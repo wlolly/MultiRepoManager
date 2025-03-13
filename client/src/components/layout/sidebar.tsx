@@ -16,7 +16,9 @@ const navItems: NavItem[] = [
   { icon: "ri-building-2-line", keyName: "warehouses", href: "/warehouses" },
   { icon: "ri-shopping-bag-line", keyName: "my_products", href: "/my-products" },
   { icon: "ri-store-line", keyName: "warehouse_products", href: "/warehouse-products" },
-  { icon: "ri-shopping-cart-line", keyName: "order", href: "/orders" },
+  // 订单管理相关导航
+  { icon: "ri-arrow-down-circle-line", keyName: "inbound_orders", href: "/inbound-orders" },
+  { icon: "ri-arrow-up-circle-line", keyName: "outbound_orders", href: "/outbound-orders" },
   { icon: "ri-cloud-line", keyName: "api_configurations", href: "/api-configurations" },
   { icon: "ri-group-line", keyName: "users_teams", href: "/users" },
   { icon: "ri-settings-line", keyName: "settings", href: "/settings" },
