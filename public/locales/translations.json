@@ -719,5 +719,138 @@
     "ru": "Товары на складе",
     "kk": "Қойма тауарлары",
     "uz": "Ombordagi mahsulotlar"
+  },
+  "dimensions": {
+    "zh": "尺寸信息",
+    "en": "Dimensions",
+    "ru": "Размеры",
+    "kk": "Өлшемдер",
+    "uz": "O'lchamlar"
+  },
+  "single_item_dimensions": {
+    "zh": "单件尺寸信息",
+    "en": "Single Item Dimensions",
+    "ru": "Размеры единицы товара",
+    "kk": "Бір дана тауар өлшемдері",
+    "uz": "Bitta mahsulot o'lchamlari"
+  },
+  "bulk_package_dimensions": {
+    "zh": "整件包装尺寸信息",
+    "en": "Bulk Package Dimensions",
+    "ru": "Размеры оптовой упаковки",
+    "kk": "Көтерме қаптама өлшемдері",
+    "uz": "Ulgurji qadoq o'lchamlari"
+  },
+  "length": {
+    "zh": "长度",
+    "en": "Length",
+    "ru": "Длина",
+    "kk": "Ұзындық",
+    "uz": "Uzunlik"
+  },
+  "width": {
+    "zh": "宽度",
+    "en": "Width",
+    "ru": "Ширина",
+    "kk": "Ені",
+    "uz": "Kenglik"
+  },
+  "height": {
+    "zh": "高度",
+    "en": "Height",
+    "ru": "Высота",
+    "kk": "Биіктік",
+    "uz": "Balandlik"
+  },
+  "weight": {
+    "zh": "重量",
+    "en": "Weight",
+    "ru": "Вес",
+    "kk": "Салмақ",
+    "uz": "Og'irlik"
+  },
+  "volume": {
+    "zh": "体积",
+    "en": "Volume",
+    "ru": "Объем",
+    "kk": "Көлем",
+    "uz": "Hajm"
+  },
+  "single_length": {
+    "zh": "单件长度",
+    "en": "Single Length",
+    "ru": "Длина единицы",
+    "kk": "Бір дана ұзындығы",
+    "uz": "Bitta uzunlik"
+  },
+  "single_width": {
+    "zh": "单件宽度",
+    "en": "Single Width",
+    "ru": "Ширина единицы",
+    "kk": "Бір дана ені",
+    "uz": "Bitta kenglik"
+  },
+  "single_height": {
+    "zh": "单件高度",
+    "en": "Single Height",
+    "ru": "Высота единицы",
+    "kk": "Бір дана биіктігі",
+    "uz": "Bitta balandlik"
+  },
+  "single_weight": {
+    "zh": "单件重量",
+    "en": "Single Weight",
+    "ru": "Вес единицы",
+    "kk": "Бір дана салмағы",
+    "uz": "Bitta og'irlik"
+  },
+  "single_volume": {
+    "zh": "单件体积",
+    "en": "Single Volume",
+    "ru": "Объем единицы",
+    "kk": "Бір дана көлемі",
+    "uz": "Bitta hajm"
+  },
+  "bulk_length": {
+    "zh": "整件长度",
+    "en": "Bulk Length",
+    "ru": "Длина упаковки",
+    "kk": "Қаптама ұзындығы",
+    "uz": "Qadoq uzunligi"
+  },
+  "bulk_width": {
+    "zh": "整件宽度",
+    "en": "Bulk Width",
+    "ru": "Ширина упаковки",
+    "kk": "Қаптама ені",
+    "uz": "Qadoq kengligi"
+  },
+  "bulk_height": {
+    "zh": "整件高度",
+    "en": "Bulk Height",
+    "ru": "Высота упаковки",
+    "kk": "Қаптама биіктігі",
+    "uz": "Qadoq balandligi"
+  },
+  "bulk_weight": {
+    "zh": "整件重量",
+    "en": "Bulk Weight",
+    "ru": "Вес упаковки",
+    "kk": "Қаптама салмағы",
+    "uz": "Qadoq og'irligi"
+  },
+  "bulk_volume": {
+    "zh": "整件体积",
+    "en": "Bulk Volume",
+    "ru": "Объем упаковки",
+    "kk": "Қаптама көлемі",
+    "uz": "Qadoq hajmi"
+  },
+  "barcode": {
+    "zh": "条码",
+    "en": "Barcode",
+    "ru": "Штрих-код",
+    "kk": "Штрих-код",
+    "uz": "Shtrix-kod"
   }
 }
