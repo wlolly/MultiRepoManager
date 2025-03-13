@@ -15,7 +15,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeftIcon, PlusCircleIcon, MinusCircleIcon, ArrowRightIcon } from "@radix-ui/react-icons";
+import { ArrowLeftIcon, PlusCircledIcon, MinusCircledIcon, ArrowRightIcon } from "@radix-ui/react-icons";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 

@@ -19,6 +19,7 @@ const navItems: NavItem[] = [
   // 订单管理相关导航
   { icon: "ri-arrow-down-circle-line", keyName: "inbound_orders", href: "/inbound-orders" },
   { icon: "ri-arrow-up-circle-line", keyName: "outbound_orders", href: "/outbound-orders" },
+  { icon: "ri-exchange-fill", keyName: "warehouse_transfers", href: "/warehouse-transfers" },
   { icon: "ri-cloud-line", keyName: "api_configurations", href: "/api-configurations" },
   { icon: "ri-group-line", keyName: "users_teams", href: "/users" },
   { icon: "ri-settings-line", keyName: "settings", href: "/settings" },
