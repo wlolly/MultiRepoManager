@@ -18,7 +18,7 @@ import {
 } from "@shared/schema";
 import { processProductCode } from "./utils/product-code-matcher";
 import { db } from './db';
-import { eq, and, gt, count, desc } from 'drizzle-orm';
+import { eq, and, gt, count, desc, sql } from 'drizzle-orm';
 
 export interface IStorage {
   // User methods
@@ -1577,12 +1577,141 @@ export class DatabaseStorage implements IStorage {
   async deleteOutboundOrderItem(id: number): Promise<void> {
     await db.delete(outboundOrderItems).where(eq(outboundOrderItems.id, id));
   }
+  
+  // 电商平台API配置方法
+  async getApiConfiguration(id: number): Promise<ApiConfiguration | undefined> {
+    const [config] = await db.select().from(apiConfigurations).where(eq(apiConfigurations.id, id));
+    return config || undefined;
+  }
+  
+  async getApiConfigurationByName(name: string): Promise<ApiConfiguration | undefined> {
+    const [config] = await db.select().from(apiConfigurations).where(eq(apiConfigurations.name, name));
+    return config || undefined;
+  }
+  
+  async createApiConfiguration(insertConfig: InsertApiConfiguration): Promise<ApiConfiguration> {
+    const [config] = await db.insert(apiConfigurations).values(insertConfig).returning();
+    return config;
+  }
+  
+  async updateApiConfiguration(id: number, config: Partial<ApiConfiguration>): Promise<ApiConfiguration | undefined> {
+    const [updatedConfig] = await db
+      .update(apiConfigurations)
+      .set({ ...config, updatedAt: new Date() })
+      .where(eq(apiConfigurations.id, id))
+      .returning();
+    return updatedConfig || undefined;
+  }
+  
+  async getApiConfigurations(): Promise<ApiConfiguration[]> {
+    return await db.select().from(apiConfigurations);
+  }
+  
+  // 电商平台产品方法
+  async getEcommerceProduct(id: number): Promise<EcommerceProduct | undefined> {
+    const [product] = await db.select().from(ecommerceProducts).where(eq(ecommerceProducts.id, id));
+    return product || undefined;
+  }
+  
+  async getEcommerceProductByPlatformId(platformId: string): Promise<EcommerceProduct | undefined> {
+    const [product] = await db.select().from(ecommerceProducts)
+      .where(eq(ecommerceProducts.platformProductId, platformId));
+    return product || undefined;
+  }
+  
+  async getEcommerceProductByPlatformCode(platformCode: string): Promise<EcommerceProduct | undefined> {
+    const [product] = await db.select().from(ecommerceProducts)
+      .where(eq(ecommerceProducts.platformProductCode, platformCode));
+    return product || undefined;
+  }
+  
+  async createEcommerceProduct(insertProduct: InsertEcommerceProduct): Promise<EcommerceProduct> {
+    const [product] = await db.insert(ecommerceProducts).values(insertProduct).returning();
+    return product;
+  }
+  
+  async updateEcommerceProduct(id: number, product: Partial<EcommerceProduct>): Promise<EcommerceProduct | undefined> {
+    const [updatedProduct] = await db
+      .update(ecommerceProducts)
+      .set({ ...product, updatedAt: new Date() })
+      .where(eq(ecommerceProducts.id, id))
+      .returning();
+    return updatedProduct || undefined;
+  }
+  
+  async getEcommerceProducts(filter?: { platformSource?: string, matchedProductId?: number }): Promise<EcommerceProduct[]> {
+    let query = db.select().from(ecommerceProducts);
+    
+    if (filter) {
+      if (filter.platformSource) {
+        query = query.where(eq(ecommerceProducts.platformSource, filter.platformSource));
+      }
+      
+      if (filter.matchedProductId !== undefined) {
+        query = query.where(eq(ecommerceProducts.matchedProductId, filter.matchedProductId));
+      }
+    }
+    
+    return await query;
+  }
+  
+  // 产品编码匹配辅助方法
+  processProductCode(platformCode: string): string {
+    return processProductCode(platformCode);
+  }
+  
+  async findProductsByMatchedCode(matchedCode: string): Promise<Product[]> {
+    return await db.select().from(products)
+      .where(sql`${products.barcode} LIKE ${`%${matchedCode}%`}`);
+  }
+  
+  async matchPlatformProducts(platformSource: string): Promise<{
+    matched: number,
+    unmatched: number,
+    total: number
+  }> {
+    // 获取指定平台的所有产品
+    const platformProducts = await this.getEcommerceProducts({ platformSource });
+    let matched = 0;
+    let unmatched = 0;
+    
+    for (const product of platformProducts) {
+      if (product.platformProductCode) {
+        // 处理平台产品编码
+        const matchedCode = this.processProductCode(product.platformProductCode);
+        // 查找匹配的系统产品
+        const matchedProducts = await this.findProductsByMatchedCode(matchedCode);
+        
+        if (matchedProducts.length > 0) {
+          // 匹配到系统产品，更新平台产品的匹配状态
+          await this.updateEcommerceProduct(product.id, {
+            matchedProductId: matchedProducts[0].id,
+            isMatched: true
+          });
+          matched++;
+        } else {
+          // 未匹配到系统产品
+          await this.updateEcommerceProduct(product.id, {
+            isMatched: false
+          });
+          unmatched++;
+        }
+      } else {
+        // 没有产品编码
+        unmatched++;
+      }
+    }
+    
+    return {
+      matched,
+      unmatched,
+      total: platformProducts.length
+    };
+  }
 }
 
 // 使用内存存储方式进行开发
-export const storage = new MemStorage();
+// export const storage = new MemStorage();
 
-// 切换到数据库存储方式时，注释掉上面的代码，取消注释下面的代码
-// import { db } from './db';
-// import { eq, and, gt, count, desc } from 'drizzle-orm';
-// export const storage = new DatabaseStorage();
+// 切换到数据库存储方式
+export const storage = new DatabaseStorage();
