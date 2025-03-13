@@ -55,6 +55,13 @@
     "kk": "{{value}} күн бұрын",
     "uz": "{{value}} kun oldin"
   },
+  "preposition_in": {
+    "zh": "在",
+    "en": "in",
+    "ru": "в",
+    "kk": "ішінде",
+    "uz": "ichida"
+  },
   "navigation": {
     "zh": "导航",
     "en": "NAVIGATION",
