@@ -299,10 +299,13 @@ i18n
       useSuspense: false
     },
     backend: {
-      loadPath: window.location.origin + '/locales/{{lng}}/{{ns}}.json',
+      loadPath: '/locales/{{lng}}/{{ns}}.json',
       requestOptions: {
-        cache: 'no-cache'  // 防止缓存问题
-      }
+        cache: 'no-cache',  // 防止缓存问题
+        mode: 'cors',
+        credentials: 'same-origin'
+      },
+      crossDomain: false
     },
     ns: ['common'],
     detection: {
@@ -363,12 +366,20 @@ export const forceChineseLanguage = () => {
   return changeLanguage('zh');
 };
 
-// 初始化时读取之前保存的语言设置，如果没有则默认使用中文
-const savedLanguage = localStorage.getItem('i18nextLng');
-if (savedLanguage && ['zh', 'en', 'ru', 'kk', 'uz'].includes(savedLanguage)) {
-  changeLanguage(savedLanguage);
-} else {
-  forceChineseLanguage();
-}
+// 初始化加载所有语言资源以确保它们可用
+i18n.reloadResources(['zh', 'en', 'ru', 'kk', 'uz']).then(() => {
+  console.log("所有语言资源已加载");
+  
+  // 读取之前保存的语言设置，如果没有则默认使用中文
+  const savedLanguage = localStorage.getItem('i18nextLng');
+  if (savedLanguage && ['zh', 'en', 'ru', 'kk', 'uz'].includes(savedLanguage)) {
+    i18n.changeLanguage(savedLanguage);
+    console.log(`已从本地存储加载语言: ${savedLanguage}`);
+  } else {
+    i18n.changeLanguage('zh');
+    localStorage.setItem('i18nextLng', 'zh');
+    console.log('默认使用中文');
+  }
+});
 
 export default i18n;
