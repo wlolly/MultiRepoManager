@@ -93,6 +93,12 @@ export class EcommerceApiService {
           case '1688':
             products = response.data.result?.toReturn || [];
             break;
+          case 'kaspi':
+            products = response.data.data || [];
+            break;
+          case 'uzum':
+            products = response.data.products || response.data.items || [];
+            break;
           default:
             // 尝试几种常见的响应格式
             products = response.data.products || response.data.items || response.data.data || response.data.result || [];

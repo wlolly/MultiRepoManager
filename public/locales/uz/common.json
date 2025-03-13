@@ -1,0 +1,220 @@
+{
+  "app": {
+    "name": "Ombor boshqaruv tizimi",
+    "version": "Versiya 1.0.0"
+  },
+  "sidebar": {
+    "navigation": "NAVIGATSIYA",
+    "recentActivity": "SO'NGGI FAOLIYAT",
+    "noActivity": "So'nggi faoliyat yo'q",
+    "newRepository": "Yangi repozitoriy",
+    "navigation_items": {
+      "dashboard": "Boshqaruv paneli",
+      "myRepositories": "Mening repozitoriylarim",
+      "teamRepositories": "Jamoa repozitoriylari",
+      "usersAndTeams": "Foydalanuvchilar va Jamoalar",
+      "settings": "Sozlamalar"
+    },
+    "activity": {
+      "justNow": "hozirgina",
+      "minutesAgo": "{{count}} daqiqa oldin",
+      "hoursAgo": "{{count}} soat oldin",
+      "yesterday": "kecha",
+      "daysAgo": "{{count}} kun oldin"
+    }
+  },
+  "header": {
+    "searchPlaceholder": "Repozitoriylarni qidirish...",
+    "account": {
+      "myAccount": "Mening hisobim",
+      "profile": "Profil",
+      "settings": "Sozlamalar",
+      "logout": "Chiqish"
+    },
+    "language": {
+      "title": "Til",
+      "zh": "Xitoy",
+      "en": "Ingliz",
+      "ru": "Rus",
+      "kk": "Qozoq",
+      "uz": "O'zbek"
+    }
+  },
+  "dashboard": {
+    "title": "Boshqaruv paneli",
+    "subtitle": "Turli tillardagi va jamoalaringiz repozitoriylarini boshqaring",
+    "stats": {
+      "totalRepositories": "Jami repozitoriylar",
+      "activeUsers": "Faol foydalanuvchilar",
+      "languagesUsed": "Qo'llanilgan tillar",
+      "recentCommits": "So'nggi kommitlar"
+    },
+    "filters": {
+      "allLanguages": "Barcha tillar",
+      "allUsers": "Barcha foydalanuvchilar",
+      "myRepositories": "Mening repozitoriylarim",
+      "teamRepositories": "Jamoa repozitoriylari"
+    },
+    "viewOptions": {
+      "listView": "Ro'yxat ko'rinishi",
+      "gridView": "Setka ko'rinishi"
+    },
+    "repositoryOverview": "Repozitoriylar umumiy ko'rinishi",
+    "newRepository": "Yangi repozitoriy",
+    "languageDistribution": "Tillar taqsimoti"
+  },
+  "repositories": {
+    "recentRepositories": "So'nggi repozitoriylar",
+    "recentRepositoriesSubtitle": "Sizning so'nggi yangilangan repozitoriylaringiz",
+    "noRepositories": "Repozitoriylar yo'q",
+    "createFirst": "Birinchi repozitoriyingizni yarating",
+    "createNew": "Yangi repozitoriy yaratish",
+    "nameLabel": "Repozitoriy nomi",
+    "namePlaceholder": "Repozitoriy nomini kiriting",
+    "descriptionLabel": "Tavsif",
+    "descriptionPlaceholder": "Repozitoriyingizni qisqacha tavsiflang (ixtiyoriy)",
+    "visibilityLabel": "Ko'rinuvchanlik",
+    "visibility": {
+      "public": "Ommaviy",
+      "private": "Xususiy",
+      "internal": "Ichki"
+    },
+    "languageLabel": "Asosiy til",
+    "createRepository": "Repozitoriy yaratish",
+    "cancel": "Bekor qilish"
+  },
+  "general": {
+    "loading": "Yuklanmoqda...",
+    "error": "Xatolik yuz berdi",
+    "retry": "Qayta urinish",
+    "save": "Saqlash",
+    "edit": "Tahrirlash",
+    "delete": "O'chirish",
+    "create": "Yaratish",
+    "cancel": "Bekor qilish",
+    "close": "Yopish",
+    "search": "Qidirish",
+    "filters": "Filtrlar",
+    "apply": "Qo'llash",
+    "reset": "Qayta o'rnatish",
+    "language": "Til",
+    "visibility": "Ko'rinuvchanlik",
+    "status": "Holat",
+    "dateCreated": "Yaratilgan sana",
+    "dateUpdated": "Yangilangan sana",
+    "back": "Orqaga",
+    "next": "Keyingi",
+    "previous": "Oldingi",
+    "finish": "Tugatish",
+    "confirm": "Tasdiqlash",
+    "yes": "Ha",
+    "no": "Yo'q",
+    "success": "Muvaffaqiyatli",
+    "failed": "Muvaffaqiyatsiz",
+    "add": "Qo'shish",
+    "remove": "Olib tashlash",
+    "details": "Tafsilotlar",
+    "code": "Kod",
+    "name": "Nomi",
+    "description": "Tavsif"
+  },
+  "warehouse": {
+    "inbound": "Kirish",
+    "outbound": "Chiqish",
+    "product": "Mahsulot",
+    "warehouse": "Ombor",
+    "inventory": "Inventar",
+    "order": "Buyurtma",
+    "management": "Boshqaruv",
+    "system": "Tizim",
+    "warehouseList": "Omborlar ro'yxati",
+    "productList": "Mahsulotlar ro'yxati",
+    "inboundOrderList": "Kirish buyurtmalari ro'yxati",
+    "outboundOrderList": "Chiqish buyurtmalari ro'yxati",
+    "inventoryList": "Inventar ro'yxati",
+    "newInboundOrder": "Yangi kirish buyurtmasi",
+    "newOutboundOrder": "Yangi chiqish buyurtmasi",
+    "newProduct": "Yangi mahsulot",
+    "newWarehouse": "Yangi ombor",
+    "statistics": "Statistika",
+    "barcode": "Shtrix-kod",
+    "quantity": "Miqdori",
+    "unitPrice": "Birlik narxi",
+    "totalPrice": "Umumiy narx",
+    "weight": "Og'irlik",
+    "volume": "Hajm",
+    "length": "Uzunlik",
+    "width": "Kenglik",
+    "height": "Balandlik",
+    "bulk": "Ulgurji",
+    "single": "Yakka",
+    "unitVolume": "Birlik hajmi",
+    "unitWeight": "Birlik og'irligi",
+    "totalVolume": "Umumiy hajm",
+    "totalWeight": "Umumiy og'irlik",
+    "dimensions": "O'lchamlar",
+    "status": {
+      "pending": "Kutilmoqda",
+      "processing": "Ishlanmoqda",
+      "completed": "Yakunlangan",
+      "cancelled": "Bekor qilingan"
+    },
+    "form": {
+      "productName": "Mahsulot nomi",
+      "productCode": "Mahsulot kodi",
+      "barcode": "Shtrix-kod",
+      "quantity": "Miqdori",
+      "warehouseName": "Ombor nomi",
+      "warehouseLocation": "Ombor joylashuvi",
+      "orderNumber": "Buyurtma raqami",
+      "orderDate": "Buyurtma sanasi",
+      "supplier": "Yetkazib beruvchi",
+      "customer": "Mijoz",
+      "operator": "Operator"
+    }
+  },
+  "ecommerce": {
+    "platform": "Elektron savdo platformasi",
+    "integration": "Integratsiya",
+    "sync": "Sinxronlash",
+    "order": "Buyurtma",
+    "product": "Mahsulot",
+    "kaspi": "Kaspi.kz",
+    "uzum": "Uzum.uz",
+    "apiConfig": "API konfiguratsiyasi",
+    "apiKey": "API kalit",
+    "apiSecret": "API sir",
+    "apiEndpoint": "API endpoint",
+    "lastSync": "So'nggi sinxronlash",
+    "syncNow": "Hozir sinxronlash",
+    "autoSync": "Avtomatik sinxronlash",
+    "mappingRules": "Xaritalash qoidalari",
+    "matchingProducts": "Mos keluvchi mahsulotlar",
+    "unmatchedProducts": "Mos kelmaydigan mahsulotlar",
+    "matchProduct": "Mahsulotni moslashtirish",
+    "platformId": "Platforma ID",
+    "platformCode": "Platforma kodi",
+    "platformName": "Platforma nomi",
+    "platformCategory": "Platforma kategoriyasi",
+    "price": "Narx",
+    "stock": "Zaxira",
+    "localProduct": "Mahalliy mahsulot",
+    "platformList": "Qo'llab-quvvatlanadigan platformalar",
+    "platforms": {
+      "kaspi": "Kaspi.kz",
+      "uzum": "Uzum.uz"
+    },
+    "status": {
+      "active": "Faol",
+      "inactive": "Faol emas",
+      "matched": "Moslashtirilgan",
+      "unmatched": "Moslashtirilmagan",
+      "pending": "Kutilmoqda",
+      "processing": "Ishlanmoqda",
+      "completed": "Yakunlangan",
+      "cancelled": "Bekor qilingan",
+      "shipped": "Jo'natilgan",
+      "delivered": "Yetkazib berilgan"
+    }
+  }
+}

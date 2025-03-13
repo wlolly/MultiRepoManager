@@ -73,6 +73,10 @@ export function extractProductCodeFromApiItem(item: any, platform: string): stri
       return item.goods_id || item.sku_id || '';
     case '1688':
       return item.offer_id || '';
+    case 'kaspi':
+      return item.masterProductId || item.productId || item.code || '';
+    case 'uzum':
+      return item.product_id || item.sku_id || item.external_id || item.id || '';
     default:
       // 尝试几个常见的字段名
       return item.product_id || item.sku || item.code || item.id || '';
