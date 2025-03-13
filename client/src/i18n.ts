@@ -8,7 +8,8 @@ const resources = {
       general: {
         loading: "加载中...",
         cancel: "取消",
-        description: "描述"
+        description: "描述",
+        optional: "可选"
       },
       app: {
         name: "ELEMENT-5 仓储管理系统",
@@ -81,6 +82,7 @@ const resources = {
         selectTeam: "选择团队",
         newRepository: "新建仓库",
         createNewRepository: "创建新仓库",
+        createRepoDesc: "创建一个新仓库来存储您的代码并与他人协作。",
         repositoryInformation: "仓库信息",
         enterRepositoryDetails: "输入您的新仓库详细信息",
         repositoryName: "仓库名称",
@@ -100,7 +102,21 @@ const resources = {
         recentDescription: "您最近更新的仓库",
         notFound: "未找到仓库",
         noTeams: "暂无可用团队",
-        noDescription: "无描述"
+        noDescription: "无描述",
+        visibility: "可见性",
+        selectVisibility: "选择可见性",
+        primaryLanguage: "主要语言",
+        selectLanguage: "选择语言",
+        public: "公开",
+        private: "私有",
+        internal: "内部",
+        otherLanguage: "其他",
+        brieflyDescribe: "简要描述您的项目",
+        creating: "创建中...",
+        createRepository: "创建仓库",
+        repoCreated: "仓库已创建",
+        repoCreatedDesc: "已成功创建 {{name}}",
+        repoCreateFailed: "创建仓库失败"
       },
       users: {
         title: "用户与团队",
@@ -194,7 +210,8 @@ const resources = {
       general: {
         loading: "Loading...",
         cancel: "Cancel",
-        description: "Description"
+        description: "Description",
+        optional: "optional"
       },
       app: {
         name: "ELEMENT-5 Warehouse Management System",
@@ -264,6 +281,7 @@ const resources = {
         team: "Team Repositories",
         newRepository: "New Repository",
         createNewRepository: "Create New Repository",
+        createRepoDesc: "Create a new repository to store your code and collaborate with others.",
         repositoryInformation: "Repository Information",
         enterRepositoryDetails: "Enter the details for your new repository",
         repositoryName: "Repository Name",
@@ -286,7 +304,21 @@ const resources = {
         noDescription: "No description",
         selectTeam: "Select a Team",
         teamDescription: "Collaborate with your team on shared repositories",
-        teamSelectPrompt: "Please select a team to view its repositories"
+        teamSelectPrompt: "Please select a team to view its repositories",
+        visibility: "Visibility",
+        selectVisibility: "Select visibility",
+        primaryLanguage: "Primary Language",
+        selectLanguage: "Select language",
+        public: "Public",
+        private: "Private",
+        internal: "Internal",
+        otherLanguage: "Other",
+        brieflyDescribe: "Briefly describe your project",
+        creating: "Creating...",
+        createRepository: "Create Repository",
+        repoCreated: "Repository created",
+        repoCreatedDesc: "Successfully created {{name}}",
+        repoCreateFailed: "Failed to create repository"
       },
       users: {
         title: "Users & Teams",

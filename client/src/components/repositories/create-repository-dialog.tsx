@@ -6,6 +6,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { useTranslation } from "react-i18next";
 
 import {
   Dialog,
@@ -58,6 +59,7 @@ export function CreateRepositoryDialog({ open, onOpenChange, currentUserId }: Cr
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [_, navigate] = useLocation();
+  const { t } = useTranslation();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(createRepositorySchema),
@@ -76,8 +78,8 @@ export function CreateRepositoryDialog({ open, onOpenChange, currentUserId }: Cr
     onSuccess: async (response) => {
       const repository = await response.json();
       toast({
-        title: "Repository created",
-        description: `Successfully created ${repository.name}`,
+        title: t('repositories.repoCreated', 'Repository created'),
+        description: t('repositories.repoCreatedDesc', `Successfully created ${repository.name}`),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/repositories"] });
       onOpenChange(false);
@@ -85,7 +87,7 @@ export function CreateRepositoryDialog({ open, onOpenChange, currentUserId }: Cr
     },
     onError: (error) => {
       toast({
-        title: "Failed to create repository",
+        title: t('repositories.repoCreateFailed', 'Failed to create repository'),
         description: error.message,
         variant: "destructive"
       });
@@ -100,9 +102,9 @@ export function CreateRepositoryDialog({ open, onOpenChange, currentUserId }: Cr
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Create New Repository</DialogTitle>
+          <DialogTitle>{t('repositories.createNewRepository', 'Create New Repository')}</DialogTitle>
           <DialogDescription>
-            Create a new repository to store your code and collaborate with others.
+            {t('repositories.createRepoDesc', 'Create a new repository to store your code and collaborate with others.')}
           </DialogDescription>
         </DialogHeader>
 
@@ -113,12 +115,12 @@ export function CreateRepositoryDialog({ open, onOpenChange, currentUserId }: Cr
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Repository Name</FormLabel>
+                  <FormLabel>{t('repositories.repositoryName', 'Repository Name')}</FormLabel>
                   <FormControl>
                     <Input placeholder="my-awesome-project" {...field} />
                   </FormControl>
                   <FormDescription>
-                    Choose a unique name for your repository
+                    {t('repositories.chooseUniqueName', 'Choose a unique name for your repository')}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -130,10 +132,10 @@ export function CreateRepositoryDialog({ open, onOpenChange, currentUserId }: Cr
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description (optional)</FormLabel>
+                  <FormLabel>{t('general.description', 'Description')} ({t('general.optional', 'optional')})</FormLabel>
                   <FormControl>
                     <Textarea 
-                      placeholder="Briefly describe your project" 
+                      placeholder={t('repositories.brieflyDescribe', 'Briefly describe your project')}
                       {...field} 
                       value={field.value || ""}
                     />
@@ -149,17 +151,17 @@ export function CreateRepositoryDialog({ open, onOpenChange, currentUserId }: Cr
                 name="visibility"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Visibility</FormLabel>
+                    <FormLabel>{t('repositories.visibility', 'Visibility')}</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select visibility" />
+                          <SelectValue placeholder={t('repositories.selectVisibility', 'Select visibility')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="public">Public</SelectItem>
-                        <SelectItem value="private">Private</SelectItem>
-                        <SelectItem value="internal">Internal</SelectItem>
+                        <SelectItem value="public">{t('repositories.public', 'Public')}</SelectItem>
+                        <SelectItem value="private">{t('repositories.private', 'Private')}</SelectItem>
+                        <SelectItem value="internal">{t('repositories.internal', 'Internal')}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -172,11 +174,11 @@ export function CreateRepositoryDialog({ open, onOpenChange, currentUserId }: Cr
                 name="language"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Primary Language</FormLabel>
+                    <FormLabel>{t('repositories.primaryLanguage', 'Primary Language')}</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select language" />
+                          <SelectValue placeholder={t('repositories.selectLanguage', 'Select language')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -192,7 +194,7 @@ export function CreateRepositoryDialog({ open, onOpenChange, currentUserId }: Cr
                         <SelectItem value="ruby">Ruby</SelectItem>
                         <SelectItem value="swift">Swift</SelectItem>
                         <SelectItem value="kotlin">Kotlin</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
+                        <SelectItem value="other">{t('repositories.otherLanguage', 'Other')}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -207,13 +209,13 @@ export function CreateRepositoryDialog({ open, onOpenChange, currentUserId }: Cr
                 variant="outline" 
                 onClick={() => onOpenChange(false)}
               >
-                Cancel
+                {t('general.cancel', 'Cancel')}
               </Button>
               <Button 
                 type="submit" 
                 disabled={createMutation.isPending}
               >
-                {createMutation.isPending ? "Creating..." : "Create Repository"}
+                {createMutation.isPending ? t('repositories.creating', 'Creating...') : t('repositories.createRepository', 'Create Repository')}
               </Button>
             </DialogFooter>
           </form>
