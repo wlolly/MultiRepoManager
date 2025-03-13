@@ -852,5 +852,124 @@
     "ru": "Штрих-код",
     "kk": "Штрих-код",
     "uz": "Shtrix-kod"
+  },
+  "warehouses": {
+    "zh": "仓库管理",
+    "en": "Warehouses",
+    "ru": "Управление складами",
+    "kk": "Қойма басқару",
+    "uz": "Omborlarni boshqarish"
+  },
+  "warehouses_description": {
+    "zh": "管理多个仓库的位置和容量",
+    "en": "Manage multiple warehouse locations and capacities",
+    "ru": "Управление несколькими складскими помещениями и их вместимостью",
+    "kk": "Бірнеше қойма орындары мен сыйымдылықтарын басқару",
+    "uz": "Bir necha ombor joylari va sig'imlarini boshqarish"
+  },
+  "new_warehouse": {
+    "zh": "新增仓库",
+    "en": "New Warehouse",
+    "ru": "Новый склад",
+    "kk": "Жаңа қойма",
+    "uz": "Yangi ombor"
+  },
+  "new_warehouse_description": {
+    "zh": "添加新的仓库位置到系统",
+    "en": "Add a new warehouse location to the system",
+    "ru": "Добавить новое складское помещение в систему",
+    "kk": "Жүйеге жаңа қойма орнын қосу",
+    "uz": "Tizimga yangi ombor joyini qo'shish"
+  },
+  "warehouse_name_placeholder": {
+    "zh": "输入仓库名称",
+    "en": "Enter warehouse name",
+    "ru": "Введите название склада",
+    "kk": "Қойма атауын енгізіңіз",
+    "uz": "Ombor nomini kiriting"
+  },
+  "warehouse_location_placeholder": {
+    "zh": "输入仓库地址",
+    "en": "Enter warehouse location",
+    "ru": "Введите местоположение склада",
+    "kk": "Қойма орналасқан жерін енгізіңіз",
+    "uz": "Ombor manzilini kiriting"
+  },
+  "capacity": {
+    "zh": "容量",
+    "en": "Capacity",
+    "ru": "Вместимость",
+    "kk": "Сыйымдылық",
+    "uz": "Sig'im"
+  },
+  "location": {
+    "zh": "地址",
+    "en": "Location",
+    "ru": "Местоположение",
+    "kk": "Орналасқан жері",
+    "uz": "Manzil"
+  },
+  "actions": {
+    "zh": "操作",
+    "en": "Actions",
+    "ru": "Действия",
+    "kk": "Әрекеттер",
+    "uz": "Harakatlar"
+  },
+  "view_inventory": {
+    "zh": "查看库存",
+    "en": "View Inventory",
+    "ru": "Просмотр инвентаря",
+    "kk": "Қорларды қарау",
+    "uz": "Inventarni ko'rish"
+  },
+  "created_at": {
+    "zh": "创建时间",
+    "en": "Created At",
+    "ru": "Создано",
+    "kk": "Құрылған уақыты",
+    "uz": "Yaratilgan vaqt"
+  },
+  "no_warehouses": {
+    "zh": "暂无仓库",
+    "en": "No Warehouses",
+    "ru": "Нет складов",
+    "kk": "Қоймалар жоқ",
+    "uz": "Omborlar yo'q"
+  },
+  "no_warehouses_description": {
+    "zh": "暂无仓库信息，请添加新仓库",
+    "en": "No warehouses available, please add a new warehouse",
+    "ru": "Нет доступных складов, добавьте новый склад",
+    "kk": "Қол жетімді қоймалар жоқ, жаңа қойма қосыңыз",
+    "uz": "Mavjud omborlar yo'q, yangi ombor qo'shing"
+  },
+  "search_warehouses": {
+    "zh": "搜索仓库...",
+    "en": "Search warehouses...",
+    "ru": "Поиск складов...",
+    "kk": "Қоймаларды іздеу...",
+    "uz": "Omborlarni qidirish..."
+  },
+  "warehouse_created": {
+    "zh": "仓库创建成功",
+    "en": "Warehouse Created",
+    "ru": "Склад создан",
+    "kk": "Қойма жасалды",
+    "uz": "Ombor yaratildi"
+  },
+  "warehouse_created_description": {
+    "zh": "新仓库已成功添加到系统",
+    "en": "New warehouse has been successfully added to the system",
+    "ru": "Новый склад успешно добавлен в систему",
+    "kk": "Жаңа қойма жүйеге сәтті қосылды",
+    "uz": "Yangi ombor tizimga muvaffaqiyatli qo'shildi"
+  },
+  "warehouse_creation_failed": {
+    "zh": "仓库创建失败",
+    "en": "Warehouse Creation Failed",
+    "ru": "Не удалось создать склад",
+    "kk": "Қойма жасау сәтсіз аяқталды",
+    "uz": "Ombor yaratish amalga oshmadi"
   }
 }

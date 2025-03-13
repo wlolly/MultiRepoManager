@@ -286,6 +286,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Warehouse routes
+  apiRouter.get("/warehouses", async (req, res) => {
+    try {
+      const warehouses = await storage.getWarehouses();
+      res.json(warehouses);
+    } catch (err) {
+      handleZodError(err, res);
+    }
+  });
+
+  apiRouter.get("/warehouses/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const warehouse = await storage.getWarehouse(id);
+      
+      if (!warehouse) {
+        return res.status(404).json({ error: "Warehouse not found" });
+      }
+      
+      res.json(warehouse);
+    } catch (err) {
+      handleZodError(err, res);
+    }
+  });
+
+  apiRouter.post("/warehouses", async (req, res) => {
+    try {
+      const warehouseData = insertWarehouseSchema.parse(req.body);
+      const warehouse = await storage.createWarehouse(warehouseData);
+      res.status(201).json(warehouse);
+    } catch (err) {
+      handleZodError(err, res);
+    }
+  });
+
+  apiRouter.patch("/warehouses/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const warehouseData = req.body;
+      
+      const updatedWarehouse = await storage.updateWarehouse(id, warehouseData);
+      
+      if (!updatedWarehouse) {
+        return res.status(404).json({ error: "Warehouse not found" });
+      }
+      
+      res.json(updatedWarehouse);
+    } catch (err) {
+      handleZodError(err, res);
+    }
+  });
+
   // Stats routes
   apiRouter.get("/stats/language-distribution", async (req, res) => {
     try {
