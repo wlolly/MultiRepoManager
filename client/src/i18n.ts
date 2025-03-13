@@ -299,7 +299,8 @@ i18n
       useSuspense: false
     },
     backend: {
-      loadPath: '/locales/{{lng}}/{{ns}}.json',
+      // 使用完整的URL路径确保正确加载语言文件
+      loadPath: `${window.location.origin}/locales/{{lng}}/{{ns}}.json`,
       requestOptions: {
         cache: 'no-cache',  // 防止缓存问题
         mode: 'cors',
