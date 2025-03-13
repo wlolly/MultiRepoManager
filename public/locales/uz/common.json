@@ -61,7 +61,9 @@
     },
     "repositoryOverview": "Repozitoriylar umumiy ko'rinishi",
     "newRepository": "Yangi repozitoriy",
-    "languageDistribution": "Tillar taqsimoti"
+    "languageDistribution": "Tillar taqsimoti",
+    "languageDistribution_title": "Tillar taqsimoti",
+    "recentActivity_title": "So'nggi faoliyat"
   },
   "repositories": {
     "recentRepositories": "So'nggi repozitoriylar",
