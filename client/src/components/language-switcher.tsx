@@ -31,31 +31,31 @@ export function LanguageSwitcher() {
       <DropdownMenuContent align="end">
         <DropdownMenuItem 
           className={currentLanguage === 'zh' ? 'bg-accent' : ''} 
-          onClick={() => changeLanguage('zh')}
+          onClick={() => handleLanguageChange('zh')}
         >
           中文
         </DropdownMenuItem>
         <DropdownMenuItem 
           className={currentLanguage === 'en' ? 'bg-accent' : ''} 
-          onClick={() => changeLanguage('en')}
+          onClick={() => handleLanguageChange('en')}
         >
           English
         </DropdownMenuItem>
         <DropdownMenuItem 
           className={currentLanguage === 'ru' ? 'bg-accent' : ''} 
-          onClick={() => changeLanguage('ru')}
+          onClick={() => handleLanguageChange('ru')}
         >
           Русский
         </DropdownMenuItem>
         <DropdownMenuItem 
           className={currentLanguage === 'kk' ? 'bg-accent' : ''} 
-          onClick={() => changeLanguage('kk')}
+          onClick={() => handleLanguageChange('kk')}
         >
           Қазақша
         </DropdownMenuItem>
         <DropdownMenuItem 
           className={currentLanguage === 'uz' ? 'bg-accent' : ''} 
-          onClick={() => changeLanguage('uz')}
+          onClick={() => handleLanguageChange('uz')}
         >
           O'zbekcha
         </DropdownMenuItem>
