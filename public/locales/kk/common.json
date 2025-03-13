@@ -61,7 +61,9 @@
     },
     "repositoryOverview": "Репозиторийлер шолуы",
     "newRepository": "Жаңа репозиторий",
-    "languageDistribution": "Тілдер таралымы"
+    "languageDistribution": "Тілдер таралымы",
+    "languageDistribution_title": "Тілдер таралымы",
+    "recentActivity_title": "Соңғы әрекеттер"
   },
   "repositories": {
     "recentRepositories": "Соңғы репозиторийлер",
