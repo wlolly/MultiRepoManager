@@ -600,5 +600,124 @@
     "ru": "Товары не найдены",
     "kk": "Тауарлар табылмады",
     "uz": "Mahsulotlar topilmadi"
+  },
+  "no_products_description": {
+    "zh": "暂无商品信息，请添加新商品",
+    "en": "No products available, please add a new product",
+    "ru": "Нет доступных товаров, добавьте новый товар",
+    "kk": "Қол жетімді тауарлар жоқ, жаңа тауар қосыңыз",
+    "uz": "Mavjud mahsulotlar yo'q, yangi mahsulot qo'shing"
+  },
+  "product_created": {
+    "zh": "商品创建成功",
+    "en": "Product created successfully",
+    "ru": "Товар успешно создан",
+    "kk": "Тауар сәтті жасалды",
+    "uz": "Mahsulot muvaffaqiyatli yaratildi"
+  },
+  "product_created_description": {
+    "zh": "新商品已添加到系统",
+    "en": "New product has been added to the system",
+    "ru": "Новый товар добавлен в систему",
+    "kk": "Жаңа тауар жүйеге қосылды",
+    "uz": "Yangi mahsulot tizimga qo'shildi"
+  },
+  "product_creation_failed": {
+    "zh": "商品创建失败",
+    "en": "Product creation failed",
+    "ru": "Не удалось создать товар",
+    "kk": "Тауар жасау сәтсіз аяқталды",
+    "uz": "Mahsulot yaratish amalga oshmadi"
+  },
+  "product_name_placeholder": {
+    "zh": "输入商品名称",
+    "en": "Enter product name",
+    "ru": "Введите название товара",
+    "kk": "Тауар атауын енгізіңіз",
+    "uz": "Mahsulot nomini kiriting"
+  },
+  "barcode_placeholder": {
+    "zh": "输入商品条码",
+    "en": "Enter product barcode",
+    "ru": "Введите штрих-код товара",
+    "kk": "Тауар штрих-кодын енгізіңіз",
+    "uz": "Mahsulot shtrix-kodini kiriting"
+  },
+  "product_description_placeholder": {
+    "zh": "输入商品描述",
+    "en": "Enter product description",
+    "ru": "Введите описание товара",
+    "kk": "Тауар сипаттамасын енгізіңіз",
+    "uz": "Mahsulot tavsifini kiriting"
+  },
+  "select_category": {
+    "zh": "选择分类",
+    "en": "Select category",
+    "ru": "Выберите категорию",
+    "kk": "Санатты таңдаңыз",
+    "uz": "Toifani tanlang"
+  },
+  "select_warehouse": {
+    "zh": "选择仓库",
+    "en": "Select warehouse",
+    "ru": "Выберите склад",
+    "kk": "Қойманы таңдаңыз",
+    "uz": "Omborni tanlang"
+  },
+  "stock": {
+    "zh": "库存",
+    "en": "Stock",
+    "ru": "Запас",
+    "kk": "Қор",
+    "uz": "Zaxira"
+  },
+  "price": {
+    "zh": "售价",
+    "en": "Price",
+    "ru": "Цена",
+    "kk": "Баға",
+    "uz": "Narx"
+  },
+  "cost": {
+    "zh": "成本",
+    "en": "Cost",
+    "ru": "Себестоимость",
+    "kk": "Өзіндік құны",
+    "uz": "Tannarx"
+  },
+  "creating": {
+    "zh": "创建中",
+    "en": "Creating",
+    "ru": "Создание",
+    "kk": "Жасау",
+    "uz": "Yaratilmoqda"
+  },
+  "updated": {
+    "zh": "更新时间",
+    "en": "Updated",
+    "ru": "Обновлено",
+    "kk": "Жаңартылды",
+    "uz": "Yangilandi"
+  },
+  "new_product_description": {
+    "zh": "添加新商品到库存系统",
+    "en": "Add a new product to the inventory system",
+    "ru": "Добавить новый товар в систему инвентаризации",
+    "kk": "Қор жүйесіне жаңа тауар қосу",
+    "uz": "Inventar tizimiga yangi mahsulot qo'shish"
+  },
+  "my_products": {
+    "zh": "我的商品",
+    "en": "My Products",
+    "ru": "Мои товары",
+    "kk": "Менің тауарларым",
+    "uz": "Mening mahsulotlarim"
+  },
+  "warehouse_products": {
+    "zh": "仓库商品",
+    "en": "Warehouse Products",
+    "ru": "Товары на складе",
+    "kk": "Қойма тауарлары",
+    "uz": "Ombordagi mahsulotlar"
   }
 }
