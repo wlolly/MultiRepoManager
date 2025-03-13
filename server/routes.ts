@@ -7,7 +7,15 @@ import {
   insertTeamSchema,
   insertTeamMemberSchema,
   insertTeamRepositorySchema,
-  insertActivitySchema
+  insertActivitySchema,
+  insertWarehouseSchema,
+  insertProductSchema,
+  insertInboundOrderSchema,
+  insertOutboundOrderSchema,
+  insertInboundOrderItemSchema,
+  insertOutboundOrderItemSchema,
+  insertEcommerceProductSchema,
+  insertApiConfigurationSchema
 } from "@shared/schema";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
@@ -333,6 +341,536 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       res.json(updatedWarehouse);
+    } catch (err) {
+      handleZodError(err, res);
+    }
+  });
+
+  // Products routes
+  apiRouter.get("/products", async (req, res) => {
+    try {
+      const products = await storage.getProducts();
+      res.json(products);
+    } catch (err) {
+      handleZodError(err, res);
+    }
+  });
+
+  apiRouter.get("/products/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const product = await storage.getProduct(id);
+      
+      if (!product) {
+        return res.status(404).json({ error: "Product not found" });
+      }
+      
+      res.json(product);
+    } catch (err) {
+      handleZodError(err, res);
+    }
+  });
+
+  apiRouter.post("/products", async (req, res) => {
+    try {
+      const productData = insertProductSchema.parse(req.body);
+      const product = await storage.createProduct(productData);
+      res.status(201).json(product);
+    } catch (err) {
+      handleZodError(err, res);
+    }
+  });
+
+  apiRouter.patch("/products/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const productData = req.body;
+      
+      const updatedProduct = await storage.updateProduct(id, productData);
+      
+      if (!updatedProduct) {
+        return res.status(404).json({ error: "Product not found" });
+      }
+      
+      res.json(updatedProduct);
+    } catch (err) {
+      handleZodError(err, res);
+    }
+  });
+  
+  // Inbound orders routes
+  apiRouter.get("/inbound-orders", async (req, res) => {
+    try {
+      const filter = {
+        warehouseId: req.query.warehouseId 
+          ? parseInt(req.query.warehouseId as string) 
+          : undefined,
+        status: req.query.status as string | undefined
+      };
+      
+      const inboundOrders = await storage.getInboundOrders(filter);
+      res.json(inboundOrders);
+    } catch (err) {
+      handleZodError(err, res);
+    }
+  });
+  
+  apiRouter.get("/inbound-orders/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const inboundOrder = await storage.getInboundOrder(id);
+      
+      if (!inboundOrder) {
+        return res.status(404).json({ error: "Inbound order not found" });
+      }
+      
+      // Get items for this order
+      const items = await storage.getInboundOrderItems(id);
+      
+      res.json({ ...inboundOrder, items });
+    } catch (err) {
+      handleZodError(err, res);
+    }
+  });
+  
+  apiRouter.post("/inbound-orders", async (req, res) => {
+    try {
+      const inboundOrderData = insertInboundOrderSchema.parse(req.body);
+      const inboundOrder = await storage.createInboundOrder(inboundOrderData);
+      res.status(201).json(inboundOrder);
+    } catch (err) {
+      handleZodError(err, res);
+    }
+  });
+  
+  apiRouter.patch("/inbound-orders/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const inboundOrderData = req.body;
+      
+      const updatedInboundOrder = await storage.updateInboundOrder(id, inboundOrderData);
+      
+      if (!updatedInboundOrder) {
+        return res.status(404).json({ error: "Inbound order not found" });
+      }
+      
+      res.json(updatedInboundOrder);
+    } catch (err) {
+      handleZodError(err, res);
+    }
+  });
+  
+  // Inbound order items routes
+  apiRouter.get("/inbound-orders/:orderId/items", async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.orderId);
+      const items = await storage.getInboundOrderItems(orderId);
+      res.json(items);
+    } catch (err) {
+      handleZodError(err, res);
+    }
+  });
+  
+  apiRouter.post("/inbound-orders/:orderId/items", async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.orderId);
+      const itemData = insertInboundOrderItemSchema.parse({
+        ...req.body,
+        inboundOrderId: orderId
+      });
+      
+      const item = await storage.createInboundOrderItem(itemData);
+      res.status(201).json(item);
+    } catch (err) {
+      handleZodError(err, res);
+    }
+  });
+  
+  apiRouter.patch("/inbound-order-items/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const itemData = req.body;
+      
+      const updatedItem = await storage.updateInboundOrderItem(id, itemData);
+      
+      if (!updatedItem) {
+        return res.status(404).json({ error: "Inbound order item not found" });
+      }
+      
+      res.json(updatedItem);
+    } catch (err) {
+      handleZodError(err, res);
+    }
+  });
+  
+  apiRouter.delete("/inbound-order-items/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteInboundOrderItem(id);
+      res.status(204).end();
+    } catch (err) {
+      handleZodError(err, res);
+    }
+  });
+  
+  // Outbound orders routes
+  apiRouter.get("/outbound-orders", async (req, res) => {
+    try {
+      const filter = {
+        warehouseId: req.query.warehouseId 
+          ? parseInt(req.query.warehouseId as string) 
+          : undefined,
+        status: req.query.status as string | undefined
+      };
+      
+      const outboundOrders = await storage.getOutboundOrders(filter);
+      res.json(outboundOrders);
+    } catch (err) {
+      handleZodError(err, res);
+    }
+  });
+  
+  apiRouter.get("/outbound-orders/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const outboundOrder = await storage.getOutboundOrder(id);
+      
+      if (!outboundOrder) {
+        return res.status(404).json({ error: "Outbound order not found" });
+      }
+      
+      // Get items for this order
+      const items = await storage.getOutboundOrderItems(id);
+      
+      res.json({ ...outboundOrder, items });
+    } catch (err) {
+      handleZodError(err, res);
+    }
+  });
+  
+  apiRouter.post("/outbound-orders", async (req, res) => {
+    try {
+      const outboundOrderData = insertOutboundOrderSchema.parse(req.body);
+      const outboundOrder = await storage.createOutboundOrder(outboundOrderData);
+      res.status(201).json(outboundOrder);
+    } catch (err) {
+      handleZodError(err, res);
+    }
+  });
+  
+  apiRouter.patch("/outbound-orders/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const outboundOrderData = req.body;
+      
+      const updatedOutboundOrder = await storage.updateOutboundOrder(id, outboundOrderData);
+      
+      if (!updatedOutboundOrder) {
+        return res.status(404).json({ error: "Outbound order not found" });
+      }
+      
+      res.json(updatedOutboundOrder);
+    } catch (err) {
+      handleZodError(err, res);
+    }
+  });
+  
+  // Outbound order items routes
+  apiRouter.get("/outbound-orders/:orderId/items", async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.orderId);
+      const items = await storage.getOutboundOrderItems(orderId);
+      res.json(items);
+    } catch (err) {
+      handleZodError(err, res);
+    }
+  });
+  
+  apiRouter.post("/outbound-orders/:orderId/items", async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.orderId);
+      const itemData = insertOutboundOrderItemSchema.parse({
+        ...req.body,
+        outboundOrderId: orderId
+      });
+      
+      const item = await storage.createOutboundOrderItem(itemData);
+      res.status(201).json(item);
+    } catch (err) {
+      handleZodError(err, res);
+    }
+  });
+  
+  apiRouter.patch("/outbound-order-items/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const itemData = req.body;
+      
+      const updatedItem = await storage.updateOutboundOrderItem(id, itemData);
+      
+      if (!updatedItem) {
+        return res.status(404).json({ error: "Outbound order item not found" });
+      }
+      
+      res.json(updatedItem);
+    } catch (err) {
+      handleZodError(err, res);
+    }
+  });
+  
+  apiRouter.delete("/outbound-order-items/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteOutboundOrderItem(id);
+      res.status(204).end();
+    } catch (err) {
+      handleZodError(err, res);
+    }
+  });
+  
+  // E-commerce API configuration routes
+  apiRouter.get("/api-configurations", async (req, res) => {
+    try {
+      const configs = await storage.getApiConfigurations();
+      res.json(configs);
+    } catch (err) {
+      handleZodError(err, res);
+    }
+  });
+  
+  apiRouter.get("/api-configurations/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const config = await storage.getApiConfiguration(id);
+      
+      if (!config) {
+        return res.status(404).json({ error: "API configuration not found" });
+      }
+      
+      res.json(config);
+    } catch (err) {
+      handleZodError(err, res);
+    }
+  });
+  
+  apiRouter.post("/api-configurations", async (req, res) => {
+    try {
+      const configData = insertApiConfigurationSchema.parse(req.body);
+      const config = await storage.createApiConfiguration(configData);
+      res.status(201).json(config);
+    } catch (err) {
+      handleZodError(err, res);
+    }
+  });
+  
+  apiRouter.patch("/api-configurations/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const configData = req.body;
+      
+      const updatedConfig = await storage.updateApiConfiguration(id, configData);
+      
+      if (!updatedConfig) {
+        return res.status(404).json({ error: "API configuration not found" });
+      }
+      
+      res.json(updatedConfig);
+    } catch (err) {
+      handleZodError(err, res);
+    }
+  });
+  
+  // Excel import/export routes
+  // Import products from Excel
+  apiRouter.post("/import/products", async (req, res) => {
+    try {
+      // Excel data will be sent in the request body as JSON
+      const { data } = req.body;
+      
+      if (!Array.isArray(data) || data.length === 0) {
+        return res.status(400).json({ error: "Invalid Excel data format" });
+      }
+      
+      const importedProducts = [];
+      
+      for (const row of data) {
+        try {
+          // Map Excel columns to product fields
+          const productData = {
+            name: row.name || row['Product Name'] || "",
+            description: row.description || row['Description'] || "",
+            barcode: row.barcode || row['Barcode'] || "",
+            category: row.category || row['Category'] || "",
+            stock: parseInt(row.stock || row['Stock'] || "0"),
+            price: parseFloat(row.price || row['Price'] || "0"),
+            cost: parseFloat(row.cost || row['Cost'] || "0"),
+            singleLengthCm: parseFloat(row.singleLengthCm || row['Length (cm)'] || "0"),
+            singleWidthCm: parseFloat(row.singleWidthCm || row['Width (cm)'] || "0"),
+            singleHeightCm: parseFloat(row.singleHeightCm || row['Height (cm)'] || "0"),
+            singleWeightKg: parseFloat(row.singleWeightKg || row['Weight (kg)'] || "0"),
+            bulkLengthCm: parseFloat(row.bulkLengthCm || row['Bulk Length (cm)'] || "0"),
+            bulkWidthCm: parseFloat(row.bulkWidthCm || row['Bulk Width (cm)'] || "0"),
+            bulkHeightCm: parseFloat(row.bulkHeightCm || row['Bulk Height (cm)'] || "0"),
+            bulkWeightKg: parseFloat(row.bulkWeightKg || row['Bulk Weight (kg)'] || "0"),
+          };
+          
+          // Create product
+          const product = await storage.createProduct(productData);
+          importedProducts.push(product);
+        } catch (error) {
+          console.error("Error importing row:", error, row);
+          // Continue with next row even if there's an error
+        }
+      }
+      
+      res.status(201).json({ 
+        message: `Successfully imported ${importedProducts.length} products`,
+        importedProducts
+      });
+    } catch (err) {
+      handleZodError(err, res);
+    }
+  });
+  
+  // Import inbound orders from Excel
+  apiRouter.post("/import/inbound-orders", async (req, res) => {
+    try {
+      const { data, warehouseId } = req.body;
+      
+      if (!Array.isArray(data) || data.length === 0) {
+        return res.status(400).json({ error: "Invalid Excel data format" });
+      }
+      
+      if (!warehouseId) {
+        return res.status(400).json({ error: "Warehouse ID is required" });
+      }
+      
+      // Create a new inbound order
+      const orderNumber = `IN-${Date.now()}`;
+      const inboundOrderData = {
+        orderNumber,
+        warehouseId: parseInt(warehouseId),
+        status: "pending",
+        sourceType: "excel",
+        notes: "Imported from Excel",
+      };
+      
+      const inboundOrder = await storage.createInboundOrder(inboundOrderData);
+      const importedItems = [];
+      
+      // Add items from Excel
+      for (const row of data) {
+        try {
+          // Try to find product by barcode
+          const barcode = row.barcode || row['Barcode'];
+          let productId = row.productId || row['Product ID'];
+          
+          if (!productId && barcode) {
+            const product = await storage.getProductByBarcode(barcode);
+            if (product) {
+              productId = product.id;
+            }
+          }
+          
+          if (!productId) {
+            console.warn("Skipping row without product ID or matching barcode:", row);
+            continue;
+          }
+          
+          // Map Excel columns to order item fields
+          const itemData = {
+            inboundOrderId: inboundOrder.id,
+            productId: parseInt(productId),
+            quantity: parseInt(row.quantity || row['Quantity'] || "0"),
+            notes: row.notes || row['Notes'] || "",
+          };
+          
+          // Create order item
+          const item = await storage.createInboundOrderItem(itemData);
+          importedItems.push(item);
+        } catch (error) {
+          console.error("Error importing item row:", error, row);
+          // Continue with next row even if there's an error
+        }
+      }
+      
+      res.status(201).json({ 
+        message: `Successfully created inbound order with ${importedItems.length} items`,
+        inboundOrder,
+        items: importedItems
+      });
+    } catch (err) {
+      handleZodError(err, res);
+    }
+  });
+  
+  // Import outbound orders from Excel
+  apiRouter.post("/import/outbound-orders", async (req, res) => {
+    try {
+      const { data, warehouseId } = req.body;
+      
+      if (!Array.isArray(data) || data.length === 0) {
+        return res.status(400).json({ error: "Invalid Excel data format" });
+      }
+      
+      if (!warehouseId) {
+        return res.status(400).json({ error: "Warehouse ID is required" });
+      }
+      
+      // Create a new outbound order
+      const orderNumber = `OUT-${Date.now()}`;
+      const outboundOrderData = {
+        orderNumber,
+        warehouseId: parseInt(warehouseId),
+        status: "pending",
+        destinationType: "excel",
+        notes: "Imported from Excel",
+      };
+      
+      const outboundOrder = await storage.createOutboundOrder(outboundOrderData);
+      const importedItems = [];
+      
+      // Add items from Excel
+      for (const row of data) {
+        try {
+          // Try to find product by barcode
+          const barcode = row.barcode || row['Barcode'];
+          let productId = row.productId || row['Product ID'];
+          
+          if (!productId && barcode) {
+            const product = await storage.getProductByBarcode(barcode);
+            if (product) {
+              productId = product.id;
+            }
+          }
+          
+          if (!productId) {
+            console.warn("Skipping row without product ID or matching barcode:", row);
+            continue;
+          }
+          
+          // Map Excel columns to order item fields
+          const itemData = {
+            outboundOrderId: outboundOrder.id,
+            productId: parseInt(productId),
+            quantity: parseInt(row.quantity || row['Quantity'] || "0"),
+            notes: row.notes || row['Notes'] || "",
+          };
+          
+          // Create order item
+          const item = await storage.createOutboundOrderItem(itemData);
+          importedItems.push(item);
+        } catch (error) {
+          console.error("Error importing item row:", error, row);
+          // Continue with next row even if there's an error
+        }
+      }
+      
+      res.status(201).json({ 
+        message: `Successfully created outbound order with ${importedItems.length} items`,
+        outboundOrder,
+        items: importedItems
+      });
     } catch (err) {
       handleZodError(err, res);
     }
