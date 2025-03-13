@@ -43,10 +43,14 @@ const resources = {
         title: "最近活动",
         noData: "暂无活动数据"
       },
+      recentActivity_title: "最近活动",
+      recentActivity_noData: "暂无活动数据",
       languageDistribution: {
         title: "语言分布",
         noData: "暂无语言分布数据"
       },
+      languageDistribution_title: "语言分布",
+      languageDistribution_noData: "暂无语言分布数据",
       time: {
         justNow: "刚刚",
         minutesAgo: "{{value}}分钟前",
