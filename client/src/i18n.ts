@@ -679,6 +679,59 @@ const resources = {
         ecommerce: "Elektron tijorat platformalari",
         barcode: "Shtrix-kod skaneri",
         settings: "Tizim sozlamalari"
+      },
+      settings: {
+        title: "Tizim sozlamalari",
+        subtitle: "Hisob sozlamalari va imtiyozlarini boshqarish",
+        tabs: {
+          account: "Hisob ma'lumotlari",
+          security: "Xavfsizlik",
+          notifications: "Bildirishnomalar",
+          appearance: "Ko'rinish"
+        },
+        account: {
+          title: "Hisob ma'lumotlari",
+          description: "Hisobingiz va profil ma'lumotlarini yangilang",
+          avatar: "Avatar",
+          avatarUrl: "Avatar rasm URL",
+          fullName: "To'liq ism",
+          username: "Foydalanuvchi nomi",
+          email: "Elektron pochta",
+          saveButton: "O'zgarishlarni saqlash"
+        },
+        security: {
+          title: "Xavfsizlik sozlamalari",
+          description: "Parol va xavfsizlik imtiyozlarini boshqarish",
+          currentPassword: "Joriy parol",
+          newPassword: "Yangi parol",
+          confirmPassword: "Yangi parolni tasdiqlang",
+          changePasswordButton: "Parolni o'zgartirish",
+          twoFactorAuth: "Ikki faktorli autentifikatsiya",
+          twoFactorDescription: "Hisobingizga qo'shimcha xavfsizlik darajasini qo'shish uchun ikki faktorli autentifikatsiyani yoqing",
+          enableTwoFactorButton: "Ikki faktorli autentifikatsiyani yoqish"
+        },
+        notifications: {
+          title: "Bildirishnoma sozlamalari",
+          description: "Bildirishnomalar va ogohlantirishlarni qanday olishni boshqarish",
+          emailNotifications: "Elektron pochta bildirishnomalari",
+          emailNotificationsDescription: "Muhim yangilanishlar uchun elektron pochta orqali bildirishnomalarni olish",
+          repositoryActivity: "Repozitoriy faoliyati",
+          repositoryActivityDescription: "Yuborishlar, tarmoqlar va so'rovlar haqida bildirishnomalar",
+          teamActivity: "Jamoa faoliyati",
+          teamActivityDescription: "Jamoa a'zolari o'zgarishlari haqida bildirishnomalar",
+          securityAlerts: "Xavfsizlik ogohlantirmalari",
+          securityAlertsDescription: "Muhim xavfsizlik yangilanishlari va zaifliklar haqida bildirishnomalar",
+          saveButton: "Imtiyozlarni saqlash"
+        },
+        appearance: {
+          title: "Ko'rinish sozlamalari",
+          description: "ELEMENT-5 tizimining ko'rinishini sozlash",
+          darkMode: "Qorong'i rejim",
+          darkModeDescription: "Qorong'i mavzudan foydalanish",
+          language: "Tizim tili",
+          selectLanguage: "Tilni tanlang",
+          saveButton: "Imtiyozlarni saqlash"
+        }
       }
     }
   }
