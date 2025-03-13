@@ -114,11 +114,12 @@ function CreateWarehouseDialog({ open, onOpenChange }: { open: boolean; onOpenCh
   
   // Create warehouse mutation
   const createWarehouseMutation = useMutation({
-    mutationFn: (data: CreateWarehouseFormValues) => 
-      apiRequest("/api/warehouses", {
+    mutationFn: async (data: CreateWarehouseFormValues) => {
+      return await apiRequest("/api/warehouses", {
         method: "POST",
         body: JSON.stringify(data),
-      }),
+      });
+    },
     onSuccess: () => {
       // Show success toast
       toast({
@@ -408,7 +409,7 @@ export default function Warehouses() {
     queryKey: ["/api/warehouses"],
     queryFn: async () => {
       const response = await apiRequest("/api/warehouses");
-      return response as Warehouse[];
+      return response;
     },
   });
   
