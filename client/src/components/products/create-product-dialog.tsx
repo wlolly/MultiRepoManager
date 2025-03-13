@@ -22,7 +22,20 @@ const createProductSchema = z.object({
   stock: z.number().min(0, "库存不能为负数"),
   price: z.number().min(0, "售价不能为负数"),
   cost: z.number().min(0, "成本不能为负数"),
-  weight: z.number().min(0, "重量不能为负数"),
+  
+  // 单件尺寸和重量信息
+  lengthCm: z.number().min(0, "长度不能为负数"),     // 单件尺寸（长CM）
+  widthCm: z.number().min(0, "宽度不能为负数"),      // 单件尺寸（宽CM）
+  heightCm: z.number().min(0, "高度不能为负数"),     // 单件尺寸（高CM）
+  weightKg: z.number().min(0, "重量不能为负数"),     // 单件重量（kg）
+  volumeM3: z.number().min(0, "体积不能为负数").optional(), // 单件立方（M3）- 可以自动计算
+  
+  // 整件包装信息
+  packageWidthCm: z.number().min(0, "包装宽度不能为负数"),    // 整件尺寸（宽CM）
+  packageHeightCm: z.number().min(0, "包装高度不能为负数"),   // 整件尺寸（高CM）
+  packageWeightKg: z.number().min(0, "包装重量不能为负数"),   // 整件重量（kg）
+  packageVolumeM3: z.number().min(0, "包装体积不能为负数").optional(), // 整件立方（M3）- 可以自动计算
+  
   warehouseId: z.number().min(1, "必须选择仓库")
 });
 
@@ -48,7 +61,20 @@ export function CreateProductDialog({ open, onOpenChange, currentUserId }: Creat
       stock: 0,
       price: 0,
       cost: 0,
-      weight: 0,
+      
+      // 单件尺寸和重量信息
+      lengthCm: 0,
+      widthCm: 0,
+      heightCm: 0,
+      weightKg: 0,
+      volumeM3: 0,
+      
+      // 整件包装信息
+      packageWidthCm: 0,
+      packageHeightCm: 0,
+      packageWeightKg: 0,
+      packageVolumeM3: 0,
+      
       warehouseId: 1 // 默认仓库ID
     }
   });
@@ -188,16 +214,16 @@ export function CreateProductDialog({ open, onOpenChange, currentUserId }: Creat
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="weight">{t('weight')} (kg)</Label>
+              <Label htmlFor="weightKg">{t('weight')} (kg)</Label>
               <Input
-                id="weight"
+                id="weightKg"
                 type="number"
                 step="0.01"
-                {...form.register("weight", { valueAsNumber: true })}
+                {...form.register("weightKg", { valueAsNumber: true })}
                 placeholder="0.00"
               />
-              {form.formState.errors.weight && (
-                <p className="text-sm text-red-500">{form.formState.errors.weight.message}</p>
+              {form.formState.errors.weightKg && (
+                <p className="text-sm text-red-500">{form.formState.errors.weightKg.message}</p>
               )}
             </div>
           </div>
@@ -229,6 +255,108 @@ export function CreateProductDialog({ open, onOpenChange, currentUserId }: Creat
               {form.formState.errors.cost && (
                 <p className="text-sm text-red-500">{form.formState.errors.cost.message}</p>
               )}
+            </div>
+          </div>
+          
+          <div>
+            <h3 className="text-sm font-medium mb-2 border-b pb-1">{t('dimensions')}</h3>
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="lengthCm">{t('length')} (cm)</Label>
+                  <Input
+                    id="lengthCm"
+                    type="number"
+                    step="0.1"
+                    {...form.register("lengthCm", { valueAsNumber: true })}
+                    placeholder="0.0"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="widthCm">{t('width')} (cm)</Label>
+                  <Input
+                    id="widthCm"
+                    type="number"
+                    step="0.1"
+                    {...form.register("widthCm", { valueAsNumber: true })}
+                    placeholder="0.0"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="heightCm">{t('height')} (cm)</Label>
+                  <Input
+                    id="heightCm"
+                    type="number"
+                    step="0.1"
+                    {...form.register("heightCm", { valueAsNumber: true })}
+                    placeholder="0.0"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="volumeM3">{t('volume')} (m³)</Label>
+                  <Input
+                    id="volumeM3"
+                    type="number"
+                    step="0.001"
+                    {...form.register("volumeM3", { valueAsNumber: true })}
+                    placeholder="0.000"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div>
+            <h3 className="text-sm font-medium mb-2 border-b pb-1">{t('package_dimensions')}</h3>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="packageWidthCm">{t('package_width')} (cm)</Label>
+                  <Input
+                    id="packageWidthCm"
+                    type="number"
+                    step="0.1"
+                    {...form.register("packageWidthCm", { valueAsNumber: true })}
+                    placeholder="0.0"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="packageHeightCm">{t('package_height')} (cm)</Label>
+                  <Input
+                    id="packageHeightCm"
+                    type="number"
+                    step="0.1"
+                    {...form.register("packageHeightCm", { valueAsNumber: true })}
+                    placeholder="0.0"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="packageWeightKg">{t('package_weight')} (kg)</Label>
+                  <Input
+                    id="packageWeightKg"
+                    type="number"
+                    step="0.01"
+                    {...form.register("packageWeightKg", { valueAsNumber: true })}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="packageVolumeM3">{t('package_volume')} (m³)</Label>
+                  <Input
+                    id="packageVolumeM3"
+                    type="number"
+                    step="0.001"
+                    {...form.register("packageVolumeM3", { valueAsNumber: true })}
+                    placeholder="0.000"
+                  />
+                </div>
+              </div>
             </div>
           </div>
           
