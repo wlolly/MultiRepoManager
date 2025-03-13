@@ -17,6 +17,7 @@ const navItems: NavItem[] = [
   { icon: "ri-shopping-bag-line", keyName: "my_products", href: "/my-products" },
   { icon: "ri-store-line", keyName: "warehouse_products", href: "/warehouse-products" },
   { icon: "ri-shopping-cart-line", keyName: "order", href: "/orders" },
+  { icon: "ri-cloud-line", keyName: "api_configurations", href: "/api-configurations" },
   { icon: "ri-group-line", keyName: "users_teams", href: "/users" },
   { icon: "ri-settings-line", keyName: "settings", href: "/settings" },
 ];
