@@ -188,6 +188,48 @@
     "kk": "Тапсырыс",
     "uz": "Buyurtma"
   },
+  "inbound_orders": {
+    "zh": "入库单",
+    "en": "Inbound Orders",
+    "ru": "Приходные ордера",
+    "kk": "Кіріс ордерлер",
+    "uz": "Kirish buyurtmalari"
+  },
+  "outbound_orders": {
+    "zh": "出库单",
+    "en": "Outbound Orders",
+    "ru": "Расходные ордера",
+    "kk": "Шығыс ордерлер",
+    "uz": "Chiqish buyurtmalari"
+  },
+  "new_inbound_order": {
+    "zh": "创建入库单",
+    "en": "Create Inbound Order",
+    "ru": "Создать приходный ордер",
+    "kk": "Кіріс ордер жасау",
+    "uz": "Kirish buyurtma yaratish"
+  },
+  "new_outbound_order": {
+    "zh": "创建出库单",
+    "en": "Create Outbound Order",
+    "ru": "Создать расходный ордер",
+    "kk": "Шығыс ордер жасау",
+    "uz": "Chiqish buyurtma yaratish"
+  },
+  "order_details": {
+    "zh": "订单详情",
+    "en": "Order Details",
+    "ru": "Детали заказа",
+    "kk": "Тапсырыс мәліметтері",
+    "uz": "Buyurtma tafsilotlari"
+  },
+  "add_item": {
+    "zh": "添加物品",
+    "en": "Add Item",
+    "ru": "Добавить предмет",
+    "kk": "Тауар қосу",
+    "uz": "Element qo'shish"
+  },
   "management": {
     "zh": "管理",
     "en": "Management",
@@ -866,6 +908,244 @@
     "ru": "Управление несколькими складскими помещениями и их вместимостью",
     "kk": "Бірнеше қойма орындары мен сыйымдылықтарын басқару",
     "uz": "Bir necha ombor joylari va sig'imlarini boshqarish"
+  },
+  "manage_inbound_orders": {
+    "zh": "管理入库单和收货流程",
+    "en": "Manage inbound orders and receiving process",
+    "ru": "Управление приходными заказами и процессом приемки",
+    "kk": "Кіріс тапсырыстары мен қабылдау процесін басқару",
+    "uz": "Kirish buyurtmalari va qabul qilish jarayonini boshqarish"
+  },
+  "manage_outbound_orders": {
+    "zh": "管理出库单和发货流程",
+    "en": "Manage outbound orders and shipping process",
+    "ru": "Управление расходными заказами и процессом отгрузки",
+    "kk": "Шығыс тапсырыстары мен жөнелту процесін басқару",
+    "uz": "Chiqish buyurtmalari va jo'natish jarayonini boshqarish"
+  },
+  "filter_and_search": {
+    "zh": "筛选和搜索",
+    "en": "Filter and Search",
+    "ru": "Фильтр и поиск",
+    "kk": "Сүзгі және іздеу",
+    "uz": "Filtrlash va qidirish"
+  },
+  "filter_orders_description": {
+    "zh": "使用以下选项筛选和搜索订单",
+    "en": "Use the options below to filter and search orders",
+    "ru": "Используйте опции ниже для фильтрации и поиска заказов",
+    "kk": "Тапсырыстарды сүзу және іздеу үшін төмендегі опцияларды пайдаланыңыз",
+    "uz": "Buyurtmalarni filtrlash va qidirish uchun quyidagi parametrlardan foydalaning"
+  },
+  "all_statuses": {
+    "zh": "所有状态",
+    "en": "All Statuses",
+    "ru": "Все статусы",
+    "kk": "Барлық күйлер",
+    "uz": "Barcha holatlar"
+  },
+  "search_inbound_orders": {
+    "zh": "搜索入库单号或仓库名称",
+    "en": "Search inbound order numbers or warehouse names",
+    "ru": "Поиск по номерам приходных ордеров или названиям складов",
+    "kk": "Кіріс ордер нөмірлері немесе қойма атаулары бойынша іздеу",
+    "uz": "Kirish buyurtma raqamlari yoki ombor nomlari bo'yicha qidirish"
+  },
+  "search_outbound_orders": {
+    "zh": "搜索出库单号或仓库名称",
+    "en": "Search outbound order numbers or warehouse names",
+    "ru": "Поиск по номерам расходных ордеров или названиям складов",
+    "kk": "Шығыс ордер нөмірлері немесе қойма атаулары бойынша іздеу",
+    "uz": "Chiqish buyurtma raqamlari yoki ombor nomlari bo'yicha qidirish"
+  },
+  "inbound_orders_list": {
+    "zh": "入库单列表",
+    "en": "Inbound Orders List",
+    "ru": "Список приходных ордеров",
+    "kk": "Кіріс ордерлер тізімі",
+    "uz": "Kirish buyurtmalari ro'yxati"
+  },
+  "outbound_orders_list": {
+    "zh": "出库单列表",
+    "en": "Outbound Orders List",
+    "ru": "Список расходных ордеров",
+    "kk": "Шығыс ордерлер тізімі",
+    "uz": "Chiqish buyurtmalari ro'yxati"
+  },
+  "order_number": {
+    "zh": "订单号",
+    "en": "Order Number",
+    "ru": "Номер заказа",
+    "kk": "Тапсырыс нөмірі",
+    "uz": "Buyurtma raqami"
+  },
+  "total_weight": {
+    "zh": "总重量",
+    "en": "Total Weight",
+    "ru": "Общий вес",
+    "kk": "Жалпы салмақ",
+    "uz": "Umumiy og'irlik"
+  },
+  "total_volume": {
+    "zh": "总体积",
+    "en": "Total Volume",
+    "ru": "Общий объем",
+    "kk": "Жалпы көлем",
+    "uz": "Umumiy hajm"
+  },
+  "created_at": {
+    "zh": "创建时间",
+    "en": "Created At",
+    "ru": "Создано",
+    "kk": "Құрылған уақыты",
+    "uz": "Yaratilgan vaqt"
+  },
+  "total_orders": {
+    "zh": "订单总数",
+    "en": "Total Orders",
+    "ru": "Всего заказов",
+    "kk": "Барлық тапсырыстар",
+    "uz": "Jami buyurtmalar"
+  },
+  "no_inbound_orders": {
+    "zh": "未找到入库单",
+    "en": "No inbound orders found",
+    "ru": "Приходные ордера не найдены",
+    "kk": "Кіріс ордерлер табылмады",
+    "uz": "Kirish buyurtmalari topilmadi"
+  },
+  "no_outbound_orders": {
+    "zh": "未找到出库单",
+    "en": "No outbound orders found",
+    "ru": "Расходные ордера не найдены",
+    "kk": "Шығыс ордерлер табылмады",
+    "uz": "Chiqish buyurtmalari topilmadi"
+  },
+  "actions": {
+    "zh": "操作",
+    "en": "Actions",
+    "ru": "Действия",
+    "kk": "Әрекеттер",
+    "uz": "Amallar"
+  },
+  "open_menu": {
+    "zh": "打开菜单",
+    "en": "Open Menu",
+    "ru": "Открыть меню",
+    "kk": "Мәзірді ашу",
+    "uz": "Menyuni ochish"
+  },
+  "view_details": {
+    "zh": "查看详情",
+    "en": "View Details",
+    "ru": "Посмотреть детали",
+    "kk": "Мәліметтерді қарау",
+    "uz": "Tafsilotlarni ko'rish"
+  },
+  "process": {
+    "zh": "处理",
+    "en": "Process",
+    "ru": "Обработать",
+    "kk": "Өңдеу",
+    "uz": "Ishlov berish"
+  },
+  "import_inbound_orders": {
+    "zh": "导入入库单",
+    "en": "Import Inbound Orders",
+    "ru": "Импорт приходных ордеров",
+    "kk": "Кіріс ордерлерді импорттау",
+    "uz": "Kirish buyurtmalarini import qilish"
+  },
+  "import_outbound_orders": {
+    "zh": "导入出库单",
+    "en": "Import Outbound Orders",
+    "ru": "Импорт расходных ордеров",
+    "kk": "Шығыс ордерлерді импорттау",
+    "uz": "Chiqish buyurtmalarini import qilish"
+  },
+  "import_excel_description": {
+    "zh": "选择Excel文件以导入订单数据",
+    "en": "Select an Excel file to import order data",
+    "ru": "Выберите файл Excel для импорта данных заказа",
+    "kk": "Тапсырыс деректерін импорттау үшін Excel файлын таңдаңыз",
+    "uz": "Buyurtma ma'lumotlarini import qilish uchun Excel faylini tanlang"
+  },
+  "select_file": {
+    "zh": "选择文件",
+    "en": "Select File",
+    "ru": "Выбрать файл",
+    "kk": "Файлды таңдау",
+    "uz": "Faylni tanlash"
+  },
+  "selected_file": {
+    "zh": "已选择文件",
+    "en": "Selected File",
+    "ru": "Выбранный файл",
+    "kk": "Таңдалған файл",
+    "uz": "Tanlangan fayl"
+  },
+  "process_import": {
+    "zh": "处理导入",
+    "en": "Process Import",
+    "ru": "Обработать импорт",
+    "kk": "Импортты өңдеу",
+    "uz": "Importni qayta ishlash"
+  },
+  "import": {
+    "zh": "导入",
+    "en": "Import",
+    "ru": "Импорт",
+    "kk": "Импорт",
+    "uz": "Import"
+  },
+  "export": {
+    "zh": "导出",
+    "en": "Export",
+    "ru": "Экспорт",
+    "kk": "Экспорт",
+    "uz": "Eksport"
+  },
+  "export_success": {
+    "zh": "导出成功",
+    "en": "Export Successful",
+    "ru": "Экспорт успешен",
+    "kk": "Экспорт сәтті",
+    "uz": "Eksport muvaffaqiyatli"
+  },
+  "file_saved_description": {
+    "zh": "文件已成功保存到您的下载文件夹",
+    "en": "File has been successfully saved to your downloads folder",
+    "ru": "Файл успешно сохранен в папке загрузок",
+    "kk": "Файл жүктеулер қалтасына сәтті сақталды",
+    "uz": "Fayl yuklamalar papkasiga muvaffaqiyatli saqlandi"
+  },
+  "import_success": {
+    "zh": "导入成功",
+    "en": "Import Successful",
+    "ru": "Импорт успешен",
+    "kk": "Импорт сәтті",
+    "uz": "Import muvaffaqiyatli"
+  },
+  "data_imported_description": {
+    "zh": "数据已成功导入系统",
+    "en": "Data has been successfully imported into the system",
+    "ru": "Данные успешно импортированы в систему",
+    "kk": "Деректер жүйеге сәтті импортталды",
+    "uz": "Ma'lumotlar tizimga muvaffaqiyatli import qilindi"
+  },
+  "import_failed": {
+    "zh": "导入失败",
+    "en": "Import Failed",
+    "ru": "Импорт не удался",
+    "kk": "Импорт сәтсіз",
+    "uz": "Import amalga oshmadi"
+  },
+  "import_failed_description": {
+    "zh": "导入过程中发生错误",
+    "en": "An error occurred during the import process",
+    "ru": "Произошла ошибка во время процесса импорта",
+    "kk": "Импорт процесі кезінде қате орын алды",
+    "uz": "Import jarayonida xatolik yuz berdi"
   },
   "new_warehouse": {
     "zh": "新增仓库",

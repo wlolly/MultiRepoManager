@@ -2,17 +2,47 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
+import { MixerHorizontalIcon, PlusIcon, DownloadIcon, UploadIcon } from "@radix-ui/react-icons";
+
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { 
+  Table, 
+  TableHeader, 
+  TableBody, 
+  TableRow, 
+  TableHead, 
+  TableCell 
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import * as XLSX from "xlsx";
+import * as XLSX from 'xlsx';
 
+// 入库单接口定义
 interface InboundOrder {
   id: number;
   orderNumber: string;
@@ -36,6 +66,7 @@ interface InboundOrder {
   items?: InboundOrderItem[];
 }
 
+// 入库单明细接口定义
 interface InboundOrderItem {
   id: number;
   inboundOrderId: number;
@@ -51,6 +82,7 @@ interface InboundOrderItem {
   };
 }
 
+// 仓库接口定义
 interface Warehouse {
   id: number;
   name: string;
@@ -60,223 +92,355 @@ interface Warehouse {
 export default function InboundOrders() {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("");
-  const [warehouseFilter, setWarehouseFilter] = useState<string>("");
-
-  // 查询入库单列表
-  const { data: inboundOrders = [], isLoading: isLoadingOrders, refetch: refetchOrders } = useQuery<InboundOrder[]>({
-    queryKey: ["/api/inbound-orders", { status: statusFilter, warehouseId: warehouseFilter }],
+  const [searchQuery, setSearchQuery] = useState("");
+  const [warehouseFilter, setWarehouseFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  
+  // 获取入库单数据
+  const { data: inboundOrders = [], isLoading: isLoadingOrders } = useQuery<InboundOrder[]>({
+    queryKey: ["/api/inbound-orders"],
   });
-
-  // 查询仓库列表（用于过滤）
-  const { data: warehouses = [] } = useQuery<Warehouse[]>({
+  
+  // 获取仓库数据
+  const { data: warehouses = [], isLoading: isLoadingWarehouses } = useQuery<Warehouse[]>({
     queryKey: ["/api/warehouses"],
   });
-
-  // 过滤入库单
-  const filteredOrders = inboundOrders.filter((order) => {
-    return order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase());
-  });
-
-  // 导出到Excel
+  
+  // 导出Excel功能
   const exportToExcel = () => {
-    const dataToExport = filteredOrders.map((order) => ({
-      [t("order_number")]: order.orderNumber,
-      [t("warehouse")]: order.warehouse?.name || '',
-      [t("total_weight")]: order.totalWeight,
-      [t("total_volume")]: order.totalVolume,
-      [t("status")]: t(order.status),
-      [t("created_at")]: formatDate(order.createdAt),
-      [t("notes")]: order.notes || ''
-    }));
-
-    const ws = XLSX.utils.json_to_sheet(dataToExport);
+    // 筛选数据
+    const filteredData = inboundOrders
+      .filter(order => 
+        (warehouseFilter === "all" || order.warehouseId === Number(warehouseFilter)) &&
+        (statusFilter === "all" || order.status === statusFilter) &&
+        (searchQuery === "" || 
+          order.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (order.warehouse?.name.toLowerCase().includes(searchQuery.toLowerCase())))
+      )
+      .map(order => ({
+        [t('order_number')]: order.orderNumber,
+        [t('warehouse')]: order.warehouse?.name,
+        [t('status')]: t(order.status),
+        [t('total_weight')]: order.totalWeight,
+        [t('total_volume')]: order.totalVolume,
+        [t('created_at')]: formatDate(new Date(order.createdAt)),
+        [t('notes')]: order.notes || '',
+      }));
+    
+    // 创建工作簿和工作表
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "InboundOrders");
-    XLSX.writeFile(wb, "inbound-orders.xlsx");
-
+    const ws = XLSX.utils.json_to_sheet(filteredData);
+    
+    // 添加工作表到工作簿
+    XLSX.utils.book_append_sheet(wb, ws, t('inbound_orders'));
+    
+    // 导出Excel文件
+    XLSX.writeFile(wb, `${t('inbound_orders')}_${new Date().toISOString().split('T')[0]}.xlsx`);
+    
     toast({
-      title: t("export_success"),
-      description: t("file_saved"),
+      title: t('export_success'),
+      description: t('file_saved_description'),
     });
   };
-
-  // 获取状态徽章颜色
-  const getStatusBadgeColor = (status: string) => {
+  
+  // 导入Excel功能
+  const importFromExcel = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    setSelectedFile(file);
+  };
+  
+  const processExcelImport = async () => {
+    if (!selectedFile) return;
+    
+    // 读取Excel文件
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const data = new Uint8Array(e.target?.result as ArrayBuffer);
+      const workbook = XLSX.read(data, { type: 'array' });
+      
+      // 获取第一个工作表
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+      
+      // 将工作表转换为JSON
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+      
+      try {
+        // 上传数据到服务器
+        const response = await fetch('/api/inbound-orders/import', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(jsonData),
+        });
+        
+        if (response.ok) {
+          toast({
+            title: t('import_success'),
+            description: t('data_imported_description'),
+          });
+          // 刷新数据
+          // queryClient.invalidateQueries({queryKey: ["/api/inbound-orders"]});
+        } else {
+          const error = await response.json();
+          toast({
+            title: t('import_failed'),
+            description: error.message || t('import_failed_description'),
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        toast({
+          title: t('import_failed'),
+          description: (error as Error).message || t('import_failed_description'),
+          variant: "destructive",
+        });
+      }
+      
+      // 清除选择的文件
+      setSelectedFile(null);
+    };
+    
+    reader.readAsArrayBuffer(selectedFile);
+  };
+  
+  // 根据筛选条件过滤数据
+  const filteredOrders = inboundOrders.filter(order => 
+    (warehouseFilter === "all" || order.warehouseId === Number(warehouseFilter)) &&
+    (statusFilter === "all" || order.status === statusFilter) &&
+    (searchQuery === "" || 
+      order.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (order.warehouse?.name.toLowerCase().includes(searchQuery.toLowerCase())))
+  );
+  
+  // 状态徽章颜色映射
+  const getStatusBadgeVariant = (status: string) => {
     switch (status) {
-      case "pending":
-        return "bg-yellow-100 text-yellow-800 hover:bg-yellow-200";
-      case "completed":
-        return "bg-green-100 text-green-800 hover:bg-green-200";
-      case "cancelled":
-        return "bg-red-100 text-red-800 hover:bg-red-200";
+      case 'pending':
+        return "secondary";
+      case 'processing':
+        return "default";
+      case 'completed':
+        return "success";
+      case 'cancelled':
+        return "destructive";
       default:
-        return "bg-gray-100 text-gray-800 hover:bg-gray-200";
+        return "outline";
     }
   };
-
+  
   return (
-    <div className="container mx-auto py-6 px-4 md:px-6">
+    <div className="container mx-auto py-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">{t("inbound_orders")}</h1>
-        <div className="flex space-x-3">
-          <Link href="/inbound-orders/new">
-            <Button>
-              <i className="ri-add-line mr-2"></i> {t("create_inbound_order")}
-            </Button>
-          </Link>
-          <Button variant="outline" onClick={exportToExcel}>
-            <i className="ri-file-excel-line mr-2"></i> {t("export_to_excel")}
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">{t('inbound_orders')}</h1>
+          <p className="text-muted-foreground">{t('manage_inbound_orders')}</p>
+        </div>
+        <div className="flex items-center gap-4">
+          {/* 导入Excel按钮 */}
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                <UploadIcon className="mr-2 h-4 w-4" />
+                {t('import')}
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{t('import_inbound_orders')}</DialogTitle>
+                <DialogDescription>
+                  {t('import_excel_description')}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div>
+                  <Label htmlFor="excel-file">{t('select_file')}</Label>
+                  <Input 
+                    id="excel-file" 
+                    type="file" 
+                    accept=".xlsx, .xls" 
+                    onChange={importFromExcel} 
+                    className="mt-2"
+                  />
+                </div>
+                {selectedFile && (
+                  <div className="text-sm">
+                    {t('selected_file')}: {selectedFile.name}
+                  </div>
+                )}
+              </div>
+              <div className="flex justify-end">
+                <Button onClick={processExcelImport} disabled={!selectedFile}>
+                  {t('process_import')}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+          
+          {/* 导出Excel按钮 */}
+          <Button variant="outline" size="sm" onClick={exportToExcel}>
+            <DownloadIcon className="mr-2 h-4 w-4" />
+            {t('export')}
+          </Button>
+          
+          {/* 创建入库单按钮 */}
+          <Button asChild>
+            <Link href="/inbound-orders/new">
+              <PlusIcon className="mr-2 h-4 w-4" />
+              {t('new_inbound_order')}
+            </Link>
           </Button>
         </div>
       </div>
-
-      <Tabs defaultValue="all" className="mb-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 space-y-4 md:space-y-0">
-          <TabsList>
-            <TabsTrigger value="all" onClick={() => setStatusFilter("")}>
-              {t("all_orders")}
-            </TabsTrigger>
-            <TabsTrigger value="pending" onClick={() => setStatusFilter("pending")}>
-              {t("pending")}
-            </TabsTrigger>
-            <TabsTrigger value="completed" onClick={() => setStatusFilter("completed")}>
-              {t("completed")}
-            </TabsTrigger>
-            <TabsTrigger value="cancelled" onClick={() => setStatusFilter("cancelled")}>
-              {t("cancelled")}
-            </TabsTrigger>
-          </TabsList>
-
-          <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2">
-            <Select value={warehouseFilter} onValueChange={setWarehouseFilter}>
-              <SelectTrigger className="w-full md:w-[200px]">
-                <SelectValue placeholder={t("select_warehouse")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">{t("all_warehouses")}</SelectItem>
-                {warehouses.map((warehouse) => (
-                  <SelectItem key={warehouse.id} value={warehouse.id.toString()}>
-                    {warehouse.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Input 
-              placeholder={t("search_by_order_number")} 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full md:w-[300px]"
-            />
+      
+      {/* 筛选器和搜索 */}
+      <Card className="mb-6">
+        <CardHeader className="pb-3">
+          <CardTitle>{t('filter_and_search')}</CardTitle>
+          <CardDescription>
+            {t('filter_orders_description')}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex-1 min-w-[200px]">
+              <Label htmlFor="warehouse-filter">{t('warehouse')}</Label>
+              <Select value={warehouseFilter} onValueChange={setWarehouseFilter}>
+                <SelectTrigger id="warehouse-filter" className="mt-1">
+                  <SelectValue placeholder={t('all_warehouses')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('all_warehouses')}</SelectItem>
+                  {warehouses.map((warehouse) => (
+                    <SelectItem key={warehouse.id} value={warehouse.id.toString()}>
+                      {warehouse.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex-1 min-w-[200px]">
+              <Label htmlFor="status-filter">{t('status')}</Label>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger id="status-filter" className="mt-1">
+                  <SelectValue placeholder={t('all_statuses')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('all_statuses')}</SelectItem>
+                  <SelectItem value="pending">{t('pending')}</SelectItem>
+                  <SelectItem value="processing">{t('processing')}</SelectItem>
+                  <SelectItem value="completed">{t('completed')}</SelectItem>
+                  <SelectItem value="cancelled">{t('cancelled')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex-[2] min-w-[300px]">
+              <Label htmlFor="search">{t('search')}</Label>
+              <Input
+                id="search"
+                placeholder={t('search_inbound_orders')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="mt-1"
+              />
+            </div>
           </div>
-        </div>
-
-        <TabsContent value="all" className="mt-0">
-          <Card>
-            <CardHeader className="pb-1">
-              <CardTitle>{t("inbound_orders")}</CardTitle>
-              <CardDescription>
-                {t("inbound_orders_description")}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoadingOrders ? (
-                <div className="flex justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-900"></div>
-                </div>
-              ) : filteredOrders.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>{t("order_number")}</TableHead>
-                        <TableHead>{t("warehouse")}</TableHead>
-                        <TableHead>{t("total_weight")}</TableHead>
-                        <TableHead>{t("total_volume")}</TableHead>
-                        <TableHead>{t("status")}</TableHead>
-                        <TableHead>{t("created_at")}</TableHead>
-                        <TableHead>{t("actions")}</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredOrders.map((order) => (
-                        <TableRow key={order.id}>
-                          <TableCell className="font-medium">{order.orderNumber}</TableCell>
-                          <TableCell>{order.warehouse?.name || `-`}</TableCell>
-                          <TableCell>{order.totalWeight} kg</TableCell>
-                          <TableCell>{order.totalVolume} m³</TableCell>
-                          <TableCell>
-                            <Badge className={getStatusBadgeColor(order.status)}>
-                              {t(order.status)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{formatDate(order.createdAt)}</TableCell>
-                          <TableCell>
-                            <Link href={`/inbound-orders/${order.id}`}>
-                              <Button variant="ghost" size="sm">
-                                <i className="ri-eye-line mr-1"></i> {t("view")}
-                              </Button>
-                            </Link>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              ) : (
-                <div className="text-center py-10">
-                  <i className="ri-inbox-line text-5xl text-gray-300 mb-3"></i>
-                  <p className="text-gray-500">{t("no_inbound_orders_found")}</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="pending" className="mt-0">
-          <Card>
-            <CardHeader className="pb-1">
-              <CardTitle>{t("pending_inbound_orders")}</CardTitle>
-              <CardDescription>
-                {t("pending_inbound_orders_description")}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {/* 内容与 "all" Tab 相同，由状态过滤器控制 */}
-              {/* 使用上面相同的表格代码，避免重复 */}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="completed" className="mt-0">
-          <Card>
-            <CardHeader className="pb-1">
-              <CardTitle>{t("completed_inbound_orders")}</CardTitle>
-              <CardDescription>
-                {t("completed_inbound_orders_description")}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {/* 内容与 "all" Tab 相同，由状态过滤器控制 */}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="cancelled" className="mt-0">
-          <Card>
-            <CardHeader className="pb-1">
-              <CardTitle>{t("cancelled_inbound_orders")}</CardTitle>
-              <CardDescription>
-                {t("cancelled_inbound_orders_description")}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {/* 内容与 "all" Tab 相同，由状态过滤器控制 */}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+        </CardContent>
+      </Card>
+      
+      {/* 入库单列表 */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle>{t('inbound_orders_list')}</CardTitle>
+          <CardDescription>
+            {t('total_orders')}: {filteredOrders.length}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoadingOrders || isLoadingWarehouses ? (
+            <div className="flex justify-center items-center h-40">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : filteredOrders.length === 0 ? (
+            <div className="text-center py-10">
+              <p className="text-muted-foreground">{t('no_inbound_orders')}</p>
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t('order_number')}</TableHead>
+                    <TableHead>{t('warehouse')}</TableHead>
+                    <TableHead>{t('status')}</TableHead>
+                    <TableHead>{t('total_weight')}</TableHead>
+                    <TableHead>{t('total_volume')}</TableHead>
+                    <TableHead>{t('created_at')}</TableHead>
+                    <TableHead className="text-right">{t('actions')}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredOrders.map((order) => (
+                    <TableRow key={order.id}>
+                      <TableCell className="font-medium">
+                        <Link href={`/inbound-order/${order.id}`} className="hover:underline text-blue-600">
+                          {order.orderNumber}
+                        </Link>
+                      </TableCell>
+                      <TableCell>{order.warehouse?.name}</TableCell>
+                      <TableCell>
+                        <Badge variant={getStatusBadgeVariant(order.status)}>
+                          {t(order.status)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{order.totalWeight} kg</TableCell>
+                      <TableCell>{order.totalVolume} m³</TableCell>
+                      <TableCell>{formatDate(new Date(order.createdAt))}</TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MixerHorizontalIcon className="h-4 w-4" />
+                              <span className="sr-only">{t('open_menu')}</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem asChild>
+                              <Link href={`/inbound-order/${order.id}`}>
+                                {t('view_details')}
+                              </Link>
+                            </DropdownMenuItem>
+                            {order.status === 'pending' && (
+                              <DropdownMenuItem asChild>
+                                <Link href={`/inbound-order/${order.id}`}>
+                                  {t('edit')}
+                                </Link>
+                              </DropdownMenuItem>
+                            )}
+                            {(order.status === 'pending' || order.status === 'processing') && (
+                              <DropdownMenuItem asChild>
+                                <Link href={`/inbound-order/${order.id}`}>
+                                  {t('process')}
+                                </Link>
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
