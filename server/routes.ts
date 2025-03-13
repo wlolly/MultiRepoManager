@@ -435,10 +435,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   apiRouter.post("/inbound-orders", async (req, res) => {
     try {
-      const inboundOrderData = insertInboundOrderSchema.parse(req.body);
+      // 增加必要的字段
+      const { orderNumber, warehouseId, notes, status, orderType = "purchase", items = [] } = req.body;
+      
+      // 计算总重量和总体积
+      let totalWeight = 0;
+      let totalVolume = 0;
+      
+      if (items && items.length > 0) {
+        items.forEach(item => {
+          totalWeight += parseFloat(item.weight || "0");
+          totalVolume += parseFloat(item.volume || "0");
+        });
+      }
+      
+      const inboundOrderData = {
+        orderNumber,
+        warehouseId,
+        totalWeight: totalWeight.toString(),
+        totalVolume: totalVolume.toString(),
+        createdBy: 1, // 假设用户ID为1
+        status: status || "pending",
+        notes,
+        orderType
+      };
+      
       const inboundOrder = await storage.createInboundOrder(inboundOrderData);
-      res.status(201).json(inboundOrder);
+      
+      // 添加明细项
+      const createdItems = [];
+      if (items && items.length > 0) {
+        for (const item of items) {
+          const itemData = {
+            inboundOrderId: inboundOrder.id,
+            productId: parseInt(item.productId),
+            quantity: item.quantity,
+            weight: item.weight || "0",
+            volume: item.volume || "0"
+          };
+          
+          const createdItem = await storage.createInboundOrderItem(itemData);
+          createdItems.push(createdItem);
+        }
+      }
+      
+      res.status(201).json({
+        ...inboundOrder,
+        items: createdItems
+      });
     } catch (err) {
+      console.error("创建入库单错误:", err);
       handleZodError(err, res);
     }
   });
@@ -550,10 +596,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   apiRouter.post("/outbound-orders", async (req, res) => {
     try {
-      const outboundOrderData = insertOutboundOrderSchema.parse(req.body);
+      // 增加必要的字段
+      const { orderNumber, warehouseId, notes, status, orderType = "sale", destinationType = "customer", items = [] } = req.body;
+      
+      // 计算总重量和总体积
+      let totalWeight = 0;
+      let totalVolume = 0;
+      
+      if (items && items.length > 0) {
+        items.forEach((item: any) => {
+          totalWeight += parseFloat(item.weight || "0");
+          totalVolume += parseFloat(item.volume || "0");
+        });
+      }
+      
+      const outboundOrderData = {
+        orderNumber,
+        warehouseId,
+        totalWeight: totalWeight.toString(),
+        totalVolume: totalVolume.toString(),
+        createdBy: 1, // 假设用户ID为1
+        status: status || "pending",
+        notes,
+        orderType,
+        destinationType
+      };
+      
       const outboundOrder = await storage.createOutboundOrder(outboundOrderData);
-      res.status(201).json(outboundOrder);
+      
+      // 添加明细项
+      const createdItems = [];
+      if (items && items.length > 0) {
+        for (const item of items) {
+          const itemData = {
+            outboundOrderId: outboundOrder.id,
+            productId: parseInt(item.productId),
+            quantity: item.quantity,
+            weight: item.weight || "0",
+            volume: item.volume || "0"
+          };
+          
+          const createdItem = await storage.createOutboundOrderItem(itemData);
+          createdItems.push(createdItem);
+        }
+      }
+      
+      res.status(201).json({
+        ...outboundOrder,
+        items: createdItems
+      });
     } catch (err) {
+      console.error("创建出库单错误:", err);
       handleZodError(err, res);
     }
   });
@@ -745,13 +838,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Warehouse ID is required" });
       }
       
+      // 计算总重量和总体积
+      let totalWeight = 0;
+      let totalVolume = 0;
+      
       // Create a new inbound order
       const orderNumber = `IN-${Date.now()}`;
       const inboundOrderData = {
         orderNumber,
         warehouseId: parseInt(warehouseId),
+        totalWeight: "0", // 初始值，后面会更新
+        totalVolume: "0", // 初始值，后面会更新 
+        createdBy: 1, // 默认用户ID
         status: "pending",
-        sourceType: "excel",
+        orderType: "purchase", // 默认为采购入库
         notes: "Imported from Excel",
       };
       
@@ -777,12 +877,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
             continue;
           }
           
+          // 获取产品信息以计算重量体积
+          const product = await storage.getProduct(parseInt(productId));
+          if (!product) {
+            console.warn("Skipping row with invalid product ID:", productId);
+            continue;
+          }
+          
+          const quantity = parseInt(row.quantity || row['Quantity'] || "0");
+          const weight = product.singleWeightKg * quantity;
+          const volume = product.singleVolumeM3 * quantity;
+          
+          // 累加总重量和体积
+          totalWeight += weight;
+          totalVolume += volume;
+          
           // Map Excel columns to order item fields
           const itemData = {
             inboundOrderId: inboundOrder.id,
             productId: parseInt(productId),
-            quantity: parseInt(row.quantity || row['Quantity'] || "0"),
-            notes: row.notes || row['Notes'] || "",
+            quantity: quantity,
+            weight: weight.toString(),
+            volume: volume.toString()
           };
           
           // Create order item
@@ -794,12 +910,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // 更新入库单总重量和体积
+      if (importedItems.length > 0) {
+        await storage.updateInboundOrder(inboundOrder.id, {
+          totalWeight: totalWeight.toString(),
+          totalVolume: totalVolume.toString()
+        });
+      }
+      
       res.status(201).json({ 
         message: `Successfully created inbound order with ${importedItems.length} items`,
-        inboundOrder,
+        inboundOrder: {
+          ...inboundOrder,
+          totalWeight: totalWeight.toString(),
+          totalVolume: totalVolume.toString()
+        },
         items: importedItems
       });
     } catch (err) {
+      console.error("导入入库单失败:", err);
       handleZodError(err, res);
     }
   });
@@ -817,13 +946,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Warehouse ID is required" });
       }
       
+      // 计算总重量和总体积
+      let totalWeight = 0;
+      let totalVolume = 0;
+      
       // Create a new outbound order
       const orderNumber = `OUT-${Date.now()}`;
       const outboundOrderData = {
         orderNumber,
         warehouseId: parseInt(warehouseId),
+        totalWeight: "0", // 初始值，后面会更新
+        totalVolume: "0", // 初始值，后面会更新
+        createdBy: 1, // 默认用户ID
         status: "pending",
-        destinationType: "excel",
+        orderType: "sale", // 默认为销售出库
+        destinationType: "customer", // 默认为客户
         notes: "Imported from Excel",
       };
       
@@ -849,12 +986,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
             continue;
           }
           
+          // 获取产品信息以计算重量体积
+          const product = await storage.getProduct(parseInt(productId));
+          if (!product) {
+            console.warn("Skipping row with invalid product ID:", productId);
+            continue;
+          }
+          
+          const quantity = parseInt(row.quantity || row['Quantity'] || "0");
+          const weight = product.singleWeightKg * quantity;
+          const volume = product.singleVolumeM3 * quantity;
+          
+          // 累加总重量和体积
+          totalWeight += weight;
+          totalVolume += volume;
+          
           // Map Excel columns to order item fields
           const itemData = {
             outboundOrderId: outboundOrder.id,
             productId: parseInt(productId),
-            quantity: parseInt(row.quantity || row['Quantity'] || "0"),
-            notes: row.notes || row['Notes'] || "",
+            quantity: quantity,
+            weight: weight.toString(),
+            volume: volume.toString()
           };
           
           // Create order item
@@ -866,10 +1019,224 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // 更新出库单总重量和体积
+      if (importedItems.length > 0) {
+        await storage.updateOutboundOrder(outboundOrder.id, {
+          totalWeight: totalWeight.toString(),
+          totalVolume: totalVolume.toString()
+        });
+      }
+      
       res.status(201).json({ 
         message: `Successfully created outbound order with ${importedItems.length} items`,
-        outboundOrder,
+        outboundOrder: {
+          ...outboundOrder,
+          totalWeight: totalWeight.toString(),
+          totalVolume: totalVolume.toString()
+        },
         items: importedItems
+      });
+    } catch (err) {
+      console.error("导入出库单失败:", err);
+      handleZodError(err, res);
+    }
+  });
+
+  // 仓库调拨相关路由
+  apiRouter.get("/warehouse-transfers", async (req, res) => {
+    try {
+      // 获取调拨单列表
+      // 实际中这里应该从数据库查询调拨单
+      // 由于我们尚未实现仓库调拨的存储方法，这里返回一个空数组
+      res.json([]);
+    } catch (err) {
+      handleZodError(err, res);
+    }
+  });
+
+  apiRouter.post("/warehouse-transfers", async (req, res) => {
+    try {
+      const { sourceWarehouseId, targetWarehouseId, notes, items } = req.body;
+      
+      if (sourceWarehouseId === targetWarehouseId) {
+        return res.status(400).json({ error: "源仓库和目标仓库不能相同" });
+      }
+      
+      // 1. 创建出库单
+      const outboundOrderNumber = `OUT-TRANSFER-${Date.now()}`;
+      const outboundOrderData = {
+        orderNumber: outboundOrderNumber,
+        warehouseId: sourceWarehouseId,
+        totalWeight: items.reduce((sum, item) => sum + parseFloat(item.weight), 0).toString(),
+        totalVolume: items.reduce((sum, item) => sum + parseFloat(item.volume), 0).toString(),
+        createdBy: 1, // 假设用户ID为1
+        status: "pending",
+        orderType: "transfer",
+        notes: notes || "仓库调拨出库单",
+        destinationType: "transfer"
+      };
+      
+      const outboundOrder = await storage.createOutboundOrder(outboundOrderData);
+      
+      // 2. 创建入库单
+      const inboundOrderNumber = `IN-TRANSFER-${Date.now()}`;
+      const inboundOrderData = {
+        orderNumber: inboundOrderNumber,
+        warehouseId: targetWarehouseId,
+        totalWeight: items.reduce((sum, item) => sum + parseFloat(item.weight), 0).toString(),
+        totalVolume: items.reduce((sum, item) => sum + parseFloat(item.volume), 0).toString(),
+        createdBy: 1, // 假设用户ID为1
+        status: "pending",
+        orderType: "transfer",
+        notes: notes || "仓库调拨入库单"
+      };
+      
+      const inboundOrder = await storage.createInboundOrder(inboundOrderData);
+      
+      // 3. 为出库单和入库单添加明细项
+      const outboundItems = [];
+      const inboundItems = [];
+      
+      for (const item of items) {
+        // 添加出库单明细
+        const outboundItem = await storage.createOutboundOrderItem({
+          outboundOrderId: outboundOrder.id,
+          productId: parseInt(item.productId),
+          quantity: item.quantity,
+          weight: item.weight.toString(),
+          volume: item.volume.toString()
+        });
+        outboundItems.push(outboundItem);
+        
+        // 添加入库单明细
+        const inboundItem = await storage.createInboundOrderItem({
+          inboundOrderId: inboundOrder.id,
+          productId: parseInt(item.productId),
+          quantity: item.quantity,
+          weight: item.weight.toString(),
+          volume: item.volume.toString()
+        });
+        inboundItems.push(inboundItem);
+      }
+      
+      // 4. 返回创建的数据
+      res.status(201).json({
+        message: "仓库调拨创建成功",
+        referenceNumber: `TRANSFER-${Date.now()}`,
+        sourceWarehouseId,
+        targetWarehouseId,
+        outboundOrder,
+        inboundOrder,
+        outboundItems,
+        inboundItems
+      });
+    } catch (err) {
+      console.error("创建仓库调拨失败:", err);
+      handleZodError(err, res);
+    }
+  });
+
+  apiRouter.get("/warehouse-transfers/stats", async (req, res) => {
+    try {
+      // 实际中这里应该从数据库获取统计数据
+      // 由于我们尚未实现仓库调拨的存储方法，这里返回模拟数据
+      res.json({
+        totalTransfers: 0,
+        pendingTransfers: 0,
+        completedTransfers: 0,
+        totalWeight: 0,
+        totalVolume: 0,
+        recentTransfers: 0
+      });
+    } catch (err) {
+      handleZodError(err, res);
+    }
+  });
+
+  // 入库单统计路由
+  apiRouter.get("/inbound-orders/stats", async (req, res) => {
+    try {
+      // 获取入库单数据进行统计
+      const orders = await storage.getInboundOrders();
+      
+      // 计算统计数据
+      const totalOrders = orders.length;
+      const pendingOrders = orders.filter(order => order.status === "pending").length;
+      const completedOrders = orders.filter(order => order.status === "completed").length;
+      
+      // 计算总重量和总体积
+      const totalWeight = orders.reduce((sum, order) => sum + (order.totalWeight || 0), 0);
+      const totalVolume = orders.reduce((sum, order) => sum + (order.totalVolume || 0), 0);
+      
+      // 订单类型分布
+      const orderTypes = ['purchase', 'return', 'transfer'];
+      const orderTypeDistribution = orderTypes.map(type => {
+        const count = orders.filter(order => order.orderType === type).length;
+        return {
+          type,
+          count,
+          percentage: totalOrders > 0 ? (count / totalOrders) * 100 : 0
+        };
+      });
+      
+      res.json({
+        totalOrders,
+        pendingOrders,
+        completedOrders,
+        totalWeight,
+        totalVolume,
+        orderTypeDistribution
+      });
+    } catch (err) {
+      handleZodError(err, res);
+    }
+  });
+  
+  // 出库单统计路由
+  apiRouter.get("/outbound-orders/stats", async (req, res) => {
+    try {
+      // 获取出库单数据进行统计
+      const orders = await storage.getOutboundOrders();
+      
+      // 计算统计数据
+      const totalOrders = orders.length;
+      const pendingOrders = orders.filter(order => order.status === "pending").length;
+      const completedOrders = orders.filter(order => order.status === "completed").length;
+      
+      // 计算总重量和总体积
+      const totalWeight = orders.reduce((sum, order) => sum + (order.totalWeight || 0), 0);
+      const totalVolume = orders.reduce((sum, order) => sum + (order.totalVolume || 0), 0);
+      
+      // 订单类型分布
+      const orderTypes = ['sale', 'return', 'transfer'];
+      const orderTypeDistribution = orderTypes.map(type => {
+        const count = orders.filter(order => order.orderType === type).length;
+        return {
+          type,
+          count,
+          percentage: totalOrders > 0 ? (count / totalOrders) * 100 : 0
+        };
+      });
+      
+      // 目的地类型分布
+      const destinationTypes = ['customer', 'retail', 'wholesale', 'transfer'];
+      const destinationTypeDistribution = destinationTypes.map(type => {
+        const count = orders.filter(order => order.destinationType === type).length;
+        return {
+          type,
+          count,
+          percentage: totalOrders > 0 ? (count / totalOrders) * 100 : 0
+        };
+      });
+      
+      res.json({
+        totalOrders,
+        pendingOrders,
+        completedOrders,
+        totalWeight,
+        totalVolume,
+        orderTypeDistribution,
+        destinationTypeDistribution
       });
     } catch (err) {
       handleZodError(err, res);
