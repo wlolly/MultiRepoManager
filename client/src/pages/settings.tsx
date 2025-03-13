@@ -60,11 +60,13 @@ export default function Settings() {
     });
   };
 
+  const { t } = useTranslation();
+
   return (
     <Layout>
       <div className="pb-5 border-b border-gray-200 mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">系统设置</h1>
-        <p className="mt-1 text-gray-500 text-sm">管理您的账户设置和偏好</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t('settings.title', '系统设置')}</h1>
+        <p className="mt-1 text-gray-500 text-sm">{t('settings.subtitle', '管理您的账户设置和偏好')}</p>
       </div>
       
       <div className="flex flex-col md:flex-row gap-6">
@@ -82,28 +84,28 @@ export default function Settings() {
                 className="w-full justify-start px-3 py-2 data-[state=active]:bg-gray-100 data-[state=active]:shadow-none"
               >
                 <i className="ri-user-line mr-2"></i>
-                账户信息
+                {t('settings.tabs.account', '账户信息')}
               </TabsTrigger>
               <TabsTrigger 
                 value="security" 
                 className="w-full justify-start px-3 py-2 data-[state=active]:bg-gray-100 data-[state=active]:shadow-none"
               >
                 <i className="ri-lock-line mr-2"></i>
-                安全设置
+                {t('settings.tabs.security', '安全设置')}
               </TabsTrigger>
               <TabsTrigger 
                 value="notifications" 
                 className="w-full justify-start px-3 py-2 data-[state=active]:bg-gray-100 data-[state=active]:shadow-none"
               >
                 <i className="ri-notification-line mr-2"></i>
-                通知设置
+                {t('settings.tabs.notifications', '通知设置')}
               </TabsTrigger>
               <TabsTrigger 
                 value="appearance" 
                 className="w-full justify-start px-3 py-2 data-[state=active]:bg-gray-100 data-[state=active]:shadow-none"
               >
                 <i className="ri-palette-line mr-2"></i>
-                外观设置
+                {t('settings.tabs.appearance', '外观设置')}
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -113,9 +115,9 @@ export default function Settings() {
           {activeTab === "account" && (
             <Card>
               <CardHeader>
-                <CardTitle>账户信息设置</CardTitle>
+                <CardTitle>{t('settings.account.title', '账户信息设置')}</CardTitle>
                 <CardDescription>
-                  更新您的账户信息和个人资料
+                  {t('settings.account.description', '更新您的账户信息和个人资料')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -127,11 +129,11 @@ export default function Settings() {
                         <AvatarFallback>{fullName.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <Label htmlFor="avatar" className="block mb-2">头像</Label>
+                        <Label htmlFor="avatar" className="block mb-2">{t('settings.account.avatar', '头像')}</Label>
                         <Input 
                           id="avatar" 
                           type="url"
-                          placeholder="头像图片URL" 
+                          placeholder={t('settings.account.avatarUrl', '头像图片URL')}
                           value={avatarUrl}
                           onChange={e => setAvatarUrl(e.target.value)}
                           className="w-full md:w-96"
@@ -141,7 +143,7 @@ export default function Settings() {
                     
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="space-y-2">
-                        <Label htmlFor="fullName">姓名</Label>
+                        <Label htmlFor="fullName">{t('settings.account.fullName', '姓名')}</Label>
                         <Input 
                           id="fullName" 
                           value={fullName}
@@ -150,7 +152,7 @@ export default function Settings() {
                       </div>
                       
                       <div className="space-y-2">
-                        <Label htmlFor="username">用户名</Label>
+                        <Label htmlFor="username">{t('settings.account.username', '用户名')}</Label>
                         <Input 
                           id="username" 
                           value={username}
@@ -160,7 +162,7 @@ export default function Settings() {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="email">电子邮箱</Label>
+                      <Label htmlFor="email">{t('settings.account.email', '电子邮箱')}</Label>
                       <Input 
                         id="email" 
                         type="email"
@@ -171,7 +173,7 @@ export default function Settings() {
                   </div>
                   
                   <div className="mt-6">
-                    <Button type="submit">保存更改</Button>
+                    <Button type="submit">{t('settings.account.saveButton', '保存更改')}</Button>
                   </div>
                 </form>
               </CardContent>
@@ -286,17 +288,17 @@ export default function Settings() {
           {activeTab === "appearance" && (
             <Card>
               <CardHeader>
-                <CardTitle>外观设置</CardTitle>
+                <CardTitle>{t('settings.appearance.title', '外观设置')}</CardTitle>
                 <CardDescription>
-                  自定义ELEMENT-5系统的外观
+                  {t('settings.appearance.description', '自定义ELEMENT-5系统的外观')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-medium">深色模式</h4>
-                      <p className="text-gray-500 text-sm">使用深色主题</p>
+                      <h4 className="font-medium">{t('settings.appearance.darkMode', '深色模式')}</h4>
+                      <p className="text-gray-500 text-sm">{t('settings.appearance.darkModeDescription', '使用深色主题')}</p>
                     </div>
                     <Switch 
                       checked={darkMode} 
@@ -305,7 +307,7 @@ export default function Settings() {
                   </div>
                   
                   <div className="pt-6 border-t border-gray-200">
-                    <h4 className="font-medium mb-3">系统语言</h4>
+                    <h4 className="font-medium mb-3">{t('settings.appearance.language', '系统语言')}</h4>
                     <Select 
                       value={localStorage.getItem('i18nextLng') || 'zh'}
                       onValueChange={(lang) => {
@@ -315,21 +317,21 @@ export default function Settings() {
                       }}
                     >
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="选择语言" />
+                        <SelectValue placeholder={t('settings.appearance.selectLanguage', '选择语言')} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="zh">中文</SelectItem>
-                        <SelectItem value="en">English</SelectItem>
-                        <SelectItem value="ru">Русский</SelectItem>
-                        <SelectItem value="kk">Қазақша</SelectItem>
-                        <SelectItem value="uz">O'zbekcha</SelectItem>
+                        <SelectItem value="zh">{t('header.language.zh', '中文')}</SelectItem>
+                        <SelectItem value="en">{t('header.language.en', 'English')}</SelectItem>
+                        <SelectItem value="ru">{t('header.language.ru', 'Русский')}</SelectItem>
+                        <SelectItem value="kk">{t('header.language.kk', 'Қазақша')}</SelectItem>
+                        <SelectItem value="uz">{t('header.language.uz', 'O\'zbekcha')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
                 
                 <div className="mt-6">
-                  <Button onClick={handleSaveAppearance}>保存偏好</Button>
+                  <Button onClick={handleSaveAppearance}>{t('settings.appearance.saveButton', '保存偏好')}</Button>
                 </div>
               </CardContent>
             </Card>
