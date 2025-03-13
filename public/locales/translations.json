@@ -1,0 +1,366 @@
+{
+  "app_name": {
+    "zh": "ELEMENT-5 系统",
+    "en": "ELEMENT-5 SYSTEM",
+    "ru": "СИСТЕМА ELEMENT-5",
+    "kk": "ELEMENT-5 ЖҮЙЕСІ",
+    "uz": "ELEMENT-5 TIZIMI"
+  },
+  "app_version": {
+    "zh": "版本 1.0.0",
+    "en": "Version 1.0.0",
+    "ru": "Версия 1.0.0",
+    "kk": "Нұсқасы 1.0.0",
+    "uz": "Versiya 1.0.0"
+  },
+  "navigation": {
+    "zh": "导航",
+    "en": "NAVIGATION",
+    "ru": "НАВИГАЦИЯ",
+    "kk": "НАВИГАЦИЯ",
+    "uz": "NAVIGATSIYA"
+  },
+  "recent_activity": {
+    "zh": "最近活动",
+    "en": "RECENT ACTIVITY",
+    "ru": "ПОСЛЕДНЯЯ АКТИВНОСТЬ",
+    "kk": "СОҢҒЫ БЕЛСЕНДІЛІК",
+    "uz": "SO'NGGI FAOLLIK"
+  },
+  "no_activity": {
+    "zh": "没有最近活动",
+    "en": "No recent activity",
+    "ru": "Нет последней активности",
+    "kk": "Жақында белсенділік жоқ",
+    "uz": "So'nggi faollik yo'q"
+  },
+  "dashboard": {
+    "zh": "仪表盘",
+    "en": "Dashboard",
+    "ru": "Панель управления",
+    "kk": "Басқару тақтасы",
+    "uz": "Boshqaruv paneli"
+  },
+  "my_repositories": {
+    "zh": "我的代码库",
+    "en": "My Repositories",
+    "ru": "Мои репозитории",
+    "kk": "Менің репозиторийлерім",
+    "uz": "Mening repozitoriyalarim"
+  },
+  "team_repositories": {
+    "zh": "团队代码库",
+    "en": "Team Repositories",
+    "ru": "Репозитории команды",
+    "kk": "Команда репозиторийлері",
+    "uz": "Jamoa repozitoriyalari"
+  },
+  "users_teams": {
+    "zh": "用户和团队",
+    "en": "Users & Teams",
+    "ru": "Пользователи и команды",
+    "kk": "Пайдаланушылар және командалар",
+    "uz": "Foydalanuvchilar va jamoalar"
+  },
+  "settings": {
+    "zh": "设置",
+    "en": "Settings",
+    "ru": "Настройки",
+    "kk": "Параметрлер",
+    "uz": "Sozlamalar"
+  },
+  "warehouse": {
+    "zh": "仓库",
+    "en": "Warehouse",
+    "ru": "Склад",
+    "kk": "Қойма",
+    "uz": "Ombor"
+  },
+  "product": {
+    "zh": "产品",
+    "en": "Product",
+    "ru": "Товар",
+    "kk": "Өнім",
+    "uz": "Mahsulot"
+  },
+  "stock_in": {
+    "zh": "入库",
+    "en": "Stock In",
+    "ru": "Приход",
+    "kk": "Келіп түсу",
+    "uz": "Kirim"
+  },
+  "stock_out": {
+    "zh": "出库",
+    "en": "Stock Out",
+    "ru": "Расход",
+    "kk": "Шығару",
+    "uz": "Chiqim"
+  },
+  "inventory": {
+    "zh": "库存",
+    "en": "Inventory",
+    "ru": "Инвентарь",
+    "kk": "Қор",
+    "uz": "Inventar"
+  },
+  "order": {
+    "zh": "订单",
+    "en": "Order",
+    "ru": "Заказ",
+    "kk": "Тапсырыс",
+    "uz": "Buyurtma"
+  },
+  "management": {
+    "zh": "管理",
+    "en": "Management",
+    "ru": "Управление",
+    "kk": "Басқару",
+    "uz": "Boshqaruv"
+  },
+  "system": {
+    "zh": "系统",
+    "en": "System",
+    "ru": "Система",
+    "kk": "Жүйе",
+    "uz": "Tizim"
+  },
+  "barcode": {
+    "zh": "条码",
+    "en": "Barcode",
+    "ru": "Штрих-код",
+    "kk": "Штрих-код",
+    "uz": "Shtrix-kod"
+  },
+  "quantity": {
+    "zh": "数量",
+    "en": "Quantity",
+    "ru": "Количество",
+    "kk": "Саны",
+    "uz": "Miqdori"
+  },
+  "unit_price": {
+    "zh": "单价",
+    "en": "Unit Price",
+    "ru": "Цена за единицу",
+    "kk": "Бірлік бағасы",
+    "uz": "Birlik narxi"
+  },
+  "total_price": {
+    "zh": "总价",
+    "en": "Total Price",
+    "ru": "Общая цена",
+    "kk": "Жалпы баға",
+    "uz": "Umumiy narx"
+  },
+  "weight": {
+    "zh": "重量",
+    "en": "Weight",
+    "ru": "Вес",
+    "kk": "Салмақ",
+    "uz": "Og'irlik"
+  },
+  "volume": {
+    "zh": "体积",
+    "en": "Volume",
+    "ru": "Объем",
+    "kk": "Көлем",
+    "uz": "Hajm"
+  },
+  "length": {
+    "zh": "长度",
+    "en": "Length",
+    "ru": "Длина",
+    "kk": "Ұзындық",
+    "uz": "Uzunlik"
+  },
+  "width": {
+    "zh": "宽度",
+    "en": "Width",
+    "ru": "Ширина",
+    "kk": "Ені",
+    "uz": "Kengligi"
+  },
+  "height": {
+    "zh": "高度",
+    "en": "Height",
+    "ru": "Высота",
+    "kk": "Биіктік",
+    "uz": "Balandligi"
+  },
+  "language": {
+    "zh": "语言",
+    "en": "Language",
+    "ru": "Язык",
+    "kk": "Тіл",
+    "uz": "Til"
+  },
+  "chinese": {
+    "zh": "中文",
+    "en": "Chinese",
+    "ru": "Китайский",
+    "kk": "Қытай",
+    "uz": "Xitoy"
+  },
+  "english": {
+    "zh": "英文",
+    "en": "English",
+    "ru": "Английский",
+    "kk": "Ағылшын",
+    "uz": "Ingliz"
+  },
+  "russian": {
+    "zh": "俄文",
+    "en": "Russian",
+    "ru": "Русский",
+    "kk": "Орыс",
+    "uz": "Rus"
+  },
+  "kazakh": {
+    "zh": "哈萨克文",
+    "en": "Kazakh",
+    "ru": "Казахский",
+    "kk": "Қазақ",
+    "uz": "Qozoq"
+  },
+  "uzbek": {
+    "zh": "乌兹别克文",
+    "en": "Uzbek",
+    "ru": "Узбекский",
+    "kk": "Өзбек",
+    "uz": "O'zbek"
+  },
+  "status": {
+    "zh": "状态",
+    "en": "Status",
+    "ru": "Статус",
+    "kk": "Күй",
+    "uz": "Holat"
+  },
+  "pending": {
+    "zh": "待处理",
+    "en": "Pending",
+    "ru": "В ожидании",
+    "kk": "Күтуде",
+    "uz": "Kutilmoqda"
+  },
+  "processing": {
+    "zh": "处理中",
+    "en": "Processing",
+    "ru": "Обработка",
+    "kk": "Өңделуде",
+    "uz": "Ishlov berilmoqda"
+  },
+  "completed": {
+    "zh": "已完成",
+    "en": "Completed",
+    "ru": "Завершено",
+    "kk": "Аяқталды",
+    "uz": "Bajarildi"
+  },
+  "cancelled": {
+    "zh": "已取消",
+    "en": "Cancelled",
+    "ru": "Отменено",
+    "kk": "Бас тартылды",
+    "uz": "Bekor qilindi"
+  },
+  "search": {
+    "zh": "搜索",
+    "en": "Search",
+    "ru": "Поиск",
+    "kk": "Іздеу",
+    "uz": "Qidirish"
+  },
+  "save": {
+    "zh": "保存",
+    "en": "Save",
+    "ru": "Сохранить",
+    "kk": "Сақтау",
+    "uz": "Saqlash"
+  },
+  "cancel": {
+    "zh": "取消",
+    "en": "Cancel",
+    "ru": "Отмена",
+    "kk": "Бас тарту",
+    "uz": "Bekor qilish"
+  },
+  "create": {
+    "zh": "创建",
+    "en": "Create",
+    "ru": "Создать",
+    "kk": "Жасау",
+    "uz": "Yaratish"
+  },
+  "edit": {
+    "zh": "编辑",
+    "en": "Edit",
+    "ru": "Редактировать",
+    "kk": "Өңдеу",
+    "uz": "Tahrirlash"
+  },
+  "delete": {
+    "zh": "删除",
+    "en": "Delete",
+    "ru": "Удалить",
+    "kk": "Жою",
+    "uz": "O'chirish"
+  },
+  "add": {
+    "zh": "添加",
+    "en": "Add",
+    "ru": "Добавить",
+    "kk": "Қосу",
+    "uz": "Qo'shish"
+  },
+  "remove": {
+    "zh": "移除",
+    "en": "Remove",
+    "ru": "Удалить",
+    "kk": "Алып тастау",
+    "uz": "Olib tashlash"
+  },
+  "yes": {
+    "zh": "是",
+    "en": "Yes",
+    "ru": "Да",
+    "kk": "Иә",
+    "uz": "Ha"
+  },
+  "no": {
+    "zh": "否",
+    "en": "No",
+    "ru": "Нет",
+    "kk": "Жоқ",
+    "uz": "Yo'q"
+  },
+  "loading": {
+    "zh": "加载中...",
+    "en": "Loading...",
+    "ru": "Загрузка...",
+    "kk": "Жүктелуде...",
+    "uz": "Yuklanmoqda..."
+  },
+  "name": {
+    "zh": "名称",
+    "en": "Name",
+    "ru": "Название",
+    "kk": "Атауы",
+    "uz": "Nomi"
+  },
+  "description": {
+    "zh": "描述",
+    "en": "Description",
+    "ru": "Описание",
+    "kk": "Сипаттама",
+    "uz": "Tavsif"
+  },
+  "optional": {
+    "zh": "可选",
+    "en": "optional",
+    "ru": "необязательно",
+    "kk": "міндетті емес",
+    "uz": "ixtiyoriy"
+  }
+}
