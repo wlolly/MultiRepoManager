@@ -516,5 +516,54 @@
     "ru": "Репозитории",
     "kk": "Репозиторийлер",
     "uz": "Repozitoriyalar"
+  },
+  "language_distribution": {
+    "zh": "语言分布",
+    "en": "Language Distribution",
+    "ru": "Распределение языков",
+    "kk": "Тіл таралуы",
+    "uz": "Tillar taqsimlanishi"
+  },
+  "language_distribution_no_data": {
+    "zh": "暂无语言分布数据",
+    "en": "No language distribution data available",
+    "ru": "Нет данных о распределении языков",
+    "kk": "Тіл таралуы туралы деректер жоқ",
+    "uz": "Tillar taqsimlanishi ma'lumotlari yo'q"
+  },
+  "recent_activity": {
+    "zh": "最近活动",
+    "en": "Recent Activity",
+    "ru": "Недавняя активность",
+    "kk": "Соңғы әрекеттер",
+    "uz": "So'nggi faoliyat"
+  },
+  "recent_activity_no_data": {
+    "zh": "暂无活动数据",
+    "en": "No activity data available",
+    "ru": "Нет данных об активности",
+    "kk": "Әрекеттер туралы деректер жоқ",
+    "uz": "Faoliyat ma'lumotlari yo'q"
+  },
+  "repositories_recent": {
+    "zh": "最近的代码库",
+    "en": "Recent Repositories",
+    "ru": "Недавние репозитории",
+    "kk": "Соңғы репозиторийлер",
+    "uz": "So'nggi repozitoriyalar"
+  },
+  "repositories_recent_description": {
+    "zh": "查看最近更新的代码库",
+    "en": "View recently updated repositories",
+    "ru": "Просмотр недавно обновленных репозиториев",
+    "kk": "Жақында жаңартылған репозиторийлерді қарау",
+    "uz": "So'nggi yangilangan repozitoriyalarni ko'rish"
+  },
+  "repositories_not_found": {
+    "zh": "未找到代码库",
+    "en": "No repositories found",
+    "ru": "Репозитории не найдены",
+    "kk": "Репозиторийлер табылмады",
+    "uz": "Repozitoriyalar topilmadi"
   }
 }
