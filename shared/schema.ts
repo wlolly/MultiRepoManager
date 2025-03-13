@@ -30,6 +30,31 @@ export const languageEnum = mysqlEnum("language", [
 // Operation types enum (入库，出库)
 export const operationTypeEnum = mysqlEnum("operation_type", ["inbound", "outbound"]);
 
+// 入库单类型枚举
+export const inboundOrderTypeEnum = mysqlEnum("inbound_order_type", [
+  "purchase",  // 采购入库
+  "return",    // 退货入库
+  "transfer",  // 调拨入库
+  "production" // 生产入库
+]);
+
+// 出库单类型枚举
+export const outboundOrderTypeEnum = mysqlEnum("outbound_order_type", [
+  "sale",      // 销售出库
+  "return",    // 退货出库
+  "transfer",  // 调拨出库
+  "scrap"      // 报废出库
+]);
+
+// 出库单目的地类型枚举
+export const destinationTypeEnum = mysqlEnum("destination_type", [
+  "customer",  // 客户
+  "retail",    // 零售商
+  "wholesale", // 批发商
+  "transfer",  // 调拨仓库
+  "supplier"   // 供应商（退货）
+]);
+
 // Users table
 export const users = mysqlTable("users", {
   id: int("id").primaryKey().autoincrement(),
@@ -232,6 +257,7 @@ export const inboundOrders = mysqlTable("inbound_orders", {
   createdBy: int("created_by").notNull().references(() => users.id), // 创建人
   createdAt: timestamp("created_at").defaultNow().notNull(), // 创建时间
   status: varchar("status", { length: 50 }).notNull().default("pending"), // 状态：待处理、已完成、已取消
+  orderType: inboundOrderTypeEnum.default("purchase"), // 入库单类型：采购入库、退货入库、调拨入库、生产入库
   notes: text("notes"), // 备注
 });
 
@@ -242,6 +268,7 @@ export const insertInboundOrderSchema = createInsertSchema(inboundOrders).pick({
   totalVolume: true,
   createdBy: true,
   status: true,
+  orderType: true,
   notes: true,
 });
 
@@ -279,6 +306,8 @@ export const outboundOrders = mysqlTable("outbound_orders", {
   createdBy: int("created_by").notNull().references(() => users.id), // 创建人
   createdAt: timestamp("created_at").defaultNow().notNull(), // 创建时间
   status: varchar("status", { length: 50 }).notNull().default("pending"), // 状态：待处理、已完成、已取消
+  orderType: outboundOrderTypeEnum.default("sale"), // 出库单类型：销售出库、退货出库、调拨出库、报废出库
+  destinationType: destinationTypeEnum.default("customer"), // 目的地类型：客户、零售商、批发商、调拨仓库、供应商
   notes: text("notes"), // 备注
 });
 
@@ -289,6 +318,8 @@ export const insertOutboundOrderSchema = createInsertSchema(outboundOrders).pick
   totalVolume: true,
   createdBy: true,
   status: true,
+  orderType: true,
+  destinationType: true,
   notes: true,
 });
 
