@@ -15,18 +15,19 @@ interface Product {
   price: number;
   cost: number;
   
-  // 单件尺寸和重量信息
-  lengthCm: number;    // 单件尺寸（长CM）
-  widthCm: number;     // 单件尺寸（宽CM）
-  heightCm: number;    // 单件尺寸（高CM）
-  weightKg: number;    // 单件重量（kg）
-  volumeM3: number;    // 单件立方（M3）
+  // 单件尺寸和重量信息（映射到数据库中的single前缀字段）
+  singleLengthCm: number;    // 单件尺寸（长CM）
+  singleWidthCm: number;     // 单件尺寸（宽CM）
+  singleHeightCm: number;    // 单件尺寸（高CM）
+  singleWeightKg: number;    // 单件重量（kg）
+  singleVolumeM3: number;    // 单件立方（M3）
   
-  // 整件包装信息
-  packageWidthCm: number;   // 整件尺寸（宽CM）
-  packageHeightCm: number;  // 整件尺寸（高CM）
-  packageWeightKg: number;  // 整件重量（kg）
-  packageVolumeM3: number;  // 整件立方（M3）
+  // 整件包装信息（映射到数据库中的bulk前缀字段）
+  bulkLengthCm: number;      // 整件尺寸（长CM）
+  bulkWidthCm: number;       // 整件尺寸（宽CM）
+  bulkHeightCm: number;      // 整件尺寸（高CM）
+  bulkWeightKg: number;      // 整件重量（kg）
+  bulkVolumeM3: number;      // 整件立方（M3）
   
   createdAt: string;
   updatedAt: string;

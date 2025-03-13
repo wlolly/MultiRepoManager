@@ -24,17 +24,18 @@ const createProductSchema = z.object({
   cost: z.number().min(0, "成本不能为负数"),
   
   // 单件尺寸和重量信息
-  lengthCm: z.number().min(0, "长度不能为负数"),     // 单件尺寸（长CM）
-  widthCm: z.number().min(0, "宽度不能为负数"),      // 单件尺寸（宽CM）
-  heightCm: z.number().min(0, "高度不能为负数"),     // 单件尺寸（高CM）
-  weightKg: z.number().min(0, "重量不能为负数"),     // 单件重量（kg）
-  volumeM3: z.number().min(0, "体积不能为负数").optional(), // 单件立方（M3）- 可以自动计算
+  singleLengthCm: z.number().min(0, "长度不能为负数"),     // 单件尺寸（长CM）
+  singleWidthCm: z.number().min(0, "宽度不能为负数"),      // 单件尺寸（宽CM）
+  singleHeightCm: z.number().min(0, "高度不能为负数"),     // 单件尺寸（高CM）
+  singleWeightKg: z.number().min(0, "重量不能为负数"),     // 单件重量（kg）
+  singleVolumeM3: z.number().min(0, "体积不能为负数").optional(), // 单件立方（M3）- 可以自动计算
   
   // 整件包装信息
-  packageWidthCm: z.number().min(0, "包装宽度不能为负数"),    // 整件尺寸（宽CM）
-  packageHeightCm: z.number().min(0, "包装高度不能为负数"),   // 整件尺寸（高CM）
-  packageWeightKg: z.number().min(0, "包装重量不能为负数"),   // 整件重量（kg）
-  packageVolumeM3: z.number().min(0, "包装体积不能为负数").optional(), // 整件立方（M3）- 可以自动计算
+  bulkLengthCm: z.number().min(0, "整件长度不能为负数"),     // 整件尺寸（长CM）
+  bulkWidthCm: z.number().min(0, "整件宽度不能为负数"),      // 整件尺寸（宽CM）
+  bulkHeightCm: z.number().min(0, "整件高度不能为负数"),     // 整件尺寸（高CM）
+  bulkWeightKg: z.number().min(0, "整件重量不能为负数"),     // 整件重量（kg）
+  bulkVolumeM3: z.number().min(0, "整件体积不能为负数").optional(), // 整件立方（M3）- 可以自动计算
   
   warehouseId: z.number().min(1, "必须选择仓库")
 });
@@ -63,17 +64,18 @@ export function CreateProductDialog({ open, onOpenChange, currentUserId }: Creat
       cost: 0,
       
       // 单件尺寸和重量信息
-      lengthCm: 0,
-      widthCm: 0,
-      heightCm: 0,
-      weightKg: 0,
-      volumeM3: 0,
+      singleLengthCm: 0,
+      singleWidthCm: 0,
+      singleHeightCm: 0,
+      singleWeightKg: 0,
+      singleVolumeM3: 0,
       
       // 整件包装信息
-      packageWidthCm: 0,
-      packageHeightCm: 0,
-      packageWeightKg: 0,
-      packageVolumeM3: 0,
+      bulkLengthCm: 0,
+      bulkWidthCm: 0,
+      bulkHeightCm: 0,
+      bulkWeightKg: 0,
+      bulkVolumeM3: 0,
       
       warehouseId: 1 // 默认仓库ID
     }
