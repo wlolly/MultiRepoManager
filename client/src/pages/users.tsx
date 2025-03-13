@@ -32,12 +32,12 @@ export default function Users() {
   const [teamDialogOpen, setTeamDialogOpen] = useState(false);
 
   // Fetch users
-  const { data: users, isLoading: isLoadingUsers } = useQuery({
+  const { data: users = [], isLoading: isLoadingUsers } = useQuery({
     queryKey: ["/api/users"],
   });
 
   // Fetch teams
-  const { data: teams, isLoading: isLoadingTeams } = useQuery({
+  const { data: teams = [], isLoading: isLoadingTeams } = useQuery({
     queryKey: ["/api/teams"],
   });
 
