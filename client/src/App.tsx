@@ -28,6 +28,7 @@ function Router() {
       <Route path="/repository/:id" component={Repository} />
       <Route path="/new-repository" component={NewRepository} />
       <Route path="/search" component={Search} />
+      <Route path="/warehouses" component={Warehouses} />
       <Route component={NotFound} />
     </Switch>
   );

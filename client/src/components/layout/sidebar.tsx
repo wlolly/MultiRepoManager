@@ -13,7 +13,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { icon: "ri-dashboard-line", keyName: "dashboard", href: "/" },
-  { icon: "ri-archive-line", keyName: "warehouse", href: "/warehouse" },
+  { icon: "ri-building-2-line", keyName: "warehouses", href: "/warehouses" },
   { icon: "ri-shopping-bag-line", keyName: "my_products", href: "/my-products" },
   { icon: "ri-store-line", keyName: "warehouse_products", href: "/warehouse-products" },
   { icon: "ri-shopping-cart-line", keyName: "order", href: "/orders" },
