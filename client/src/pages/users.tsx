@@ -23,8 +23,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { useTranslation } from "react-i18next";
 
 export default function Users() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("users");
   const [userDialogOpen, setUserDialogOpen] = useState(false);
   const [teamDialogOpen, setTeamDialogOpen] = useState(false);
@@ -43,17 +45,17 @@ export default function Users() {
     <Layout>
       <div className="pb-5 border-b border-gray-200 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Users & Teams</h1>
-          <p className="mt-1 text-gray-500 text-sm">Manage users and team access</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('users.title', 'Users & Teams')}</h1>
+          <p className="mt-1 text-gray-500 text-sm">{t('users.subtitle', 'Manage users and team access')}</p>
         </div>
         <div className="mt-4 sm:mt-0 flex space-x-3">
           {activeTab === "users" ? (
             <Button onClick={() => setUserDialogOpen(true)}>
-              <i className="ri-user-add-line mr-2"></i> Add User
+              <i className="ri-user-add-line mr-2"></i> {t('users.addUser', 'Add User')}
             </Button>
           ) : (
             <Button onClick={() => setTeamDialogOpen(true)}>
-              <i className="ri-team-line mr-2"></i> Create Team
+              <i className="ri-team-line mr-2"></i> {t('users.createTeam', 'Create Team')}
             </Button>
           )}
         </div>
@@ -61,13 +63,13 @@ export default function Users() {
 
       <Tabs defaultValue="users" value={activeTab} onValueChange={setActiveTab} className="mb-6">
         <TabsList className="grid w-full max-w-md grid-cols-2">
-          <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="teams">Teams</TabsTrigger>
+          <TabsTrigger value="users">{t('users.users', 'Users')}</TabsTrigger>
+          <TabsTrigger value="teams">{t('users.teams', 'Teams')}</TabsTrigger>
         </TabsList>
         <TabsContent value="users">
           <Card>
             <CardHeader>
-              <CardTitle>System Users</CardTitle>
+              <CardTitle>{t('users.systemUsers', 'System Users')}</CardTitle>
             </CardHeader>
             <CardContent>
               {isLoadingUsers ? (
@@ -86,10 +88,10 @@ export default function Users() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>User</TableHead>
-                      <TableHead>Username</TableHead>
-                      <TableHead className="hidden md:table-cell">Created</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead>{t('users.user', 'User')}</TableHead>
+                      <TableHead>{t('users.username', 'Username')}</TableHead>
+                      <TableHead className="hidden md:table-cell">{t('users.created', 'Created')}</TableHead>
+                      <TableHead className="text-right">{t('users.actions', 'Actions')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -123,7 +125,7 @@ export default function Users() {
                     ) : (
                       <TableRow>
                         <TableCell colSpan={4} className="text-center py-8">
-                          No users found
+                          {t('users.noUsersFound', 'No users found')}
                         </TableCell>
                       </TableRow>
                     )}
@@ -136,7 +138,7 @@ export default function Users() {
         <TabsContent value="teams">
           <Card>
             <CardHeader>
-              <CardTitle>Teams</CardTitle>
+              <CardTitle>{t('users.teams', 'Teams')}</CardTitle>
             </CardHeader>
             <CardContent>
               {isLoadingTeams ? (
@@ -164,18 +166,18 @@ export default function Users() {
                           <CardTitle>{team.name}</CardTitle>
                         </CardHeader>
                         <CardContent>
-                          <p className="text-sm text-gray-500">{team.description || "No description"}</p>
+                          <p className="text-sm text-gray-500">{team.description || t('repositories.noDescription', 'No description')}</p>
                         </CardContent>
                         <CardFooter>
                           <Button variant="outline" className="w-full">
-                            <i className="ri-team-line mr-2"></i> Manage Team
+                            <i className="ri-team-line mr-2"></i> {t('users.manageTeam', 'Manage Team')}
                           </Button>
                         </CardFooter>
                       </Card>
                     ))
                   ) : (
                     <div className="col-span-full text-center p-8 border rounded-md">
-                      <p>No teams available</p>
+                      <p>{t('repositories.noTeams', 'No teams available')}</p>
                     </div>
                   )}
                 </div>
@@ -189,34 +191,34 @@ export default function Users() {
       <Dialog open={userDialogOpen} onOpenChange={setUserDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add New User</DialogTitle>
-            <DialogDescription>Create a new user account in the system.</DialogDescription>
+            <DialogTitle>{t('users.addNewUser', 'Add New User')}</DialogTitle>
+            <DialogDescription>{t('users.createNewUserDesc', 'Create a new user account in the system.')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <label htmlFor="username" className="text-right text-sm font-medium">
-                Username
+                {t('users.username', 'Username')}
               </label>
               <Input id="username" className="col-span-3" />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <label htmlFor="fullName" className="text-right text-sm font-medium">
-                Full Name
+                {t('users.fullName', 'Full Name')}
               </label>
               <Input id="fullName" className="col-span-3" />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <label htmlFor="password" className="text-right text-sm font-medium">
-                Password
+                {t('users.password', 'Password')}
               </label>
               <Input id="password" type="password" className="col-span-3" />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setUserDialogOpen(false)}>
-              Cancel
+              {t('general.cancel', 'Cancel')}
             </Button>
-            <Button>Create User</Button>
+            <Button>{t('users.createUser', 'Create User')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -225,28 +227,28 @@ export default function Users() {
       <Dialog open={teamDialogOpen} onOpenChange={setTeamDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create Team</DialogTitle>
-            <DialogDescription>Create a new team to collaborate on repositories.</DialogDescription>
+            <DialogTitle>{t('users.createTeam', 'Create Team')}</DialogTitle>
+            <DialogDescription>{t('users.createTeamDesc', 'Create a new team to collaborate on repositories.')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <label htmlFor="teamName" className="text-right text-sm font-medium">
-                Team Name
+                {t('users.teamName', 'Team Name')}
               </label>
               <Input id="teamName" className="col-span-3" />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <label htmlFor="description" className="text-right text-sm font-medium">
-                Description
+                {t('general.description', 'Description')}
               </label>
               <Input id="description" className="col-span-3" />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setTeamDialogOpen(false)}>
-              Cancel
+              {t('general.cancel', 'Cancel')}
             </Button>
-            <Button>Create Team</Button>
+            <Button>{t('users.createTeam', 'Create Team')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
