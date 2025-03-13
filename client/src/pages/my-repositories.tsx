@@ -14,6 +14,31 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { CreateRepositoryDialog } from "@/components/repositories/create-repository-dialog";
 
+// 定义Repository类型
+interface Repository {
+  id: number;
+  name: string;
+  description: string;
+  visibility: string;
+  language: string;
+  branchCount: number;
+  contributorCount: number;
+  viewCount: number;
+  updatedAt: string;
+  owner: {
+    id: number;
+    username: string;
+    fullName: string;
+    avatarUrl: string;
+  };
+  contributors?: {
+    id: number;
+    username: string;
+    fullName?: string;
+    avatarUrl?: string;
+  }[];
+}
+
 export default function MyRepositories() {
   const { t } = useTranslation();
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
@@ -25,7 +50,7 @@ export default function MyRepositories() {
   const currentUserId = 1;
 
   // Fetch user's repositories with filters
-  const { data: repositories = [], isLoading } = useQuery({
+  const { data: repositories = [] as Repository[], isLoading } = useQuery<Repository[]>({
     queryKey: [`/api/repositories?ownerId=${currentUserId}${languageFilter !== "all" ? `&language=${languageFilter}` : ""}${visibilityFilter !== "all" ? `&visibility=${visibilityFilter}` : ""}`],
   });
 
@@ -96,14 +121,14 @@ export default function MyRepositories() {
         
         {viewMode === "list" ? (
           <RepositoryList 
-            repositories={repositories || []} 
+            repositories={repositories} 
             isLoading={isLoading}
             title={t('repositories.my', 'My Repositories')}
             subtitle={t('repositories.recentDescription', 'Your personal repositories')}
           />
         ) : (
           <RepositoryGrid 
-            repositories={repositories || []} 
+            repositories={repositories} 
             isLoading={isLoading} 
           />
         )}

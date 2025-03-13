@@ -25,6 +25,23 @@ import {
 import { Input } from "@/components/ui/input";
 import { useTranslation } from "react-i18next";
 
+// 定义用户和团队类型
+interface User {
+  id: number;
+  username: string;
+  fullName?: string;
+  avatarUrl?: string;
+  createdAt: string;
+}
+
+interface Team {
+  id: number;
+  name: string;
+  description?: string;
+  ownerId: number;
+  createdAt: string;
+}
+
 export default function Users() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("users");
@@ -32,12 +49,12 @@ export default function Users() {
   const [teamDialogOpen, setTeamDialogOpen] = useState(false);
 
   // Fetch users
-  const { data: users = [], isLoading: isLoadingUsers } = useQuery({
+  const { data: users = [] as User[], isLoading: isLoadingUsers } = useQuery<User[]>({
     queryKey: ["/api/users"],
   });
 
   // Fetch teams
-  const { data: teams = [], isLoading: isLoadingTeams } = useQuery({
+  const { data: teams = [] as Team[], isLoading: isLoadingTeams } = useQuery<Team[]>({
     queryKey: ["/api/teams"],
   });
 
@@ -96,7 +113,7 @@ export default function Users() {
                   </TableHeader>
                   <TableBody>
                     {users && users.length > 0 ? (
-                      users.map((user: any) => (
+                      users.map((user: User) => (
                         <TableRow key={user.id}>
                           <TableCell>
                             <div className="flex items-center space-x-3">
@@ -160,7 +177,7 @@ export default function Users() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {teams && teams.length > 0 ? (
-                    teams.map((team: any) => (
+                    teams.map((team: Team) => (
                       <Card key={team.id}>
                         <CardHeader>
                           <CardTitle>{team.name}</CardTitle>
