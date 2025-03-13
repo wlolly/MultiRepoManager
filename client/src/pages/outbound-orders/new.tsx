@@ -74,6 +74,7 @@ export default function NewOutboundOrder() {
           orderNumber: data.orderNumber,
           warehouseId: parseInt(data.warehouseId),
           status: data.status,
+          orderType: data.orderType,
           destinationType: data.destinationType,
           notes: data.notes || ""
         }),
@@ -220,6 +221,36 @@ export default function NewOutboundOrder() {
                     </Select>
                     <FormDescription>
                       {t("status_description")}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="orderType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("order_type")}</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("select_order_type")} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="sale">{t("sale_outbound")}</SelectItem>
+                        <SelectItem value="return">{t("return_outbound")}</SelectItem>
+                        <SelectItem value="transfer">{t("transfer_outbound")}</SelectItem>
+                        <SelectItem value="scrap">{t("scrap_outbound")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      {t("order_type_description")}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
