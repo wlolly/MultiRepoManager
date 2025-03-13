@@ -1769,5 +1769,145 @@
     "ru": "Вы уверены, что хотите удалить эту конфигурацию API?",
     "kk": "Бұл API конфигурациясын жоюды қалайсыз ба?",
     "uz": "Ushbu API sozlamalarini o'chirishni xohlaysizmi?"
+  },
+  "order_type": {
+    "zh": "订单类型",
+    "en": "Order Type",
+    "ru": "Тип заказа",
+    "kk": "Тапсырыс түрі",
+    "uz": "Buyurtma turi"
+  },
+  "select_order_type": {
+    "zh": "选择订单类型",
+    "en": "Select Order Type",
+    "ru": "Выберите тип заказа",
+    "kk": "Тапсырыс түрін таңдаңыз",
+    "uz": "Buyurtma turini tanlang"
+  },
+  "order_type_description": {
+    "zh": "选择适当的订单类型以进行正确的处理和跟踪",
+    "en": "Choose the appropriate order type for proper processing and tracking",
+    "ru": "Выберите соответствующий тип заказа для правильной обработки и отслеживания",
+    "kk": "Дұрыс өңдеу және бақылау үшін тиісті тапсырыс түрін таңдаңыз",
+    "uz": "To'g'ri qayta ishlash va kuzatish uchun tegishli buyurtma turini tanlang"
+  },
+  "purchase_inbound": {
+    "zh": "采购入库",
+    "en": "Purchase Inbound",
+    "ru": "Закупка на склад",
+    "kk": "Сатып алу кіріс",
+    "uz": "Xarid kirim"
+  },
+  "return_inbound": {
+    "zh": "退货入库",
+    "en": "Return Inbound",
+    "ru": "Возврат на склад",
+    "kk": "Қайтару кіріс",
+    "uz": "Qaytarish kirim"
+  },
+  "transfer_inbound": {
+    "zh": "调拨入库",
+    "en": "Transfer Inbound",
+    "ru": "Перемещение на склад",
+    "kk": "Аудару кіріс",
+    "uz": "Ko'chirish kirim"
+  },
+  "production_inbound": {
+    "zh": "生产入库",
+    "en": "Production Inbound",
+    "ru": "Производство на склад",
+    "kk": "Өндіріс кіріс",
+    "uz": "Ishlab chiqarish kirim"
+  },
+  "sale_outbound": {
+    "zh": "销售出库",
+    "en": "Sales Outbound",
+    "ru": "Продажа со склада",
+    "kk": "Сату шығыс",
+    "uz": "Sotish chiqim"
+  },
+  "return_outbound": {
+    "zh": "退货出库",
+    "en": "Return Outbound",
+    "ru": "Возврат со склада",
+    "kk": "Қайтару шығыс",
+    "uz": "Qaytarish chiqim"
+  },
+  "transfer_outbound": {
+    "zh": "调拨出库",
+    "en": "Transfer Outbound",
+    "ru": "Перемещение со склада",
+    "kk": "Аудару шығыс",
+    "uz": "Ko'chirish chiqim"
+  },
+  "scrap_outbound": {
+    "zh": "报废出库",
+    "en": "Scrap Outbound",
+    "ru": "Утилизация со склада",
+    "kk": "Есептен шығару",
+    "uz": "Chiqitga chiqarish"
+  },
+  "destination_type": {
+    "zh": "目的地类型",
+    "en": "Destination Type",
+    "ru": "Тип назначения",
+    "kk": "Баратын жер түрі",
+    "uz": "Manzil turi"
+  },
+  "select_destination_type": {
+    "zh": "选择目的地类型",
+    "en": "Select Destination Type",
+    "ru": "Выберите тип назначения",
+    "kk": "Баратын жер түрін таңдаңыз",
+    "uz": "Manzil turini tanlang"
+  },
+  "destination_type_description": {
+    "zh": "选择货物将被发送到的目的地类型",
+    "en": "Choose the type of destination where goods will be sent",
+    "ru": "Выберите тип назначения, куда будут отправлены товары",
+    "kk": "Тауарлар жіберілетін баратын жер түрін таңдаңыз",
+    "uz": "Tovarlar jo'natiladigan manzil turini tanlang"
+  },
+  "customer": {
+    "zh": "客户",
+    "en": "Customer",
+    "ru": "Клиент",
+    "kk": "Тұтынушы",
+    "uz": "Mijoz"
+  },
+  "retail": {
+    "zh": "零售商",
+    "en": "Retail",
+    "ru": "Розница",
+    "kk": "Бөлшек сауда",
+    "uz": "Chakana savdo"
+  },
+  "wholesale": {
+    "zh": "批发商",
+    "en": "Wholesale",
+    "ru": "Оптовик",
+    "kk": "Көтерме сауда",
+    "uz": "Ulgurji savdo"
+  },
+  "transfer": {
+    "zh": "调拨仓库",
+    "en": "Transfer Warehouse",
+    "ru": "Склад перемещения",
+    "kk": "Аудару қоймасы",
+    "uz": "Ko'chirish ombori"
+  },
+  "supplier": {
+    "zh": "供应商",
+    "en": "Supplier",
+    "ru": "Поставщик",
+    "kk": "Жеткізуші",
+    "uz": "Ta'minotchi"
+  },
+  "manual": {
+    "zh": "手动输入",
+    "en": "Manual Entry",
+    "ru": "Ручной ввод",
+    "kk": "Қолмен енгізу",
+    "uz": "Qo'lda kiritish"
   }
 }
