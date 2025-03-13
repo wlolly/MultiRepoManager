@@ -73,16 +73,16 @@ export default function Dashboard() {
     <Layout>
       <div className="pb-5 border-b border-gray-200 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('dashboard.statsTitle')}</h1>
-          <p className="mt-1 text-gray-500 text-sm">{t('dashboard.welcome')}</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('dashboard_stats_title')}</h1>
+          <p className="mt-1 text-gray-500 text-sm">{t('dashboard_welcome')}</p>
         </div>
         <div className="mt-4 sm:mt-0 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
           <Select value={languageFilter} onValueChange={setLanguageFilter}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder={t('dashboard.allLanguages')} />
+              <SelectValue placeholder={t('all_languages')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">{t('dashboard.allLanguages')}</SelectItem>
+              <SelectItem value="all">{t('all_languages')}</SelectItem>
               <SelectItem value="javascript">JavaScript</SelectItem>
               <SelectItem value="python">Python</SelectItem>
               <SelectItem value="java">Java</SelectItem>
@@ -93,12 +93,12 @@ export default function Dashboard() {
 
           <Select value={userFilter} onValueChange={setUserFilter}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder={t('dashboard.allUsers')} />
+              <SelectValue placeholder={t('all_users')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">{t('dashboard.allUsers')}</SelectItem>
-              <SelectItem value="me">{t('repositories.my')}</SelectItem>
-              <SelectItem value="team">{t('repositories.team')}</SelectItem>
+              <SelectItem value="all">{t('all_users')}</SelectItem>
+              <SelectItem value="me">{t('my_repositories')}</SelectItem>
+              <SelectItem value="team">{t('team_repositories')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -106,25 +106,25 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatsCard 
-          title={t('dashboard.repositoriesCount')} 
+          title={t('repositories_count')} 
           value={isLoadingStats ? "..." : stats?.totalRepositories || 0} 
           icon="ri-git-repository-line" 
           color="blue" 
         />
         <StatsCard 
-          title={t('dashboard.usersCount')} 
+          title={t('users_count')} 
           value={isLoadingStats ? "..." : stats?.totalUsers || 0} 
           icon="ri-team-line" 
           color="green" 
         />
         <StatsCard 
-          title={t('dashboard.languagesCount')} 
+          title={t('languages_count')} 
           value={isLoadingStats ? "..." : stats?.languagesCount || 0} 
           icon="ri-code-s-slash-line" 
           color="purple" 
         />
         <StatsCard 
-          title={t('dashboard.commitsCount')} 
+          title={t('commits_count')} 
           value={isLoadingStats ? "..." : stats?.recentCommits || 0} 
           icon="ri-git-commit-line" 
           color="yellow" 
@@ -140,7 +140,7 @@ export default function Dashboard() {
 
       <div className="mb-6">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg leading-6 font-medium text-gray-900">{t('repositories.title')}</h3>
+          <h3 className="text-lg leading-6 font-medium text-gray-900">{t('repositories')}</h3>
           <div className="flex space-x-3">
             <Button
               variant={viewMode === "list" ? "default" : "outline"}
@@ -148,7 +148,7 @@ export default function Dashboard() {
               onClick={() => setViewMode("list")}
               className="flex items-center"
             >
-              <i className="ri-list-check-2 mr-1.5"></i> {t('dashboard.listView')}
+              <i className="ri-list-check-2 mr-1.5"></i> {t('list_view')}
             </Button>
             <Button
               variant={viewMode === "grid" ? "default" : "outline"}
@@ -156,13 +156,13 @@ export default function Dashboard() {
               onClick={() => setViewMode("grid")}
               className="flex items-center"
             >
-              <i className="ri-grid-line mr-1.5"></i> {t('dashboard.gridView')}
+              <i className="ri-grid-line mr-1.5"></i> {t('grid_view')}
             </Button>
             <Button
               onClick={() => setCreateDialogOpen(true)}
               className="flex items-center"
             >
-              <i className="ri-add-line mr-1.5"></i> {t('repositories.newRepository')}
+              <i className="ri-add-line mr-1.5"></i> {t('new_repository')}
             </Button>
           </div>
         </div>
