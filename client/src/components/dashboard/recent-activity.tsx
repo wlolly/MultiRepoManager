@@ -29,7 +29,7 @@ export function RecentActivity() {
   if (isLoading) {
     return (
       <div className="bg-white shadow rounded-lg p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">{t('recentActivity')}</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">{t('recentActivity.title')}</h3>
         <div className="space-y-4">
           <Skeleton className="h-20 w-full" />
           <Skeleton className="h-20 w-full" />
@@ -83,7 +83,7 @@ export function RecentActivity() {
 
   return (
     <div className="bg-white shadow rounded-lg p-6">
-      <h3 className="text-lg font-medium text-gray-900 mb-4">{t('recentActivity')}</h3>
+      <h3 className="text-lg font-medium text-gray-900 mb-4">{t('recentActivity.title')}</h3>
       <div className="flow-root">
         <ul className="-mb-8">
           {activities && activities.length > 0 ? (
