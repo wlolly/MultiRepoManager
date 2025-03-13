@@ -61,8 +61,8 @@ export default function Settings() {
   return (
     <Layout>
       <div className="pb-5 border-b border-gray-200 mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-        <p className="mt-1 text-gray-500 text-sm">Manage your account settings and preferences</p>
+        <h1 className="text-2xl font-bold text-gray-900">系统设置</h1>
+        <p className="mt-1 text-gray-500 text-sm">管理您的账户设置和偏好</p>
       </div>
       
       <div className="flex flex-col md:flex-row gap-6">
@@ -80,28 +80,28 @@ export default function Settings() {
                 className="w-full justify-start px-3 py-2 data-[state=active]:bg-gray-100 data-[state=active]:shadow-none"
               >
                 <i className="ri-user-line mr-2"></i>
-                Account
+                账户信息
               </TabsTrigger>
               <TabsTrigger 
                 value="security" 
                 className="w-full justify-start px-3 py-2 data-[state=active]:bg-gray-100 data-[state=active]:shadow-none"
               >
                 <i className="ri-lock-line mr-2"></i>
-                Security
+                安全设置
               </TabsTrigger>
               <TabsTrigger 
                 value="notifications" 
                 className="w-full justify-start px-3 py-2 data-[state=active]:bg-gray-100 data-[state=active]:shadow-none"
               >
                 <i className="ri-notification-line mr-2"></i>
-                Notifications
+                通知设置
               </TabsTrigger>
               <TabsTrigger 
                 value="appearance" 
                 className="w-full justify-start px-3 py-2 data-[state=active]:bg-gray-100 data-[state=active]:shadow-none"
               >
                 <i className="ri-palette-line mr-2"></i>
-                Appearance
+                外观设置
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -111,9 +111,9 @@ export default function Settings() {
           {activeTab === "account" && (
             <Card>
               <CardHeader>
-                <CardTitle>Account Settings</CardTitle>
+                <CardTitle>账户信息设置</CardTitle>
                 <CardDescription>
-                  Update your account information and profile details
+                  更新您的账户信息和个人资料
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -125,11 +125,11 @@ export default function Settings() {
                         <AvatarFallback>{fullName.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <Label htmlFor="avatar" className="block mb-2">Profile Picture</Label>
+                        <Label htmlFor="avatar" className="block mb-2">头像</Label>
                         <Input 
                           id="avatar" 
                           type="url"
-                          placeholder="URL for profile image" 
+                          placeholder="头像图片URL" 
                           value={avatarUrl}
                           onChange={e => setAvatarUrl(e.target.value)}
                           className="w-full md:w-96"
@@ -139,7 +139,7 @@ export default function Settings() {
                     
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="space-y-2">
-                        <Label htmlFor="fullName">Full Name</Label>
+                        <Label htmlFor="fullName">姓名</Label>
                         <Input 
                           id="fullName" 
                           value={fullName}
@@ -148,7 +148,7 @@ export default function Settings() {
                       </div>
                       
                       <div className="space-y-2">
-                        <Label htmlFor="username">Username</Label>
+                        <Label htmlFor="username">用户名</Label>
                         <Input 
                           id="username" 
                           value={username}
@@ -158,7 +158,7 @@ export default function Settings() {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="email">Email Address</Label>
+                      <Label htmlFor="email">电子邮箱</Label>
                       <Input 
                         id="email" 
                         type="email"
@@ -169,7 +169,7 @@ export default function Settings() {
                   </div>
                   
                   <div className="mt-6">
-                    <Button type="submit">Save Changes</Button>
+                    <Button type="submit">保存更改</Button>
                   </div>
                 </form>
               </CardContent>
@@ -179,41 +179,41 @@ export default function Settings() {
           {activeTab === "security" && (
             <Card>
               <CardHeader>
-                <CardTitle>Security Settings</CardTitle>
+                <CardTitle>安全设置</CardTitle>
                 <CardDescription>
-                  Manage your password and security preferences
+                  管理您的密码和安全偏好
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleChangePassword}>
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="currentPassword">Current Password</Label>
+                      <Label htmlFor="currentPassword">当前密码</Label>
                       <Input id="currentPassword" type="password" />
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="newPassword">New Password</Label>
+                      <Label htmlFor="newPassword">新密码</Label>
                       <Input id="newPassword" type="password" />
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                      <Label htmlFor="confirmPassword">确认新密码</Label>
                       <Input id="confirmPassword" type="password" />
                     </div>
                   </div>
                   
                   <div className="mt-6">
-                    <Button type="submit">Change Password</Button>
+                    <Button type="submit">修改密码</Button>
                   </div>
                 </form>
                 
                 <div className="mt-8 pt-6 border-t border-gray-200">
-                  <h3 className="text-lg font-medium mb-4">Two-Factor Authentication</h3>
+                  <h3 className="text-lg font-medium mb-4">双因素认证</h3>
                   <p className="text-gray-500 mb-4">
-                    Add an extra layer of security to your account by enabling two-factor authentication.
+                    启用双因素认证为您的账户添加额外的安全层级。
                   </p>
-                  <Button variant="outline">Enable 2FA</Button>
+                  <Button variant="outline">启用双因素认证</Button>
                 </div>
               </CardContent>
             </Card>
@@ -222,17 +222,17 @@ export default function Settings() {
           {activeTab === "notifications" && (
             <Card>
               <CardHeader>
-                <CardTitle>Notification Preferences</CardTitle>
+                <CardTitle>通知偏好设置</CardTitle>
                 <CardDescription>
-                  Manage how you receive notifications and alerts
+                  管理如何接收通知和提醒
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-medium">Email Notifications</h4>
-                      <p className="text-gray-500 text-sm">Receive email notifications for important updates</p>
+                      <h4 className="font-medium">电子邮件通知</h4>
+                      <p className="text-gray-500 text-sm">接收重要更新的电子邮件通知</p>
                     </div>
                     <Switch 
                       checked={emailNotifications} 
@@ -242,8 +242,8 @@ export default function Settings() {
                   
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-medium">Repository Activity</h4>
-                      <p className="text-gray-500 text-sm">Get notified about commits, branches, and pull requests</p>
+                      <h4 className="font-medium">仓库活动</h4>
+                      <p className="text-gray-500 text-sm">接收关于提交、分支和合并请求的通知</p>
                     </div>
                     <Switch 
                       checked={repositoryActivity} 
@@ -253,8 +253,8 @@ export default function Settings() {
                   
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-medium">Team Activity</h4>
-                      <p className="text-gray-500 text-sm">Notifications about team membership changes</p>
+                      <h4 className="font-medium">团队活动</h4>
+                      <p className="text-gray-500 text-sm">关于团队成员变更的通知</p>
                     </div>
                     <Switch 
                       checked={teamActivity} 
@@ -264,8 +264,8 @@ export default function Settings() {
                   
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-medium">Security Alerts</h4>
-                      <p className="text-gray-500 text-sm">Important security updates and vulnerability alerts</p>
+                      <h4 className="font-medium">安全提醒</h4>
+                      <p className="text-gray-500 text-sm">重要安全更新和漏洞提醒</p>
                     </div>
                     <Switch 
                       checked={securityAlerts} 
@@ -275,7 +275,7 @@ export default function Settings() {
                 </div>
                 
                 <div className="mt-6">
-                  <Button onClick={handleSaveNotifications}>Save Preferences</Button>
+                  <Button onClick={handleSaveNotifications}>保存偏好</Button>
                 </div>
               </CardContent>
             </Card>
@@ -284,17 +284,17 @@ export default function Settings() {
           {activeTab === "appearance" && (
             <Card>
               <CardHeader>
-                <CardTitle>Appearance Settings</CardTitle>
+                <CardTitle>外观设置</CardTitle>
                 <CardDescription>
-                  Customize how RepoManager looks for you
+                  自定义ELEMENT-5系统的外观
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-medium">Dark Mode</h4>
-                      <p className="text-gray-500 text-sm">Use the dark theme for the application</p>
+                      <h4 className="font-medium">深色模式</h4>
+                      <p className="text-gray-500 text-sm">使用深色主题</p>
                     </div>
                     <Switch 
                       checked={darkMode} 
@@ -303,18 +303,19 @@ export default function Settings() {
                   </div>
                   
                   <div className="pt-6 border-t border-gray-200">
-                    <h4 className="font-medium mb-3">Language</h4>
+                    <h4 className="font-medium mb-3">系统语言</h4>
                     <select className="w-full rounded-md border border-gray-300 p-2.5">
-                      <option value="en">English</option>
-                      <option value="zh">Chinese</option>
-                      <option value="es">Spanish</option>
-                      <option value="fr">French</option>
+                      <option value="zh">中文</option>
+                      <option value="en">英文</option>
+                      <option value="ru">俄文</option>
+                      <option value="kk">哈萨克文</option>
+                      <option value="uz">乌兹别克文</option>
                     </select>
                   </div>
                 </div>
                 
                 <div className="mt-6">
-                  <Button onClick={handleSaveAppearance}>Save Preferences</Button>
+                  <Button onClick={handleSaveAppearance}>保存偏好</Button>
                 </div>
               </CardContent>
             </Card>

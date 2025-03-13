@@ -47,10 +47,10 @@ export default function Dashboard() {
         <div className="mt-4 sm:mt-0 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
           <Select value={languageFilter} onValueChange={setLanguageFilter}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder={t('repositories.all_languages')} />
+              <SelectValue placeholder="所有语言" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">{t('repositories.all_languages')}</SelectItem>
+              <SelectItem value="all">所有语言</SelectItem>
               <SelectItem value="javascript">JavaScript</SelectItem>
               <SelectItem value="python">Python</SelectItem>
               <SelectItem value="java">Java</SelectItem>
@@ -61,12 +61,12 @@ export default function Dashboard() {
 
           <Select value={userFilter} onValueChange={setUserFilter}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder={t('repositories.all_users')} />
+              <SelectValue placeholder="所有用户" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">{t('repositories.all_users')}</SelectItem>
-              <SelectItem value="me">{t('repositories.my')}</SelectItem>
-              <SelectItem value="team">{t('repositories.team')}</SelectItem>
+              <SelectItem value="all">所有用户</SelectItem>
+              <SelectItem value="me">我的</SelectItem>
+              <SelectItem value="team">团队</SelectItem>
             </SelectContent>
           </Select>
         </div>
