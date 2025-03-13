@@ -25,7 +25,7 @@ export default function MyRepositories() {
   const currentUserId = 1;
 
   // Fetch user's repositories with filters
-  const { data: repositories, isLoading } = useQuery({
+  const { data: repositories = [], isLoading } = useQuery({
     queryKey: [`/api/repositories?ownerId=${currentUserId}${languageFilter !== "all" ? `&language=${languageFilter}` : ""}${visibilityFilter !== "all" ? `&visibility=${visibilityFilter}` : ""}`],
   });
 
