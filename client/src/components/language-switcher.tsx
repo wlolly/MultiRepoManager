@@ -8,15 +8,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Globe } from "lucide-react";
+import { supportedLanguages } from '@/i18n';
 
 export function LanguageSwitcher() {
   const { t, i18n } = useTranslation();
   const currentLanguage = i18n.language;
 
-  const changeLanguage = (lng: string) => {
-    i18n.changeLanguage(lng);
-    // 可选：将所选语言保存到localStorage
-    localStorage.setItem('i18nextLng', lng);
+  const handleLanguageChange = (lng: string) => {
+    import('@/i18n').then(({ changeLanguage }) => {
+      changeLanguage(lng);
+    });
   };
 
   return (
