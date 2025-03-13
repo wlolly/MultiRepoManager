@@ -67,6 +67,20 @@ const resources = {
         listView: "列表视图",
         gridView: "网格视图"
       },
+      repositories: {
+        title: "仓库",
+        my: "我的仓库",
+        team: "团队仓库",
+        newRepository: "新建仓库",
+        empty: "暂无仓库",
+        createFirst: "创建第一个仓库",
+        search: "搜索仓库",
+        all_languages: "所有语言",
+        all_users: "所有用户",
+        recent: "最近仓库",
+        recentDescription: "您最近更新的仓库",
+        notFound: "未找到仓库"
+      },
       warehouse: {
         products: "商品管理",
         warehouses: "仓库管理",
@@ -143,6 +157,20 @@ const resources = {
         listView: "List View",
         gridView: "Grid View"
       },
+      repositories: {
+        title: "Repositories",
+        my: "My Repositories",
+        team: "Team Repositories",
+        newRepository: "New Repository",
+        empty: "No repositories",
+        createFirst: "Create your first repository",
+        search: "Search repositories",
+        all_languages: "All Languages",
+        all_users: "All Users",
+        recent: "Recent Repositories",
+        recentDescription: "Your recently updated repositories",
+        notFound: "Repository not found"
+      },
       warehouse: {
         products: "Products",
         warehouses: "Warehouses",
@@ -217,6 +245,20 @@ const resources = {
         allUsers: "Все пользователи",
         listView: "Список",
         gridView: "Сетка"
+      },
+      repositories: {
+        title: "Репозитории",
+        my: "Мои репозитории",
+        team: "Командные репозитории",
+        newRepository: "Новый репозиторий",
+        empty: "Нет репозиториев",
+        createFirst: "Создайте свой первый репозиторий",
+        search: "Поиск репозиториев",
+        all_languages: "Все языки",
+        all_users: "Все пользователи",
+        recent: "Последние репозитории",
+        recentDescription: "Ваши недавно обновленные репозитории",
+        notFound: "Репозиторий не найден"
       },
       warehouse: {
         products: "Товары",
@@ -293,6 +335,20 @@ const resources = {
         listView: "Тізім көрінісі",
         gridView: "Торлы көрініс"
       },
+      repositories: {
+        title: "Репозиторийлер",
+        my: "Менің репозиторийлерім",
+        team: "Команда репозиторийлері",
+        newRepository: "Жаңа репозиторий",
+        empty: "Репозиторийлер жоқ",
+        createFirst: "Алғашқы репозиторийді жасаңыз",
+        search: "Репозиторийлерді іздеу",
+        all_languages: "Барлық тілдер",
+        all_users: "Барлық пайдаланушылар",
+        recent: "Соңғы репозиторийлер",
+        recentDescription: "Сіздің жақында жаңартылған репозиторийлеріңіз",
+        notFound: "Репозиторий табылмады"
+      },
       warehouse: {
         products: "Тауарлар",
         warehouses: "Қоймалар",
@@ -367,6 +423,20 @@ const resources = {
         allUsers: "Barcha foydalanuvchilar",
         listView: "Ro'yxat ko'rinishi",
         gridView: "Setka ko'rinishi"
+      },
+      repositories: {
+        title: "Repozitoriylar",
+        my: "Mening repozitoriylarim",
+        team: "Jamoa repozitoriylari",
+        newRepository: "Yangi repozitoriy",
+        empty: "Repozitoriylar yo'q",
+        createFirst: "Birinchi repozitoriyni yarating",
+        search: "Repozitoriylarni qidirish",
+        all_languages: "Barcha tillar",
+        all_users: "Barcha foydalanuvchilar",
+        recent: "So'nggi repozitoriylar",
+        recentDescription: "Yaqinda yangilangan repozitoriylaringiz",
+        notFound: "Repozitoriy topilmadi"
       },
       warehouse: {
         products: "Mahsulotlar",
