@@ -180,6 +180,7 @@
     "order": "Order",
     "product": "Product",
     "kaspi": "Kaspi.kz",
+    "uzum": "Uzum.uz",
     "apiConfig": "API Configuration",
     "apiKey": "API Key",
     "apiSecret": "API Secret",
@@ -198,6 +199,11 @@
     "price": "Price",
     "stock": "Stock",
     "localProduct": "Local Product",
+    "platformList": "Supported Platforms",
+    "platforms": {
+      "kaspi": "Kaspi.kz",
+      "uzum": "Uzum.uz"
+    },
     "status": {
       "active": "Active",
       "inactive": "Inactive",

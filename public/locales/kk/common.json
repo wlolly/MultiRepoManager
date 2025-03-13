@@ -1,0 +1,220 @@
+{
+  "app": {
+    "name": "Қойма басқару жүйесі",
+    "version": "Нұсқасы 1.0.0"
+  },
+  "sidebar": {
+    "navigation": "НАВИГАЦИЯ",
+    "recentActivity": "СОҢҒЫ ӘРЕКЕТТЕР",
+    "noActivity": "Соңғы әрекеттер жоқ",
+    "newRepository": "Жаңа репозиторий",
+    "navigation_items": {
+      "dashboard": "Басқару тақтасы",
+      "myRepositories": "Менің репозиторийлерім",
+      "teamRepositories": "Команда репозиторийлері",
+      "usersAndTeams": "Пайдаланушылар мен Командалар",
+      "settings": "Параметрлер"
+    },
+    "activity": {
+      "justNow": "жаңа ғана",
+      "minutesAgo": "{{count}} минут бұрын",
+      "hoursAgo": "{{count}} сағат бұрын",
+      "yesterday": "кеше",
+      "daysAgo": "{{count}} күн бұрын"
+    }
+  },
+  "header": {
+    "searchPlaceholder": "Репозиторийлерді іздеу...",
+    "account": {
+      "myAccount": "Менің аккаунтым",
+      "profile": "Профиль",
+      "settings": "Параметрлер",
+      "logout": "Шығу"
+    },
+    "language": {
+      "title": "Тіл",
+      "zh": "Қытай",
+      "en": "Ағылшын",
+      "ru": "Орыс",
+      "kk": "Қазақ",
+      "uz": "Өзбек"
+    }
+  },
+  "dashboard": {
+    "title": "Басқару тақтасы",
+    "subtitle": "Әртүрлі тілдердегі және командалардағы репозиторийлеріңізді басқарыңыз",
+    "stats": {
+      "totalRepositories": "Барлық репозиторийлер",
+      "activeUsers": "Белсенді пайдаланушылар",
+      "languagesUsed": "Қолданылған тілдер",
+      "recentCommits": "Соңғы коммиттер"
+    },
+    "filters": {
+      "allLanguages": "Барлық тілдер",
+      "allUsers": "Барлық пайдаланушылар",
+      "myRepositories": "Менің репозиторийлерім",
+      "teamRepositories": "Команда репозиторийлері"
+    },
+    "viewOptions": {
+      "listView": "Тізім",
+      "gridView": "Торлар"
+    },
+    "repositoryOverview": "Репозиторийлер шолуы",
+    "newRepository": "Жаңа репозиторий",
+    "languageDistribution": "Тілдер таралымы"
+  },
+  "repositories": {
+    "recentRepositories": "Соңғы репозиторийлер",
+    "recentRepositoriesSubtitle": "Сіздің соңғы жаңартылған репозиторийлеріңіз",
+    "noRepositories": "Репозиторийлер жоқ",
+    "createFirst": "Бірінші репозиторийіңізді жасаңыз",
+    "createNew": "Жаңа репозиторий жасау",
+    "nameLabel": "Репозиторий атауы",
+    "namePlaceholder": "Репозиторий атауын енгізіңіз",
+    "descriptionLabel": "Сипаттама",
+    "descriptionPlaceholder": "Репозиторийіңізді қысқаша сипаттаңыз (міндетті емес)",
+    "visibilityLabel": "Көрінушілік",
+    "visibility": {
+      "public": "Жалпыға ортақ",
+      "private": "Жеке",
+      "internal": "Ішкі"
+    },
+    "languageLabel": "Негізгі тіл",
+    "createRepository": "Репозиторий жасау",
+    "cancel": "Болдырмау"
+  },
+  "general": {
+    "loading": "Жүктелуде...",
+    "error": "Қате пайда болды",
+    "retry": "Қайталау",
+    "save": "Сақтау",
+    "edit": "Өңдеу",
+    "delete": "Жою",
+    "create": "Жасау",
+    "cancel": "Болдырмау",
+    "close": "Жабу",
+    "search": "Іздеу",
+    "filters": "Сүзгілер",
+    "apply": "Қолдану",
+    "reset": "Қалпына келтіру",
+    "language": "Тіл",
+    "visibility": "Көрінушілік",
+    "status": "Күй",
+    "dateCreated": "Жасалған күні",
+    "dateUpdated": "Жаңартылған күні",
+    "back": "Артқа",
+    "next": "Келесі",
+    "previous": "Алдыңғы",
+    "finish": "Аяқтау",
+    "confirm": "Растау",
+    "yes": "Иә",
+    "no": "Жоқ",
+    "success": "Сәтті",
+    "failed": "Сәтсіз",
+    "add": "Қосу",
+    "remove": "Жою",
+    "details": "Толық ақпарат",
+    "code": "Код",
+    "name": "Аты",
+    "description": "Сипаттама"
+  },
+  "warehouse": {
+    "inbound": "Кіріс",
+    "outbound": "Шығыс",
+    "product": "Өнім",
+    "warehouse": "Қойма",
+    "inventory": "Қор",
+    "order": "Тапсырыс",
+    "management": "Басқару",
+    "system": "Жүйе",
+    "warehouseList": "Қоймалар тізімі",
+    "productList": "Өнімдер тізімі",
+    "inboundOrderList": "Кіріс тапсырыстар тізімі",
+    "outboundOrderList": "Шығыс тапсырыстар тізімі",
+    "inventoryList": "Қор тізімі",
+    "newInboundOrder": "Жаңа кіріс тапсырыс",
+    "newOutboundOrder": "Жаңа шығыс тапсырыс",
+    "newProduct": "Жаңа өнім",
+    "newWarehouse": "Жаңа қойма",
+    "statistics": "Статистика",
+    "barcode": "Штрих-код",
+    "quantity": "Саны",
+    "unitPrice": "Бірлік бағасы",
+    "totalPrice": "Жалпы баға",
+    "weight": "Салмақ",
+    "volume": "Көлем",
+    "length": "Ұзындық",
+    "width": "Ені",
+    "height": "Биіктік",
+    "bulk": "Топтап",
+    "single": "Дана",
+    "unitVolume": "Бірлік көлемі",
+    "unitWeight": "Бірлік салмағы",
+    "totalVolume": "Жалпы көлем",
+    "totalWeight": "Жалпы салмақ",
+    "dimensions": "Өлшемдер",
+    "status": {
+      "pending": "Күтуде",
+      "processing": "Өңделуде",
+      "completed": "Аяқталды",
+      "cancelled": "Тоқтатылды"
+    },
+    "form": {
+      "productName": "Өнім атауы",
+      "productCode": "Өнім коды",
+      "barcode": "Штрих-код",
+      "quantity": "Саны",
+      "warehouseName": "Қойма атауы",
+      "warehouseLocation": "Қойма орналасқан жері",
+      "orderNumber": "Тапсырыс нөмірі",
+      "orderDate": "Тапсырыс күні",
+      "supplier": "Жеткізуші",
+      "customer": "Тұтынушы",
+      "operator": "Оператор"
+    }
+  },
+  "ecommerce": {
+    "platform": "Электрондық сауда платформасы",
+    "integration": "Интеграция",
+    "sync": "Синхрондау",
+    "order": "Тапсырыс",
+    "product": "Өнім",
+    "kaspi": "Kaspi.kz",
+    "uzum": "Uzum.uz",
+    "apiConfig": "API конфигурациясы",
+    "apiKey": "API кілті",
+    "apiSecret": "API құпиясы",
+    "apiEndpoint": "API endpoint",
+    "lastSync": "Соңғы синхрондау",
+    "syncNow": "Қазір синхрондау",
+    "autoSync": "Автоматты синхрондау",
+    "mappingRules": "Сәйкестік ережелері",
+    "matchingProducts": "Сәйкес өнімдер",
+    "unmatchedProducts": "Сәйкес емес өнімдер",
+    "matchProduct": "Өнімді сәйкестендіру",
+    "platformId": "Платформа ID",
+    "platformCode": "Платформа коды",
+    "platformName": "Платформа атауы",
+    "platformCategory": "Платформа санаты",
+    "price": "Баға",
+    "stock": "Қор",
+    "localProduct": "Жергілікті өнім",
+    "platformList": "Қолдау көрсетілетін платформалар",
+    "platforms": {
+      "kaspi": "Kaspi.kz",
+      "uzum": "Uzum.uz"
+    },
+    "status": {
+      "active": "Белсенді",
+      "inactive": "Белсенді емес",
+      "matched": "Сәйкестендірілген",
+      "unmatched": "Сәйкестендірілмеген",
+      "pending": "Күтуде",
+      "processing": "Өңделуде",
+      "completed": "Аяқталды",
+      "cancelled": "Тоқтатылды",
+      "shipped": "Жөнелтілді",
+      "delivered": "Жеткізілді"
+    }
+  }
+}
