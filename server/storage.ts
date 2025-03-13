@@ -11,8 +11,12 @@ import {
   inboundOrders, type InboundOrder, type InsertInboundOrder,
   inboundOrderItems, type InboundOrderItem, type InsertInboundOrderItem,
   outboundOrders, type OutboundOrder, type InsertOutboundOrder,
-  outboundOrderItems, type OutboundOrderItem, type InsertOutboundOrderItem
+  outboundOrderItems, type OutboundOrderItem, type InsertOutboundOrderItem,
+  // 电商平台相关导入
+  apiConfigurations, type ApiConfiguration, type InsertApiConfiguration,
+  ecommerceProducts, type EcommerceProduct, type InsertEcommerceProduct
 } from "@shared/schema";
+import { processProductCode } from "./utils/product-code-matcher";
 import { db } from './db';
 import { eq, and, gt, count, desc } from 'drizzle-orm';
 
@@ -132,6 +136,10 @@ export class MemStorage implements IStorage {
   private inboundOrderItemsMap: Map<number, InboundOrderItem>;
   private outboundOrdersMap: Map<number, OutboundOrder>;
   private outboundOrderItemsMap: Map<number, OutboundOrderItem>;
+  
+  // 电商平台相关存储
+  private apiConfigurationsMap: Map<number, ApiConfiguration>;
+  private ecommerceProductsMap: Map<number, EcommerceProduct>;
 
   private userIdCounter: number;
   private repositoryIdCounter: number;
@@ -147,6 +155,10 @@ export class MemStorage implements IStorage {
   private inboundOrderItemIdCounter: number;
   private outboundOrderIdCounter: number;
   private outboundOrderItemIdCounter: number;
+  
+  // 电商平台相关计数器
+  private apiConfigurationIdCounter: number;
+  private ecommerceProductIdCounter: number;
   
   // 计算体积的辅助函数 (长x宽x高，单位：cm，结果为立方米)
   private calculateVolume(length: number, width: number, height: number): number {
@@ -169,6 +181,10 @@ export class MemStorage implements IStorage {
     this.inboundOrderItemsMap = new Map();
     this.outboundOrdersMap = new Map();
     this.outboundOrderItemsMap = new Map();
+    
+    // 初始化电商平台相关存储
+    this.apiConfigurationsMap = new Map();
+    this.ecommerceProductsMap = new Map();
 
     // 初始化ID计数器
     this.userIdCounter = 1;
@@ -185,6 +201,10 @@ export class MemStorage implements IStorage {
     this.inboundOrderItemIdCounter = 1;
     this.outboundOrderIdCounter = 1;
     this.outboundOrderItemIdCounter = 1;
+    
+    // 初始化电商平台相关ID计数器
+    this.apiConfigurationIdCounter = 1;
+    this.ecommerceProductIdCounter = 1;
 
     // 初始化演示数据
     this.initializeDemoData();
@@ -1035,6 +1055,146 @@ export class MemStorage implements IStorage {
   
   async deleteOutboundOrderItem(id: number): Promise<void> {
     this.outboundOrderItemsMap.delete(id);
+  }
+  
+  // 电商平台API配置方法
+  async getApiConfiguration(id: number): Promise<ApiConfiguration | undefined> {
+    return this.apiConfigurationsMap.get(id);
+  }
+  
+  async getApiConfigurationByName(name: string): Promise<ApiConfiguration | undefined> {
+    return Array.from(this.apiConfigurationsMap.values()).find(
+      (config) => config.name === name
+    );
+  }
+  
+  async createApiConfiguration(insertConfig: InsertApiConfiguration): Promise<ApiConfiguration> {
+    const id = this.apiConfigurationIdCounter++;
+    const createdAt = new Date();
+    const config: ApiConfiguration = { ...insertConfig, id, createdAt };
+    this.apiConfigurationsMap.set(id, config);
+    return config;
+  }
+  
+  async updateApiConfiguration(id: number, config: Partial<ApiConfiguration>): Promise<ApiConfiguration | undefined> {
+    const existingConfig = this.apiConfigurationsMap.get(id);
+    if (!existingConfig) return undefined;
+    
+    const updatedConfig = { ...existingConfig, ...config, updatedAt: new Date() };
+    this.apiConfigurationsMap.set(id, updatedConfig);
+    return updatedConfig;
+  }
+  
+  async getApiConfigurations(): Promise<ApiConfiguration[]> {
+    return Array.from(this.apiConfigurationsMap.values());
+  }
+  
+  // 电商平台产品方法
+  async getEcommerceProduct(id: number): Promise<EcommerceProduct | undefined> {
+    return this.ecommerceProductsMap.get(id);
+  }
+  
+  async getEcommerceProductByPlatformId(platformId: string): Promise<EcommerceProduct | undefined> {
+    return Array.from(this.ecommerceProductsMap.values()).find(
+      (product) => product.platformProductId === platformId
+    );
+  }
+  
+  async getEcommerceProductByPlatformCode(platformCode: string): Promise<EcommerceProduct | undefined> {
+    return Array.from(this.ecommerceProductsMap.values()).find(
+      (product) => product.platformProductCode === platformCode
+    );
+  }
+  
+  async createEcommerceProduct(insertProduct: InsertEcommerceProduct): Promise<EcommerceProduct> {
+    const id = this.ecommerceProductIdCounter++;
+    const createdAt = new Date();
+    const product: EcommerceProduct = { ...insertProduct, id, createdAt };
+    this.ecommerceProductsMap.set(id, product);
+    return product;
+  }
+  
+  async updateEcommerceProduct(id: number, product: Partial<EcommerceProduct>): Promise<EcommerceProduct | undefined> {
+    const existingProduct = this.ecommerceProductsMap.get(id);
+    if (!existingProduct) return undefined;
+    
+    const updatedProduct = { ...existingProduct, ...product, updatedAt: new Date() };
+    this.ecommerceProductsMap.set(id, updatedProduct);
+    return updatedProduct;
+  }
+  
+  async getEcommerceProducts(filter?: { platformSource?: string, matchedProductId?: number }): Promise<EcommerceProduct[]> {
+    let products = Array.from(this.ecommerceProductsMap.values());
+    
+    if (filter) {
+      if (filter.platformSource) {
+        products = products.filter(product => product.platformSource === filter.platformSource);
+      }
+      
+      if (filter.matchedProductId !== undefined) {
+        products = products.filter(product => product.matchedProductId === filter.matchedProductId);
+      }
+    }
+    
+    return products;
+  }
+  
+  // 产品编码匹配辅助方法
+  processProductCode(platformCode: string): string {
+    return processProductCode(platformCode);
+  }
+  
+  async findProductsByMatchedCode(matchedCode: string): Promise<Product[]> {
+    return Array.from(this.productsMap.values()).filter(product => {
+      // 从条形码中提取匹配码
+      const productCode = product.barcode;
+      // 检查是否匹配
+      return productCode.includes(matchedCode);
+    });
+  }
+  
+  async matchPlatformProducts(platformSource: string): Promise<{
+    matched: number,
+    unmatched: number,
+    total: number
+  }> {
+    // 获取指定平台的所有产品
+    const platformProducts = await this.getEcommerceProducts({ platformSource });
+    let matched = 0;
+    let unmatched = 0;
+    
+    for (const product of platformProducts) {
+      if (product.platformProductCode) {
+        // 处理平台产品编码
+        const matchedCode = this.processProductCode(product.platformProductCode);
+        // 查找匹配的系统产品
+        const matchedProducts = await this.findProductsByMatchedCode(matchedCode);
+        
+        if (matchedProducts.length > 0) {
+          // 匹配到系统产品，更新平台产品的匹配状态
+          await this.updateEcommerceProduct(product.id, {
+            matchedProductId: matchedProducts[0].id,
+            isMatched: true
+          });
+          matched++;
+        } else {
+          // 未匹配到系统产品
+          await this.updateEcommerceProduct(product.id, {
+            isMatched: false
+          });
+          unmatched++;
+        }
+      } else {
+        // 没有产品编码
+        unmatched++;
+      }
+    }
+    
+    return {
+      matched,
+      unmatched,
+      total: platformProducts.length
+    };
   }
 }
 
