@@ -288,7 +288,7 @@ i18n
   .use(initReactI18next)
   .use(HttpBackend)
   .init({
-    resources,
+    resources, // 内部资源仅作为回退
     lng: 'zh', // 默认使用中文
     fallbackLng: 'zh',
     interpolation: {
@@ -297,7 +297,19 @@ i18n
     defaultNS: 'common',
     react: {
       useSuspense: false
-    }
+    },
+    backend: {
+      loadPath: '/locales/{{lng}}/{{ns}}.json',
+      requestOptions: {
+        cache: 'no-cache'  // 防止缓存问题
+      }
+    },
+    ns: ['common'],
+    detection: {
+      order: ['localStorage', 'navigator'],
+      caches: ['localStorage']
+    },
+    debug: true // 在控制台输出调试信息
   });
 
 // 获取支持的语言列表
@@ -316,29 +328,34 @@ export const changeLanguage = (langCode: string) => {
   }
   
   localStorage.setItem('i18nextLng', langCode);
-  i18n.changeLanguage(langCode);
   
-  let message = '';
-  switch(langCode) {
-    case 'zh':
-      message = '语言已设置为中文';
-      break;
-    case 'en':
-      message = 'Language set to English';
-      break;
-    case 'ru':
-      message = 'Язык установлен на русский';
-      break;
-    case 'kk':
-      message = 'Тіл қазақ тіліне орнатылды';
-      break;
-    case 'uz':
-      message = 'Til o\'zbek tiliga o\'rnatildi';
-      break;
-  }
+  // 强制重新加载 HTTP backend 中的资源
+  i18n.reloadResources([langCode]).then(() => {
+    i18n.changeLanguage(langCode);
+    
+    let message = '';
+    switch(langCode) {
+      case 'zh':
+        message = '语言已设置为中文';
+        break;
+      case 'en':
+        message = 'Language set to English';
+        break;
+      case 'ru':
+        message = 'Язык установлен на русский';
+        break;
+      case 'kk':
+        message = 'Тіл қазақ тіліне орнатылды';
+        break;
+      case 'uz':
+        message = 'Til o\'zbek tiliga o\'rnatildi';
+        break;
+    }
+    
+    console.log(message, langCode);
+  });
   
-  console.log(message, langCode);
-  return message;
+  return langCode;
 };
 
 // 兼容旧代码的函数
