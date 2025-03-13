@@ -44,11 +44,11 @@ export function RecentActivity() {
     const activityDate = new Date(date);
     const diffInSeconds = Math.floor((now.getTime() - activityDate.getTime()) / 1000);
     
-    if (diffInSeconds < 60) return t('time.justNow');
-    if (diffInSeconds < 3600) return t('time.minutesAgo', { value: Math.floor(diffInSeconds / 60) });
-    if (diffInSeconds < 86400) return t('time.hoursAgo', { value: Math.floor(diffInSeconds / 3600) });
-    if (diffInSeconds < 172800) return t('time.yesterday');
-    return t('time.daysAgo', { value: Math.floor(diffInSeconds / 86400) });
+    if (diffInSeconds < 60) return t('just_now');
+    if (diffInSeconds < 3600) return t('minutes_ago', { value: Math.floor(diffInSeconds / 60) });
+    if (diffInSeconds < 86400) return t('hours_ago', { value: Math.floor(diffInSeconds / 3600) });
+    if (diffInSeconds < 172800) return t('yesterday');
+    return t('days_ago', { value: Math.floor(diffInSeconds / 86400) });
   };
 
   const getActivityIcon = (type: string) => {
@@ -104,7 +104,7 @@ export function RecentActivity() {
                         {activity.summary.indexOf(' in ') > -1 ? (
                           <>
                             {activity.summary.split(' in ')[0]}{' '}
-                            {t('in')}{' '}
+                            {t('preposition_in')}{' '}
                             <Link href={`/repository/${activity.repository.id}`}>
                               <a className="font-medium text-blue-600">{activity.repository.name}</a>
                             </Link>

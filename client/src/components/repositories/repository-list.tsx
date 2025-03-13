@@ -28,8 +28,8 @@ export function RepositoryList({ repositories, isLoading, title, subtitle }: Rep
   const { t } = useTranslation();
   
   // 使用翻译或默认值
-  const displayTitle = title || t('repositories.recent');
-  const displaySubtitle = subtitle || t('repositories.recentDescription');
+  const displayTitle = title || t('repositories_recent');
+  const displaySubtitle = subtitle || t('repositories_recent_description');
   return (
     <div className="bg-white shadow overflow-hidden sm:rounded-md mb-6">
       <div className="px-4 py-5 border-b border-gray-200 sm:px-6">
@@ -78,7 +78,7 @@ export function RepositoryList({ repositories, isLoading, title, subtitle }: Rep
         </ul>
       ) : (
         <div className="p-4 text-center text-gray-500">
-          {t('repositories.notFound')}
+          {t('repositories_not_found')}
         </div>
       )}
     </div>
