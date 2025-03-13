@@ -29,7 +29,7 @@ export function RecentActivity() {
   if (isLoading) {
     return (
       <div className="bg-white shadow rounded-lg p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">{t('recentActivity_title', '最近活动')}</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">{t('recent_activity')}</h3>
         <div className="space-y-4">
           <Skeleton className="h-20 w-full" />
           <Skeleton className="h-20 w-full" />
@@ -83,7 +83,7 @@ export function RecentActivity() {
 
   return (
     <div className="bg-white shadow rounded-lg p-6">
-      <h3 className="text-lg font-medium text-gray-900 mb-4">{t('recentActivity_title', '最近活动')}</h3>
+      <h3 className="text-lg font-medium text-gray-900 mb-4">{t('recent_activity')}</h3>
       <div className="flow-root">
         <ul className="-mb-8">
           {activities && activities.length > 0 ? (
@@ -123,7 +123,7 @@ export function RecentActivity() {
               </li>
             ))
           ) : (
-            <div className="text-gray-500 text-center py-4">{t('recentActivity_noData', '暂无活动数据')}</div>
+            <div className="text-gray-500 text-center py-4">{t('recent_activity_no_data')}</div>
           )}
         </ul>
       </div>
