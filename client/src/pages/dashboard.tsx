@@ -74,25 +74,25 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatsCard 
-          title={t('dashboard.stats.totalRepositories')} 
+          title="仓库总数" 
           value={isLoadingStats ? "..." : stats?.totalRepositories || 0} 
           icon="ri-git-repository-line" 
           color="blue" 
         />
         <StatsCard 
-          title={t('dashboard.stats.totalUsers')} 
+          title="用户总数" 
           value={isLoadingStats ? "..." : stats?.totalUsers || 0} 
           icon="ri-team-line" 
           color="green" 
         />
         <StatsCard 
-          title={t('dashboard.stats.totalLanguages')} 
+          title="支持语言数" 
           value={isLoadingStats ? "..." : stats?.languagesCount || 0} 
           icon="ri-code-s-slash-line" 
           color="purple" 
         />
         <StatsCard 
-          title={t('dashboard.stats.recentCommits')} 
+          title="最近提交" 
           value={isLoadingStats ? "..." : stats?.recentCommits || 0} 
           icon="ri-git-commit-line" 
           color="yellow" 
@@ -116,7 +116,7 @@ export default function Dashboard() {
               onClick={() => setViewMode("list")}
               className="flex items-center"
             >
-              <i className="ri-list-check-2 mr-1.5"></i> {t('list_view')}
+              <i className="ri-list-check-2 mr-1.5"></i> 列表视图
             </Button>
             <Button
               variant={viewMode === "grid" ? "default" : "outline"}
@@ -124,13 +124,13 @@ export default function Dashboard() {
               onClick={() => setViewMode("grid")}
               className="flex items-center"
             >
-              <i className="ri-grid-line mr-1.5"></i> {t('grid_view')}
+              <i className="ri-grid-line mr-1.5"></i> 网格视图
             </Button>
             <Button
               onClick={() => setCreateDialogOpen(true)}
               className="flex items-center"
             >
-              <i className="ri-add-line mr-1.5"></i> {t('repositories.newRepository')}
+              <i className="ri-add-line mr-1.5"></i> 新建仓库
             </Button>
           </div>
         </div>
