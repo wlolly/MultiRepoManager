@@ -1711,7 +1711,7 @@ export class DatabaseStorage implements IStorage {
 }
 
 // 使用内存存储方式进行开发
-// export const storage = new MemStorage();
+export const storage = new MemStorage();
 
 // 切换到数据库存储方式
-export const storage = new DatabaseStorage();
+// export const storage = new DatabaseStorage();
