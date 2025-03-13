@@ -24,13 +24,45 @@ export default function Dashboard() {
   const [userFilter, setUserFilter] = useState<string>("all");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
+  // 定义接口类型
+  interface Repository {
+    id: number;
+    name: string;
+    description: string;
+    visibility: string;
+    language: string;
+    branchCount: number;
+    contributorCount: number;
+    viewCount: number;
+    updatedAt: string;
+    owner: {
+      id: number;
+      username: string;
+      fullName: string;
+      avatarUrl: string;
+    };
+    contributors?: {
+      id: number;
+      username: string;
+      fullName?: string;
+      avatarUrl?: string;
+    }[];
+  }
+
+  interface Stats {
+    totalRepositories: number;
+    totalUsers: number;
+    languagesCount: number;
+    recentCommits: number;
+  }
+
   // Fetch repositories with filters
-  const { data: repositories, isLoading: isLoadingRepositories } = useQuery({
+  const { data: repositories, isLoading: isLoadingRepositories } = useQuery<Repository[]>({
     queryKey: ["/api/repositories", languageFilter, userFilter],
   });
 
   // Fetch repository stats
-  const { data: stats, isLoading: isLoadingStats } = useQuery({
+  const { data: stats, isLoading: isLoadingStats } = useQuery<Stats>({
     queryKey: ["/api/stats"],
   });
 
