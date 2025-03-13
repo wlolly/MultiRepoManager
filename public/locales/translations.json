@@ -132,6 +132,34 @@
     "kk": "Өнім",
     "uz": "Mahsulot"
   },
+  "category": {
+    "zh": "分类",
+    "en": "Category",
+    "ru": "Категория",
+    "kk": "Санат",
+    "uz": "Toifa"
+  },
+  "all_categories": {
+    "zh": "所有分类",
+    "en": "All Categories",
+    "ru": "Все категории",
+    "kk": "Барлық санаттар",
+    "uz": "Barcha toifalar"
+  },
+  "all_warehouses": {
+    "zh": "所有仓库",
+    "en": "All Warehouses",
+    "ru": "Все склады",
+    "kk": "Барлық қоймалар",
+    "uz": "Barcha omborlar"
+  },
+  "operations": {
+    "zh": "操作记录",
+    "en": "Operations",
+    "ru": "Операции",
+    "kk": "Операциялар",
+    "uz": "Operatsiyalar"
+  },
   "stock_in": {
     "zh": "入库",
     "en": "Stock In",
