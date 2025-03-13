@@ -55,11 +55,11 @@ export function CreateProductDialog({ open, onOpenChange, currentUserId }: Creat
   
   const { mutate, isPending } = useMutation({
     mutationFn: (data: FormValues) => 
-      apiRequest<any>({
-        url: "/api/products",
-        method: "POST",
+      apiRequest(
+        "POST",
+        "/api/products",
         data
-      }),
+      ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/products'] });
       toast({
