@@ -78,10 +78,16 @@ const resources = {
         createFirst: "创建第一个仓库",
         search: "搜索仓库",
         all_languages: "所有语言",
-        all_users: "所有用户"
+        all_users: "所有用户",
+        recent: "最近仓库",
+        recentDescription: "您最近更新的仓库",
+        notFound: "未找到仓库"
       },
       list_view: "列表视图",
-      grid_view: "网格视图"
+      grid_view: "网格视图",
+      languageDistribution: "语言分布",
+      recentActivity: "最近活动",
+      noRecentActivity: "没有最近活动"
     }
   },
   en: {
