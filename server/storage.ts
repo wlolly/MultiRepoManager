@@ -1504,17 +1504,25 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createInboundOrder(insertInboundOrder: InsertInboundOrder): Promise<InboundOrder> {
-    const [inboundOrder] = await db.insert(inboundOrders).values(insertInboundOrder).returning();
+    // MySQL不直接支持returning，所以我们需要先插入然后查询
+    const result = await db.insert(inboundOrders).values(insertInboundOrder);
+    const orderId = Number(result.insertId);
+    
+    // 获取刚插入的入库单
+    const inboundOrder = await this.getInboundOrder(orderId);
+    if (!inboundOrder) throw new Error(`Failed to retrieve inbound order after creation`);
+    
     return inboundOrder;
   }
 
   async updateInboundOrder(id: number, inboundOrder: Partial<InboundOrder>): Promise<InboundOrder | undefined> {
-    const [updatedInboundOrder] = await db
+    await db
       .update(inboundOrders)
       .set(inboundOrder)
-      .where(eq(inboundOrders.id, id))
-      .returning();
-    return updatedInboundOrder || undefined;
+      .where(eq(inboundOrders.id, id));
+    
+    // 获取更新后的入库单
+    return await this.getInboundOrder(id);
   }
 
   async getInboundOrders(filter?: { warehouseId?: number, status?: string }): Promise<InboundOrder[]> {
@@ -1543,20 +1551,30 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createInboundOrderItem(insertInboundOrderItem: InsertInboundOrderItem): Promise<InboundOrderItem> {
-    const [inboundOrderItem] = await db
-      .insert(inboundOrderItems)
-      .values(insertInboundOrderItem)
-      .returning();
+    // MySQL不直接支持returning，所以我们需要先插入然后查询
+    const result = await db.insert(inboundOrderItems).values(insertInboundOrderItem);
+    const itemId = Number(result.insertId);
+    
+    // 获取刚插入的入库单明细
+    const inboundOrderItem = await this.getInboundOrderItem(itemId);
+    if (!inboundOrderItem) throw new Error(`Failed to retrieve inbound order item after creation`);
+    
     return inboundOrderItem;
   }
 
+  async getInboundOrderItem(id: number): Promise<InboundOrderItem | undefined> {
+    const [item] = await db.select().from(inboundOrderItems).where(eq(inboundOrderItems.id, id));
+    return item || undefined;
+  }
+
   async updateInboundOrderItem(id: number, inboundOrderItem: Partial<InboundOrderItem>): Promise<InboundOrderItem | undefined> {
-    const [updatedInboundOrderItem] = await db
+    await db
       .update(inboundOrderItems)
       .set(inboundOrderItem)
-      .where(eq(inboundOrderItems.id, id))
-      .returning();
-    return updatedInboundOrderItem || undefined;
+      .where(eq(inboundOrderItems.id, id));
+    
+    // 获取更新后的入库单明细
+    return await this.getInboundOrderItem(id);
   }
 
   async deleteInboundOrderItem(id: number): Promise<void> {
@@ -1575,20 +1593,25 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createOutboundOrder(insertOutboundOrder: InsertOutboundOrder): Promise<OutboundOrder> {
-    const [outboundOrder] = await db
-      .insert(outboundOrders)
-      .values(insertOutboundOrder)
-      .returning();
+    // MySQL不直接支持returning，所以我们需要先插入然后查询
+    const result = await db.insert(outboundOrders).values(insertOutboundOrder);
+    const orderId = Number(result.insertId);
+    
+    // 获取刚插入的出库单
+    const outboundOrder = await this.getOutboundOrder(orderId);
+    if (!outboundOrder) throw new Error(`Failed to retrieve outbound order after creation`);
+    
     return outboundOrder;
   }
 
   async updateOutboundOrder(id: number, outboundOrder: Partial<OutboundOrder>): Promise<OutboundOrder | undefined> {
-    const [updatedOutboundOrder] = await db
+    await db
       .update(outboundOrders)
       .set(outboundOrder)
-      .where(eq(outboundOrders.id, id))
-      .returning();
-    return updatedOutboundOrder || undefined;
+      .where(eq(outboundOrders.id, id));
+    
+    // 获取更新后的出库单
+    return await this.getOutboundOrder(id);
   }
 
   async getOutboundOrders(filter?: { warehouseId?: number, status?: string }): Promise<OutboundOrder[]> {
@@ -1617,20 +1640,30 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createOutboundOrderItem(insertOutboundOrderItem: InsertOutboundOrderItem): Promise<OutboundOrderItem> {
-    const [outboundOrderItem] = await db
-      .insert(outboundOrderItems)
-      .values(insertOutboundOrderItem)
-      .returning();
+    // MySQL不直接支持returning，所以我们需要先插入然后查询
+    const result = await db.insert(outboundOrderItems).values(insertOutboundOrderItem);
+    const itemId = Number(result.insertId);
+    
+    // 获取刚插入的出库单明细
+    const outboundOrderItem = await this.getOutboundOrderItem(itemId);
+    if (!outboundOrderItem) throw new Error(`Failed to retrieve outbound order item after creation`);
+    
     return outboundOrderItem;
   }
 
+  async getOutboundOrderItem(id: number): Promise<OutboundOrderItem | undefined> {
+    const [item] = await db.select().from(outboundOrderItems).where(eq(outboundOrderItems.id, id));
+    return item || undefined;
+  }
+
   async updateOutboundOrderItem(id: number, outboundOrderItem: Partial<OutboundOrderItem>): Promise<OutboundOrderItem | undefined> {
-    const [updatedOutboundOrderItem] = await db
+    await db
       .update(outboundOrderItems)
       .set(outboundOrderItem)
-      .where(eq(outboundOrderItems.id, id))
-      .returning();
-    return updatedOutboundOrderItem || undefined;
+      .where(eq(outboundOrderItems.id, id));
+    
+    // 获取更新后的出库单明细
+    return await this.getOutboundOrderItem(id);
   }
 
   async deleteOutboundOrderItem(id: number): Promise<void> {
