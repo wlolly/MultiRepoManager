@@ -455,7 +455,8 @@ const resources = {
         all_users: "Barcha foydalanuvchilar",
         recent: "So'nggi repozitoriylar",
         recentDescription: "Yaqinda yangilangan repozitoriylaringiz",
-        notFound: "Repozitoriy topilmadi"
+        notFound: "Repozitoriy topilmadi",
+        noTeams: "Mavjud jamoalar yo'q"
       },
       warehouse: {
         products: "Mahsulotlar",
