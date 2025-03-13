@@ -38,7 +38,23 @@ const resources = {
           settings: "设置",
           logout: "退出登录"
         }
-      }
+      },
+      recentActivity: {
+        title: "最近活动",
+        noData: "暂无活动数据"
+      },
+      languageDistribution: {
+        title: "语言分布",
+        noData: "暂无语言分布数据"
+      },
+      time: {
+        justNow: "刚刚",
+        minutesAgo: "{{value}}分钟前",
+        hoursAgo: "{{value}}小时前",
+        yesterday: "昨天",
+        daysAgo: "{{value}}天前"
+      },
+      in: "在"
     }
   },
   en: {

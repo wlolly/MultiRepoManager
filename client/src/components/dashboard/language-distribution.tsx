@@ -18,7 +18,7 @@ export function LanguageDistribution() {
   if (isLoading) {
     return (
       <div className="bg-white shadow rounded-lg p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">{t('languageDistribution')}</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">{t('languageDistribution.title')}</h3>
         <div className="space-y-4">
           <Skeleton className="h-4 w-full" />
           <div className="grid grid-cols-2 gap-4">
@@ -54,7 +54,7 @@ export function LanguageDistribution() {
 
   return (
     <div className="bg-white shadow rounded-lg p-6">
-      <h3 className="text-lg font-medium text-gray-900 mb-4">{t('languageDistribution')}</h3>
+      <h3 className="text-lg font-medium text-gray-900 mb-4">{t('languageDistribution.title')}</h3>
       <div className="relative">
         <div className="flex h-4 mb-6 overflow-hidden rounded-full bg-gray-200">
           {topLanguages.map((lang, index) => (
