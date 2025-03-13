@@ -24,7 +24,7 @@ export function LanguageSwitcher() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
           <Globe className="h-4 w-4" />
-          <span className="sr-only">{t('header.language.title')}</span>
+          <span className="sr-only">切换语言</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
@@ -32,31 +32,31 @@ export function LanguageSwitcher() {
           className={currentLanguage === 'zh' ? 'bg-accent' : ''} 
           onClick={() => changeLanguage('zh')}
         >
-          {t('header.language.zh')} (中文)
+          中文
         </DropdownMenuItem>
         <DropdownMenuItem 
           className={currentLanguage === 'en' ? 'bg-accent' : ''} 
           onClick={() => changeLanguage('en')}
         >
-          {t('header.language.en')} (English)
+          English
         </DropdownMenuItem>
         <DropdownMenuItem 
           className={currentLanguage === 'ru' ? 'bg-accent' : ''} 
           onClick={() => changeLanguage('ru')}
         >
-          {t('header.language.ru')} (Русский)
+          Русский
         </DropdownMenuItem>
         <DropdownMenuItem 
           className={currentLanguage === 'kk' ? 'bg-accent' : ''} 
           onClick={() => changeLanguage('kk')}
         >
-          {t('header.language.kk')} (Қазақша)
+          Қазақша
         </DropdownMenuItem>
         <DropdownMenuItem 
           className={currentLanguage === 'uz' ? 'bg-accent' : ''} 
           onClick={() => changeLanguage('uz')}
         >
-          {t('header.language.uz')} (O'zbekcha)
+          O'zbekcha
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
