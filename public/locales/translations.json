@@ -432,5 +432,89 @@
     "ru": "Выйти",
     "kk": "Шығу",
     "uz": "Chiqish"
+  },
+  "dashboard_stats_title": {
+    "zh": "仪表盘统计",
+    "en": "Dashboard Statistics",
+    "ru": "Статистика панели управления",
+    "kk": "Басқару тақтасы статистикасы",
+    "uz": "Boshqaruv paneli statistikasi"
+  },
+  "dashboard_welcome": {
+    "zh": "欢迎访问ELEMENT-5系统仪表盘",
+    "en": "Welcome to the ELEMENT-5 SYSTEM dashboard",
+    "ru": "Добро пожаловать на панель управления СИСТЕМЫ ELEMENT-5",
+    "kk": "ELEMENT-5 ЖҮЙЕСІ басқару тақтасына қош келдіңіз",
+    "uz": "ELEMENT-5 TIZIMI boshqaruv paneliga xush kelibsiz"
+  },
+  "all_languages": {
+    "zh": "所有语言",
+    "en": "All Languages",
+    "ru": "Все языки",
+    "kk": "Барлық тілдер",
+    "uz": "Barcha tillar"
+  },
+  "all_users": {
+    "zh": "所有用户",
+    "en": "All Users",
+    "ru": "Все пользователи",
+    "kk": "Барлық пайдаланушылар",
+    "uz": "Barcha foydalanuvchilar"
+  },
+  "repositories_count": {
+    "zh": "代码库数量",
+    "en": "Repositories",
+    "ru": "Репозитории",
+    "kk": "Репозиторийлер",
+    "uz": "Repozitoriyalar"
+  },
+  "users_count": {
+    "zh": "用户数量",
+    "en": "Users",
+    "ru": "Пользователи",
+    "kk": "Пайдаланушылар",
+    "uz": "Foydalanuvchilar"
+  },
+  "languages_count": {
+    "zh": "语言数量",
+    "en": "Languages",
+    "ru": "Языки",
+    "kk": "Тілдер",
+    "uz": "Tillar"
+  },
+  "commits_count": {
+    "zh": "提交数量",
+    "en": "Commits",
+    "ru": "Коммиты",
+    "kk": "Коммиттер",
+    "uz": "Kommitlar"
+  },
+  "list_view": {
+    "zh": "列表视图",
+    "en": "List View",
+    "ru": "Список",
+    "kk": "Тізім көрінісі",
+    "uz": "Ro'yxat ko'rinishi"
+  },
+  "grid_view": {
+    "zh": "网格视图",
+    "en": "Grid View",
+    "ru": "Сетка",
+    "kk": "Тор көрінісі",
+    "uz": "Jadval ko'rinishi"
+  },
+  "new_repository": {
+    "zh": "新建代码库",
+    "en": "New Repository",
+    "ru": "Новый репозиторий",
+    "kk": "Жаңа репозиторий",
+    "uz": "Yangi repozitoriya"
+  },
+  "repositories": {
+    "zh": "代码库",
+    "en": "Repositories",
+    "ru": "Репозитории",
+    "kk": "Репозиторийлер",
+    "uz": "Repozitoriyalar"
   }
 }
