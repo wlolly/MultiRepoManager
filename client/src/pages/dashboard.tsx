@@ -3,8 +3,8 @@ import { Layout } from "@/components/layout/layout";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { LanguageDistribution } from "@/components/dashboard/language-distribution";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
-import { RepositoryList } from "@/components/repositories/repository-list";
-import { RepositoryGrid } from "@/components/repositories/repository-grid";
+import { ProductList } from "@/components/products/product-list";
+import { ProductGrid } from "@/components/products/product-grid";
 import { Button } from "@/components/ui/button";
 import { 
   Select, 
@@ -14,7 +14,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
-import { CreateRepositoryDialog } from "@/components/repositories/create-repository-dialog";
+import { CreateProductDialog } from "@/components/products/create-product-dialog";
 import { useTranslation } from "react-i18next";
 
 export default function Dashboard() {
@@ -132,13 +132,6 @@ export default function Dashboard() {
         />
       </div>
 
-      {viewMode === "list" ? (
-        <RepositoryList 
-          repositories={products || []} 
-          isLoading={isLoadingProducts} 
-        />
-      ) : null}
-
       <div className="mb-6">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg leading-6 font-medium text-gray-900">{t('products')}</h3>
@@ -168,12 +161,17 @@ export default function Dashboard() {
           </div>
         </div>
         
-        {viewMode === "grid" ? (
-          <RepositoryGrid 
-            repositories={products || []} 
+        {viewMode === "list" ? (
+          <ProductList 
+            products={products || []} 
             isLoading={isLoadingProducts} 
           />
-        ) : null}
+        ) : (
+          <ProductGrid 
+            products={products || []} 
+            isLoading={isLoadingProducts} 
+          />
+        )}
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -181,7 +179,7 @@ export default function Dashboard() {
         <RecentActivity />
       </div>
 
-      <CreateRepositoryDialog 
+      <CreateProductDialog 
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
         currentUserId={currentUserId}
