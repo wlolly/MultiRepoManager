@@ -54,7 +54,7 @@ export function LanguageDistribution() {
 
   return (
     <div className="bg-white shadow rounded-lg p-6">
-      <h3 className="text-lg font-medium text-gray-900 mb-4">Language Distribution</h3>
+      <h3 className="text-lg font-medium text-gray-900 mb-4">{t('languageDistribution')}</h3>
       <div className="relative">
         <div className="flex h-4 mb-6 overflow-hidden rounded-full bg-gray-200">
           {topLanguages.map((lang, index) => (
@@ -66,12 +66,16 @@ export function LanguageDistribution() {
           ))}
         </div>
         <div className="grid grid-cols-2 gap-4">
-          {topLanguages.map((lang, index) => (
+          {topLanguages.length > 0 ? topLanguages.map((lang, index) => (
             <div key={index} className="flex items-center">
               <span className={`w-3 h-3 rounded-full ${languageColors[lang.language] || "bg-gray-500"} mr-2`}></span>
               <span className="text-sm text-gray-600">{lang.language} ({lang.percentage}%)</span>
             </div>
-          ))}
+          )) : (
+            <div className="col-span-2 text-center text-gray-500">
+              {t('languageDistribution.noData')}
+            </div>
+          )}
         </div>
       </div>
     </div>
