@@ -444,11 +444,11 @@ export default function ApiConfigurations() {
           variant: "destructive",
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error testing API connection:", error);
       toast({
         title: t("api_test_error"),
-        description: error.message,
+        description: error.message || t("unknown_error"),
         variant: "destructive",
       });
     } finally {
@@ -484,11 +484,11 @@ export default function ApiConfigurations() {
           variant: "destructive",
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error syncing products:", error);
       toast({
         title: t("product_sync_error"),
-        description: error.message,
+        description: error.message || t("unknown_error"),
         variant: "destructive",
       });
     } finally {
@@ -514,11 +514,11 @@ export default function ApiConfigurations() {
       // Refresh API configurations list
       queryClient.invalidateQueries({ queryKey: ["/api/api-configurations"] });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Error deleting API configuration:", error);
       toast({
         title: t("api_config_deletion_failed"),
-        description: error.message,
+        description: error.message || t("unknown_error"),
         variant: "destructive",
       });
     },
@@ -608,7 +608,7 @@ export default function ApiConfigurations() {
                   </TableCell>
                   <TableCell>
                     {config.isActive ? (
-                      <Badge variant="success" className="bg-green-100 text-green-800">
+                      <Badge className="bg-green-100 text-green-800">
                         <Cloud className="mr-1 h-3 w-3" />
                         {t("active")}
                       </Badge>
