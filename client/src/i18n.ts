@@ -286,9 +286,8 @@ const resources = {
 // 初始化 i18n 配置
 i18n
   .use(initReactI18next)
-  .use(HttpBackend)
   .init({
-    resources, // 内部资源仅作为回退
+    resources, // 直接使用内嵌的翻译资源
     lng: 'zh', // 默认使用中文
     fallbackLng: 'zh',
     interpolation: {
@@ -297,16 +296,6 @@ i18n
     defaultNS: 'common',
     react: {
       useSuspense: false
-    },
-    backend: {
-      // 使用完整的URL路径确保正确加载语言文件
-      loadPath: `${window.location.origin}/locales/{{lng}}/{{ns}}.json`,
-      requestOptions: {
-        cache: 'no-cache',  // 防止缓存问题
-        mode: 'cors',
-        credentials: 'same-origin'
-      },
-      crossDomain: false
     },
     ns: ['common'],
     detection: {

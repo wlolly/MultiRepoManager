@@ -51,74 +51,29 @@ export function LanguageSwitcher() {
         break;
     }
 
-    // 直接加载资源文件测试，使用完整的URL路径
-    const fullUrl = `${window.location.origin}/locales/${lng}/common.json`;
-    console.log("尝试加载语言文件:", fullUrl);
-    
-    fetch(fullUrl)
-      .then(response => {
-        console.log(`测试加载语言文件 ${lng}:`, response.status);
-        if (!response.ok) {
-          throw new Error(`无法加载语言文件: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then(data => {
-        // 检查JSON数据是否有效
-        if (!data || typeof data !== 'object') {
-          throw new Error('加载的语言文件数据格式无效');
-        }
+    // 直接切换语言，使用内部翻译资源
+    import('@/i18n').then(({ changeLanguage }) => {
+      try {
+        changeLanguage(lng);
         
-        console.log(`语言文件 ${lng} 加载成功`);
-        
-        // 如果测试加载成功，再实际切换语言
-        import('@/i18n').then(({ changeLanguage }) => {
-          try {
-            changeLanguage(lng);
-            
-            // 显示成功提示
-            toast({
-              title: message,
-              description: "语言已成功切换",
-              duration: 2000
-            });
-          } catch (error: any) {
-            console.error("Language change error:", error);
-            
-            // 显示错误提示
-            toast({
-              title: "语言切换失败",
-              description: error.message || "无法加载翻译资源",
-              variant: "destructive",
-              duration: 3000
-            });
-          }
+        // 显示成功提示
+        toast({
+          title: message,
+          description: "语言已成功切换",
+          duration: 2000
         });
-      })
-      .catch(error => {
-        console.error("语言文件加载错误:", error);
+      } catch (error: any) {
+        console.error("语言切换失败:", error);
         
-        // 尝试使用内部翻译资源备份
-        console.log("尝试使用内部翻译资源");
-        import('@/i18n').then(({ changeLanguage }) => {
-          try {
-            changeLanguage(lng);
-            toast({
-              title: message,
-              description: "已使用内部翻译资源",
-              duration: 2000
-            });
-          } catch (secondError: any) {
-            console.error("内部翻译资源加载失败:", secondError);
-            toast({
-              title: "语言切换完全失败",
-              description: secondError.message || "所有翻译资源加载失败",
-              variant: "destructive",
-              duration: 3000
-            });
-          }
+        // 显示错误提示
+        toast({
+          title: "语言切换失败",
+          description: error.message || "无法加载翻译资源",
+          variant: "destructive",
+          duration: 3000
         });
-      });
+      }
+    });
   };
 
   return (
