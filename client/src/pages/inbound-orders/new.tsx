@@ -30,7 +30,7 @@ const createInboundOrderSchema = z.object({
     .max(50, { message: "Order number must be 50 characters or less" }),
   warehouseId: z.string().min(1, { message: "Warehouse is required" }),
   status: z.string().default("pending"),
-  sourceType: z.string().default("manual"),
+  orderType: z.string().default("purchase"),
   notes: z.string().optional(),
 });
 
@@ -55,7 +55,7 @@ export default function NewInboundOrder() {
       orderNumber: "",
       warehouseId: "",
       status: "pending",
-      sourceType: "manual",
+      orderType: "purchase",
       notes: ""
     },
   });
@@ -72,7 +72,7 @@ export default function NewInboundOrder() {
           orderNumber: data.orderNumber,
           warehouseId: parseInt(data.warehouseId),
           status: data.status,
-          sourceType: data.sourceType,
+          orderType: data.orderType,
           notes: data.notes || ""
         }),
       });
@@ -218,6 +218,36 @@ export default function NewInboundOrder() {
                     </Select>
                     <FormDescription>
                       {t("status_description")}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="orderType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("order_type")}</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("select_order_type")} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="purchase">{t("purchase_inbound")}</SelectItem>
+                        <SelectItem value="return">{t("return_inbound")}</SelectItem>
+                        <SelectItem value="transfer">{t("transfer_inbound")}</SelectItem>
+                        <SelectItem value="production">{t("production_inbound")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      {t("order_type_description")}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

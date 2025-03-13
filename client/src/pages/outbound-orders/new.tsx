@@ -30,7 +30,8 @@ const createOutboundOrderSchema = z.object({
     .max(50, { message: "Order number must be 50 characters or less" }),
   warehouseId: z.string().min(1, { message: "Warehouse is required" }),
   status: z.string().default("pending"),
-  destinationType: z.string().default("manual"),
+  orderType: z.string().default("sale"),
+  destinationType: z.string().default("customer"),
   notes: z.string().optional(),
 });
 
@@ -55,7 +56,8 @@ export default function NewOutboundOrder() {
       orderNumber: "",
       warehouseId: "",
       status: "pending",
-      destinationType: "manual",
+      orderType: "sale",
+      destinationType: "customer",
       notes: ""
     },
   });
