@@ -11,6 +11,7 @@ import Settings from "@/pages/settings";
 import Repository from "@/pages/repository/[id]";
 import NewRepository from "@/pages/new-repository";
 import Search from "@/pages/search";
+import Warehouses from "@/pages/warehouses";
 import { useEffect } from "react";
 import { Layout } from "@/components/layout/layout";
 // 引入预先配置好的i18n实例
