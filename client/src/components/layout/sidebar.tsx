@@ -23,7 +23,23 @@ export function Sidebar() {
   const [location] = useLocation();
   const { t } = useTranslation();
 
-  const { data: activities } = useQuery({
+  interface Activity {
+    id: number;
+    type: string;
+    summary: string;
+    createdAt: string;
+    user: {
+      id: number;
+      username: string;
+      fullName: string;
+    };
+    repository: {
+      id: number;
+      name: string;
+    };
+  }
+
+  const { data: activities } = useQuery<Activity[]>({
     queryKey: ["/api/activities?limit=2"],
     staleTime: 60000, // 1 minute
   });
@@ -100,7 +116,7 @@ export function Sidebar() {
       <div className="px-4 py-2 mt-6 text-gray-400 text-sm font-medium">{t('sidebar.recentActivity')}</div>
       <div className="px-4 py-2 text-sm">
         {activities && activities.length > 0 ? (
-          activities.map((activity: any) => (
+          activities.map((activity) => (
             <div key={activity.id} className="flex items-start mb-3">
               <span className={`${getActivityColor(activity.type)} mt-1`}>
                 <i className={getActivityIcon(activity.type)}></i>
