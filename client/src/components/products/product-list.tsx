@@ -12,7 +12,21 @@ interface Product {
   stock: number;
   price: number;
   cost: number;
-  weight: number;
+  
+  // 单件尺寸和重量信息
+  lengthCm: number;    // 单件尺寸（长CM）
+  widthCm: number;     // 单件尺寸（宽CM）
+  heightCm: number;    // 单件尺寸（高CM）
+  weightKg: number;    // 单件重量（kg）
+  volumeM3: number;    // 单件立方（M3）
+  
+  // 整件包装信息
+  packageWidthCm: number;   // 整件尺寸（宽CM）
+  packageHeightCm: number;  // 整件尺寸（高CM）
+  packageWeightKg: number;  // 整件重量（kg）
+  packageVolumeM3: number;  // 整件立方（M3）
+  
+  createdAt: string;
   updatedAt: string;
   warehouse: {
     id: number;
@@ -36,7 +50,7 @@ export function ProductListItem({ product }: ProductListItemProps) {
           {product.name}
         </h3>
         <p className="text-sm text-gray-500 mt-1">{product.description}</p>
-        <div className="flex items-center mt-2 text-xs text-gray-500">
+        <div className="flex flex-wrap items-center mt-2 text-xs text-gray-500">
           <span>
             {t('category')}: <span className="text-gray-700">{product.category}</span>
           </span>
@@ -46,7 +60,15 @@ export function ProductListItem({ product }: ProductListItemProps) {
           </span>
           <span className="mx-2">•</span>
           <span>
-            {t('updated')}: <span className="text-gray-700">{formatDate(product.updatedAt)}</span>
+            {t('dimensions')}: <span className="text-gray-700">{product.lengthCm}×{product.widthCm}×{product.heightCm} cm</span>
+          </span>
+          <span className="mx-2">•</span>
+          <span>
+            {t('weight')}: <span className="text-gray-700">{product.weightKg.toFixed(2)} kg</span>
+          </span>
+          <span className="mx-2">•</span>
+          <span>
+            {t('volume')}: <span className="text-gray-700">{product.volumeM3.toFixed(3)} m³</span>
           </span>
         </div>
       </div>
@@ -57,6 +79,7 @@ export function ProductListItem({ product }: ProductListItemProps) {
           </div>
         </div>
         <div className="mt-2 text-sm text-gray-700">¥{product.price.toFixed(2)}</div>
+        <div className="mt-1 text-xs text-gray-500">{formatDate(product.updatedAt)}</div>
       </div>
     </div>
   );
