@@ -39,18 +39,11 @@ const resources = {
           logout: "退出登录"
         }
       },
-      recentActivity: {
-        title: "最近活动",
-        noData: "暂无活动数据"
-      },
-      recentActivity_title: "最近活动",
-      recentActivity_noData: "暂无活动数据",
-      languageDistribution: {
-        title: "语言分布",
-        noData: "暂无语言分布数据"
-      },
+      // 使用扁平结构的翻译键
       languageDistribution_title: "语言分布",
       languageDistribution_noData: "暂无语言分布数据",
+      recentActivity_title: "最近活动",
+      recentActivity_noData: "暂无活动数据",
       time: {
         justNow: "刚刚",
         minutesAgo: "{{value}}分钟前",
@@ -96,7 +89,12 @@ const resources = {
           settings: "Settings",
           logout: "Logout"
         }
-      }
+      },
+      // 使用扁平结构的翻译键
+      languageDistribution_title: "Language Distribution",
+      languageDistribution_noData: "No language distribution data",
+      recentActivity_title: "Recent Activity",
+      recentActivity_noData: "No recent activity"
     }
   }
 };
