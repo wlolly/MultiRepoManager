@@ -13,9 +13,9 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { icon: "ri-dashboard-line", keyName: "dashboard", href: "/" },
-  { icon: "ri-folder-line", keyName: "myRepositories", href: "/my-repositories" },
-  { icon: "ri-team-line", keyName: "teamRepositories", href: "/team-repositories" },
-  { icon: "ri-group-line", keyName: "usersAndTeams", href: "/users" },
+  { icon: "ri-folder-line", keyName: "my_repositories", href: "/my-repositories" },
+  { icon: "ri-team-line", keyName: "team_repositories", href: "/team-repositories" },
+  { icon: "ri-group-line", keyName: "users_teams", href: "/users" },
   { icon: "ri-settings-line", keyName: "settings", href: "/settings" },
 ];
 
@@ -49,11 +49,11 @@ export function Sidebar() {
     const activityDate = new Date(date);
     const diffInSeconds = Math.floor((now.getTime() - activityDate.getTime()) / 1000);
     
-    if (diffInSeconds < 60) return t('time.justNow');
-    if (diffInSeconds < 3600) return t('time.minutesAgo', { value: Math.floor(diffInSeconds / 60) });
-    if (diffInSeconds < 86400) return t('time.hoursAgo', { value: Math.floor(diffInSeconds / 3600) });
-    if (diffInSeconds < 172800) return t('time.yesterday');
-    return t('time.daysAgo', { value: Math.floor(diffInSeconds / 86400) });
+    if (diffInSeconds < 60) return t('just_now');
+    if (diffInSeconds < 3600) return t('minutes_ago', { value: Math.floor(diffInSeconds / 60) });
+    if (diffInSeconds < 86400) return t('hours_ago', { value: Math.floor(diffInSeconds / 3600) });
+    if (diffInSeconds < 172800) return t('yesterday');
+    return t('days_ago', { value: Math.floor(diffInSeconds / 86400) });
   };
   
   const getActivityIcon = (type: string) => {
@@ -90,17 +90,17 @@ export function Sidebar() {
     <div className="bg-gray-900 text-white w-64 flex-shrink-0 hidden md:flex md:flex-col">
       <div className="p-4 flex items-center border-b border-gray-800">
         <i className="ri-git-repository-line text-2xl mr-2 text-blue-500"></i>
-        <h1 className="text-xl font-semibold">{t('app.name')}</h1>
+        <h1 className="text-xl font-semibold">{t('app_name')}</h1>
       </div>
       
       <div className="p-4">
         <Link href="/new-repository" className="bg-blue-600 hover:bg-blue-700 w-full py-2 px-4 rounded-md flex items-center justify-center transition">
-          <i className="ri-add-line mr-2"></i> {t('sidebar.newRepository')}
+          <i className="ri-add-line mr-2"></i> {t('create')} {t('repository')}
         </Link>
       </div>
       
       <nav className="mt-2">
-        <div className="px-4 py-2 text-gray-400 text-sm font-medium">{t('sidebar.navigation')}</div>
+        <div className="px-4 py-2 text-gray-400 text-sm font-medium">{t('navigation')}</div>
         {navItems.map((item) => (
           <Link key={item.href} href={item.href} className={cn(
             "flex items-center py-2 px-4 transition",
@@ -108,12 +108,12 @@ export function Sidebar() {
               ? "bg-gray-800 text-blue-500" 
               : "text-gray-300 hover:bg-gray-800 hover:text-white"
           )}>
-            <i className={`${item.icon} mr-3`}></i> {t(`sidebar.navigation_items.${item.keyName}`)}
+            <i className={`${item.icon} mr-3`}></i> {t(item.keyName)}
           </Link>
         ))}
       </nav>
       
-      <div className="px-4 py-2 mt-6 text-gray-400 text-sm font-medium">{t('sidebar.recentActivity')}</div>
+      <div className="px-4 py-2 mt-6 text-gray-400 text-sm font-medium">{t('recent_activity')}</div>
       <div className="px-4 py-2 text-sm">
         {activities && activities.length > 0 ? (
           activities.map((activity) => (
@@ -128,12 +128,12 @@ export function Sidebar() {
             </div>
           ))
         ) : (
-          <div className="text-gray-500">{t('sidebar.noActivity')}</div>
+          <div className="text-gray-500">{t('no_activity')}</div>
         )}
       </div>
       
       <div className="mt-auto p-4 border-t border-gray-800 text-xs text-gray-500">
-        <p>{t('app.version')}</p>
+        <p>{t('app_version')}</p>
       </div>
     </div>
   );

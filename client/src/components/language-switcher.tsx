@@ -31,45 +31,41 @@ export function LanguageSwitcher() {
   }, [i18n]);
 
   const handleLanguageChange = (lng: string) => {
-    // 获取对应语言的名称
-    const languageName = t(`${lng === 'zh' ? 'chinese' : lng === 'en' ? 'english' : lng === 'ru' ? 'russian' : lng === 'kk' ? 'kazakh' : 'uzbek'}`);
-
     // 直接切换语言，使用内部翻译资源
     import('@/i18n').then(({ changeLanguage }) => {
       try {
         changeLanguage(lng);
         
-        // 显示成功提示
+        // 根据目标语言设置提示语言(已切换到该语言)
+        const successMessages = {
+          zh: { title: '语言已设置为中文', description: "语言已成功切换" },
+          en: { title: 'Language set to English', description: "Language successfully changed" },
+          ru: { title: 'Язык установлен на русский', description: "Язык успешно изменен" },
+          kk: { title: 'Тіл қазақ тіліне орнатылды', description: "Тіл сәтті өзгертілді" },
+          uz: { title: 'Til o\'zbek tiliga o\'rnatildi', description: "Til muvaffaqiyatli o'zgartirildi" }
+        };
+        
+        // 显示成功提示，使用用户选择的语言
         toast({
-          title: lng === 'zh' ? '语言已设置为中文' :
-                 lng === 'en' ? 'Language set to English' :
-                 lng === 'ru' ? 'Язык установлен на русский' :
-                 lng === 'kk' ? 'Тіл қазақ тіліне орнатылды' :
-                                'Til o\'zbek tiliga o\'rnatildi',
-          description: lng === 'zh' ? "语言已成功切换" :
-                       lng === 'en' ? "Language successfully changed" :
-                       lng === 'ru' ? "Язык успешно изменен" :
-                       lng === 'kk' ? "Тіл сәтті өзгертілді" :
-                                      "Til muvaffaqiyatli o'zgartirildi",
+          title: successMessages[lng as keyof typeof successMessages].title,
+          description: successMessages[lng as keyof typeof successMessages].description,
           duration: 2000
         });
       } catch (error: any) {
         console.error("语言切换失败:", error);
         
-        // 显示错误提示
+        // 错误提示使用当前语言
+        const errorMessages = {
+          zh: { title: "语言切换失败", description: "无法加载翻译资源" },
+          en: { title: "Language change failed", description: "Unable to load translation resources" },
+          ru: { title: "Ошибка смены языка", description: "Не удалось загрузить ресурсы перевода" },
+          kk: { title: "Тілді ауыстыру қатесі", description: "Аударма ресурстарын жүктеу мүмкін емес" },
+          uz: { title: "Tilni o'zgartirish xatosi", description: "Tarjima resurslarini yuklab bo'lmadi" }
+        };
+        
         toast({
-          title: lng === 'zh' ? "语言切换失败" :
-                 lng === 'en' ? "Language change failed" :
-                 lng === 'ru' ? "Ошибка смены языка" :
-                 lng === 'kk' ? "Тілді ауыстыру қатесі" :
-                                "Tilni o'zgartirish xatosi",
-          description: error.message || (
-            lng === 'zh' ? "无法加载翻译资源" :
-            lng === 'en' ? "Unable to load translation resources" :
-            lng === 'ru' ? "Не удалось загрузить ресурсы перевода" :
-            lng === 'kk' ? "Аударма ресурстарын жүктеу мүмкін емес" :
-                          "Tarjima resurslarini yuklab bo'lmadi"
-          ),
+          title: errorMessages[lng as keyof typeof errorMessages].title,
+          description: error.message || errorMessages[lng as keyof typeof errorMessages].description,
           variant: "destructive",
           duration: 3000
         });

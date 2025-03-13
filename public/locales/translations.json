@@ -13,6 +13,48 @@
     "kk": "Нұсқасы 1.0.0",
     "uz": "Versiya 1.0.0"
   },
+  "repository": {
+    "zh": "代码库",
+    "en": "Repository",
+    "ru": "Репозиторий",
+    "kk": "Репозиторий",
+    "uz": "Repozitoriya"
+  },
+  "just_now": {
+    "zh": "刚刚",
+    "en": "just now",
+    "ru": "только что",
+    "kk": "дәл қазір",
+    "uz": "hozirgina"
+  },
+  "minutes_ago": {
+    "zh": "{{value}}分钟前",
+    "en": "{{value}} minutes ago",
+    "ru": "{{value}} минут назад",
+    "kk": "{{value}} минут бұрын",
+    "uz": "{{value}} daqiqa oldin"
+  },
+  "hours_ago": {
+    "zh": "{{value}}小时前",
+    "en": "{{value}} hours ago",
+    "ru": "{{value}} часов назад",
+    "kk": "{{value}} сағат бұрын",
+    "uz": "{{value}} soat oldin"
+  },
+  "yesterday": {
+    "zh": "昨天",
+    "en": "yesterday",
+    "ru": "вчера",
+    "kk": "кеше",
+    "uz": "kecha"
+  },
+  "days_ago": {
+    "zh": "{{value}}天前",
+    "en": "{{value}} days ago",
+    "ru": "{{value}} дней назад",
+    "kk": "{{value}} күн бұрын",
+    "uz": "{{value}} kun oldin"
+  },
   "navigation": {
     "zh": "导航",
     "en": "NAVIGATION",
