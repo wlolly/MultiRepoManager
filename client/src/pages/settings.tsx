@@ -183,41 +183,41 @@ export default function Settings() {
           {activeTab === "security" && (
             <Card>
               <CardHeader>
-                <CardTitle>安全设置</CardTitle>
+                <CardTitle>{t('settings.security.title', '安全设置')}</CardTitle>
                 <CardDescription>
-                  管理您的密码和安全偏好
+                  {t('settings.security.description', '管理您的密码和安全偏好')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleChangePassword}>
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="currentPassword">当前密码</Label>
+                      <Label htmlFor="currentPassword">{t('settings.security.currentPassword', '当前密码')}</Label>
                       <Input id="currentPassword" type="password" />
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="newPassword">新密码</Label>
+                      <Label htmlFor="newPassword">{t('settings.security.newPassword', '新密码')}</Label>
                       <Input id="newPassword" type="password" />
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="confirmPassword">确认新密码</Label>
+                      <Label htmlFor="confirmPassword">{t('settings.security.confirmPassword', '确认新密码')}</Label>
                       <Input id="confirmPassword" type="password" />
                     </div>
                   </div>
                   
                   <div className="mt-6">
-                    <Button type="submit">修改密码</Button>
+                    <Button type="submit">{t('settings.security.changePasswordButton', '修改密码')}</Button>
                   </div>
                 </form>
                 
                 <div className="mt-8 pt-6 border-t border-gray-200">
-                  <h3 className="text-lg font-medium mb-4">双因素认证</h3>
+                  <h3 className="text-lg font-medium mb-4">{t('settings.security.twoFactorAuth', '双因素认证')}</h3>
                   <p className="text-gray-500 mb-4">
-                    启用双因素认证为您的账户添加额外的安全层级。
+                    {t('settings.security.twoFactorDescription', '启用双因素认证为您的账户添加额外的安全层级')}
                   </p>
-                  <Button variant="outline">启用双因素认证</Button>
+                  <Button variant="outline">{t('settings.security.enableTwoFactorButton', '启用双因素认证')}</Button>
                 </div>
               </CardContent>
             </Card>
@@ -226,17 +226,17 @@ export default function Settings() {
           {activeTab === "notifications" && (
             <Card>
               <CardHeader>
-                <CardTitle>通知偏好设置</CardTitle>
+                <CardTitle>{t('settings.notifications.title', '通知偏好设置')}</CardTitle>
                 <CardDescription>
-                  管理如何接收通知和提醒
+                  {t('settings.notifications.description', '管理如何接收通知和提醒')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-medium">电子邮件通知</h4>
-                      <p className="text-gray-500 text-sm">接收重要更新的电子邮件通知</p>
+                      <h4 className="font-medium">{t('settings.notifications.emailNotifications', '电子邮件通知')}</h4>
+                      <p className="text-gray-500 text-sm">{t('settings.notifications.emailNotificationsDescription', '接收重要更新的电子邮件通知')}</p>
                     </div>
                     <Switch 
                       checked={emailNotifications} 
@@ -246,8 +246,8 @@ export default function Settings() {
                   
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-medium">仓库活动</h4>
-                      <p className="text-gray-500 text-sm">接收关于提交、分支和合并请求的通知</p>
+                      <h4 className="font-medium">{t('settings.notifications.repositoryActivity', '仓库活动')}</h4>
+                      <p className="text-gray-500 text-sm">{t('settings.notifications.repositoryActivityDescription', '接收关于提交、分支和合并请求的通知')}</p>
                     </div>
                     <Switch 
                       checked={repositoryActivity} 
@@ -257,8 +257,8 @@ export default function Settings() {
                   
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-medium">团队活动</h4>
-                      <p className="text-gray-500 text-sm">关于团队成员变更的通知</p>
+                      <h4 className="font-medium">{t('settings.notifications.teamActivity', '团队活动')}</h4>
+                      <p className="text-gray-500 text-sm">{t('settings.notifications.teamActivityDescription', '关于团队成员变更的通知')}</p>
                     </div>
                     <Switch 
                       checked={teamActivity} 
@@ -268,8 +268,8 @@ export default function Settings() {
                   
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-medium">安全提醒</h4>
-                      <p className="text-gray-500 text-sm">重要安全更新和漏洞提醒</p>
+                      <h4 className="font-medium">{t('settings.notifications.securityAlerts', '安全提醒')}</h4>
+                      <p className="text-gray-500 text-sm">{t('settings.notifications.securityAlertsDescription', '重要安全更新和漏洞提醒')}</p>
                     </div>
                     <Switch 
                       checked={securityAlerts} 
@@ -279,7 +279,7 @@ export default function Settings() {
                 </div>
                 
                 <div className="mt-6">
-                  <Button onClick={handleSaveNotifications}>保存偏好</Button>
+                  <Button onClick={handleSaveNotifications}>{t('settings.notifications.saveButton', '保存偏好')}</Button>
                 </div>
               </CardContent>
             </Card>

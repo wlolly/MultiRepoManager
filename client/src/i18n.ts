@@ -94,6 +94,59 @@ const resources = {
         ecommerce: "电商平台",
         barcode: "条码扫描",
         settings: "系统设置"
+      },
+      settings: {
+        title: "系统设置",
+        subtitle: "管理您的账户设置和偏好",
+        tabs: {
+          account: "账户信息",
+          security: "安全设置",
+          notifications: "通知设置",
+          appearance: "外观设置"
+        },
+        account: {
+          title: "账户信息设置",
+          description: "更新您的账户信息和个人资料",
+          avatar: "头像",
+          avatarUrl: "头像图片URL",
+          fullName: "姓名",
+          username: "用户名",
+          email: "电子邮箱",
+          saveButton: "保存更改"
+        },
+        security: {
+          title: "安全设置",
+          description: "管理您的密码和安全偏好",
+          currentPassword: "当前密码",
+          newPassword: "新密码",
+          confirmPassword: "确认新密码",
+          changePasswordButton: "修改密码",
+          twoFactorAuth: "双因素认证",
+          twoFactorDescription: "启用双因素认证为您的账户添加额外的安全层级",
+          enableTwoFactorButton: "启用双因素认证"
+        },
+        notifications: {
+          title: "通知偏好设置",
+          description: "管理如何接收通知和提醒",
+          emailNotifications: "电子邮件通知",
+          emailNotificationsDescription: "接收重要更新的电子邮件通知",
+          repositoryActivity: "仓库活动",
+          repositoryActivityDescription: "接收关于提交、分支和合并请求的通知",
+          teamActivity: "团队活动",
+          teamActivityDescription: "关于团队成员变更的通知",
+          securityAlerts: "安全提醒",
+          securityAlertsDescription: "重要安全更新和漏洞提醒",
+          saveButton: "保存偏好"
+        },
+        appearance: {
+          title: "外观设置",
+          description: "自定义ELEMENT-5系统的外观",
+          darkMode: "深色模式",
+          darkModeDescription: "使用深色主题",
+          language: "系统语言",
+          selectLanguage: "选择语言",
+          saveButton: "保存偏好"
+        }
       }
     }
   },
@@ -188,6 +241,59 @@ const resources = {
         ecommerce: "E-commerce Platforms",
         barcode: "Barcode Scanner",
         settings: "System Settings"
+      },
+      settings: {
+        title: "System Settings",
+        subtitle: "Manage your account settings and preferences",
+        tabs: {
+          account: "Account Info",
+          security: "Security",
+          notifications: "Notifications",
+          appearance: "Appearance"
+        },
+        account: {
+          title: "Account Information",
+          description: "Update your account and profile information",
+          avatar: "Avatar",
+          avatarUrl: "Avatar Image URL",
+          fullName: "Full Name",
+          username: "Username",
+          email: "Email",
+          saveButton: "Save Changes"
+        },
+        security: {
+          title: "Security Settings",
+          description: "Manage your password and security preferences",
+          currentPassword: "Current Password",
+          newPassword: "New Password",
+          confirmPassword: "Confirm New Password",
+          changePasswordButton: "Change Password",
+          twoFactorAuth: "Two-Factor Authentication",
+          twoFactorDescription: "Enable two-factor authentication to add an extra layer of security to your account.",
+          enableTwoFactorButton: "Enable Two-Factor Authentication"
+        },
+        notifications: {
+          title: "Notification Preferences",
+          description: "Manage how you receive notifications and alerts",
+          emailNotifications: "Email Notifications",
+          emailNotificationsDescription: "Receive email notifications for important updates",
+          repositoryActivity: "Repository Activity",
+          repositoryActivityDescription: "Notifications about commits, branches, and pull requests",
+          teamActivity: "Team Activity",
+          teamActivityDescription: "Notifications about team member changes",
+          securityAlerts: "Security Alerts",
+          securityAlertsDescription: "Important security updates and vulnerability alerts",
+          saveButton: "Save Preferences"
+        },
+        appearance: {
+          title: "Appearance Settings",
+          description: "Customize the appearance of the ELEMENT-5 system",
+          darkMode: "Dark Mode",
+          darkModeDescription: "Use dark theme",
+          language: "System Language",
+          selectLanguage: "Select Language",
+          saveButton: "Save Preferences"
+        }
       }
     }
   },
@@ -281,6 +387,59 @@ const resources = {
         ecommerce: "Платформы электронной коммерции",
         barcode: "Сканер штрих-кодов",
         settings: "Настройки системы"
+      },
+      settings: {
+        title: "Настройки системы",
+        subtitle: "Управление настройками и предпочтениями аккаунта",
+        tabs: {
+          account: "Информация аккаунта",
+          security: "Безопасность",
+          notifications: "Уведомления",
+          appearance: "Внешний вид"
+        },
+        account: {
+          title: "Информация аккаунта",
+          description: "Обновите информацию вашего аккаунта и профиля",
+          avatar: "Аватар",
+          avatarUrl: "URL изображения аватара",
+          fullName: "Полное имя",
+          username: "Имя пользователя",
+          email: "Электронная почта",
+          saveButton: "Сохранить изменения"
+        },
+        security: {
+          title: "Настройки безопасности",
+          description: "Управление паролем и настройками безопасности",
+          currentPassword: "Текущий пароль",
+          newPassword: "Новый пароль",
+          confirmPassword: "Подтвердите новый пароль",
+          changePasswordButton: "Изменить пароль",
+          twoFactorAuth: "Двухфакторная аутентификация",
+          twoFactorDescription: "Включите двухфакторную аутентификацию для дополнительного уровня защиты вашего аккаунта",
+          enableTwoFactorButton: "Включить двухфакторную аутентификацию"
+        },
+        notifications: {
+          title: "Настройки уведомлений",
+          description: "Управление способами получения уведомлений и оповещений",
+          emailNotifications: "Уведомления по электронной почте",
+          emailNotificationsDescription: "Получать уведомления по электронной почте о важных обновлениях",
+          repositoryActivity: "Активность в репозиториях",
+          repositoryActivityDescription: "Уведомления о коммитах, ветках и запросах на слияние",
+          teamActivity: "Активность команды",
+          teamActivityDescription: "Уведомления об изменениях в составе команды",
+          securityAlerts: "Оповещения безопасности",
+          securityAlertsDescription: "Важные обновления безопасности и оповещения об уязвимостях",
+          saveButton: "Сохранить настройки"
+        },
+        appearance: {
+          title: "Настройки внешнего вида",
+          description: "Настройка внешнего вида системы ELEMENT-5",
+          darkMode: "Темный режим",
+          darkModeDescription: "Использовать темную тему",
+          language: "Язык системы",
+          selectLanguage: "Выберите язык",
+          saveButton: "Сохранить настройки"
+        }
       }
     }
   },
@@ -374,6 +533,59 @@ const resources = {
         ecommerce: "Электрондық коммерция платформалары",
         barcode: "Штрих-код сканері",
         settings: "Жүйе параметрлері"
+      },
+      settings: {
+        title: "Жүйе параметрлері",
+        subtitle: "Тіркелгі параметрлері мен таңдауларын басқару",
+        tabs: {
+          account: "Тіркелгі ақпараты",
+          security: "Қауіпсіздік",
+          notifications: "Хабарландырулар",
+          appearance: "Сыртқы түрі"
+        },
+        account: {
+          title: "Тіркелгі ақпараты",
+          description: "Тіркелгі ақпаратыңыз бен профиліңізді жаңартыңыз",
+          avatar: "Аватар",
+          avatarUrl: "Аватар суретінің URL",
+          fullName: "Толық аты",
+          username: "Пайдаланушы аты",
+          email: "Электрондық пошта",
+          saveButton: "Өзгерістерді сақтау"
+        },
+        security: {
+          title: "Қауіпсіздік параметрлері",
+          description: "Құпия сөз бен қауіпсіздік параметрлерін басқару",
+          currentPassword: "Ағымдағы құпия сөз",
+          newPassword: "Жаңа құпия сөз",
+          confirmPassword: "Жаңа құпия сөзді растаңыз",
+          changePasswordButton: "Құпия сөзді өзгерту",
+          twoFactorAuth: "Екі факторлы аутентификация",
+          twoFactorDescription: "Тіркелгіңіздің қауіпсіздігін арттыру үшін екі факторлы аутентификацияны қосыңыз",
+          enableTwoFactorButton: "Екі факторлы аутентификацияны қосу"
+        },
+        notifications: {
+          title: "Хабарландыру параметрлері",
+          description: "Хабарландыруларды қалай алатыныңызды басқару",
+          emailNotifications: "Электрондық пошта хабарландырулары",
+          emailNotificationsDescription: "Маңызды жаңартулар туралы электрондық пошта хабарландыруларын алу",
+          repositoryActivity: "Репозиторий белсенділігі",
+          repositoryActivityDescription: "Коммиттер, тармақтар және тартуға сұрауларды хабарландырулар",
+          teamActivity: "Команда белсенділігі",
+          teamActivityDescription: "Команда мүшелеріндегі өзгерістер туралы хабарландырулар",
+          securityAlerts: "Қауіпсіздік ескертулері",
+          securityAlertsDescription: "Маңызды қауіпсіздік жаңартулары мен осалдықтар туралы ескертулер",
+          saveButton: "Параметрлерді сақтау"
+        },
+        appearance: {
+          title: "Сыртқы түрі параметрлері",
+          description: "ELEMENT-5 жүйесінің сыртқы түрін баптау",
+          darkMode: "Қараңғы режим",
+          darkModeDescription: "Қараңғы тақырыпты қолдану",
+          language: "Жүйе тілі",
+          selectLanguage: "Тілді таңдаңыз",
+          saveButton: "Параметрлерді сақтау"
+        }
       }
     }
   },
