@@ -1216,7 +1216,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db.insert(users).values(insertUser).returning();
+    // MySQL不直接支持returning，所以我们需要先插入然后查询
+    const result = await db.insert(users).values(insertUser);
+    const userId = Number(result.insertId);
+    
+    // 获取刚插入的用户
+    const user = await this.getUser(userId);
+    if (!user) throw new Error(`Failed to retrieve user after creation`);
+    
     return user;
   }
 
@@ -1236,17 +1243,25 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createRepository(insertRepository: InsertRepository): Promise<Repository> {
-    const [repository] = await db.insert(repositories).values(insertRepository).returning();
+    // MySQL不直接支持returning，所以我们需要先插入然后查询
+    const result = await db.insert(repositories).values(insertRepository);
+    const repositoryId = Number(result.insertId);
+    
+    // 获取刚插入的仓库
+    const repository = await this.getRepository(repositoryId);
+    if (!repository) throw new Error(`Failed to retrieve repository after creation`);
+    
     return repository;
   }
 
   async updateRepository(id: number, repository: Partial<Repository>): Promise<Repository | undefined> {
-    const [updatedRepository] = await db
+    await db
       .update(repositories)
       .set({ ...repository, updatedAt: new Date() })
-      .where(eq(repositories.id, id))
-      .returning();
-    return updatedRepository || undefined;
+      .where(eq(repositories.id, id));
+    
+    // 获取更新后的仓库
+    return await this.getRepository(id);
   }
 
   async getRepositories(filters?: { ownerId?: number, language?: string, visibility?: string }): Promise<Repository[]> {
@@ -1277,7 +1292,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTeam(insertTeam: InsertTeam): Promise<Team> {
-    const [team] = await db.insert(teams).values(insertTeam).returning();
+    // MySQL不直接支持returning，所以我们需要先插入然后查询
+    const result = await db.insert(teams).values(insertTeam);
+    const teamId = Number(result.insertId);
+    
+    // 获取刚插入的团队
+    const team = await this.getTeam(teamId);
+    if (!team) throw new Error(`Failed to retrieve team after creation`);
+    
     return team;
   }
 
@@ -1287,7 +1309,14 @@ export class DatabaseStorage implements IStorage {
 
   // Team members methods
   async addTeamMember(insertTeamMember: InsertTeamMember): Promise<TeamMember> {
-    const [teamMember] = await db.insert(teamMembers).values(insertTeamMember).returning();
+    // MySQL不直接支持returning，所以我们需要先插入然后查询
+    const result = await db.insert(teamMembers).values(insertTeamMember);
+    const memberId = Number(result.insertId);
+    
+    // 获取刚插入的团队成员
+    const [teamMember] = await db.select().from(teamMembers).where(eq(teamMembers.id, memberId));
+    if (!teamMember) throw new Error(`Failed to retrieve team member after creation`);
+    
     return teamMember;
   }
 
@@ -1303,7 +1332,14 @@ export class DatabaseStorage implements IStorage {
 
   // Team repositories methods
   async addTeamRepository(insertTeamRepository: InsertTeamRepository): Promise<TeamRepository> {
-    const [teamRepository] = await db.insert(teamRepositories).values(insertTeamRepository).returning();
+    // MySQL不直接支持returning，所以我们需要先插入然后查询
+    const result = await db.insert(teamRepositories).values(insertTeamRepository);
+    const repoId = Number(result.insertId);
+    
+    // 获取刚插入的团队仓库关联
+    const [teamRepository] = await db.select().from(teamRepositories).where(eq(teamRepositories.id, repoId));
+    if (!teamRepository) throw new Error(`Failed to retrieve team repository after creation`);
+    
     return teamRepository;
   }
 
@@ -1313,7 +1349,14 @@ export class DatabaseStorage implements IStorage {
 
   // Activity methods
   async createActivity(insertActivity: InsertActivity): Promise<Activity> {
-    const [activity] = await db.insert(activities).values(insertActivity).returning();
+    // MySQL不直接支持returning，所以我们需要先插入然后查询
+    const result = await db.insert(activities).values(insertActivity);
+    const activityId = Number(result.insertId);
+    
+    // 获取刚插入的活动
+    const [activity] = await db.select().from(activities).where(eq(activities.id, activityId));
+    if (!activity) throw new Error(`Failed to retrieve activity after creation`);
+    
     return activity;
   }
 
@@ -1392,17 +1435,25 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createProduct(insertProduct: InsertProduct): Promise<Product> {
-    const [product] = await db.insert(products).values(insertProduct).returning();
+    // MySQL不直接支持returning，所以我们需要先插入然后查询
+    const result = await db.insert(products).values(insertProduct);
+    const productId = Number(result.insertId);
+    
+    // 获取刚插入的产品
+    const product = await this.getProduct(productId);
+    if (!product) throw new Error(`Failed to retrieve product after creation`);
+    
     return product;
   }
 
   async updateProduct(id: number, product: Partial<Product>): Promise<Product | undefined> {
-    const [updatedProduct] = await db
+    await db
       .update(products)
       .set({ ...product, updatedAt: new Date() })
-      .where(eq(products.id, id))
-      .returning();
-    return updatedProduct || undefined;
+      .where(eq(products.id, id));
+    
+    // 获取更新后的产品
+    return await this.getProduct(id);
   }
 
   async getProducts(): Promise<Product[]> {
@@ -1416,17 +1467,25 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createWarehouse(insertWarehouse: InsertWarehouse): Promise<Warehouse> {
-    const [warehouse] = await db.insert(warehouses).values(insertWarehouse).returning();
+    // MySQL不直接支持returning，所以我们需要先插入然后查询
+    const result = await db.insert(warehouses).values(insertWarehouse);
+    const warehouseId = Number(result.insertId);
+    
+    // 获取刚插入的仓库
+    const warehouse = await this.getWarehouse(warehouseId);
+    if (!warehouse) throw new Error(`Failed to retrieve warehouse after creation`);
+    
     return warehouse;
   }
 
   async updateWarehouse(id: number, warehouse: Partial<Warehouse>): Promise<Warehouse | undefined> {
-    const [updatedWarehouse] = await db
+    await db
       .update(warehouses)
       .set(warehouse)
-      .where(eq(warehouses.id, id))
-      .returning();
-    return updatedWarehouse || undefined;
+      .where(eq(warehouses.id, id));
+    
+    // 获取更新后的仓库
+    return await this.getWarehouse(id);
   }
 
   async getWarehouses(): Promise<Warehouse[]> {
@@ -1590,17 +1649,25 @@ export class DatabaseStorage implements IStorage {
   }
   
   async createApiConfiguration(insertConfig: InsertApiConfiguration): Promise<ApiConfiguration> {
-    const [config] = await db.insert(apiConfigurations).values(insertConfig).returning();
+    // MySQL不直接支持returning，所以我们需要先插入然后查询
+    const result = await db.insert(apiConfigurations).values(insertConfig);
+    const configId = Number(result.insertId);
+    
+    // 获取刚插入的API配置
+    const config = await this.getApiConfiguration(configId);
+    if (!config) throw new Error(`Failed to retrieve API configuration after creation`);
+    
     return config;
   }
   
   async updateApiConfiguration(id: number, config: Partial<ApiConfiguration>): Promise<ApiConfiguration | undefined> {
-    const [updatedConfig] = await db
+    await db
       .update(apiConfigurations)
       .set({ ...config, updatedAt: new Date() })
-      .where(eq(apiConfigurations.id, id))
-      .returning();
-    return updatedConfig || undefined;
+      .where(eq(apiConfigurations.id, id));
+    
+    // 获取更新后的API配置
+    return await this.getApiConfiguration(id);
   }
   
   async getApiConfigurations(): Promise<ApiConfiguration[]> {
@@ -1626,17 +1693,32 @@ export class DatabaseStorage implements IStorage {
   }
   
   async createEcommerceProduct(insertProduct: InsertEcommerceProduct): Promise<EcommerceProduct> {
-    const [product] = await db.insert(ecommerceProducts).values(insertProduct).returning();
+    // MySQL不直接支持returning，所以我们需要先插入然后查询
+    const result = await db.insert(ecommerceProducts).values(insertProduct);
+    const productId = Number(result.insertId);
+    
+    // 获取刚插入的电商产品
+    const product = await this.getEcommerceProduct(productId);
+    if (!product) throw new Error(`Failed to retrieve e-commerce product after creation`);
+    
     return product;
   }
   
   async updateEcommerceProduct(id: number, product: Partial<EcommerceProduct>): Promise<EcommerceProduct | undefined> {
-    const [updatedProduct] = await db
+    const updateData = { ...product };
+    // 确保包含更新时间
+    if (!('updatedAt' in updateData)) {
+      // @ts-ignore - 我们知道在MySQL schema中有updatedAt字段
+      updateData.updatedAt = new Date();
+    }
+    
+    await db
       .update(ecommerceProducts)
-      .set({ ...product, updatedAt: new Date() })
-      .where(eq(ecommerceProducts.id, id))
-      .returning();
-    return updatedProduct || undefined;
+      .set(updateData)
+      .where(eq(ecommerceProducts.id, id));
+    
+    // 获取更新后的电商产品
+    return await this.getEcommerceProduct(id);
   }
   
   async getEcommerceProducts(filter?: { platformSource?: string, matchedProductId?: number }): Promise<EcommerceProduct[]> {
