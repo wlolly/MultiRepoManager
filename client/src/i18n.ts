@@ -299,7 +299,7 @@ i18n
       useSuspense: false
     },
     backend: {
-      loadPath: '/locales/{{lng}}/{{ns}}.json',
+      loadPath: window.location.origin + '/locales/{{lng}}/{{ns}}.json',
       requestOptions: {
         cache: 'no-cache'  // 防止缓存问题
       }
