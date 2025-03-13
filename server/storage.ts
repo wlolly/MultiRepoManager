@@ -91,6 +91,30 @@ export interface IStorage {
   createOutboundOrderItem(outboundOrderItem: InsertOutboundOrderItem): Promise<OutboundOrderItem>;
   updateOutboundOrderItem(id: number, outboundOrderItem: Partial<OutboundOrderItem>): Promise<OutboundOrderItem | undefined>;
   deleteOutboundOrderItem(id: number): Promise<void>;
+  
+  // 电商平台API配置方法
+  getApiConfiguration(id: number): Promise<ApiConfiguration | undefined>;
+  getApiConfigurationByName(name: string): Promise<ApiConfiguration | undefined>;
+  createApiConfiguration(config: InsertApiConfiguration): Promise<ApiConfiguration>;
+  updateApiConfiguration(id: number, config: Partial<ApiConfiguration>): Promise<ApiConfiguration | undefined>;
+  getApiConfigurations(): Promise<ApiConfiguration[]>;
+  
+  // 电商平台产品方法
+  getEcommerceProduct(id: number): Promise<EcommerceProduct | undefined>;
+  getEcommerceProductByPlatformId(platformId: string): Promise<EcommerceProduct | undefined>;
+  getEcommerceProductByPlatformCode(platformCode: string): Promise<EcommerceProduct | undefined>;
+  createEcommerceProduct(product: InsertEcommerceProduct): Promise<EcommerceProduct>;
+  updateEcommerceProduct(id: number, product: Partial<EcommerceProduct>): Promise<EcommerceProduct | undefined>;
+  getEcommerceProducts(filter?: { platformSource?: string, matchedProductId?: number }): Promise<EcommerceProduct[]>;
+  
+  // 产品编码匹配辅助方法
+  processProductCode(platformCode: string): string; // 处理电商平台编码为可匹配的编码
+  findProductsByMatchedCode(matchedCode: string): Promise<Product[]>; // 通过匹配码查找系统产品
+  matchPlatformProducts(platformSource: string): Promise<{
+    matched: number,
+    unmatched: number,
+    total: number
+  }>; // 执行匹配操作并返回结果统计
 }
 
 export class MemStorage implements IStorage {

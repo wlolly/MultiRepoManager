@@ -315,3 +315,63 @@ export const insertOutboundOrderItemSchema = createInsertSchema(outboundOrderIte
 
 export type InsertOutboundOrderItem = z.infer<typeof insertOutboundOrderItemSchema>;
 export type OutboundOrderItem = typeof outboundOrderItems.$inferSelect;
+
+// 电商平台产品表
+export const ecommerceProducts = mysqlTable("ecommerce_products", {
+  id: int("id").primaryKey().autoincrement(),
+  platformId: varchar("platform_id", { length: 255 }).notNull(), // 电商平台上的产品ID
+  platformCode: varchar("platform_code", { length: 255 }).notNull(), // 电商平台上的产品编码
+  platformName: varchar("platform_name", { length: 255 }).notNull(), // 电商平台上的产品名称
+  platformCategory: varchar("platform_category", { length: 255 }), // 电商平台上的产品分类
+  price: decimal("price", { precision: 10, scale: 2 }), // 价格
+  stock: int("stock"), // 库存
+  matchedCode: varchar("matched_code", { length: 255 }).notNull(), // 匹配后的编码
+  matchedProductId: int("matched_product_id").references(() => products.id), // 匹配的系统产品ID
+  lastUpdated: timestamp("last_updated").defaultNow().notNull(), // 最后更新时间
+  platformSource: varchar("platform_source", { length: 50 }).notNull(), // 来源平台
+  additionalInfo: text("additional_info"), // 额外信息（JSON格式）
+});
+
+export const insertEcommerceProductSchema = createInsertSchema(ecommerceProducts).pick({
+  platformId: true,
+  platformCode: true,
+  platformName: true,
+  platformCategory: true,
+  price: true,
+  stock: true,
+  matchedCode: true,
+  matchedProductId: true,
+  platformSource: true,
+  additionalInfo: true,
+});
+
+export type InsertEcommerceProduct = z.infer<typeof insertEcommerceProductSchema>;
+export type EcommerceProduct = typeof ecommerceProducts.$inferSelect;
+
+// API集成配置表
+export const apiConfigurations = mysqlTable("api_configurations", {
+  id: int("id").primaryKey().autoincrement(),
+  name: varchar("name", { length: 255 }).notNull(), // 配置名称
+  platformType: varchar("platform_type", { length: 50 }).notNull(), // 平台类型
+  apiKey: varchar("api_key", { length: 255 }), // API密钥
+  apiSecret: varchar("api_secret", { length: 255 }), // API密钥
+  apiEndpoint: varchar("api_endpoint", { length: 255 }).notNull(), // API端点
+  isActive: boolean("is_active").default(true), // 是否激活
+  lastSyncTime: timestamp("last_sync_time"), // 最后同步时间
+  createdAt: timestamp("created_at").defaultNow().notNull(), // 创建时间
+  updatedAt: timestamp("updated_at").defaultNow().notNull(), // 更新时间
+  config: text("config"), // 其他配置（JSON格式）
+});
+
+export const insertApiConfigurationSchema = createInsertSchema(apiConfigurations).pick({
+  name: true,
+  platformType: true,
+  apiKey: true,
+  apiSecret: true,
+  apiEndpoint: true,
+  isActive: true,
+  config: true,
+});
+
+export type InsertApiConfiguration = z.infer<typeof insertApiConfigurationSchema>;
+export type ApiConfiguration = typeof apiConfigurations.$inferSelect;
