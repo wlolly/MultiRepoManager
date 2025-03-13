@@ -5,6 +5,9 @@ import { initReactI18next } from 'react-i18next';
 const resources = {
   zh: {
     common: {
+      general: {
+        loading: "加载中..."
+      },
       app: {
         name: "ELEMENT-5 仓储管理系统",
         version: "版本 1.0.0"
@@ -79,7 +82,8 @@ const resources = {
         all_users: "所有用户",
         recent: "最近仓库",
         recentDescription: "您最近更新的仓库",
-        notFound: "未找到仓库"
+        notFound: "未找到仓库",
+        noTeams: "暂无可用团队"
       },
       warehouse: {
         products: "商品管理",
@@ -95,6 +99,9 @@ const resources = {
   },
   en: {
     common: {
+      general: {
+        loading: "Loading..."
+      },
       app: {
         name: "ELEMENT-5 Warehouse Management System",
         version: "Version 1.0.0"
@@ -169,7 +176,8 @@ const resources = {
         all_users: "All Users",
         recent: "Recent Repositories",
         recentDescription: "Your recently updated repositories",
-        notFound: "Repository not found"
+        notFound: "Repository not found",
+        noTeams: "No teams available"
       },
       warehouse: {
         products: "Products",
@@ -185,6 +193,9 @@ const resources = {
   },
   ru: {
     common: {
+      general: {
+        loading: "Загрузка..."
+      },
       app: {
         name: "ELEMENT-5 Система управления складом",
         version: "Версия 1.0.0"
@@ -258,7 +269,8 @@ const resources = {
         all_users: "Все пользователи",
         recent: "Последние репозитории",
         recentDescription: "Ваши недавно обновленные репозитории",
-        notFound: "Репозиторий не найден"
+        notFound: "Репозиторий не найден",
+        noTeams: "Нет доступных команд"
       },
       warehouse: {
         products: "Товары",
@@ -274,6 +286,9 @@ const resources = {
   },
   kk: {
     common: {
+      general: {
+        loading: "Жүктелуде..."
+      },
       app: {
         name: "ELEMENT-5 Қойма басқару жүйесі",
         version: "Нұсқасы 1.0.0"
@@ -347,7 +362,8 @@ const resources = {
         all_users: "Барлық пайдаланушылар",
         recent: "Соңғы репозиторийлер",
         recentDescription: "Сіздің жақында жаңартылған репозиторийлеріңіз",
-        notFound: "Репозиторий табылмады"
+        notFound: "Репозиторий табылмады",
+        noTeams: "Қолжетімді командалар жоқ"
       },
       warehouse: {
         products: "Тауарлар",
@@ -363,6 +379,9 @@ const resources = {
   },
   uz: {
     common: {
+      general: {
+        loading: "Yuklanmoqda..."
+      },
       app: {
         name: "ELEMENT-5 Ombor boshqaruv tizimi",
         version: "Versiya 1.0.0"
