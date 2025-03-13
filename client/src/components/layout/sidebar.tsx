@@ -13,8 +13,10 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { icon: "ri-dashboard-line", keyName: "dashboard", href: "/" },
-  { icon: "ri-folder-line", keyName: "my_repositories", href: "/my-repositories" },
-  { icon: "ri-team-line", keyName: "team_repositories", href: "/team-repositories" },
+  { icon: "ri-archive-line", keyName: "warehouse", href: "/warehouse" },
+  { icon: "ri-shopping-bag-line", keyName: "my_products", href: "/my-products" },
+  { icon: "ri-store-line", keyName: "warehouse_products", href: "/warehouse-products" },
+  { icon: "ri-shopping-cart-line", keyName: "order", href: "/orders" },
   { icon: "ri-group-line", keyName: "users_teams", href: "/users" },
   { icon: "ri-settings-line", keyName: "settings", href: "/settings" },
 ];
@@ -58,29 +60,33 @@ export function Sidebar() {
   
   const getActivityIcon = (type: string) => {
     switch (type) {
-      case 'commit':
-        return 'ri-git-commit-line';
-      case 'branch':
-        return 'ri-git-branch-line';
-      case 'pull_request':
-        return 'ri-git-pull-request-line';
+      case 'stock_in':
+        return 'ri-arrow-down-circle-line';
+      case 'stock_out':
+        return 'ri-arrow-up-circle-line';
+      case 'inventory_check':
+        return 'ri-file-list-3-line';
       case 'update':
         return 'ri-edit-line';
+      case 'new_product':
+        return 'ri-shopping-bag-line';
       default:
-        return 'ri-git-commit-line';
+        return 'ri-file-list-3-line';
     }
   };
 
   const getActivityColor = (type: string) => {
     switch (type) {
-      case 'commit':
+      case 'stock_in':
         return 'text-green-400';
-      case 'branch':
+      case 'stock_out':
+        return 'text-red-400';
+      case 'inventory_check':
         return 'text-blue-400';
-      case 'pull_request':
-        return 'text-purple-400';
       case 'update':
         return 'text-yellow-400';
+      case 'new_product':
+        return 'text-purple-400';
       default:
         return 'text-gray-400';
     }
@@ -89,13 +95,13 @@ export function Sidebar() {
   return (
     <div className="bg-gray-900 text-white w-64 flex-shrink-0 hidden md:flex md:flex-col">
       <div className="p-4 flex items-center border-b border-gray-800">
-        <i className="ri-git-repository-line text-2xl mr-2 text-blue-500"></i>
+        <i className="ri-archive-drawer-line text-2xl mr-2 text-blue-500"></i>
         <h1 className="text-xl font-semibold">{t('app_name')}</h1>
       </div>
       
       <div className="p-4">
-        <Link href="/new-repository" className="bg-blue-600 hover:bg-blue-700 w-full py-2 px-4 rounded-md flex items-center justify-center transition">
-          <i className="ri-add-line mr-2"></i> {t('create')} {t('repository')}
+        <Link href="/new-product" className="bg-blue-600 hover:bg-blue-700 w-full py-2 px-4 rounded-md flex items-center justify-center transition">
+          <i className="ri-add-line mr-2"></i> {t('new_product')}
         </Link>
       </div>
       

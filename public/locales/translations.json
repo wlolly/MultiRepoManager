@@ -14,11 +14,11 @@
     "uz": "Versiya 1.0.0"
   },
   "repository": {
-    "zh": "代码库",
-    "en": "Repository",
-    "ru": "Репозиторий",
-    "kk": "Репозиторий",
-    "uz": "Repozitoriya"
+    "zh": "商品",
+    "en": "Product",
+    "ru": "Товар",
+    "kk": "Тауар",
+    "uz": "Mahsulot"
   },
   "just_now": {
     "zh": "刚刚",
@@ -90,19 +90,19 @@
     "kk": "Басқару тақтасы",
     "uz": "Boshqaruv paneli"
   },
-  "my_repositories": {
-    "zh": "我的代码库",
-    "en": "My Repositories",
-    "ru": "Мои репозитории",
-    "kk": "Менің репозиторийлерім",
-    "uz": "Mening repozitoriyalarim"
+  "my_products": {
+    "zh": "我的商品",
+    "en": "My Products",
+    "ru": "Мои товары",
+    "kk": "Менің тауарларым",
+    "uz": "Mening mahsulotlarim"
   },
-  "team_repositories": {
-    "zh": "团队代码库",
-    "en": "Team Repositories",
-    "ru": "Репозитории команды",
-    "kk": "Команда репозиторийлері",
-    "uz": "Jamoa repozitoriyalari"
+  "warehouse_products": {
+    "zh": "仓库商品",
+    "en": "Warehouse Products",
+    "ru": "Складские товары",
+    "kk": "Қойма тауарлары",
+    "uz": "Ombor mahsulotlari"
   },
   "users_teams": {
     "zh": "用户和团队",
@@ -413,11 +413,11 @@
     "uz": "ixtiyoriy"
   },
   "search_placeholder": {
-    "zh": "搜索代码库、产品或订单...",
-    "en": "Search repositories, products or orders...",
-    "ru": "Поиск репозиториев, товаров или заказов...",
-    "kk": "Репозиторийлерді, тауарларды немесе тапсырыстарды іздеу...",
-    "uz": "Repozitoriyalar, mahsulotlar yoki buyurtmalarni qidirish..."
+    "zh": "搜索商品、仓库或订单...",
+    "en": "Search products, warehouses or orders...",
+    "ru": "Поиск товаров, складов или заказов...",
+    "kk": "Тауарларды, қоймаларды немесе тапсырыстарды іздеу...",
+    "uz": "Mahsulotlar, omborlar yoki buyurtmalarni qidirish..."
   },
   "my_account": {
     "zh": "我的账户",
@@ -468,12 +468,12 @@
     "kk": "Барлық пайдаланушылар",
     "uz": "Barcha foydalanuvchilar"
   },
-  "repositories_count": {
-    "zh": "代码库数量",
-    "en": "Repositories",
-    "ru": "Репозитории",
-    "kk": "Репозиторийлер",
-    "uz": "Repozitoriyalar"
+  "products_count": {
+    "zh": "商品数量",
+    "en": "Products",
+    "ru": "Товары",
+    "kk": "Тауарлар",
+    "uz": "Mahsulotlar"
   },
   "users_count": {
     "zh": "用户数量",
@@ -510,19 +510,19 @@
     "kk": "Тор көрінісі",
     "uz": "Jadval ko'rinishi"
   },
-  "new_repository": {
-    "zh": "新建代码库",
-    "en": "New Repository",
-    "ru": "Новый репозиторий",
-    "kk": "Жаңа репозиторий",
-    "uz": "Yangi repozitoriya"
+  "new_product": {
+    "zh": "新增商品",
+    "en": "New Product",
+    "ru": "Новый товар",
+    "kk": "Жаңа тауар",
+    "uz": "Yangi mahsulot"
   },
-  "repositories": {
-    "zh": "代码库",
-    "en": "Repositories",
-    "ru": "Репозитории",
-    "kk": "Репозиторийлер",
-    "uz": "Repozitoriyalar"
+  "products": {
+    "zh": "商品",
+    "en": "Products",
+    "ru": "Товары",
+    "kk": "Тауарлар",
+    "uz": "Mahsulotlar"
   },
   "language_distribution": {
     "zh": "语言分布",
@@ -552,25 +552,25 @@
     "kk": "Әрекеттер туралы деректер жоқ",
     "uz": "Faoliyat ma'lumotlari yo'q"
   },
-  "repositories_recent": {
-    "zh": "最近的代码库",
-    "en": "Recent Repositories",
-    "ru": "Недавние репозитории",
-    "kk": "Соңғы репозиторийлер",
-    "uz": "So'nggi repozitoriyalar"
+  "products_recent": {
+    "zh": "最近的商品",
+    "en": "Recent Products",
+    "ru": "Недавние товары",
+    "kk": "Соңғы тауарлар",
+    "uz": "So'nggi mahsulotlar"
   },
-  "repositories_recent_description": {
-    "zh": "查看最近更新的代码库",
-    "en": "View recently updated repositories",
-    "ru": "Просмотр недавно обновленных репозиториев",
-    "kk": "Жақында жаңартылған репозиторийлерді қарау",
-    "uz": "So'nggi yangilangan repozitoriyalarni ko'rish"
+  "products_recent_description": {
+    "zh": "查看最近更新的商品",
+    "en": "View recently updated products",
+    "ru": "Просмотр недавно обновленных товаров",
+    "kk": "Жақында жаңартылған тауарларды қарау",
+    "uz": "So'nggi yangilangan mahsulotlarni ko'rish"
   },
-  "repositories_not_found": {
-    "zh": "未找到代码库",
-    "en": "No repositories found",
-    "ru": "Репозитории не найдены",
-    "kk": "Репозиторийлер табылмады",
-    "uz": "Repozitoriyalar topilmadi"
+  "products_not_found": {
+    "zh": "未找到商品",
+    "en": "No products found",
+    "ru": "Товары не найдены",
+    "kk": "Тауарлар табылмады",
+    "uz": "Mahsulotlar topilmadi"
   }
 }
