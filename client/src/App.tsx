@@ -15,13 +15,14 @@ import { useEffect } from "react";
 import { I18nextProvider } from "react-i18next";
 import i18next from "i18next";
 import { initReactI18next } from "react-i18next";
+import { Layout } from "@/components/layout/layout";
 
-// 直接在应用中定义翻译
+// 扩展翻译内容，包含右侧的英文内容
 const resources = {
   zh: {
     translation: {
       app: {
-        name: "仓储管理系统",
+        name: "ELEMENT-5 SYSTEM",
         version: "版本 1.0.0"
       },
       sidebar: {
@@ -53,13 +54,40 @@ const resources = {
           settings: "设置",
           logout: "退出登录"
         }
-      }
+      },
+      dashboard: {
+        title: "仪表盘",
+        welcome: "欢迎使用仓储管理系统",
+        overview: "系统概览",
+        stats: {
+          totalRepositories: "仓库总数",
+          totalUsers: "用户总数",
+          totalLanguages: "支持语言数",
+          recentCommits: "最近提交"
+        },
+        languageDistribution: "语言分布",
+        recentActivity: "最近活动",
+        noActivity: "暂无活动"
+      },
+      repositories: {
+        title: "仓库",
+        my: "我的仓库",
+        team: "团队仓库",
+        newRepository: "新建仓库",
+        empty: "暂无仓库",
+        createFirst: "创建第一个仓库",
+        search: "搜索仓库",
+        all_languages: "所有语言",
+        all_users: "所有用户"
+      },
+      list_view: "列表视图",
+      grid_view: "网格视图"
     }
   },
   en: {
     translation: {
       app: {
-        name: "Warehouse Management System",
+        name: "ELEMENT-5 SYSTEM",
         version: "Version 1.0.0"
       },
       sidebar: {
@@ -91,7 +119,34 @@ const resources = {
           settings: "Settings",
           logout: "Logout"
         }
-      }
+      },
+      dashboard: {
+        title: "Dashboard",
+        welcome: "Welcome to Warehouse Management System",
+        overview: "System Overview",
+        stats: {
+          totalRepositories: "Total Repositories",
+          totalUsers: "Total Users",
+          totalLanguages: "Supported Languages",
+          recentCommits: "Recent Commits"
+        },
+        languageDistribution: "Language Distribution",
+        recentActivity: "Recent Activity",
+        noActivity: "No Activity"
+      },
+      repositories: {
+        title: "Repositories",
+        my: "My Repositories",
+        team: "Team Repositories",
+        newRepository: "New Repository",
+        empty: "No repositories",
+        createFirst: "Create your first repository",
+        search: "Search repositories",
+        all_languages: "All Languages",
+        all_users: "All Users"
+      },
+      list_view: "List View",
+      grid_view: "Grid View"
     }
   }
 };
@@ -100,7 +155,8 @@ const resources = {
 const i18n = i18next.createInstance();
 i18n.use(initReactI18next).init({
   resources,
-  lng: 'zh',
+  lng: 'zh', // 默认中文
+  fallbackLng: 'zh',
   interpolation: {
     escapeValue: false
   }
@@ -129,13 +185,17 @@ function App() {
     localStorage.removeItem('i18nextLng');
     // 设置为中文
     i18n.changeLanguage('zh');
+    // 确保设置生效
+    document.documentElement.lang = 'zh';
     console.log('语言已设置为中文', i18n.language);
   }, []);
 
   return (
     <I18nextProvider i18n={i18n}>
       <QueryClientProvider client={queryClient}>
-        <Router />
+        <Layout>
+          <Router />
+        </Layout>
         <Toaster />
       </QueryClientProvider>
     </I18nextProvider>
