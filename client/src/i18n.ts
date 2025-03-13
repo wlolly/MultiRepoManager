@@ -6,7 +6,9 @@ const resources = {
   zh: {
     common: {
       general: {
-        loading: "加载中..."
+        loading: "加载中...",
+        cancel: "取消",
+        description: "描述"
       },
       app: {
         name: "ELEMENT-5 仓储管理系统",
@@ -80,6 +82,7 @@ const resources = {
         search: "搜索仓库",
         all_languages: "所有语言",
         all_users: "所有用户",
+        all_visibility: "所有可见性",
         recent: "最近仓库",
         recentDescription: "您最近更新的仓库",
         notFound: "未找到仓库",
@@ -176,7 +179,9 @@ const resources = {
   en: {
     common: {
       general: {
-        loading: "Loading..."
+        loading: "Loading...",
+        cancel: "Cancel",
+        description: "Description"
       },
       app: {
         name: "ELEMENT-5 Warehouse Management System",
@@ -250,6 +255,7 @@ const resources = {
         search: "Search repositories",
         all_languages: "All Languages",
         all_users: "All Users",
+        all_visibility: "All Visibility",
         recent: "Recent Repositories",
         recentDescription: "Your recently updated repositories",
         notFound: "Repository not found",
@@ -349,7 +355,9 @@ const resources = {
   ru: {
     common: {
       general: {
-        loading: "Загрузка..."
+        loading: "Загрузка...",
+        cancel: "Отмена",
+        description: "Описание"
       },
       app: {
         name: "ELEMENT-5 Система управления складом",
@@ -522,7 +530,9 @@ const resources = {
   kk: {
     common: {
       general: {
-        loading: "Жүктелуде..."
+        loading: "Жүктелуде...",
+        cancel: "Болдырмау",
+        description: "Сипаттама"
       },
       app: {
         name: "ELEMENT-5 Қойма басқару жүйесі",
@@ -595,6 +605,7 @@ const resources = {
         search: "Репозиторийлерді іздеу",
         all_languages: "Барлық тілдер",
         all_users: "Барлық пайдаланушылар",
+        all_visibility: "Барлық көрінушіліктер",
         recent: "Соңғы репозиторийлер",
         recentDescription: "Сіздің жақында жаңартылған репозиторийлеріңіз",
         notFound: "Репозиторий табылмады",
@@ -694,7 +705,9 @@ const resources = {
   uz: {
     common: {
       general: {
-        loading: "Yuklanmoqda..."
+        loading: "Yuklanmoqda...",
+        cancel: "Bekor qilish",
+        description: "Tavsif"
       },
       app: {
         name: "ELEMENT-5 Ombor boshqaruv tizimi",
@@ -767,6 +780,7 @@ const resources = {
         search: "Repozitoriylarni qidirish",
         all_languages: "Barcha tillar",
         all_users: "Barcha foydalanuvchilar",
+        all_visibility: "Barcha ko'rinishlar",
         recent: "So'nggi repozitoriylar",
         recentDescription: "Yaqinda yangilangan repozitoriylaringiz",
         notFound: "Repozitoriy topilmadi",
