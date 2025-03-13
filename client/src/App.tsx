@@ -33,14 +33,21 @@ function Router() {
 }
 
 function App() {
-  // 强制设置为中文
+  // 从本地存储加载用户首选语言
   useEffect(() => {
     // 导入i18n实例和changeLanguage函数
     import('./i18n').then(({ changeLanguage }) => {
-      // 设置为中文
-      changeLanguage('zh');
-      // 确保设置生效
-      document.documentElement.lang = 'zh';
+      const savedLanguage = localStorage.getItem('i18nextLng');
+      if (savedLanguage && ['zh', 'en', 'ru', 'kk', 'uz'].includes(savedLanguage)) {
+        changeLanguage(savedLanguage);
+        document.documentElement.lang = savedLanguage;
+        console.log('已从本地存储加载语言:', savedLanguage);
+      } else {
+        // 如果没有保存的语言，默认使用中文
+        changeLanguage('zh');
+        document.documentElement.lang = 'zh';
+        console.log('未找到保存的语言，默认使用中文');
+      }
     });
   }, []);
 
