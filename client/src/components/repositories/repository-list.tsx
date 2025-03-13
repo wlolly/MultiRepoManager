@@ -1,6 +1,7 @@
 import React from "react";
 import { RepositoryListItem } from "./repository-list-item";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useTranslation } from "react-i18next";
 
 interface Repository {
   id: number;
@@ -23,15 +24,20 @@ interface RepositoryListProps {
   subtitle?: string;
 }
 
-export function RepositoryList({ repositories, isLoading, title = "Recent Repositories", subtitle = "Your most recently updated repositories" }: RepositoryListProps) {
+export function RepositoryList({ repositories, isLoading, title, subtitle }: RepositoryListProps) {
+  const { t } = useTranslation();
+  
+  // 使用翻译或默认值
+  const displayTitle = title || t('repositories.recent');
+  const displaySubtitle = subtitle || t('repositories.recentDescription');
   return (
     <div className="bg-white shadow overflow-hidden sm:rounded-md mb-6">
       <div className="px-4 py-5 border-b border-gray-200 sm:px-6">
         <h3 className="text-lg leading-6 font-medium text-gray-900">
-          {title}
+          {displayTitle}
         </h3>
         <p className="mt-1 max-w-2xl text-sm text-gray-500">
-          {subtitle}
+          {displaySubtitle}
         </p>
       </div>
       
@@ -72,7 +78,7 @@ export function RepositoryList({ repositories, isLoading, title = "Recent Reposi
         </ul>
       ) : (
         <div className="p-4 text-center text-gray-500">
-          No repositories found
+          {t('repositories.notFound')}
         </div>
       )}
     </div>

@@ -1,6 +1,7 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useTranslation } from "react-i18next";
 
 interface LanguageDistribution {
   language: string;
@@ -9,6 +10,7 @@ interface LanguageDistribution {
 }
 
 export function LanguageDistribution() {
+  const { t } = useTranslation();
   const { data: distribution, isLoading } = useQuery<LanguageDistribution[]>({
     queryKey: ["/api/stats/language-distribution"],
   });
@@ -16,7 +18,7 @@ export function LanguageDistribution() {
   if (isLoading) {
     return (
       <div className="bg-white shadow rounded-lg p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Language Distribution</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">{t('languageDistribution')}</h3>
         <div className="space-y-4">
           <Skeleton className="h-4 w-full" />
           <div className="grid grid-cols-2 gap-4">
