@@ -1,6 +1,5 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import HttpBackend from 'i18next-http-backend';
 
 // 定义多语言翻译资源
 const resources = {
@@ -237,7 +236,21 @@ const resources = {
         name: "ELEMENT-5 Қойма басқару жүйесі",
         version: "Нұсқасы 1.0.0"
       },
+      sidebar: {
+        navigation: "Навигация",
+        recentActivity: "Соңғы белсенділік",
+        noActivity: "Белсенділік жоқ",
+        newRepository: "Жаңа репозиторий",
+        navigation_items: {
+          dashboard: "Басқару тақтасы",
+          myRepositories: "Менің репозиторийлерім",
+          teamRepositories: "Команда репозиторийлері",
+          usersAndTeams: "Пайдаланушылар мен командалар",
+          settings: "Параметрлер"
+        }
+      },
       header: {
+        searchPlaceholder: "Іздеу",
         language: {
           title: "Тілді ауыстыру",
           zh: "Қытай",
@@ -245,14 +258,50 @@ const resources = {
           ru: "Орыс",
           kk: "Қазақ",
           uz: "Өзбек"
+        },
+        account: {
+          myAccount: "Менің аккаунтым",
+          profile: "Профиль",
+          settings: "Параметрлер",
+          logout: "Шығу"
         }
       },
+      languageDistribution_title: "Тілдер таралуы",
+      languageDistribution_noData: "Тілдер таралуы туралы деректер жоқ",
+      recentActivity_title: "Соңғы белсенділік",
+      recentActivity_noData: "Соңғы белсенділік жоқ",
       time: {
         justNow: "дәл қазір",
         minutesAgo: "{{value}} минут бұрын",
         hoursAgo: "{{value}} сағат бұрын",
         yesterday: "кеше",
         daysAgo: "{{value}} күн бұрын"
+      },
+      in: "ішінде",
+      dashboard: {
+        welcome: "ELEMENT-5 жүйесіне қош келдіңіз",
+        statsTitle: "Жүйе статистикасы",
+        repositoriesCount: "Барлық репозиторийлер",
+        usersCount: "Барлық пайдаланушылар",
+        languagesCount: "Тілдер саны",
+        commitsCount: "Соңғы жазбалар",
+        createRepository: "Репозиторий жасау",
+        filterByLanguage: "Тіл бойынша сүзу",
+        filterByUser: "Пайдаланушы бойынша сүзу",
+        allLanguages: "Барлық тілдер",
+        allUsers: "Барлық пайдаланушылар",
+        listView: "Тізім көрінісі",
+        gridView: "Торлы көрініс"
+      },
+      warehouse: {
+        products: "Тауарлар",
+        warehouses: "Қоймалар",
+        inbound: "Кіріс тапсырыстары",
+        outbound: "Шығыс тапсырыстары",
+        inventory: "Түгендеу",
+        ecommerce: "Электрондық коммерция платформалары",
+        barcode: "Штрих-код сканері",
+        settings: "Жүйе параметрлері"
       }
     }
   },
@@ -262,7 +311,21 @@ const resources = {
         name: "ELEMENT-5 Ombor boshqaruv tizimi",
         version: "Versiya 1.0.0"
       },
+      sidebar: {
+        navigation: "Navigatsiya",
+        recentActivity: "So'nggi faoliyat",
+        noActivity: "Faoliyat yo'q",
+        newRepository: "Yangi repozitoriy",
+        navigation_items: {
+          dashboard: "Boshqaruv paneli",
+          myRepositories: "Mening repozitoriylarim",
+          teamRepositories: "Jamoa repozitoriylari",
+          usersAndTeams: "Foydalanuvchilar va jamoalar",
+          settings: "Sozlamalar"
+        }
+      },
       header: {
+        searchPlaceholder: "Qidirish",
         language: {
           title: "Tilni o'zgartirish",
           zh: "Xitoy",
@@ -270,14 +333,50 @@ const resources = {
           ru: "Rus",
           kk: "Qozoq",
           uz: "O'zbek"
+        },
+        account: {
+          myAccount: "Mening hisobim",
+          profile: "Profil",
+          settings: "Sozlamalar",
+          logout: "Chiqish"
         }
       },
+      languageDistribution_title: "Tillar taqsimoti",
+      languageDistribution_noData: "Tillar taqsimoti bo'yicha ma'lumot yo'q",
+      recentActivity_title: "So'nggi faoliyat",
+      recentActivity_noData: "So'nggi faoliyat yo'q",
       time: {
         justNow: "hozirgina",
         minutesAgo: "{{value}} daqiqa oldin",
         hoursAgo: "{{value}} soat oldin",
         yesterday: "kecha",
         daysAgo: "{{value}} kun oldin"
+      },
+      in: "ichida",
+      dashboard: {
+        welcome: "ELEMENT-5 tizimiga xush kelibsiz",
+        statsTitle: "Tizim statistikasi",
+        repositoriesCount: "Jami repozitoriylar",
+        usersCount: "Jami foydalanuvchilar",
+        languagesCount: "Tillar soni",
+        commitsCount: "So'nggi yuborishlar",
+        createRepository: "Repozitoriy yaratish",
+        filterByLanguage: "Til bo'yicha filtrlash",
+        filterByUser: "Foydalanuvchi bo'yicha filtrlash",
+        allLanguages: "Barcha tillar",
+        allUsers: "Barcha foydalanuvchilar",
+        listView: "Ro'yxat ko'rinishi",
+        gridView: "Setka ko'rinishi"
+      },
+      warehouse: {
+        products: "Mahsulotlar",
+        warehouses: "Omborlar",
+        inbound: "Kirish buyurtmalari",
+        outbound: "Chiqish buyurtmalari",
+        inventory: "Inventarizatsiya",
+        ecommerce: "Elektron tijorat platformalari",
+        barcode: "Shtrix-kod skaneri",
+        settings: "Tizim sozlamalari"
       }
     }
   }
@@ -322,9 +421,8 @@ export const changeLanguage = (langCode: string) => {
   
   localStorage.setItem('i18nextLng', langCode);
   
-  // 强制重新加载 HTTP backend 中的资源
-  i18n.reloadResources([langCode]).then(() => {
-    i18n.changeLanguage(langCode);
+  // 更改语言
+  i18n.changeLanguage(langCode).then(() => {
     
     let message = '';
     switch(langCode) {
@@ -356,20 +454,18 @@ export const forceChineseLanguage = () => {
   return changeLanguage('zh');
 };
 
-// 初始化加载所有语言资源以确保它们可用
-i18n.reloadResources(['zh', 'en', 'ru', 'kk', 'uz']).then(() => {
-  console.log("所有语言资源已加载");
+// 初始化
+console.log("所有语言资源已加载");
   
-  // 读取之前保存的语言设置，如果没有则默认使用中文
-  const savedLanguage = localStorage.getItem('i18nextLng');
-  if (savedLanguage && ['zh', 'en', 'ru', 'kk', 'uz'].includes(savedLanguage)) {
-    i18n.changeLanguage(savedLanguage);
-    console.log(`已从本地存储加载语言: ${savedLanguage}`);
-  } else {
-    i18n.changeLanguage('zh');
-    localStorage.setItem('i18nextLng', 'zh');
-    console.log('默认使用中文');
-  }
-});
+// 读取之前保存的语言设置，如果没有则默认使用中文
+const savedLanguage = localStorage.getItem('i18nextLng');
+if (savedLanguage && ['zh', 'en', 'ru', 'kk', 'uz'].includes(savedLanguage)) {
+  i18n.changeLanguage(savedLanguage);
+  console.log(`已从本地存储加载语言: ${savedLanguage}`);
+} else {
+  i18n.changeLanguage('zh');
+  localStorage.setItem('i18nextLng', 'zh');
+  console.log('默认使用中文');
+}
 
 export default i18n;
