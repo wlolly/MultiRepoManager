@@ -29,7 +29,7 @@ export function RecentActivity() {
   if (isLoading) {
     return (
       <div className="bg-white shadow rounded-lg p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">{t('recentActivity_title')}</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">最近活动</h3>
         <div className="space-y-4">
           <Skeleton className="h-20 w-full" />
           <Skeleton className="h-20 w-full" />
