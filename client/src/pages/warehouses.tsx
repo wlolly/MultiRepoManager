@@ -405,11 +405,10 @@ export default function Warehouses() {
   const [view, setView] = useState<"grid" | "table">("grid");
   
   // Fetch warehouses
-  const { data: warehouses = [], isLoading } = useQuery({
+  const { data: warehouses = [], isLoading } = useQuery<Warehouse[]>({
     queryKey: ["/api/warehouses"],
     queryFn: async () => {
-      const response = await apiRequest("/api/warehouses");
-      return response;
+      return await apiRequest<Warehouse[]>("/api/warehouses");
     },
   });
   
@@ -442,7 +441,7 @@ export default function Warehouses() {
           }
           
           // Create warehouse
-          const response = await apiRequest<Warehouse>("/api/warehouses", {
+          const response = await apiRequest("/api/warehouses", {
             method: "POST",
             body: JSON.stringify(parsed.data),
           });
