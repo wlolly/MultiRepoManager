@@ -1,6 +1,6 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import HttpBackend from 'i18next-http-backend';
+import translations from '../../public/locales/translations.json';
 
 // 支持的语言列表
 export const supportedLanguages = [
@@ -11,20 +11,39 @@ export const supportedLanguages = [
   { code: 'uz', name: 'O\'zbek' }
 ];
 
-// 使用后端加载翻译资源
+// 定义翻译文件的类型
+type TranslationsType = Record<string, Record<string, string>>;
+
+// 从translations.json生成各语言的资源对象
+const resources: Record<string, { translation: Record<string, string> }> = {};
+
+// 支持的语言代码
+const languageCodes = ['zh', 'en', 'ru', 'kk', 'uz'];
+
+// 为每种语言生成翻译资源
+languageCodes.forEach(langCode => {
+  resources[langCode] = {
+    translation: {}
+  };
+  
+  // 遍历所有翻译键，为每种语言提取对应的翻译
+  Object.keys(translations).forEach(key => {
+    const translationObj = translations as TranslationsType;
+    if (translationObj[key] && translationObj[key][langCode]) {
+      resources[langCode].translation[key] = translationObj[key][langCode];
+    }
+  });
+});
+
+// 初始化i18next
 i18n
-  .use(HttpBackend) // 使用HTTP后端从JSON文件加载翻译
-  .use(initReactI18next) // 将i18n传递给react-i18next
+  .use(initReactI18next)
   .init({
+    resources,
     fallbackLng: 'zh', // 默认语言为中文
-    ns: ['common'], // 命名空间
-    defaultNS: 'common', // 默认命名空间
     debug: false,
     interpolation: {
       escapeValue: false, // 不转义HTML
-    },
-    backend: {
-      loadPath: '/locales/{{lng}}/{{ns}}.json', // JSON文件路径
     }
   });
 
@@ -65,12 +84,9 @@ export const forceChineseLanguage = () => {
   return changeLanguage('zh');
 };
 
-// 初始化
-console.log("所有语言资源已加载");
-  
-// 读取之前保存的语言设置，如果没有则默认使用中文
+// 初始化 - 读取之前保存的语言设置，如果没有则默认使用中文
 const savedLanguage = localStorage.getItem('i18nextLng');
-if (savedLanguage && ['zh', 'en', 'ru', 'kk', 'uz'].includes(savedLanguage)) {
+if (savedLanguage && languageCodes.includes(savedLanguage)) {
   i18n.changeLanguage(savedLanguage);
   console.log(`已从本地存储加载语言: ${savedLanguage}`);
 } else {

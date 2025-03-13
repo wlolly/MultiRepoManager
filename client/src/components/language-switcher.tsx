@@ -31,25 +31,8 @@ export function LanguageSwitcher() {
   }, [i18n]);
 
   const handleLanguageChange = (lng: string) => {
-    // 获取界面显示的消息
-    let message = '';
-    switch(lng) {
-      case 'zh':
-        message = '语言已设置为中文';
-        break;
-      case 'en':
-        message = 'Language set to English';
-        break;
-      case 'ru':
-        message = 'Язык установлен на русский';
-        break;
-      case 'kk':
-        message = 'Тіл қазақ тіліне орнатылды';
-        break;
-      case 'uz':
-        message = 'Til o\'zbek tiliga o\'rnatildi';
-        break;
-    }
+    // 获取对应语言的名称
+    const languageName = t(`${lng === 'zh' ? 'chinese' : lng === 'en' ? 'english' : lng === 'ru' ? 'russian' : lng === 'kk' ? 'kazakh' : 'uzbek'}`);
 
     // 直接切换语言，使用内部翻译资源
     import('@/i18n').then(({ changeLanguage }) => {
@@ -58,8 +41,16 @@ export function LanguageSwitcher() {
         
         // 显示成功提示
         toast({
-          title: message,
-          description: "语言已成功切换",
+          title: lng === 'zh' ? '语言已设置为中文' :
+                 lng === 'en' ? 'Language set to English' :
+                 lng === 'ru' ? 'Язык установлен на русский' :
+                 lng === 'kk' ? 'Тіл қазақ тіліне орнатылды' :
+                                'Til o\'zbek tiliga o\'rnatildi',
+          description: lng === 'zh' ? "语言已成功切换" :
+                       lng === 'en' ? "Language successfully changed" :
+                       lng === 'ru' ? "Язык успешно изменен" :
+                       lng === 'kk' ? "Тіл сәтті өзгертілді" :
+                                      "Til muvaffaqiyatli o'zgartirildi",
           duration: 2000
         });
       } catch (error: any) {
@@ -67,8 +58,18 @@ export function LanguageSwitcher() {
         
         // 显示错误提示
         toast({
-          title: "语言切换失败",
-          description: error.message || "无法加载翻译资源",
+          title: lng === 'zh' ? "语言切换失败" :
+                 lng === 'en' ? "Language change failed" :
+                 lng === 'ru' ? "Ошибка смены языка" :
+                 lng === 'kk' ? "Тілді ауыстыру қатесі" :
+                                "Tilni o'zgartirish xatosi",
+          description: error.message || (
+            lng === 'zh' ? "无法加载翻译资源" :
+            lng === 'en' ? "Unable to load translation resources" :
+            lng === 'ru' ? "Не удалось загрузить ресурсы перевода" :
+            lng === 'kk' ? "Аударма ресурстарын жүктеу мүмкін емес" :
+                          "Tarjima resurslarini yuklab bo'lmadi"
+          ),
           variant: "destructive",
           duration: 3000
         });
@@ -81,41 +82,20 @@ export function LanguageSwitcher() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
           <Globe className="h-4 w-4" />
-          <span className="sr-only">{t('header.language.title', '切换语言')}</span>
+          <span className="sr-only">{t('language')}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuLabel>{t('header.language.title', '切换语言')}</DropdownMenuLabel>
-        <DropdownMenuItem 
-          className={currentLanguage === 'zh' ? 'bg-accent' : ''} 
-          onClick={() => handleLanguageChange('zh')}
-        >
-          中文
-        </DropdownMenuItem>
-        <DropdownMenuItem 
-          className={currentLanguage === 'en' ? 'bg-accent' : ''} 
-          onClick={() => handleLanguageChange('en')}
-        >
-          English
-        </DropdownMenuItem>
-        <DropdownMenuItem 
-          className={currentLanguage === 'ru' ? 'bg-accent' : ''} 
-          onClick={() => handleLanguageChange('ru')}
-        >
-          Русский
-        </DropdownMenuItem>
-        <DropdownMenuItem 
-          className={currentLanguage === 'kk' ? 'bg-accent' : ''} 
-          onClick={() => handleLanguageChange('kk')}
-        >
-          Қазақша
-        </DropdownMenuItem>
-        <DropdownMenuItem 
-          className={currentLanguage === 'uz' ? 'bg-accent' : ''} 
-          onClick={() => handleLanguageChange('uz')}
-        >
-          O'zbekcha
-        </DropdownMenuItem>
+        <DropdownMenuLabel>{t('language')}</DropdownMenuLabel>
+        {supportedLanguages.map((lang) => (
+          <DropdownMenuItem 
+            key={lang.code}
+            className={currentLanguage === lang.code ? 'bg-accent' : ''} 
+            onClick={() => handleLanguageChange(lang.code)}
+          >
+            {lang.name}
+          </DropdownMenuItem>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   );
