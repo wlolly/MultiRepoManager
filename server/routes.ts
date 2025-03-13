@@ -603,6 +603,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 增加必要的字段
       const { orderNumber, warehouseId, notes, status, orderType = "sale", destinationType = "customer", items = [] } = req.body;
       
+      // 验证orderType是否为有效的枚举值
+      const validOrderTypes = ["sale", "return", "transfer", "scrap"];
+      const validatedOrderType = validOrderTypes.includes(orderType) ? orderType : "sale";
+      
+      // 验证destinationType是否为有效的枚举值
+      const validDestinationTypes = ["customer", "retail", "wholesale", "transfer", "supplier"];
+      const validatedDestinationType = validDestinationTypes.includes(destinationType) ? destinationType : "customer";
+      
       // 计算总重量和总体积
       let totalWeight = 0;
       let totalVolume = 0;
@@ -622,8 +630,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdBy: 1, // 假设用户ID为1
         status: status || "pending",
         notes,
-        orderType,
-        destinationType
+        orderType: validatedOrderType,
+        destinationType: validatedDestinationType
       };
       
       const outboundOrder = await storage.createOutboundOrder(outboundOrderData);
@@ -848,6 +856,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create a new inbound order
       const orderNumber = `IN-${Date.now()}`;
+      
+      // 验证orderType是否为有效的枚举值
+      const validOrderTypes = ["purchase", "return", "transfer", "production"];
+      const validatedOrderType = validOrderTypes.includes("purchase") ? "purchase" : "purchase";
+      
       const inboundOrderData = {
         orderNumber,
         warehouseId: parseInt(warehouseId),
@@ -855,7 +868,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalVolume: "0", // 初始值，后面会更新 
         createdBy: 1, // 默认用户ID
         status: "pending",
-        orderType: "purchase", // 默认为采购入库
+        orderType: validatedOrderType, // 默认为采购入库
         notes: "Imported from Excel",
       };
       
@@ -956,6 +969,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create a new outbound order
       const orderNumber = `OUT-${Date.now()}`;
+      
+      // 验证orderType和destinationType是否为有效的枚举值
+      const validOrderTypes = ["sale", "return", "transfer", "scrap"];
+      const validatedOrderType = validOrderTypes.includes("sale") ? "sale" : "sale";
+      
+      const validDestinationTypes = ["customer", "retail", "wholesale", "transfer", "supplier"];
+      const validatedDestinationType = validDestinationTypes.includes("customer") ? "customer" : "customer";
+      
       const outboundOrderData = {
         orderNumber,
         warehouseId: parseInt(warehouseId),
@@ -963,8 +984,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalVolume: "0", // 初始值，后面会更新
         createdBy: 1, // 默认用户ID
         status: "pending",
-        orderType: "sale", // 默认为销售出库
-        destinationType: "customer", // 默认为客户
+        orderType: validatedOrderType, // 默认为销售出库
+        destinationType: validatedDestinationType, // 默认为客户
         notes: "Imported from Excel",
       };
       
@@ -1068,30 +1089,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // 1. 创建出库单
       const outboundOrderNumber = `OUT-TRANSFER-${Date.now()}`;
+      
+      // 验证orderType和destinationType是否为有效的枚举值
+      const validOutboundOrderTypes = ["sale", "return", "transfer", "scrap"];
+      const validatedOutboundOrderType = validOutboundOrderTypes.includes("transfer") ? "transfer" : "transfer";
+      
+      const validDestinationTypes = ["customer", "retail", "wholesale", "transfer", "supplier"];
+      const validatedDestinationType = validDestinationTypes.includes("transfer") ? "transfer" : "transfer";
+      
       const outboundOrderData = {
         orderNumber: outboundOrderNumber,
         warehouseId: sourceWarehouseId,
-        totalWeight: items.reduce((sum, item) => sum + parseFloat(item.weight), 0).toString(),
-        totalVolume: items.reduce((sum, item) => sum + parseFloat(item.volume), 0).toString(),
+        totalWeight: items.reduce((sum: number, item: any) => sum + parseFloat(item.weight), 0).toString(),
+        totalVolume: items.reduce((sum: number, item: any) => sum + parseFloat(item.volume), 0).toString(),
         createdBy: 1, // 假设用户ID为1
         status: "pending",
-        orderType: "transfer",
+        orderType: validatedOutboundOrderType,
         notes: notes || "仓库调拨出库单",
-        destinationType: "transfer"
+        destinationType: validatedDestinationType
       };
       
       const outboundOrder = await storage.createOutboundOrder(outboundOrderData);
       
       // 2. 创建入库单
       const inboundOrderNumber = `IN-TRANSFER-${Date.now()}`;
+      
+      // 验证orderType是否为有效的枚举值
+      const validInboundOrderTypes = ["purchase", "return", "transfer", "production"];
+      const validatedInboundOrderType = validInboundOrderTypes.includes("transfer") ? "transfer" : "transfer";
+      
       const inboundOrderData = {
         orderNumber: inboundOrderNumber,
         warehouseId: targetWarehouseId,
-        totalWeight: items.reduce((sum, item) => sum + parseFloat(item.weight), 0).toString(),
-        totalVolume: items.reduce((sum, item) => sum + parseFloat(item.volume), 0).toString(),
+        totalWeight: items.reduce((sum: number, item: any) => sum + parseFloat(item.weight), 0).toString(),
+        totalVolume: items.reduce((sum: number, item: any) => sum + parseFloat(item.volume), 0).toString(),
         createdBy: 1, // 假设用户ID为1
         status: "pending",
-        orderType: "transfer",
+        orderType: validatedInboundOrderType,
         notes: notes || "仓库调拨入库单"
       };
       
@@ -1169,8 +1203,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const completedOrders = orders.filter(order => order.status === "completed").length;
       
       // 计算总重量和总体积
-      const totalWeight = orders.reduce((sum, order) => sum + (order.totalWeight || 0), 0);
-      const totalVolume = orders.reduce((sum, order) => sum + (order.totalVolume || 0), 0);
+      const totalWeight = orders.reduce((sum: number, order) => sum + (parseFloat(order.totalWeight as string) || 0), 0);
+      const totalVolume = orders.reduce((sum: number, order) => sum + (parseFloat(order.totalVolume as string) || 0), 0);
       
       // 订单类型分布
       const orderTypes = ['purchase', 'return', 'transfer'];
@@ -1208,8 +1242,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const completedOrders = orders.filter(order => order.status === "completed").length;
       
       // 计算总重量和总体积
-      const totalWeight = orders.reduce((sum, order) => sum + (order.totalWeight || 0), 0);
-      const totalVolume = orders.reduce((sum, order) => sum + (order.totalVolume || 0), 0);
+      const totalWeight = orders.reduce((sum: number, order) => sum + (parseFloat(order.totalWeight as string) || 0), 0);
+      const totalVolume = orders.reduce((sum: number, order) => sum + (parseFloat(order.totalVolume as string) || 0), 0);
       
       // 订单类型分布
       const orderTypes = ['sale', 'return', 'transfer'];
