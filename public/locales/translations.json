@@ -664,6 +664,62 @@
     "kk": "Жаңа тауар жүйеге қосылды",
     "uz": "Yangi mahsulot tizimga qo'shildi"
   },
+  "inbound_order_created": {
+    "zh": "入库单创建成功",
+    "en": "Inbound order created successfully",
+    "ru": "Приходный ордер успешно создан",
+    "kk": "Кіріс ордер сәтті жасалды",
+    "uz": "Kirish buyurtmasi muvaffaqiyatli yaratildi"
+  },
+  "inbound_order_created_description": {
+    "zh": "新的入库单已添加到系统",
+    "en": "New inbound order has been added to the system",
+    "ru": "Новый приходный ордер добавлен в систему",
+    "kk": "Жаңа кіріс ордер жүйеге қосылды",
+    "uz": "Yangi kirish buyurtmasi tizimga qo'shildi"
+  },
+  "inbound_order_creation_failed": {
+    "zh": "入库单创建失败",
+    "en": "Inbound order creation failed",
+    "ru": "Не удалось создать приходный ордер",
+    "kk": "Кіріс ордер жасау сәтсіз аяқталды",
+    "uz": "Kirish buyurtmasini yaratish amalga oshmadi"
+  },
+  "inbound_order_creation_failed_description": {
+    "zh": "创建入库单时发生错误",
+    "en": "An error occurred while creating the inbound order",
+    "ru": "Произошла ошибка при создании приходного ордера",
+    "kk": "Кіріс ордер жасау кезінде қате пайда болды",
+    "uz": "Kirish buyurtmasini yaratishda xato yuz berdi"
+  },
+  "outbound_order_created": {
+    "zh": "出库单创建成功",
+    "en": "Outbound order created successfully",
+    "ru": "Расходный ордер успешно создан",
+    "kk": "Шығыс ордер сәтті жасалды",
+    "uz": "Chiqish buyurtmasi muvaffaqiyatli yaratildi"
+  },
+  "outbound_order_created_description": {
+    "zh": "新的出库单已添加到系统",
+    "en": "New outbound order has been added to the system",
+    "ru": "Новый расходный ордер добавлен в систему",
+    "kk": "Жаңа шығыс ордер жүйеге қосылды",
+    "uz": "Yangi chiqish buyurtmasi tizimga qo'shildi"
+  },
+  "outbound_order_creation_failed": {
+    "zh": "出库单创建失败",
+    "en": "Outbound order creation failed",
+    "ru": "Не удалось создать расходный ордер",
+    "kk": "Шығыс ордер жасау сәтсіз аяқталды",
+    "uz": "Chiqish buyurtmasini yaratish amalga oshmadi"
+  },
+  "outbound_order_creation_failed_description": {
+    "zh": "创建出库单时发生错误",
+    "en": "An error occurred while creating the outbound order",
+    "ru": "Произошла ошибка при создании расходного ордера",
+    "kk": "Шығыс ордер жасау кезінде қате пайда болды",
+    "uz": "Chiqish buyurtmasini yaratishda xato yuz berdi"
+  },
   "product_creation_failed": {
     "zh": "商品创建失败",
     "en": "Product creation failed",
@@ -1146,6 +1202,146 @@
     "ru": "Произошла ошибка во время процесса импорта",
     "kk": "Импорт процесі кезінде қате орын алды",
     "uz": "Import jarayonida xatolik yuz berdi"
+  },
+  "new_inbound_order_description": {
+    "zh": "创建新的入库单以记录商品入库",
+    "en": "Create a new inbound order to record product receipt",
+    "ru": "Создайте новый приходный ордер для регистрации поступления товара",
+    "kk": "Тауарды қабылдауды тіркеу үшін жаңа кіріс ордерін жасаңыз",
+    "uz": "Mahsulot qabulini qayd qilish uchun yangi kirish buyurtmasini yarating"
+  },
+  "new_outbound_order_description": {
+    "zh": "创建新的出库单以记录商品出库",
+    "en": "Create a new outbound order to record product shipment",
+    "ru": "Создайте новый расходный ордер для регистрации отгрузки товара",
+    "kk": "Тауарды жөнелтуді тіркеу үшін жаңа шығыс ордерін жасаңыз",
+    "uz": "Mahsulot jo'natilishini qayd qilish uchun yangi chiqish buyurtmasini yarating"
+  },
+  "order_number_placeholder": {
+    "zh": "输入订单号或自动生成",
+    "en": "Enter order number or auto-generate",
+    "ru": "Введите номер заказа или автоматически сгенерируйте",
+    "kk": "Тапсырыс нөмірін енгізіңіз немесе автоматты түрде жасаңыз",
+    "uz": "Buyurtma raqamini kiriting yoki avtomatik yarating"
+  },
+  "select_warehouse_description": {
+    "zh": "选择用于此订单的仓库",
+    "en": "Select the warehouse for this order",
+    "ru": "Выберите склад для этого заказа",
+    "kk": "Бұл тапсырыс үшін қойманы таңдаңыз",
+    "uz": "Ushbu buyurtma uchun omborni tanlang"
+  },
+  "select_status": {
+    "zh": "选择状态",
+    "en": "Select status",
+    "ru": "Выберите статус",
+    "kk": "Күйді таңдаңыз",
+    "uz": "Holatni tanlang"
+  },
+  "status_description": {
+    "zh": "订单的当前处理状态",
+    "en": "Current processing status of the order",
+    "ru": "Текущий статус обработки заказа",
+    "kk": "Тапсырыстың ағымдағы өңделу күйі",
+    "uz": "Buyurtmaning joriy qayta ishlash holati"
+  },
+  "destination_type": {
+    "zh": "目的地类型",
+    "en": "Destination Type",
+    "ru": "Тип назначения",
+    "kk": "Тағайындау түрі",
+    "uz": "Manzil turi"
+  },
+  "select_destination_type": {
+    "zh": "选择目的地类型",
+    "en": "Select destination type",
+    "ru": "Выберите тип назначения",
+    "kk": "Тағайындау түрін таңдаңыз",
+    "uz": "Manzil turini tanlang"
+  },
+  "destination_type_description": {
+    "zh": "出库单的目的地或接收方类型",
+    "en": "Type of destination or recipient for the outbound order",
+    "ru": "Тип назначения или получателя для расходного ордера",
+    "kk": "Шығыс ордердің тағайындау түрі немесе алушысы",
+    "uz": "Chiqish buyurtmasi uchun manzil yoki qabul qiluvchi turi"
+  },
+  "notes": {
+    "zh": "备注",
+    "en": "Notes",
+    "ru": "Примечания",
+    "kk": "Ескертпелер",
+    "uz": "Izohlar"
+  },
+  "notes_placeholder": {
+    "zh": "输入任何订单特定的说明或注释...",
+    "en": "Enter any order-specific instructions or notes...",
+    "ru": "Введите любые особые инструкции или примечания к заказу...",
+    "kk": "Тапсырысқа қатысты қандай да бір арнайы нұсқаулар немесе ескертпелер енгізіңіз...",
+    "uz": "Buyurtmaga oid har qanday maxsus ko'rsatmalar yoki izohlar kiriting..."
+  },
+  "notes_description": {
+    "zh": "添加关于此订单的任何额外信息",
+    "en": "Add any additional information about this order",
+    "ru": "Добавьте любую дополнительную информацию об этом заказе",
+    "kk": "Бұл тапсырыс туралы қосымша ақпаратты қосыңыз",
+    "uz": "Ushbu buyurtma haqida qo'shimcha ma'lumot qo'shing"
+  },
+  "back_to_inbound_orders": {
+    "zh": "返回入库单列表",
+    "en": "Back to Inbound Orders",
+    "ru": "Вернуться к приходным ордерам",
+    "kk": "Кіріс ордерлерге оралу",
+    "uz": "Kirish buyurtmalariga qaytish"
+  },
+  "back_to_outbound_orders": {
+    "zh": "返回出库单列表",
+    "en": "Back to Outbound Orders",
+    "ru": "Вернуться к расходным ордерам",
+    "kk": "Шығыс ордерлерге оралу",
+    "uz": "Chiqish buyurtmalariga qaytish"
+  },
+  "auto_generate": {
+    "zh": "自动生成",
+    "en": "Auto Generate",
+    "ru": "Автоматически",
+    "kk": "Автоматты түрде",
+    "uz": "Avtomatik yaratish"
+  },
+  "manual": {
+    "zh": "手动",
+    "en": "Manual",
+    "ru": "Вручную",
+    "kk": "Қолмен",
+    "uz": "Qo'lda"
+  },
+  "customer": {
+    "zh": "客户",
+    "en": "Customer",
+    "ru": "Клиент",
+    "kk": "Тұтынушы",
+    "uz": "Mijoz"
+  },
+  "retail": {
+    "zh": "零售",
+    "en": "Retail",
+    "ru": "Розничная торговля",
+    "kk": "Бөлшек сауда",
+    "uz": "Chakana savdo"
+  },
+  "wholesale": {
+    "zh": "批发",
+    "en": "Wholesale",
+    "ru": "Оптовая торговля",
+    "kk": "Көтерме сауда",
+    "uz": "Ulgurji savdo"
+  },
+  "transfer": {
+    "zh": "调拨",
+    "en": "Transfer",
+    "ru": "Перемещение",
+    "kk": "Аудару",
+    "uz": "Ko'chirish"
   },
   "new_warehouse": {
     "zh": "新增仓库",
