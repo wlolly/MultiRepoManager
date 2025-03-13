@@ -273,11 +273,11 @@ export default function NewOutboundOrder() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="manual">{t("manual")}</SelectItem>
                         <SelectItem value="customer">{t("customer")}</SelectItem>
                         <SelectItem value="retail">{t("retail")}</SelectItem>
                         <SelectItem value="wholesale">{t("wholesale")}</SelectItem>
                         <SelectItem value="transfer">{t("transfer")}</SelectItem>
+                        <SelectItem value="supplier">{t("supplier")}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormDescription>

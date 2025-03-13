@@ -438,12 +438,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 增加必要的字段
       const { orderNumber, warehouseId, notes, status, orderType = "purchase", items = [] } = req.body;
       
+      // 验证orderType是否为有效的枚举值
+      const validOrderTypes = ["purchase", "return", "transfer", "production"];
+      const validatedOrderType = validOrderTypes.includes(orderType) ? orderType : "purchase";
+      
       // 计算总重量和总体积
       let totalWeight = 0;
       let totalVolume = 0;
       
       if (items && items.length > 0) {
-        items.forEach(item => {
+        items.forEach((item: any) => {
           totalWeight += parseFloat(item.weight || "0");
           totalVolume += parseFloat(item.volume || "0");
         });
@@ -457,7 +461,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdBy: 1, // 假设用户ID为1
         status: status || "pending",
         notes,
-        orderType
+        orderType: validatedOrderType
       };
       
       const inboundOrder = await storage.createInboundOrder(inboundOrderData);
