@@ -20,48 +20,49 @@ import { useTranslation } from "react-i18next";
 export default function Dashboard() {
   const { t } = useTranslation();
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
-  const [languageFilter, setLanguageFilter] = useState<string>("all");
-  const [userFilter, setUserFilter] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [warehouseFilter, setWarehouseFilter] = useState<string>("all");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   // 定义接口类型
-  interface Repository {
+  interface Product {
     id: number;
     name: string;
     description: string;
-    visibility: string;
-    language: string;
-    branchCount: number;
-    contributorCount: number;
-    viewCount: number;
+    barcode: string;
+    category: string;
+    stock: number;
+    price: number;
+    cost: number;
+    weight: number;
     updatedAt: string;
-    owner: {
+    warehouse: {
       id: number;
-      username: string;
-      fullName: string;
-      avatarUrl: string;
+      name: string;
+      location: string;
+      imageUrl: string;
     };
-    contributors?: {
+    suppliers?: {
       id: number;
-      username: string;
-      fullName?: string;
+      name: string;
+      contact?: string;
       avatarUrl?: string;
     }[];
   }
 
   interface Stats {
-    totalRepositories: number;
-    totalUsers: number;
-    languagesCount: number;
-    recentCommits: number;
+    totalProducts: number;
+    totalWarehouses: number;
+    categoriesCount: number;
+    recentOperations: number;
   }
 
-  // Fetch repositories with filters
-  const { data: repositories, isLoading: isLoadingRepositories } = useQuery<Repository[]>({
-    queryKey: ["/api/repositories", languageFilter, userFilter],
+  // Fetch products with filters
+  const { data: products, isLoading: isLoadingProducts } = useQuery<Product[]>({
+    queryKey: ["/api/repositories", categoryFilter, warehouseFilter],
   });
 
-  // Fetch repository stats
+  // Fetch warehouse stats
   const { data: stats, isLoading: isLoadingStats } = useQuery<Stats>({
     queryKey: ["/api/stats"],
   });
@@ -77,28 +78,28 @@ export default function Dashboard() {
           <p className="mt-1 text-gray-500 text-sm">{t('dashboard_welcome')}</p>
         </div>
         <div className="mt-4 sm:mt-0 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-          <Select value={languageFilter} onValueChange={setLanguageFilter}>
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder={t('all_languages')} />
+              <SelectValue placeholder={t('category')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">{t('all_languages')}</SelectItem>
-              <SelectItem value="javascript">JavaScript</SelectItem>
-              <SelectItem value="python">Python</SelectItem>
-              <SelectItem value="java">Java</SelectItem>
-              <SelectItem value="go">Go</SelectItem>
-              <SelectItem value="rust">Rust</SelectItem>
+              <SelectItem value="all">{t('all_categories')}</SelectItem>
+              <SelectItem value="electronics">电子产品</SelectItem>
+              <SelectItem value="clothing">服装</SelectItem>
+              <SelectItem value="food">食品</SelectItem>
+              <SelectItem value="home">家居</SelectItem>
+              <SelectItem value="other">其他</SelectItem>
             </SelectContent>
           </Select>
 
-          <Select value={userFilter} onValueChange={setUserFilter}>
+          <Select value={warehouseFilter} onValueChange={setWarehouseFilter}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder={t('all_users')} />
+              <SelectValue placeholder={t('warehouse')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">{t('all_users')}</SelectItem>
-              <SelectItem value="me">{t('my_repositories')}</SelectItem>
-              <SelectItem value="team">{t('team_repositories')}</SelectItem>
+              <SelectItem value="all">{t('all_warehouses')}</SelectItem>
+              <SelectItem value="main">{t('my_products')}</SelectItem>
+              <SelectItem value="branch">{t('warehouse_products')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -106,41 +107,41 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatsCard 
-          title={t('repositories_count')} 
-          value={isLoadingStats ? "..." : stats?.totalRepositories || 0} 
-          icon="ri-git-repository-line" 
+          title={t('products_count')} 
+          value={isLoadingStats ? "..." : stats?.totalProducts || 0} 
+          icon="ri-shopping-bag-line" 
           color="blue" 
         />
         <StatsCard 
-          title={t('users_count')} 
-          value={isLoadingStats ? "..." : stats?.totalUsers || 0} 
-          icon="ri-team-line" 
+          title={t('warehouse')} 
+          value={isLoadingStats ? "..." : stats?.totalWarehouses || 0} 
+          icon="ri-archive-line" 
           color="green" 
         />
         <StatsCard 
-          title={t('languages_count')} 
-          value={isLoadingStats ? "..." : stats?.languagesCount || 0} 
-          icon="ri-code-s-slash-line" 
+          title={t('category')} 
+          value={isLoadingStats ? "..." : stats?.categoriesCount || 0} 
+          icon="ri-price-tag-3-line" 
           color="purple" 
         />
         <StatsCard 
-          title={t('commits_count')} 
-          value={isLoadingStats ? "..." : stats?.recentCommits || 0} 
-          icon="ri-git-commit-line" 
+          title={t('operations')} 
+          value={isLoadingStats ? "..." : stats?.recentOperations || 0} 
+          icon="ri-file-list-3-line" 
           color="yellow" 
         />
       </div>
 
       {viewMode === "list" ? (
         <RepositoryList 
-          repositories={repositories || []} 
-          isLoading={isLoadingRepositories} 
+          repositories={products || []} 
+          isLoading={isLoadingProducts} 
         />
       ) : null}
 
       <div className="mb-6">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg leading-6 font-medium text-gray-900">{t('repositories')}</h3>
+          <h3 className="text-lg leading-6 font-medium text-gray-900">{t('products')}</h3>
           <div className="flex space-x-3">
             <Button
               variant={viewMode === "list" ? "default" : "outline"}
@@ -162,15 +163,15 @@ export default function Dashboard() {
               onClick={() => setCreateDialogOpen(true)}
               className="flex items-center"
             >
-              <i className="ri-add-line mr-1.5"></i> {t('new_repository')}
+              <i className="ri-add-line mr-1.5"></i> {t('new_product')}
             </Button>
           </div>
         </div>
         
         {viewMode === "grid" ? (
           <RepositoryGrid 
-            repositories={repositories || []} 
-            isLoading={isLoadingRepositories} 
+            repositories={products || []} 
+            isLoading={isLoadingProducts} 
           />
         ) : null}
       </div>
