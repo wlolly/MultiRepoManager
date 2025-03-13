@@ -363,7 +363,7 @@ function CreateApiConfigurationDialog({
 // Function to test API connection
 async function testApiConnection(config: ApiConfiguration): Promise<boolean> {
   try {
-    const response = await apiRequest(`/api/api-configurations/${config.id}/test`, {
+    const response = await apiRequest<{ success: boolean }>(`/api/api-configurations/${config.id}/test`, {
       method: "POST"
     });
     
@@ -385,12 +385,20 @@ async function syncProducts(config: ApiConfiguration): Promise<{
   };
 }> {
   try {
-    const response = await apiRequest(`/api/api-configurations/${config.id}/sync`, {
+    const response = await apiRequest<{
+      success: boolean;
+      message: string;
+      stats?: {
+        total: number;
+        matched: number;
+        unmatched: number;
+      };
+    }>(`/api/api-configurations/${config.id}/sync`, {
       method: "POST"
     });
     
     return response;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Product sync failed:", error);
     return {
       success: false,
@@ -408,11 +416,10 @@ export default function ApiConfigurations() {
   const [isSyncingProducts, setIsSyncingProducts] = useState<Record<number, boolean>>({});
   
   // Fetch API configurations
-  const { data: apiConfigurations = [], isLoading } = useQuery({
+  const { data: apiConfigurations = [], isLoading } = useQuery<ApiConfiguration[]>({
     queryKey: ["/api/api-configurations"],
     queryFn: async () => {
-      const response = await apiRequest("/api/api-configurations");
-      return response as ApiConfiguration[];
+      return await apiRequest<ApiConfiguration[]>("/api/api-configurations");
     }
   });
   
