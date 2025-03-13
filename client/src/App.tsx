@@ -11,6 +11,8 @@ import Settings from "@/pages/settings";
 import Repository from "@/pages/repository/[id]";
 import NewRepository from "@/pages/new-repository";
 import Search from "@/pages/search";
+import { useEffect } from "react";
+import i18n from "./i18n";
 
 function Router() {
   return (
@@ -29,6 +31,15 @@ function Router() {
 }
 
 function App() {
+  // 强制设置为中文
+  useEffect(() => {
+    // 清除localStorage中可能存在的语言设置
+    localStorage.removeItem('i18nextLng');
+    // 设置为中文
+    i18n.changeLanguage('zh');
+    console.log('语言已设置为中文', i18n.language);
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <Router />
