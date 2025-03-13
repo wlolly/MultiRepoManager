@@ -31,34 +31,47 @@ export function LanguageSwitcher() {
   }, [i18n]);
 
   const handleLanguageChange = (lng: string) => {
+    // 获取界面显示的消息
+    let message = '';
+    switch(lng) {
+      case 'zh':
+        message = '语言已设置为中文';
+        break;
+      case 'en':
+        message = 'Language set to English';
+        break;
+      case 'ru':
+        message = 'Язык установлен на русский';
+        break;
+      case 'kk':
+        message = 'Тіл қазақ тіліне орнатылды';
+        break;
+      case 'uz':
+        message = 'Til o\'zbek tiliga o\'rnatildi';
+        break;
+    }
+
     import('@/i18n').then(({ changeLanguage }) => {
-      const langCode = changeLanguage(lng);
-      
-      // 显示提示
-      let message = '';
-      switch(langCode) {
-        case 'zh':
-          message = '语言已设置为中文';
-          break;
-        case 'en':
-          message = 'Language set to English';
-          break;
-        case 'ru':
-          message = 'Язык установлен на русский';
-          break;
-        case 'kk':
-          message = 'Тіл қазақ тіліне орнатылды';
-          break;
-        case 'uz':
-          message = 'Til o\'zbek tiliga o\'rnatildi';
-          break;
+      try {
+        changeLanguage(lng);
+        
+        // 显示成功提示
+        toast({
+          title: message,
+          description: "",
+          duration: 2000
+        });
+      } catch (error) {
+        console.error("Language change error:", error);
+        
+        // 显示错误提示
+        toast({
+          title: "语言切换失败",
+          description: "无法加载翻译资源",
+          variant: "destructive",
+          duration: 3000
+        });
       }
-      
-      toast({
-        title: message,
-        description: "",
-        duration: 2000
-      });
     });
   };
 
