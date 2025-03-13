@@ -355,6 +355,44 @@ async function createAllTables(db: any) {
     `);
     console.log('outbound_order_items 表已创建');
     
+    // 创建电商平台API配置表
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS \`api_configurations\` (
+        \`id\` INT AUTO_INCREMENT PRIMARY KEY,
+        \`name\` VARCHAR(255) NOT NULL,
+        \`platform_type\` VARCHAR(50) NOT NULL,
+        \`api_key\` VARCHAR(255),
+        \`api_secret\` VARCHAR(255),
+        \`api_endpoint\` VARCHAR(255) NOT NULL,
+        \`is_active\` BOOLEAN DEFAULT TRUE,
+        \`last_sync_time\` TIMESTAMP NULL,
+        \`created_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        \`updated_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        \`config\` TEXT
+      )
+    `);
+    console.log('api_configurations 表已创建');
+    
+    // 创建电商平台产品表
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS \`ecommerce_products\` (
+        \`id\` INT AUTO_INCREMENT PRIMARY KEY,
+        \`platform_id\` VARCHAR(255) NOT NULL,
+        \`platform_code\` VARCHAR(255) NOT NULL,
+        \`platform_name\` VARCHAR(255) NOT NULL,
+        \`platform_category\` VARCHAR(255),
+        \`price\` DECIMAL(10, 2),
+        \`stock\` INT,
+        \`matched_code\` VARCHAR(255) NOT NULL,
+        \`matched_product_id\` INT,
+        \`last_updated\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        \`platform_source\` VARCHAR(50) NOT NULL,
+        \`additional_info\` TEXT,
+        FOREIGN KEY (\`matched_product_id\`) REFERENCES \`products\`(\`id\`)
+      )
+    `);
+    console.log('ecommerce_products 表已创建');
+    
   } catch (error) {
     console.error('创建表失败:', error);
     throw error;
