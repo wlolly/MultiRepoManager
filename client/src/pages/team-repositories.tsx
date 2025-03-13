@@ -47,7 +47,7 @@ export default function TeamRepositories() {
             </SelectTrigger>
             <SelectContent>
               {isLoadingTeams ? (
-                <SelectItem value="" disabled>Loading teams...</SelectItem>
+                <SelectItem value="loading" disabled>Loading teams...</SelectItem>
               ) : teams && teams.length > 0 ? (
                 teams.map((team: any) => (
                   <SelectItem key={team.id} value={team.id.toString()}>
@@ -55,7 +55,7 @@ export default function TeamRepositories() {
                   </SelectItem>
                 ))
               ) : (
-                <SelectItem value="" disabled>No teams available</SelectItem>
+                <SelectItem value="no-teams" disabled>No teams available</SelectItem>
               )}
             </SelectContent>
           </Select>
