@@ -12,6 +12,7 @@ import Repository from "@/pages/repository/[id]";
 import NewRepository from "@/pages/new-repository";
 import Search from "@/pages/search";
 import Warehouses from "@/pages/warehouses";
+import ApiConfigurations from "@/pages/api-configurations";
 import { useEffect } from "react";
 import { Layout } from "@/components/layout/layout";
 // 引入预先配置好的i18n实例
@@ -29,6 +30,7 @@ function Router() {
       <Route path="/new-repository" component={NewRepository} />
       <Route path="/search" component={Search} />
       <Route path="/warehouses" component={Warehouses} />
+      <Route path="/api-configurations" component={ApiConfigurations} />
       <Route component={NotFound} />
     </Switch>
   );
