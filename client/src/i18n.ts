@@ -83,7 +83,30 @@ const resources = {
         recent: "最近仓库",
         recentDescription: "您最近更新的仓库",
         notFound: "未找到仓库",
-        noTeams: "暂无可用团队"
+        noTeams: "暂无可用团队",
+        noDescription: "无描述"
+      },
+      users: {
+        title: "用户与团队",
+        subtitle: "管理用户和团队访问权限",
+        users: "用户",
+        teams: "团队",
+        user: "用户",
+        systemUsers: "系统用户",
+        username: "用户名",
+        fullName: "全名",
+        created: "创建时间",
+        actions: "操作",
+        noUsersFound: "未找到用户",
+        addUser: "添加用户",
+        addNewUser: "添加新用户",
+        createNewUserDesc: "在系统中创建新用户账户。",
+        password: "密码",
+        createUser: "创建用户",
+        createTeam: "创建团队",
+        createTeamDesc: "创建新团队以共同协作处理仓库。",
+        teamName: "团队名称",
+        manageTeam: "管理团队"
       },
       warehouse: {
         products: "商品管理",
