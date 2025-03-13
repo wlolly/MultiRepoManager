@@ -44,11 +44,11 @@ export function RecentActivity() {
     const activityDate = new Date(date);
     const diffInSeconds = Math.floor((now.getTime() - activityDate.getTime()) / 1000);
     
-    if (diffInSeconds < 60) return t('time.justNow');
-    if (diffInSeconds < 3600) return t('time.minutesAgo', {value: Math.floor(diffInSeconds / 60)});
-    if (diffInSeconds < 86400) return t('time.hoursAgo', {value: Math.floor(diffInSeconds / 3600)});
-    if (diffInSeconds < 172800) return t('time.yesterday');
-    return t('time.daysAgo', {value: Math.floor(diffInSeconds / 86400)});
+    if (diffInSeconds < 60) return "刚刚";
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}分钟前`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}小时前`;
+    if (diffInSeconds < 172800) return "昨天";
+    return `${Math.floor(diffInSeconds / 86400)}天前`;
   };
 
   const getActivityIcon = (type: string) => {
@@ -83,7 +83,7 @@ export function RecentActivity() {
 
   return (
     <div className="bg-white shadow rounded-lg p-6">
-      <h3 className="text-lg font-medium text-gray-900 mb-4">{t('recentActivity_title')}</h3>
+      <h3 className="text-lg font-medium text-gray-900 mb-4">最近活动</h3>
       <div className="flow-root">
         <ul className="-mb-8">
           {activities && activities.length > 0 ? (
@@ -104,7 +104,7 @@ export function RecentActivity() {
                         {activity.summary.indexOf(' in ') > -1 ? (
                           <>
                             {activity.summary.split(' in ')[0]}{' '}
-                            {t('in')}{' '}
+                            在{' '}
                             <Link href={`/repository/${activity.repository.id}`}>
                               <a className="font-medium text-blue-600">{activity.repository.name}</a>
                             </Link>
@@ -123,7 +123,7 @@ export function RecentActivity() {
               </li>
             ))
           ) : (
-            <div className="text-gray-500 text-center py-4">{t('recentActivity_noData')}</div>
+            <div className="text-gray-500 text-center py-4">暂无活动数据</div>
           )}
         </ul>
       </div>

@@ -41,8 +41,8 @@ export default function Dashboard() {
     <Layout>
       <div className="pb-5 border-b border-gray-200 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('dashboard.title')}</h1>
-          <p className="mt-1 text-gray-500 text-sm">{t('dashboard.welcome')}</p>
+          <h1 className="text-2xl font-bold text-gray-900">管理面板</h1>
+          <p className="mt-1 text-gray-500 text-sm">欢迎使用 ELEMENT-5 系统</p>
         </div>
         <div className="mt-4 sm:mt-0 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
           <Select value={languageFilter} onValueChange={setLanguageFilter}>
@@ -108,7 +108,7 @@ export default function Dashboard() {
 
       <div className="mb-6">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg leading-6 font-medium text-gray-900">{t('dashboard.overview')}</h3>
+          <h3 className="text-lg leading-6 font-medium text-gray-900">仓库概览</h3>
           <div className="flex space-x-3">
             <Button
               variant={viewMode === "list" ? "default" : "outline"}
