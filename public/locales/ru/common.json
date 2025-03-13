@@ -61,7 +61,9 @@
     },
     "repositoryOverview": "Обзор репозиториев",
     "newRepository": "Новый репозиторий",
-    "languageDistribution": "Распределение языков"
+    "languageDistribution": "Распределение языков",
+    "languageDistribution_title": "Распределение языков",
+    "recentActivity_title": "Последние действия"
   },
   "repositories": {
     "recentRepositories": "Недавние репозитории",

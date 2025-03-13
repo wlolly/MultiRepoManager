@@ -61,7 +61,9 @@
     },
     "repositoryOverview": "Repository Overview",
     "newRepository": "New Repository",
-    "languageDistribution": "Language Distribution"
+    "languageDistribution": "Language Distribution",
+    "languageDistribution_title": "Language Distribution",
+    "recentActivity_title": "Recent Activity"
   },
   "repositories": {
     "recentRepositories": "Recent Repositories",
