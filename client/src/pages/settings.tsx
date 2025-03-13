@@ -304,13 +304,25 @@ export default function Settings() {
                   
                   <div className="pt-6 border-t border-gray-200">
                     <h4 className="font-medium mb-3">系统语言</h4>
-                    <select className="w-full rounded-md border border-gray-300 p-2.5">
-                      <option value="zh">中文</option>
-                      <option value="en">英文</option>
-                      <option value="ru">俄文</option>
-                      <option value="kk">哈萨克文</option>
-                      <option value="uz">乌兹别克文</option>
-                    </select>
+                    <Select 
+                      value={localStorage.getItem('i18nextLng') || 'zh'}
+                      onValueChange={(lang) => {
+                        import('@/i18n').then(({ changeLanguage }) => {
+                          changeLanguage(lang);
+                        });
+                      }}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="选择语言" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="zh">中文</SelectItem>
+                        <SelectItem value="en">English</SelectItem>
+                        <SelectItem value="ru">Русский</SelectItem>
+                        <SelectItem value="kk">Қазақша</SelectItem>
+                        <SelectItem value="uz">O'zbekcha</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 
