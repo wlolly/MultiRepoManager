@@ -33,11 +33,11 @@ export function Sidebar() {
     const activityDate = new Date(date);
     const diffInSeconds = Math.floor((now.getTime() - activityDate.getTime()) / 1000);
     
-    if (diffInSeconds < 60) return t('sidebar.activity.justNow');
-    if (diffInSeconds < 3600) return t('sidebar.activity.minutesAgo', { count: Math.floor(diffInSeconds / 60) });
-    if (diffInSeconds < 86400) return t('sidebar.activity.hoursAgo', { count: Math.floor(diffInSeconds / 3600) });
-    if (diffInSeconds < 172800) return t('sidebar.activity.yesterday');
-    return t('sidebar.activity.daysAgo', { count: Math.floor(diffInSeconds / 86400) });
+    if (diffInSeconds < 60) return t('time.justNow');
+    if (diffInSeconds < 3600) return t('time.minutesAgo', { value: Math.floor(diffInSeconds / 60) });
+    if (diffInSeconds < 86400) return t('time.hoursAgo', { value: Math.floor(diffInSeconds / 3600) });
+    if (diffInSeconds < 172800) return t('time.yesterday');
+    return t('time.daysAgo', { value: Math.floor(diffInSeconds / 86400) });
   };
   
   const getActivityIcon = (type: string) => {
