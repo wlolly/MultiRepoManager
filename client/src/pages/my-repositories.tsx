@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Layout } from "@/components/layout/layout";
 import { RepositoryList } from "@/components/repositories/repository-list";
 import { RepositoryGrid } from "@/components/repositories/repository-grid";
@@ -14,6 +15,7 @@ import { useQuery } from "@tanstack/react-query";
 import { CreateRepositoryDialog } from "@/components/repositories/create-repository-dialog";
 
 export default function MyRepositories() {
+  const { t } = useTranslation();
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [languageFilter, setLanguageFilter] = useState<string>("all");
   const [visibilityFilter, setVisibilityFilter] = useState<string>("all");
@@ -31,16 +33,16 @@ export default function MyRepositories() {
     <Layout>
       <div className="pb-5 border-b border-gray-200 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Repositories</h1>
-          <p className="mt-1 text-gray-500 text-sm">Manage your personal repositories</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('repositories.my', 'My Repositories')}</h1>
+          <p className="mt-1 text-gray-500 text-sm">{t('repositories.recentDescription', 'Manage your personal repositories')}</p>
         </div>
         <div className="mt-4 sm:mt-0 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
           <Select value={languageFilter} onValueChange={setLanguageFilter}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="All Languages" />
+              <SelectValue placeholder={t('dashboard.allLanguages', 'All Languages')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Languages</SelectItem>
+              <SelectItem value="all">{t('dashboard.allLanguages', 'All Languages')}</SelectItem>
               <SelectItem value="javascript">JavaScript</SelectItem>
               <SelectItem value="python">Python</SelectItem>
               <SelectItem value="java">Java</SelectItem>
@@ -51,10 +53,10 @@ export default function MyRepositories() {
 
           <Select value={visibilityFilter} onValueChange={setVisibilityFilter}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="All Visibility" />
+              <SelectValue placeholder={t('repositories.all_visibility', 'All Visibility')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Visibility</SelectItem>
+              <SelectItem value="all">{t('repositories.all_visibility', 'All Visibility')}</SelectItem>
               <SelectItem value="public">Public</SelectItem>
               <SelectItem value="private">Private</SelectItem>
               <SelectItem value="internal">Internal</SelectItem>
@@ -65,7 +67,7 @@ export default function MyRepositories() {
 
       <div className="mb-6">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg leading-6 font-medium text-gray-900">My Repositories</h3>
+          <h3 className="text-lg leading-6 font-medium text-gray-900">{t('repositories.my', 'My Repositories')}</h3>
           <div className="flex space-x-3">
             <Button
               variant={viewMode === "list" ? "default" : "outline"}
@@ -73,7 +75,7 @@ export default function MyRepositories() {
               onClick={() => setViewMode("list")}
               className="flex items-center"
             >
-              <i className="ri-list-check-2 mr-1.5"></i> List View
+              <i className="ri-list-check-2 mr-1.5"></i> {t('dashboard.listView', 'List View')}
             </Button>
             <Button
               variant={viewMode === "grid" ? "default" : "outline"}
@@ -81,13 +83,13 @@ export default function MyRepositories() {
               onClick={() => setViewMode("grid")}
               className="flex items-center"
             >
-              <i className="ri-grid-line mr-1.5"></i> Grid View
+              <i className="ri-grid-line mr-1.5"></i> {t('dashboard.gridView', 'Grid View')}
             </Button>
             <Button
               onClick={() => setCreateDialogOpen(true)}
               className="flex items-center"
             >
-              <i className="ri-add-line mr-1.5"></i> New Repository
+              <i className="ri-add-line mr-1.5"></i> {t('repositories.newRepository', 'New Repository')}
             </Button>
           </div>
         </div>
@@ -96,8 +98,8 @@ export default function MyRepositories() {
           <RepositoryList 
             repositories={repositories || []} 
             isLoading={isLoading}
-            title="My Repositories"
-            subtitle="Your personal repositories"
+            title={t('repositories.my', 'My Repositories')}
+            subtitle={t('repositories.recentDescription', 'Your personal repositories')}
           />
         ) : (
           <RepositoryGrid 

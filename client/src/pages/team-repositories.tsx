@@ -84,13 +84,13 @@ export default function TeamRepositories() {
     <Layout>
       <div className="pb-5 border-b border-gray-200 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Team Repositories</h1>
-          <p className="mt-1 text-gray-500 text-sm">Collaborate with your team on shared repositories</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('repositories.team', 'Team Repositories')}</h1>
+          <p className="mt-1 text-gray-500 text-sm">{t('repositories.teamDescription', 'Collaborate with your team on shared repositories')}</p>
         </div>
         <div className="mt-4 sm:mt-0 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
           <Select value={selectedTeam} onValueChange={setSelectedTeam}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select Team" />
+              <SelectValue placeholder={t('repositories.selectTeam', 'Select Team')} />
             </SelectTrigger>
             <SelectContent>
               {isLoadingTeams ? (
@@ -113,10 +113,10 @@ export default function TeamRepositories() {
             disabled={!selectedTeam}
           >
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="All Languages" />
+              <SelectValue placeholder={t('dashboard.allLanguages', 'All Languages')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Languages</SelectItem>
+              <SelectItem value="all">{t('dashboard.allLanguages', 'All Languages')}</SelectItem>
               <SelectItem value="javascript">JavaScript</SelectItem>
               <SelectItem value="python">Python</SelectItem>
               <SelectItem value="java">Java</SelectItem>
@@ -130,7 +130,7 @@ export default function TeamRepositories() {
       {selectedTeam ? (
         <div className="mb-6">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg leading-6 font-medium text-gray-900">Team Repositories</h3>
+            <h3 className="text-lg leading-6 font-medium text-gray-900">{t('repositories.team', 'Team Repositories')}</h3>
             <div className="flex space-x-3">
               <Button
                 variant={viewMode === "list" ? "default" : "outline"}
@@ -138,7 +138,7 @@ export default function TeamRepositories() {
                 onClick={() => setViewMode("list")}
                 className="flex items-center"
               >
-                <i className="ri-list-check-2 mr-1.5"></i> List View
+                <i className="ri-list-check-2 mr-1.5"></i> {t('dashboard.listView', 'List View')}
               </Button>
               <Button
                 variant={viewMode === "grid" ? "default" : "outline"}
@@ -146,7 +146,7 @@ export default function TeamRepositories() {
                 onClick={() => setViewMode("grid")}
                 className="flex items-center"
               >
-                <i className="ri-grid-line mr-1.5"></i> Grid View
+                <i className="ri-grid-line mr-1.5"></i> {t('dashboard.gridView', 'Grid View')}
               </Button>
             </div>
           </div>
@@ -155,8 +155,8 @@ export default function TeamRepositories() {
             <RepositoryList 
               repositories={repositories} 
               isLoading={isLoadingRepositories}
-              title="Team Repositories"
-              subtitle="Repositories shared with your team"
+              title={t('repositories.team', 'Team Repositories')}
+              subtitle={t('repositories.teamDescription', 'Repositories shared with your team')}
             />
           ) : (
             <RepositoryGrid 
@@ -168,10 +168,10 @@ export default function TeamRepositories() {
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle>Select a Team</CardTitle>
+            <CardTitle>{t('repositories.selectTeam', 'Select a Team')}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-gray-500">Please select a team to view its repositories</p>
+            <p className="text-gray-500">{t('repositories.teamSelectPrompt', 'Please select a team to view its repositories')}</p>
             
             {isLoadingTeams ? (
               <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -191,13 +191,13 @@ export default function TeamRepositories() {
                     onClick={() => setSelectedTeam(team.id.toString())}
                   >
                     <h4 className="font-medium text-gray-900">{team.name}</h4>
-                    <p className="text-sm text-gray-500">{team.description || "No description"}</p>
+                    <p className="text-sm text-gray-500">{team.description || t('repositories.noDescription', 'No description')}</p>
                   </Card>
                 ))}
               </div>
             ) : (
               <div className="mt-4 text-center p-8 border rounded-md">
-                <p>No teams available</p>
+                <p>{t('repositories.noTeams', 'No teams available')}</p>
               </div>
             )}
           </CardContent>
