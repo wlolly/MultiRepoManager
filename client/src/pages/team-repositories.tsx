@@ -13,25 +13,72 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useTranslation } from "react-i18next";
+
+// 定义类型接口
+interface Repository {
+  id: number;
+  name: string;
+  description: string;
+  visibility: string;
+  language: string;
+  branchCount: number;
+  contributorCount: number;
+  viewCount: number;
+  updatedAt: string;
+  owner: {
+    id: number;
+    username: string;
+    fullName: string;
+    avatarUrl: string;
+  };
+  contributors?: {
+    id: number;
+    username: string;
+    fullName?: string;
+    avatarUrl?: string;
+  }[];
+}
+
+interface TeamRepository {
+  id: number;
+  teamId: number;
+  repositoryId: number;
+  repository: Repository;
+}
+
+interface Team {
+  id: number;
+  name: string;
+  description?: string;
+  ownerId: number;
+  createdAt: string;
+}
 
 export default function TeamRepositories() {
+  const { t } = useTranslation();
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [selectedTeam, setSelectedTeam] = useState<string>("");
   const [languageFilter, setLanguageFilter] = useState<string>("all");
 
   // Fetch teams
-  const { data: teams, isLoading: isLoadingTeams } = useQuery({
+  const { data: teamsData, isLoading: isLoadingTeams } = useQuery<Team[]>({
     queryKey: ["/api/teams"],
   });
+  // 确保teams是一个数组
+  const teams: Team[] = Array.isArray(teamsData) ? teamsData : [];
 
   // Fetch team repositories
-  const { data: teamRepositories, isLoading: isLoadingRepositories } = useQuery({
+  const { data: teamRepositoriesData, isLoading: isLoadingRepositories } = useQuery<TeamRepository[]>({
     queryKey: [`/api/teams/${selectedTeam}/repositories${languageFilter !== "all" ? `?language=${languageFilter}` : ""}`],
     enabled: !!selectedTeam,
   });
+  
+  // 确保teamRepositories是一个数组
+  const teamRepositories: TeamRepository[] = Array.isArray(teamRepositoriesData) ? teamRepositoriesData : [];
 
   // Extract repositories from the team repositories response
-  const repositories = teamRepositories?.map((tr: any) => tr.repository) || [];
+  const repositories: Repository[] = teamRepositories.map((tr) => tr.repository);
 
   return (
     <Layout>
@@ -47,15 +94,15 @@ export default function TeamRepositories() {
             </SelectTrigger>
             <SelectContent>
               {isLoadingTeams ? (
-                <SelectItem value="loading" disabled>Loading teams...</SelectItem>
+                <SelectItem value="loading" disabled>{t('general.loading', 'Loading teams...')}</SelectItem>
               ) : teams && teams.length > 0 ? (
-                teams.map((team: any) => (
+                teams.map((team: Team) => (
                   <SelectItem key={team.id} value={team.id.toString()}>
                     {team.name}
                   </SelectItem>
                 ))
               ) : (
-                <SelectItem value="no-teams" disabled>No teams available</SelectItem>
+                <SelectItem value="no-teams" disabled>{t('repositories.noTeams', 'No teams available')}</SelectItem>
               )}
             </SelectContent>
           </Select>

@@ -51,28 +51,51 @@ export function LanguageSwitcher() {
         break;
     }
 
-    import('@/i18n').then(({ changeLanguage }) => {
-      try {
-        changeLanguage(lng);
+    // 直接加载资源文件测试
+    fetch(`/locales/${lng}/common.json`)
+      .then(response => {
+        console.log(`测试加载语言文件 ${lng}:`, response.status);
+        if (!response.ok) {
+          throw new Error(`无法加载语言文件: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log(`语言文件 ${lng} 内容:`, data);
         
-        // 显示成功提示
-        toast({
-          title: message,
-          description: "",
-          duration: 2000
+        // 如果测试加载成功，再实际切换语言
+        import('@/i18n').then(({ changeLanguage }) => {
+          try {
+            changeLanguage(lng);
+            
+            // 显示成功提示
+            toast({
+              title: message,
+              description: "语言已成功切换",
+              duration: 2000
+            });
+          } catch (error) {
+            console.error("Language change error:", error);
+            
+            // 显示错误提示
+            toast({
+              title: "语言切换失败",
+              description: "无法加载翻译资源",
+              variant: "destructive",
+              duration: 3000
+            });
+          }
         });
-      } catch (error) {
-        console.error("Language change error:", error);
-        
-        // 显示错误提示
+      })
+      .catch(error => {
+        console.error("语言文件加载错误:", error);
         toast({
-          title: "语言切换失败",
-          description: "无法加载翻译资源",
+          title: "语言文件加载失败",
+          description: error.message,
           variant: "destructive",
           duration: 3000
         });
-      }
-    });
+      });
   };
 
   return (
