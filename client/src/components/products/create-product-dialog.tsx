@@ -216,16 +216,16 @@ export function CreateProductDialog({ open, onOpenChange, currentUserId }: Creat
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="weightKg">{t('weight')} (kg)</Label>
+              <Label htmlFor="singleWeightKg">{t('weight')} (kg)</Label>
               <Input
-                id="weightKg"
+                id="singleWeightKg"
                 type="number"
                 step="0.01"
-                {...form.register("weightKg", { valueAsNumber: true })}
+                {...form.register("singleWeightKg", { valueAsNumber: true })}
                 placeholder="0.00"
               />
-              {form.formState.errors.weightKg && (
-                <p className="text-sm text-red-500">{form.formState.errors.weightKg.message}</p>
+              {form.formState.errors.singleWeightKg && (
+                <p className="text-sm text-red-500">{form.formState.errors.singleWeightKg.message}</p>
               )}
             </div>
           </div>
@@ -261,36 +261,36 @@ export function CreateProductDialog({ open, onOpenChange, currentUserId }: Creat
           </div>
           
           <div>
-            <h3 className="text-sm font-medium mb-2 border-b pb-1">{t('dimensions')}</h3>
+            <h3 className="text-sm font-medium mb-2 border-b pb-1">{t('single_item_dimensions')}</h3>
             <div className="space-y-4">
               <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-2">
-                  <Label htmlFor="lengthCm">{t('length')} (cm)</Label>
+                  <Label htmlFor="singleLengthCm">{t('single_length')} (cm)</Label>
                   <Input
-                    id="lengthCm"
+                    id="singleLengthCm"
                     type="number"
                     step="0.1"
-                    {...form.register("lengthCm", { valueAsNumber: true })}
+                    {...form.register("singleLengthCm", { valueAsNumber: true })}
                     placeholder="0.0"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="widthCm">{t('width')} (cm)</Label>
+                  <Label htmlFor="singleWidthCm">{t('single_width')} (cm)</Label>
                   <Input
-                    id="widthCm"
+                    id="singleWidthCm"
                     type="number"
                     step="0.1"
-                    {...form.register("widthCm", { valueAsNumber: true })}
+                    {...form.register("singleWidthCm", { valueAsNumber: true })}
                     placeholder="0.0"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="heightCm">{t('height')} (cm)</Label>
+                  <Label htmlFor="singleHeightCm">{t('single_height')} (cm)</Label>
                   <Input
-                    id="heightCm"
+                    id="singleHeightCm"
                     type="number"
                     step="0.1"
-                    {...form.register("heightCm", { valueAsNumber: true })}
+                    {...form.register("singleHeightCm", { valueAsNumber: true })}
                     placeholder="0.0"
                   />
                 </div>
@@ -298,12 +298,12 @@ export function CreateProductDialog({ open, onOpenChange, currentUserId }: Creat
               
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label htmlFor="volumeM3">{t('volume')} (m³)</Label>
+                  <Label htmlFor="singleVolumeM3">{t('single_volume')} (m³)</Label>
                   <Input
-                    id="volumeM3"
+                    id="singleVolumeM3"
                     type="number"
                     step="0.001"
-                    {...form.register("volumeM3", { valueAsNumber: true })}
+                    {...form.register("singleVolumeM3", { valueAsNumber: true })}
                     placeholder="0.000"
                   />
                 </div>
@@ -312,26 +312,36 @@ export function CreateProductDialog({ open, onOpenChange, currentUserId }: Creat
           </div>
           
           <div>
-            <h3 className="text-sm font-medium mb-2 border-b pb-1">{t('package_dimensions')}</h3>
+            <h3 className="text-sm font-medium mb-2 border-b pb-1">{t('bulk_package_dimensions')}</h3>
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-2">
-                  <Label htmlFor="packageWidthCm">{t('package_width')} (cm)</Label>
+                  <Label htmlFor="bulkLengthCm">{t('bulk_length')} (cm)</Label>
                   <Input
-                    id="packageWidthCm"
+                    id="bulkLengthCm"
                     type="number"
                     step="0.1"
-                    {...form.register("packageWidthCm", { valueAsNumber: true })}
+                    {...form.register("bulkLengthCm", { valueAsNumber: true })}
                     placeholder="0.0"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="packageHeightCm">{t('package_height')} (cm)</Label>
+                  <Label htmlFor="bulkWidthCm">{t('bulk_width')} (cm)</Label>
                   <Input
-                    id="packageHeightCm"
+                    id="bulkWidthCm"
                     type="number"
                     step="0.1"
-                    {...form.register("packageHeightCm", { valueAsNumber: true })}
+                    {...form.register("bulkWidthCm", { valueAsNumber: true })}
+                    placeholder="0.0"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="bulkHeightCm">{t('bulk_height')} (cm)</Label>
+                  <Input
+                    id="bulkHeightCm"
+                    type="number"
+                    step="0.1"
+                    {...form.register("bulkHeightCm", { valueAsNumber: true })}
                     placeholder="0.0"
                   />
                 </div>
@@ -339,22 +349,22 @@ export function CreateProductDialog({ open, onOpenChange, currentUserId }: Creat
               
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label htmlFor="packageWeightKg">{t('package_weight')} (kg)</Label>
+                  <Label htmlFor="bulkWeightKg">{t('bulk_weight')} (kg)</Label>
                   <Input
-                    id="packageWeightKg"
+                    id="bulkWeightKg"
                     type="number"
                     step="0.01"
-                    {...form.register("packageWeightKg", { valueAsNumber: true })}
+                    {...form.register("bulkWeightKg", { valueAsNumber: true })}
                     placeholder="0.00"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="packageVolumeM3">{t('package_volume')} (m³)</Label>
+                  <Label htmlFor="bulkVolumeM3">{t('bulk_volume')} (m³)</Label>
                   <Input
-                    id="packageVolumeM3"
+                    id="bulkVolumeM3"
                     type="number"
                     step="0.001"
-                    {...form.register("packageVolumeM3", { valueAsNumber: true })}
+                    {...form.register("bulkVolumeM3", { valueAsNumber: true })}
                     placeholder="0.000"
                   />
                 </div>
