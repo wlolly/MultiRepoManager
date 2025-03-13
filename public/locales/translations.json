@@ -404,5 +404,33 @@
     "ru": "необязательно",
     "kk": "міндетті емес",
     "uz": "ixtiyoriy"
+  },
+  "search_placeholder": {
+    "zh": "搜索代码库、产品或订单...",
+    "en": "Search repositories, products or orders...",
+    "ru": "Поиск репозиториев, товаров или заказов...",
+    "kk": "Репозиторийлерді, тауарларды немесе тапсырыстарды іздеу...",
+    "uz": "Repozitoriyalar, mahsulotlar yoki buyurtmalarni qidirish..."
+  },
+  "my_account": {
+    "zh": "我的账户",
+    "en": "My Account",
+    "ru": "Мой аккаунт",
+    "kk": "Менің тіркелгім",
+    "uz": "Mening hisobim"
+  },
+  "profile": {
+    "zh": "个人资料",
+    "en": "Profile",
+    "ru": "Профиль",
+    "kk": "Профиль",
+    "uz": "Profil"
+  },
+  "logout": {
+    "zh": "退出登录",
+    "en": "Logout",
+    "ru": "Выйти",
+    "kk": "Шығу",
+    "uz": "Chiqish"
   }
 }
