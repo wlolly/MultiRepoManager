@@ -7,6 +7,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { useTranslation } from "react-i18next";
 
 import {
   Card,
@@ -57,6 +58,7 @@ export default function NewRepository() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [_, navigate] = useLocation();
+  const { t } = useTranslation();
   
   // Hardcoded current user ID (in a real app, this would come from authentication)
   const currentUserId = 1;
@@ -80,15 +82,15 @@ export default function NewRepository() {
     onSuccess: async (response) => {
       const repository = await response.json();
       toast({
-        title: "Repository created",
-        description: `Successfully created ${repository.name}`,
+        title: t('repositories.repoCreated', 'Repository created'),
+        description: t('repositories.repoCreatedDesc', 'Successfully created {{name}}', { name: repository.name }),
       });
       queryClient.invalidateQueries({ queryKey: ["/api/repositories"] });
       navigate(`/repository/${repository.id}`);
     },
     onError: (error) => {
       toast({
-        title: "Failed to create repository",
+        title: t('repositories.repoCreateFailed', 'Failed to create repository'),
         description: error.message,
         variant: "destructive"
       });
@@ -102,16 +104,16 @@ export default function NewRepository() {
   return (
     <Layout>
       <div className="pb-5 border-b border-gray-200 mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Create New Repository</h1>
-        <p className="mt-1 text-gray-500 text-sm">Set up a new repository to store your code</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t('repositories.createNewRepository', 'Create New Repository')}</h1>
+        <p className="mt-1 text-gray-500 text-sm">{t('repositories.createRepoDesc', 'Set up a new repository to store your code')}</p>
       </div>
       
       <div className="max-w-3xl mx-auto">
         <Card>
           <CardHeader>
-            <CardTitle>Repository Information</CardTitle>
+            <CardTitle>{t('repositories.repositoryInformation', 'Repository Information')}</CardTitle>
             <CardDescription>
-              Enter the details for your new repository
+              {t('repositories.enterRepositoryDetails', 'Enter the details for your new repository')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -122,12 +124,12 @@ export default function NewRepository() {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Repository Name</FormLabel>
+                      <FormLabel>{t('repositories.repositoryName', 'Repository Name')}</FormLabel>
                       <FormControl>
                         <Input placeholder="my-awesome-project" {...field} />
                       </FormControl>
                       <FormDescription>
-                        Choose a unique name for your repository. Use only letters, numbers, hyphens, and underscores.
+                        {t('repositories.chooseUniqueName', 'Choose a unique name for your repository. Use only letters, numbers, hyphens, and underscores.')}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -139,16 +141,16 @@ export default function NewRepository() {
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Description (optional)</FormLabel>
+                      <FormLabel>{t('general.description', 'Description')} ({t('general.optional', 'optional')})</FormLabel>
                       <FormControl>
                         <Textarea 
-                          placeholder="Briefly describe your project" 
+                          placeholder={t('repositories.brieflyDescribe', 'Briefly describe your project')}
                           {...field} 
                           value={field.value || ""}
                         />
                       </FormControl>
                       <FormDescription>
-                        A short description helps others understand your project.
+                        {t('repositories.shortDescription', 'A short description helps others understand your project.')}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -161,21 +163,21 @@ export default function NewRepository() {
                     name="visibility"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Visibility</FormLabel>
+                        <FormLabel>{t('repositories.visibility', 'Visibility')}</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select visibility" />
+                              <SelectValue placeholder={t('repositories.selectVisibility', 'Select visibility')} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="public">Public</SelectItem>
-                            <SelectItem value="private">Private</SelectItem>
-                            <SelectItem value="internal">Internal</SelectItem>
+                            <SelectItem value="public">{t('repositories.public', 'Public')}</SelectItem>
+                            <SelectItem value="private">{t('repositories.private', 'Private')}</SelectItem>
+                            <SelectItem value="internal">{t('repositories.internal', 'Internal')}</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormDescription>
-                          Controls who can see and access your repository.
+                          {t('repositories.visibilityDescription', 'Controls who can see and access your repository.')}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -187,11 +189,11 @@ export default function NewRepository() {
                     name="language"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Primary Language</FormLabel>
+                        <FormLabel>{t('repositories.primaryLanguage', 'Primary Language')}</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select language" />
+                              <SelectValue placeholder={t('repositories.selectLanguage', 'Select language')} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -207,11 +209,11 @@ export default function NewRepository() {
                             <SelectItem value="ruby">Ruby</SelectItem>
                             <SelectItem value="swift">Swift</SelectItem>
                             <SelectItem value="kotlin">Kotlin</SelectItem>
-                            <SelectItem value="other">Other</SelectItem>
+                            <SelectItem value="other">{t('repositories.otherLanguage', 'Other')}</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormDescription>
-                          The main programming language of your project.
+                          {t('repositories.languageDescription', 'The main programming language of your project.')}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -222,7 +224,7 @@ export default function NewRepository() {
                 <Separator />
 
                 <div className="space-y-4">
-                  <h3 className="text-md font-medium">Initialize Repository With</h3>
+                  <h3 className="text-md font-medium">{t('repositories.initializeRepositoryWith', 'Initialize Repository With')}</h3>
                   
                   <FormField
                     control={form.control}
@@ -236,9 +238,9 @@ export default function NewRepository() {
                           />
                         </FormControl>
                         <div className="space-y-1 leading-none">
-                          <FormLabel>Add a README file</FormLabel>
+                          <FormLabel>{t('repositories.addReadme', 'Add a README file')}</FormLabel>
                           <FormDescription>
-                            Create a README to describe your project and give important information.
+                            {t('repositories.createReadme', 'Create a README to describe your project and give important information.')}
                           </FormDescription>
                         </div>
                       </FormItem>
@@ -257,9 +259,9 @@ export default function NewRepository() {
                           />
                         </FormControl>
                         <div className="space-y-1 leading-none">
-                          <FormLabel>Add .gitignore</FormLabel>
+                          <FormLabel>{t('repositories.addGitignore', 'Add .gitignore file')}</FormLabel>
                           <FormDescription>
-                            Add a .gitignore file to exclude build artifacts and other common files.
+                            {t('repositories.addGitignoreDescription', 'Add a .gitignore file to exclude build artifacts and other common files.')}
                           </FormDescription>
                         </div>
                       </FormItem>
@@ -273,13 +275,15 @@ export default function NewRepository() {
                     variant="outline" 
                     onClick={() => navigate("/")}
                   >
-                    Cancel
+                    {t('general.cancel', 'Cancel')}
                   </Button>
                   <Button 
                     type="submit" 
                     disabled={createMutation.isPending}
                   >
-                    {createMutation.isPending ? "Creating..." : "Create Repository"}
+                    {createMutation.isPending 
+                      ? t('repositories.creating', 'Creating...')
+                      : t('repositories.createRepository', 'Create Repository')}
                   </Button>
                 </div>
               </form>

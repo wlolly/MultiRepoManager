@@ -88,6 +88,7 @@ const resources = {
         repositoryName: "仓库名称",
         chooseUniqueName: "为您的仓库选择一个唯一名称。仅使用字母、数字、连字符和下划线。",
         initializeRepository: "初始化仓库",
+        initializeRepositoryWith: "用以下内容初始化仓库",
         addReadme: "添加README文件",
         createReadme: "创建README来描述您的项目并提供重要信息。",
         addGitignore: "添加.gitignore文件",
