@@ -83,11 +83,10 @@ export function CreateProductDialog({ open, onOpenChange, currentUserId }: Creat
   
   const { mutate, isPending } = useMutation({
     mutationFn: (data: FormValues) => 
-      apiRequest(
-        "POST",
-        "/api/products",
-        data
-      ),
+      apiRequest("/api/products", {
+        method: "POST",
+        body: data
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/products'] });
       toast({
@@ -97,10 +96,10 @@ export function CreateProductDialog({ open, onOpenChange, currentUserId }: Creat
       form.reset();
       onOpenChange(false);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: t('product_creation_failed'),
-        description: String(error),
+        description: error.message || String(error) || t('unknown_error'),
         variant: "destructive"
       });
     }
