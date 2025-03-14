@@ -142,7 +142,16 @@ export default function NewOutboundOrder() {
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form 
+              onSubmit={(e) => {
+                console.log("Form submit event triggered");
+                form.handleSubmit((data) => {
+                  console.log("Form data is valid, calling onSubmit", data);
+                  onSubmit(data);
+                })(e);
+              }} 
+              className="space-y-6"
+            >
               <div className="flex items-end gap-4">
                 <FormField
                   control={form.control}
@@ -331,8 +340,18 @@ export default function NewOutboundOrder() {
                   {t("cancel")}
                 </Button>
                 <Button 
-                  type="submit" 
+                  type="button" 
                   disabled={isSubmitting}
+                  onClick={() => {
+                    console.log("Create button clicked directly");
+                    console.log("Form state:", form.getValues());
+                    console.log("Form errors:", form.formState.errors);
+                    // 手动触发表单提交
+                    form.handleSubmit((data) => {
+                      console.log("Form data validated via direct button click:", data);
+                      onSubmit(data);
+                    })();
+                  }}
                 >
                   {isSubmitting ? t("creating") : t("create")}
                 </Button>
