@@ -22,8 +22,8 @@ const createProductSchema = z.object({
   uniqueCode: z.string().optional(), // 商品唯一码，用于与电商平台匹配
   category: z.string().min(1, "商品分类不能为空"),
   stock: z.number().min(0, "库存不能为负数"),
-  price: z.number().min(0, "售价不能为负数"),
-  cost: z.number().min(0, "成本不能为负数"),
+  price: z.number().min(0, "批发价不能为负数"),
+  cost: z.number().min(0, "代理价不能为负数"),
   
   // 单件尺寸和重量信息
   singleLengthCm: z.number().min(0, "长度不能为负数"),     // 单件尺寸（长CM）
@@ -94,19 +94,12 @@ export function CreateProductDialog({ open, onOpenChange, currentUserId }: Creat
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/products'] });
-      toast({
-        title: t('product_created'),
-        description: t('product_created_description')
-      });
+      toast.success(t('product_created'));
       form.reset();
       onOpenChange(false);
     },
     onError: (error: any) => {
-      toast({
-        title: t('product_creation_failed'),
-        description: error.message || String(error) || t('unknown_error'),
-        variant: "destructive"
-      });
+      toast.error(error.message || String(error) || t('unknown_error'));
     }
   });
   
@@ -250,7 +243,7 @@ export function CreateProductDialog({ open, onOpenChange, currentUserId }: Creat
           
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="price">{t('price')} (¥) *</Label>
+              <Label htmlFor="price">{t('wholesale_price') || "批发价"} *</Label>
               <Input
                 id="price"
                 type="number"
@@ -264,7 +257,7 @@ export function CreateProductDialog({ open, onOpenChange, currentUserId }: Creat
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="cost">{t('cost')} (¥) *</Label>
+              <Label htmlFor="cost">{t('agent_price') || "代理价"} *</Label>
               <Input
                 id="cost"
                 type="number"

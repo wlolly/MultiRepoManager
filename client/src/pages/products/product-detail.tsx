@@ -155,11 +155,11 @@ export default function ProductDetail() {
                   <p className="mt-1">{product.category}</p>
                 </div>
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500">价格</h3>
+                  <h3 className="text-sm font-medium text-gray-500">批发价</h3>
                   <p className="mt-1">¥{product.price?.toFixed(2)}</p>
                 </div>
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500">成本</h3>
+                  <h3 className="text-sm font-medium text-gray-500">代理价</h3>
                   <p className="mt-1">¥{product.cost?.toFixed(2)}</p>
                 </div>
                 <div className="md:col-span-2">
@@ -335,7 +335,7 @@ export default function ProductDetail() {
                   <Badge variant={product.stock > 10 ? "default" : "destructive"}>{product.stock} 件</Badge>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500">总价值</span>
+                  <span className="text-gray-500">总价值（代理价）</span>
                   <span>¥{(product.stock * product.cost).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
@@ -378,11 +378,11 @@ export default function ProductDetail() {
                 <Input id="stock" name="stock" type="number" defaultValue={product.stock} required />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="price">价格</Label>
+                <Label htmlFor="price">批发价</Label>
                 <Input id="price" name="price" type="number" step="0.01" defaultValue={product.price} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="cost">成本</Label>
+                <Label htmlFor="cost">代理价</Label>
                 <Input id="cost" name="cost" type="number" step="0.01" defaultValue={product.cost} />
               </div>
               <div className="space-y-2 md:col-span-2">
