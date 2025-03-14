@@ -433,6 +433,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Agent handling route
+  apiRouter.post("/agent/query", async (req, res) => {
+    try {
+      const { query, history } = req.body;
+      console.log("[Agent] Received query:", query);
+      console.log("[Agent] Chat history:", history);
+      
+      // TODO: 将聊天记录和查询发送给实际的 Agent 处理
+      const response = {
+        success: true,
+        reply: `我已收到您的消息: ${query}`,
+        timestamp: new Date().toISOString()
+      };
+      
+      console.log("[Agent] Sending response:", response);
+      res.json(response);
+    } catch (err) {
+      console.error("[Agent] Error:", err);
+      res.status(500).json({
+        success: false,
+        error: "Failed to process agent request"
+      });
+    }
+  });
+
   apiRouter.post("/inbound-orders", async (req, res) => {
     try {
       // 增加必要的字段
