@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
-import { FileDown, FileUp, FileText, AlertCircle, Upload, ArrowLeft } from "lucide-react";
+import { FileSpreadsheet, FileText, AlertCircle, Upload, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import axios from "axios";
@@ -193,7 +193,7 @@ export default function WarehouseTransferImport() {
             {t("common.back")}
           </Button>
           <Button variant="outline" onClick={handleDownloadTemplate}>
-            <FileDown className="mr-2 h-4 w-4" />
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
             {t("warehouseTransfer.download_template")}
           </Button>
         </div>
@@ -251,7 +251,7 @@ export default function WarehouseTransferImport() {
                     disabled={!file || isUploading}
                     className="ml-2"
                   >
-                    <FileUp className="mr-2 h-4 w-4" />
+                    <FileSpreadsheet className="mr-2 h-4 w-4" />
                     {isUploading ? t("common.uploading") : t("warehouseTransfer.preview_data")}
                   </Button>
                 </div>

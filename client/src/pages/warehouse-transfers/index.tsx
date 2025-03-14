@@ -488,7 +488,7 @@ export default function WarehouseTransfers() {
                   key={transfer.id}
                   onClick={() => exportTransferToExcel(transfer.id)}
                 >
-                  <Download className="mr-2 h-4 w-4" />
+                  <FileSpreadsheet className="mr-2 h-4 w-4" />
                   {t("warehouseTransfer.export_transfer", { ref: transfer.referenceNumber })}
                 </DropdownMenuItem>
               )).slice(0, 5)}
