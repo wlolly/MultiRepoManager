@@ -188,6 +188,7 @@ export default function OutboundOrderDetail() {
         body: JSON.stringify({
           outboundOrderId: parseInt(id),
           productId: parseInt(data.productId),
+          externalOrderNumber: data.externalOrderNumber || null,
           quantity: data.quantity,
           packageCount: data.packageCount,
           weight: data.weight,
