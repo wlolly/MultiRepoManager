@@ -13,6 +13,7 @@ import { FileSpreadsheet, FileText, AlertCircle, Upload, ArrowLeft } from "lucid
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import axios from "axios";
+import { apiRequest } from "@/lib/queryClient";
 
 // 预览数据接口
 interface ImportPreviewItem {
