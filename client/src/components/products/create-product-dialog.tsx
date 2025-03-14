@@ -38,9 +38,7 @@ const createProductSchema = z.object({
   bulkWidthCm: z.number().min(0, "整件宽度不能为负数"),      // 整件尺寸（宽CM）
   bulkHeightCm: z.number().min(0, "整件高度不能为负数"),     // 整件尺寸（高CM）
   bulkWeightKg: z.number().min(0, "整件重量不能为负数"),     // 整件重量（kg）
-  bulkVolumeM3: z.number().min(0, "整件体积不能为负数").optional(), // 整件立方（M3）- 可以自动计算
-  
-  warehouseId: z.number().min(1, "必须选择仓库")
+  bulkVolumeM3: z.number().min(0, "整件体积不能为负数").optional() // 整件立方（M3）- 可以自动计算
 });
 
 type FormValues = z.infer<typeof createProductSchema>;
@@ -80,9 +78,7 @@ export function CreateProductDialog({ open, onOpenChange, currentUserId }: Creat
       bulkWidthCm: 0,
       bulkHeightCm: 0,
       bulkWeightKg: 0,
-      bulkVolumeM3: 0,
-      
-      warehouseId: 1 // 默认仓库ID
+      bulkVolumeM3: 0
     }
   });
   
@@ -168,48 +164,26 @@ export function CreateProductDialog({ open, onOpenChange, currentUserId }: Creat
             />
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="category">{t('category')} *</Label>
-              <Select
-                value={form.watch("category")}
-                onValueChange={(value) => form.setValue("category", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('select_category')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="electronics">电子产品</SelectItem>
-                  <SelectItem value="clothing">服装</SelectItem>
-                  <SelectItem value="food">食品</SelectItem>
-                  <SelectItem value="home">家居</SelectItem>
-                  <SelectItem value="other">其他</SelectItem>
-                </SelectContent>
-              </Select>
-              {form.formState.errors.category && (
-                <p className="text-sm text-red-500">{form.formState.errors.category.message}</p>
-              )}
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="warehouse">{t('warehouse')} *</Label>
-              <Select
-                value={form.watch("warehouseId")?.toString()}
-                onValueChange={(value) => form.setValue("warehouseId", parseInt(value))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('select_warehouse')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">主仓库</SelectItem>
-                  <SelectItem value="2">分仓库1</SelectItem>
-                  <SelectItem value="3">分仓库2</SelectItem>
-                </SelectContent>
-              </Select>
-              {form.formState.errors.warehouseId && (
-                <p className="text-sm text-red-500">{form.formState.errors.warehouseId.message}</p>
-              )}
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="category">{t('category')} *</Label>
+            <Select
+              value={form.watch("category")}
+              onValueChange={(value) => form.setValue("category", value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={t('select_category')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="electronics">电子产品</SelectItem>
+                <SelectItem value="clothing">服装</SelectItem>
+                <SelectItem value="food">食品</SelectItem>
+                <SelectItem value="home">家居</SelectItem>
+                <SelectItem value="other">其他</SelectItem>
+              </SelectContent>
+            </Select>
+            {form.formState.errors.category && (
+              <p className="text-sm text-red-500">{form.formState.errors.category.message}</p>
+            )}
           </div>
           
           <div className="grid grid-cols-2 gap-4">
