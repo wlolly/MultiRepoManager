@@ -704,7 +704,7 @@ export default function WarehouseTransfers() {
                 disabled={!importFile || importPreview.length === 0 || importPreview.filter(item => item.matched).length === 0}
                 onClick={handleImportExcel}
               >
-                <FileImport className="mr-2 h-4 w-4" />
+                <FileUp className="mr-2 h-4 w-4" />
                 {t("warehouseTransfer.import")}
               </Button>
             </div>
