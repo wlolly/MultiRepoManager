@@ -780,6 +780,24 @@ export default function InboundOrderDetail() {
                           </FormItem>
                         )}
                       />
+                      
+                      <FormField
+                        control={itemForm.control}
+                        name="remark"
+                        render={({ field }) => (
+                          <FormItem className="col-span-1 md:col-span-2">
+                            <FormLabel>{t("remark")}</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                placeholder={t("enter_remark")} 
+                                className="resize-none" 
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     </div>
                     
                     <div className="flex justify-end space-x-4 pt-2">
