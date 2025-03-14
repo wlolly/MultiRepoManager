@@ -33,6 +33,7 @@ const createProductSchema = z.object({
   singleVolumeM3: z.number().min(0, "体积不能为负数").optional(), // 单件立方（M3）- 可以自动计算
   
   // 整件包装信息
+  bulkQuantity: z.number().min(1, "每件包装内的产品数量必须至少为1").default(1), // 每件包装内的产品数量
   bulkLengthCm: z.number().min(0, "整件长度不能为负数"),     // 整件尺寸（长CM）
   bulkWidthCm: z.number().min(0, "整件宽度不能为负数"),      // 整件尺寸（宽CM）
   bulkHeightCm: z.number().min(0, "整件高度不能为负数"),     // 整件尺寸（高CM）
@@ -74,6 +75,7 @@ export function CreateProductDialog({ open, onOpenChange, currentUserId }: Creat
       singleVolumeM3: 0,
       
       // 整件包装信息
+      bulkQuantity: 1, // 每件包装内的产品数量
       bulkLengthCm: 0,
       bulkWidthCm: 0,
       bulkHeightCm: 0,
