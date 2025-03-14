@@ -2,7 +2,8 @@ import React, { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
+// 导入全局toast工具，不再使用hooks
+import toast from "../lib/toast";
 import { ScanLine, QrCode, Edit } from "lucide-react";
 
 interface BarcodeScannerProps {
@@ -24,7 +25,6 @@ export function BarcodeScanner({
   const [isScanning, setIsScanning] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { toast } = useToast();
 
   // 当扫描设备输入数据时，会快速输入完整的条码信息
   // 通常情况下，手动输入的速度不会那么快
@@ -83,10 +83,8 @@ export function BarcodeScanner({
           // 确保不是空值
           if (value) {
             onCodeDetected(value);
-            toast({
-              title: uniqueCodeMode ? "唯一码已扫描" : "条码已扫描",
-              description: value,
-            });
+            // 使用全局toast方法
+            toast.success(uniqueCodeMode ? `唯一码已扫描: ${value}` : `条码已扫描: ${value}`);
             setInputValue(value);
             // 扫描成功后，清空输入框准备下一次扫描
             if (isScanner && inputRef.current) {
@@ -158,10 +156,8 @@ export function BarcodeScanner({
     try {
       if (inputValue.trim()) {
         onCodeDetected(inputValue.trim());
-        toast({
-          title: uniqueCodeMode ? "唯一码已提交" : "条码已提交",
-          description: inputValue,
-        });
+        // 使用全局toast方法
+        toast.success(uniqueCodeMode ? `唯一码已提交: ${inputValue}` : `条码已提交: ${inputValue}`);
         if (isEditing) {
           setIsEditing(false);
         }
@@ -180,10 +176,8 @@ export function BarcodeScanner({
         inputRef.current.value = '';
         inputRef.current.focus();
       }
-      toast({
-        title: uniqueCodeMode ? "开始扫描唯一码" : "开始扫描条码",
-        description: "请使用扫描枪扫描条码",
-      });
+      // 使用全局toast方法
+      toast.info(uniqueCodeMode ? "开始扫描唯一码，请使用扫描枪扫描" : "开始扫描条码，请使用扫描枪扫描");
     } catch (error) {
       console.error("开始扫描时发生错误:", error);
       setIsScanning(false);
