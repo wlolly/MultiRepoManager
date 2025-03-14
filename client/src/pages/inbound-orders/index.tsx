@@ -477,6 +477,5 @@ export default function InboundOrders() {
         </CardFooter>
       </Card>
     </div>
-  </Layout>
   );
 }
