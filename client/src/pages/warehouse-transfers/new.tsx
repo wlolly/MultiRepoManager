@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -15,9 +15,11 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeftIcon, PlusIcon, MinusIcon, ArrowRightIcon } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ArrowLeftIcon, PlusIcon, MinusIcon, ArrowRightIcon, ScanLine } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { BarcodeScanner } from "@/components/BarcodeScanner";
 
 // 仓库接口定义
 interface Warehouse {
@@ -31,6 +33,7 @@ interface Product {
   id: number;
   name: string;
   barcode: string;
+  uniqueCode?: string;
   category: string;
   stock: number;
   singleWeightKg: number;
@@ -49,6 +52,7 @@ const transferSchema = z.object({
       packageCount: z.string().min(1, { message: "件数是必填项" }).transform(val => parseInt(val)),
       weight: z.string().min(0, { message: "重量不能为负" }).transform(val => parseFloat(val)),
       volume: z.string().min(0, { message: "体积不能为负" }).transform(val => parseFloat(val)),
+      uniqueCode: z.string().optional(), // 商品唯一码，可选
     })
   ).min(1, { message: "至少需要添加一个商品" }),
 });
@@ -85,7 +89,8 @@ export default function NewWarehouseTransfer() {
           quantity: "1",
           packageCount: "1",
           weight: "0",
-          volume: "0"
+          volume: "0",
+          uniqueCode: "" // 初始化唯一码字段为空
         }
       ],
     }
@@ -111,7 +116,8 @@ export default function NewWarehouseTransfer() {
             quantity: item.quantity,
             packageCount: item.packageCount,
             weight: item.weight,
-            volume: item.volume
+            volume: item.volume,
+            uniqueCode: item.uniqueCode || null // 添加唯一码数据，如果为空则传null
           }))
         }),
       });
@@ -157,7 +163,8 @@ export default function NewWarehouseTransfer() {
       quantity: "1",
       packageCount: "1",
       weight: "0",
-      volume: "0"
+      volume: "0",
+      uniqueCode: "" // 添加唯一码字段，初始为空
     });
   };
   
