@@ -704,8 +704,9 @@ export default function NewWarehouseTransfer() {
   const { totalQuantity, totalPackages, totalWeight, totalVolume } = calculateTotals();
   
   return (
-    <div className="container mx-auto py-6">
-      <div className="flex justify-between items-center mb-6">
+    <Layout>
+      <div className="container mx-auto py-6">
+        <div className="flex justify-between items-center mb-6">
         <Button variant="outline" size="sm" onClick={() => setLocation("/warehouse-transfers")}>
           <ArrowLeftIcon className="mr-2 h-4 w-4" />
           {t("back_to_warehouse_transfers")}
@@ -1253,5 +1254,6 @@ export default function NewWarehouseTransfer() {
         </DialogContent>
       </Dialog>
     </div>
+  </Layout>
   );
 }
