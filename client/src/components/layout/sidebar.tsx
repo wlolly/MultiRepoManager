@@ -97,7 +97,7 @@ export function Sidebar() {
   };
 
   return (
-    <div className="bg-gray-900 text-white w-64 flex-shrink-0 flex flex-col" style={{display: 'flex'}}>
+    <div className="bg-gray-900 text-white w-64 flex-shrink-0 flex flex-col h-full">
       <div className="p-4 flex items-center border-b border-gray-800">
         <i className="ri-archive-drawer-line text-2xl mr-2 text-blue-500"></i>
         <h1 className="text-xl font-semibold">{t('app_name')}</h1>
