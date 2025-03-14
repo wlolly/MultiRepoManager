@@ -3,8 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
-import { Plus, Download, Filter, ArrowUpDown, Search, FileUp, FileDown, FileText, AlertCircle, X, FileInput as FileImport } from "lucide-react";
+import { Plus, Download, Filter, ArrowUpDown, Search, FileUp, FileDown, FileText, AlertCircle, X, FileSpreadsheet } from "lucide-react";
 import axios from "axios";
+import * as XLSX from "xlsx";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -291,11 +292,11 @@ export default function WarehouseTransfers() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={handleDownloadTemplate}>
-            <FileDown className="mr-2 h-4 w-4" />
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
             {t("warehouseTransfer.download_template")}
           </Button>
           <Button variant="outline" onClick={() => navigate('/warehouse-transfers/import')}>
-            <FileUp className="mr-2 h-4 w-4" />
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
             {t("warehouseTransfer.import_from_excel")}
           </Button>
           <Button onClick={handleCreateTransfer}>
@@ -369,7 +370,7 @@ export default function WarehouseTransfers() {
             onClick={handleDownloadTemplate}
             className="flex items-center"
           >
-            <FileDown className="mr-2 h-4 w-4" />
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
             {t("warehouseTransfer.download_template")}
           </Button>
           <Button
@@ -377,7 +378,7 @@ export default function WarehouseTransfers() {
             onClick={() => navigate('/warehouse-transfers/import')}
             className="flex items-center"
           >
-            <FileUp className="mr-2 h-4 w-4" />
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
             {t("warehouseTransfer.import_from_excel")}
           </Button>
         </div>
@@ -465,18 +466,18 @@ export default function WarehouseTransfers() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
-                <FileDown className="mr-2 h-4 w-4" />
+                <FileSpreadsheet className="mr-2 h-4 w-4" />
                 {t("warehouseTransfer.excel_options")}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuLabel>{t("warehouseTransfer.excel_operations")}</DropdownMenuLabel>
               <DropdownMenuItem onClick={handleDownloadTemplate}>
-                <FileText className="mr-2 h-4 w-4" />
+                <FileSpreadsheet className="mr-2 h-4 w-4" />
                 {t("warehouseTransfer.download_template")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setImportDialogOpen(true)}>
-                <FileUp className="mr-2 h-4 w-4" />
+                <FileSpreadsheet className="mr-2 h-4 w-4" />
                 {t("warehouseTransfer.import_from_excel")}
               </DropdownMenuItem>
               {displayedTransfers.length > 0 && (
@@ -638,7 +639,7 @@ export default function WarehouseTransfers() {
                   onClick={handleDownloadTemplate}
                   className="h-8 text-xs ml-2"
                 >
-                  <FileText className="mr-2 h-3 w-3" />
+                  <FileSpreadsheet className="mr-2 h-3 w-3" />
                   下载导入模板
                 </Button>
               </div>
@@ -740,7 +741,7 @@ export default function WarehouseTransfers() {
                 disabled={!importFile || importPreview.length === 0 || importPreview.filter(item => item.matched).length === 0}
                 onClick={handleImportExcel}
               >
-                <FileUp className="mr-2 h-4 w-4" />
+                <FileSpreadsheet className="mr-2 h-4 w-4" />
                 {t("warehouseTransfer.import")}
               </Button>
             </div>
