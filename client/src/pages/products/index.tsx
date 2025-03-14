@@ -204,11 +204,25 @@ export default function ProductsPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => window.location.href = "/api/products/excel/template"}>
+              <DropdownMenuItem onClick={() => {
+                const link = document.createElement('a');
+                link.href = "/api/products/excel/template";
+                link.download = "product_import_template.xlsx";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }}>
                 <DownloadIcon className="mr-2 h-4 w-4" />
                 {t('download_template')}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => window.location.href = "/api/products/excel/export"}>
+              <DropdownMenuItem onClick={() => {
+                const link = document.createElement('a');
+                link.href = "/api/products/excel/export";
+                link.download = "products_export.xlsx";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }}>
                 <DatabaseIcon className="mr-2 h-4 w-4" />
                 {t('export_products')}
               </DropdownMenuItem>
