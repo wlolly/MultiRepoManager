@@ -1644,15 +1644,66 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createInboundOrder(insertInboundOrder: InsertInboundOrder): Promise<InboundOrder> {
-    // MySQL不直接支持returning，所以我们需要先插入然后查询
-    const result = await db.insert(inboundOrders).values(insertInboundOrder);
-    const orderId = Number(result.insertId);
-    
-    // 获取刚插入的入库单
-    const inboundOrder = await this.getInboundOrder(orderId);
-    if (!inboundOrder) throw new Error(`Failed to retrieve inbound order after creation`);
-    
-    return inboundOrder;
+    try {
+      // MySQL不直接支持returning，所以我们需要先插入然后查询
+      console.log("即将插入入库单数据:", JSON.stringify(insertInboundOrder));
+      const result = await db.insert(inboundOrders).values(insertInboundOrder);
+      
+      // 处理insertId可能在不同位置的情况
+      let orderId;
+      if (result && typeof result === 'object') {
+        console.log("插入入库单结果:", JSON.stringify(result));
+        
+        // 尝试多种可能的路径获取insertId
+        if ('insertId' in result) {
+          orderId = Number(result.insertId);
+        } else if (result[0] && 'insertId' in result[0]) {
+          orderId = Number(result[0].insertId);
+        } else if (result.rows && result.rows.insertId) {
+          orderId = Number(result.rows.insertId);
+        } else {
+          // 如果无法获取ID，使用订单号查询
+          console.log("无法从插入结果中获取ID，尝试通过订单号查询");
+          const orderByNumber = await this.getInboundOrderByNumber(insertInboundOrder.orderNumber);
+          if (orderByNumber) {
+            return orderByNumber;
+          }
+          throw new Error("无法获取新创建的入库单ID");
+        }
+      } else {
+        console.log("插入结果不是对象:", result);
+        throw new Error("插入结果格式异常");
+      }
+      
+      if (isNaN(orderId) || orderId <= 0) {
+        console.log("获取到的入库单ID无效:", orderId);
+        // 尝试通过订单号查询
+        const orderByNumber = await this.getInboundOrderByNumber(insertInboundOrder.orderNumber);
+        if (orderByNumber) {
+          return orderByNumber;
+        }
+        throw new Error(`无效的入库单ID: ${orderId}`);
+      }
+      
+      console.log("成功获取入库单ID:", orderId);
+      
+      // 获取刚插入的入库单
+      const inboundOrder = await this.getInboundOrder(orderId);
+      if (!inboundOrder) {
+        console.log("无法通过ID查询到入库单，尝试通过订单号查询");
+        // 尝试通过订单号查询
+        const orderByNumber = await this.getInboundOrderByNumber(insertInboundOrder.orderNumber);
+        if (orderByNumber) {
+          return orderByNumber;
+        }
+        throw new Error(`无法获取新创建的入库单: ${orderId}`);
+      }
+      
+      return inboundOrder;
+    } catch (error) {
+      console.error("创建入库单错误:", error);
+      throw error;
+    }
   }
 
   async updateInboundOrder(id: number, inboundOrder: Partial<InboundOrder>): Promise<InboundOrder | undefined> {
@@ -1709,15 +1760,84 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createInboundOrderItem(insertInboundOrderItem: InsertInboundOrderItem): Promise<InboundOrderItem> {
-    // MySQL不直接支持returning，所以我们需要先插入然后查询
-    const result = await db.insert(inboundOrderItems).values(insertInboundOrderItem);
-    const itemId = Number(result.insertId);
-    
-    // 获取刚插入的入库单明细
-    const inboundOrderItem = await this.getInboundOrderItem(itemId);
-    if (!inboundOrderItem) throw new Error(`Failed to retrieve inbound order item after creation`);
-    
-    return inboundOrderItem;
+    try {
+      // MySQL不直接支持returning，所以我们需要先插入然后查询
+      console.log("插入入库单明细:", JSON.stringify(insertInboundOrderItem));
+      const result = await db.insert(inboundOrderItems).values(insertInboundOrderItem);
+      
+      // 处理insertId可能在不同位置的情况
+      let itemId;
+      if (result && typeof result === 'object') {
+        console.log("入库单明细插入结果:", JSON.stringify(result));
+        
+        // 尝试多种可能的路径获取insertId
+        if ('insertId' in result) {
+          itemId = Number(result.insertId);
+        } else if (result[0] && 'insertId' in result[0]) {
+          itemId = Number(result[0].insertId);
+        } else if (result.rows && result.rows.insertId) {
+          itemId = Number(result.rows.insertId);
+        } else {
+          // 如果无法获取ID，尝试通过联合查询
+          console.log("无法获取明细ID，尝试通过订单ID和商品ID查询最新插入的项目");
+          const recentItems = await db.select()
+                                     .from(inboundOrderItems)
+                                     .where(eq(inboundOrderItems.inboundOrderId, insertInboundOrderItem.inboundOrderId))
+                                     .orderBy(desc(inboundOrderItems.id))
+                                     .limit(1);
+          
+          if (recentItems.length > 0) {
+            return recentItems[0];
+          }
+          
+          throw new Error("无法获取新创建的入库单明细ID");
+        }
+      } else {
+        console.log("插入结果不是对象:", result);
+        throw new Error("插入结果格式异常");
+      }
+      
+      if (isNaN(itemId) || itemId <= 0) {
+        console.log("获取到的明细ID无效:", itemId);
+        // 尝试通过关联字段查询
+        const recentItems = await db.select()
+                                   .from(inboundOrderItems)
+                                   .where(eq(inboundOrderItems.inboundOrderId, insertInboundOrderItem.inboundOrderId))
+                                   .orderBy(desc(inboundOrderItems.id))
+                                   .limit(1);
+        
+        if (recentItems.length > 0) {
+          return recentItems[0];
+        }
+        
+        throw new Error(`无效的入库单明细ID: ${itemId}`);
+      }
+      
+      console.log("成功获取入库单明细ID:", itemId);
+      
+      // 获取刚插入的入库单明细
+      const inboundOrderItem = await this.getInboundOrderItem(itemId);
+      if (!inboundOrderItem) {
+        console.log("无法通过ID查询到入库单明细，尝试通过订单ID查询最新项目");
+        // 尝试通过关联字段查询
+        const recentItems = await db.select()
+                                   .from(inboundOrderItems)
+                                   .where(eq(inboundOrderItems.inboundOrderId, insertInboundOrderItem.inboundOrderId))
+                                   .orderBy(desc(inboundOrderItems.id))
+                                   .limit(1);
+        
+        if (recentItems.length > 0) {
+          return recentItems[0];
+        }
+        
+        throw new Error(`无法获取新创建的入库单明细: ${itemId}`);
+      }
+      
+      return inboundOrderItem;
+    } catch (error) {
+      console.error("创建入库单明细错误:", error);
+      throw error;
+    }
   }
 
   async getInboundOrderItem(id: number): Promise<InboundOrderItem | undefined> {
@@ -1777,15 +1897,67 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createOutboundOrder(insertOutboundOrder: InsertOutboundOrder): Promise<OutboundOrder> {
-    // MySQL不直接支持returning，所以我们需要先插入然后查询
-    const result = await db.insert(outboundOrders).values(insertOutboundOrder);
-    const orderId = Number(result.insertId);
-    
-    // 获取刚插入的出库单
-    const outboundOrder = await this.getOutboundOrder(orderId);
-    if (!outboundOrder) throw new Error(`Failed to retrieve outbound order after creation`);
-    
-    return outboundOrder;
+    try {
+      // MySQL不直接支持returning，所以我们需要先插入然后查询
+      console.log("即将插入出库单数据:", JSON.stringify(insertOutboundOrder));
+      const result = await db.insert(outboundOrders).values(insertOutboundOrder);
+      
+      // 处理insertId可能在不同位置的情况
+      let orderId;
+      if (result && typeof result === 'object') {
+        // 输出结果以便调试
+        console.log("插入结果:", JSON.stringify(result));
+        
+        // 尝试多种可能的路径获取insertId
+        if ('insertId' in result) {
+          orderId = Number(result.insertId);
+        } else if (result[0] && 'insertId' in result[0]) {
+          orderId = Number(result[0].insertId);
+        } else if (result.rows && result.rows.insertId) {
+          orderId = Number(result.rows.insertId);
+        } else {
+          // 如果无法获取ID，使用订单号查询
+          console.log("无法从插入结果中获取ID，尝试通过订单号查询");
+          const orderByNumber = await this.getOutboundOrderByNumber(insertOutboundOrder.orderNumber);
+          if (orderByNumber) {
+            return orderByNumber;
+          }
+          throw new Error("无法获取新创建的出库单ID");
+        }
+      } else {
+        console.log("插入结果不是对象:", result);
+        throw new Error("插入结果格式异常");
+      }
+      
+      if (isNaN(orderId) || orderId <= 0) {
+        console.log("获取到的订单ID无效:", orderId);
+        // 尝试通过订单号查询
+        const orderByNumber = await this.getOutboundOrderByNumber(insertOutboundOrder.orderNumber);
+        if (orderByNumber) {
+          return orderByNumber;
+        }
+        throw new Error(`无效的出库单ID: ${orderId}`);
+      }
+      
+      console.log("成功获取出库单ID:", orderId);
+      
+      // 获取刚插入的出库单
+      const outboundOrder = await this.getOutboundOrder(orderId);
+      if (!outboundOrder) {
+        console.log("无法通过ID查询到出库单，尝试通过订单号查询");
+        // 尝试通过订单号查询
+        const orderByNumber = await this.getOutboundOrderByNumber(insertOutboundOrder.orderNumber);
+        if (orderByNumber) {
+          return orderByNumber;
+        }
+        throw new Error(`无法获取新创建的出库单: ${orderId}`);
+      }
+      
+      return outboundOrder;
+    } catch (error) {
+      console.error("创建出库单错误:", error);
+      throw error;
+    }
   }
 
   async updateOutboundOrder(id: number, outboundOrder: Partial<OutboundOrder>): Promise<OutboundOrder | undefined> {
@@ -1842,15 +2014,84 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createOutboundOrderItem(insertOutboundOrderItem: InsertOutboundOrderItem): Promise<OutboundOrderItem> {
-    // MySQL不直接支持returning，所以我们需要先插入然后查询
-    const result = await db.insert(outboundOrderItems).values(insertOutboundOrderItem);
-    const itemId = Number(result.insertId);
-    
-    // 获取刚插入的出库单明细
-    const outboundOrderItem = await this.getOutboundOrderItem(itemId);
-    if (!outboundOrderItem) throw new Error(`Failed to retrieve outbound order item after creation`);
-    
-    return outboundOrderItem;
+    try {
+      // MySQL不直接支持returning，所以我们需要先插入然后查询
+      console.log("插入出库单明细:", JSON.stringify(insertOutboundOrderItem));
+      const result = await db.insert(outboundOrderItems).values(insertOutboundOrderItem);
+      
+      // 处理insertId可能在不同位置的情况
+      let itemId;
+      if (result && typeof result === 'object') {
+        console.log("出库单明细插入结果:", JSON.stringify(result));
+        
+        // 尝试多种可能的路径获取insertId
+        if ('insertId' in result) {
+          itemId = Number(result.insertId);
+        } else if (result[0] && 'insertId' in result[0]) {
+          itemId = Number(result[0].insertId);
+        } else if (result.rows && result.rows.insertId) {
+          itemId = Number(result.rows.insertId);
+        } else {
+          // 如果无法获取ID，尝试通过联合查询
+          console.log("无法获取明细ID，尝试通过订单ID和商品ID查询最新插入的项目");
+          const recentItems = await db.select()
+                                     .from(outboundOrderItems)
+                                     .where(eq(outboundOrderItems.outboundOrderId, insertOutboundOrderItem.outboundOrderId))
+                                     .orderBy(desc(outboundOrderItems.id))
+                                     .limit(1);
+          
+          if (recentItems.length > 0) {
+            return recentItems[0];
+          }
+          
+          throw new Error("无法获取新创建的出库单明细ID");
+        }
+      } else {
+        console.log("插入结果不是对象:", result);
+        throw new Error("插入结果格式异常");
+      }
+      
+      if (isNaN(itemId) || itemId <= 0) {
+        console.log("获取到的明细ID无效:", itemId);
+        // 尝试通过关联字段查询
+        const recentItems = await db.select()
+                                   .from(outboundOrderItems)
+                                   .where(eq(outboundOrderItems.outboundOrderId, insertOutboundOrderItem.outboundOrderId))
+                                   .orderBy(desc(outboundOrderItems.id))
+                                   .limit(1);
+        
+        if (recentItems.length > 0) {
+          return recentItems[0];
+        }
+        
+        throw new Error(`无效的出库单明细ID: ${itemId}`);
+      }
+      
+      console.log("成功获取出库单明细ID:", itemId);
+      
+      // 获取刚插入的出库单明细
+      const outboundOrderItem = await this.getOutboundOrderItem(itemId);
+      if (!outboundOrderItem) {
+        console.log("无法通过ID查询到出库单明细，尝试通过订单ID查询最新项目");
+        // 尝试通过关联字段查询
+        const recentItems = await db.select()
+                                   .from(outboundOrderItems)
+                                   .where(eq(outboundOrderItems.outboundOrderId, insertOutboundOrderItem.outboundOrderId))
+                                   .orderBy(desc(outboundOrderItems.id))
+                                   .limit(1);
+        
+        if (recentItems.length > 0) {
+          return recentItems[0];
+        }
+        
+        throw new Error(`无法获取新创建的出库单明细: ${itemId}`);
+      }
+      
+      return outboundOrderItem;
+    } catch (error) {
+      console.error("创建出库单明细错误:", error);
+      throw error;
+    }
   }
 
   async getOutboundOrderItem(id: number): Promise<OutboundOrderItem | undefined> {
@@ -1884,15 +2125,66 @@ export class DatabaseStorage implements IStorage {
   }
   
   async createApiConfiguration(insertConfig: InsertApiConfiguration): Promise<ApiConfiguration> {
-    // MySQL不直接支持returning，所以我们需要先插入然后查询
-    const result = await db.insert(apiConfigurations).values(insertConfig);
-    const configId = Number(result.insertId);
-    
-    // 获取刚插入的API配置
-    const config = await this.getApiConfiguration(configId);
-    if (!config) throw new Error(`Failed to retrieve API configuration after creation`);
-    
-    return config;
+    try {
+      // MySQL不直接支持returning，所以我们需要先插入然后查询
+      console.log("即将插入API配置数据:", JSON.stringify(insertConfig));
+      const result = await db.insert(apiConfigurations).values(insertConfig);
+      
+      // 处理insertId可能在不同位置的情况
+      let configId;
+      if (result && typeof result === 'object') {
+        console.log("插入API配置结果:", JSON.stringify(result));
+        
+        // 尝试多种可能的路径获取insertId
+        if ('insertId' in result) {
+          configId = Number(result.insertId);
+        } else if (result[0] && 'insertId' in result[0]) {
+          configId = Number(result[0].insertId);
+        } else if (result.rows && result.rows.insertId) {
+          configId = Number(result.rows.insertId);
+        } else {
+          // 如果无法获取ID，使用名称查询
+          console.log("无法从插入结果中获取ID，尝试通过名称查询");
+          const configByName = await this.getApiConfigurationByName(insertConfig.name);
+          if (configByName) {
+            return configByName;
+          }
+          throw new Error("无法获取新创建的API配置ID");
+        }
+      } else {
+        console.log("插入结果不是对象:", result);
+        throw new Error("插入结果格式异常");
+      }
+      
+      if (isNaN(configId) || configId <= 0) {
+        console.log("获取到的API配置ID无效:", configId);
+        // 尝试通过名称查询
+        const configByName = await this.getApiConfigurationByName(insertConfig.name);
+        if (configByName) {
+          return configByName;
+        }
+        throw new Error(`无效的API配置ID: ${configId}`);
+      }
+      
+      console.log("成功获取API配置ID:", configId);
+      
+      // 获取刚插入的API配置
+      const config = await this.getApiConfiguration(configId);
+      if (!config) {
+        console.log("无法通过ID查询到API配置，尝试通过名称查询");
+        // 尝试通过名称查询
+        const configByName = await this.getApiConfigurationByName(insertConfig.name);
+        if (configByName) {
+          return configByName;
+        }
+        throw new Error(`无法获取新创建的API配置: ${configId}`);
+      }
+      
+      return config;
+    } catch (error) {
+      console.error("创建API配置错误:", error);
+      throw error;
+    }
   }
   
   async updateApiConfiguration(id: number, config: Partial<ApiConfiguration>): Promise<ApiConfiguration | undefined> {
@@ -1928,15 +2220,97 @@ export class DatabaseStorage implements IStorage {
   }
   
   async createEcommerceProduct(insertProduct: InsertEcommerceProduct): Promise<EcommerceProduct> {
-    // MySQL不直接支持returning，所以我们需要先插入然后查询
-    const result = await db.insert(ecommerceProducts).values(insertProduct);
-    const productId = Number(result.insertId);
-    
-    // 获取刚插入的电商产品
-    const product = await this.getEcommerceProduct(productId);
-    if (!product) throw new Error(`Failed to retrieve e-commerce product after creation`);
-    
-    return product;
+    try {
+      // MySQL不直接支持returning，所以我们需要先插入然后查询
+      console.log("即将插入电商产品数据:", JSON.stringify(insertProduct));
+      const result = await db.insert(ecommerceProducts).values(insertProduct);
+      
+      // 处理insertId可能在不同位置的情况
+      let productId;
+      if (result && typeof result === 'object') {
+        console.log("插入电商产品结果:", JSON.stringify(result));
+        
+        // 尝试多种可能的路径获取insertId
+        if ('insertId' in result) {
+          productId = Number(result.insertId);
+        } else if (result[0] && 'insertId' in result[0]) {
+          productId = Number(result[0].insertId);
+        } else if (result.rows && result.rows.insertId) {
+          productId = Number(result.rows.insertId);
+        } else {
+          // 如果无法获取ID，使用平台ID或平台编码查询
+          console.log("无法从插入结果中获取ID，尝试通过平台标识查询");
+          
+          if (insertProduct.platformId) {
+            const productByPlatformId = await this.getEcommerceProductByPlatformId(insertProduct.platformId);
+            if (productByPlatformId) {
+              return productByPlatformId;
+            }
+          }
+          
+          if (insertProduct.platformCode) {
+            const productByPlatformCode = await this.getEcommerceProductByPlatformCode(insertProduct.platformCode);
+            if (productByPlatformCode) {
+              return productByPlatformCode;
+            }
+          }
+          
+          throw new Error("无法获取新创建的电商产品ID");
+        }
+      } else {
+        console.log("插入结果不是对象:", result);
+        throw new Error("插入结果格式异常");
+      }
+      
+      if (isNaN(productId) || productId <= 0) {
+        console.log("获取到的电商产品ID无效:", productId);
+        // 尝试通过平台ID或平台编码查询
+        if (insertProduct.platformId) {
+          const productByPlatformId = await this.getEcommerceProductByPlatformId(insertProduct.platformId);
+          if (productByPlatformId) {
+            return productByPlatformId;
+          }
+        }
+        
+        if (insertProduct.platformCode) {
+          const productByPlatformCode = await this.getEcommerceProductByPlatformCode(insertProduct.platformCode);
+          if (productByPlatformCode) {
+            return productByPlatformCode;
+          }
+        }
+        
+        throw new Error(`无效的电商产品ID: ${productId}`);
+      }
+      
+      console.log("成功获取电商产品ID:", productId);
+      
+      // 获取刚插入的电商产品
+      const product = await this.getEcommerceProduct(productId);
+      if (!product) {
+        console.log("无法通过ID查询到电商产品，尝试通过平台标识查询");
+        // 尝试通过平台ID或平台编码查询
+        if (insertProduct.platformId) {
+          const productByPlatformId = await this.getEcommerceProductByPlatformId(insertProduct.platformId);
+          if (productByPlatformId) {
+            return productByPlatformId;
+          }
+        }
+        
+        if (insertProduct.platformCode) {
+          const productByPlatformCode = await this.getEcommerceProductByPlatformCode(insertProduct.platformCode);
+          if (productByPlatformCode) {
+            return productByPlatformCode;
+          }
+        }
+        
+        throw new Error(`无法获取新创建的电商产品: ${productId}`);
+      }
+      
+      return product;
+    } catch (error) {
+      console.error("创建电商产品错误:", error);
+      throw error;
+    }
   }
   
   async updateEcommerceProduct(id: number, product: Partial<EcommerceProduct>): Promise<EcommerceProduct | undefined> {
