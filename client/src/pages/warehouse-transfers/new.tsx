@@ -464,6 +464,21 @@ export default function NewWarehouseTransfer() {
     }
   };
   
+  // 件数变更时更新汇总数据
+  const handlePackageCountChange = (value: string, index: number) => {
+    // 确保数值有效
+    const numericValue = value.replace(/[^\d]/g, '');
+    
+    // 设置经过验证的数值
+    form.setValue(`items.${index}.packageCount`, numericValue || "1");
+    
+    // 手动更新件数不直接计算重量和体积，但需要更新汇总信息
+    form.trigger(`items.${index}.packageCount`);
+    
+    // 更新总计数据
+    calculateTotals();
+  };
+  
   // 计算总数量、件数、重量和体积
   const calculateTotals = () => {
     const items = form.getValues("items");
@@ -750,8 +765,7 @@ export default function NewWarehouseTransfer() {
                                   className="w-full"
                                   onChange={(e) => {
                                     field.onChange(e);
-                                    // 手动更新件数时不直接计算重量和体积，但需要更新汇总信息
-                                    calculateTotals();
+                                    handlePackageCountChange(e.target.value, index);
                                   }}
                                 />
                               </FormControl>
