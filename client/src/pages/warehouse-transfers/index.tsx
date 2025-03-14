@@ -357,6 +357,32 @@ export default function WarehouseTransfers() {
         </div>
       )}
       
+      {/* Excel导入导出按钮 */}
+      <div className="bg-accent/20 p-4 rounded-lg mb-6 flex flex-wrap gap-4 items-center">
+        <div className="flex-1">
+          <h3 className="text-lg font-medium mb-1">{t("warehouseTransfer.excel_operations")}</h3>
+          <p className="text-sm text-muted-foreground">{t("warehouseTransfer.excel_description")}</p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={handleDownloadTemplate}
+            className="flex items-center"
+          >
+            <FileDown className="mr-2 h-4 w-4" />
+            {t("warehouseTransfer.download_template")}
+          </Button>
+          <Button
+            variant="default"
+            onClick={() => navigate('/warehouse-transfers/import')}
+            className="flex items-center"
+          >
+            <FileUp className="mr-2 h-4 w-4" />
+            {t("warehouseTransfer.import_from_excel")}
+          </Button>
+        </div>
+      </div>
+
       {/* 过滤和搜索 */}
       <div className="flex flex-col md:flex-row gap-4 mb-6">
         <div className="flex items-center space-x-2 flex-1">
