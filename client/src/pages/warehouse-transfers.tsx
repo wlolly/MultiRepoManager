@@ -141,7 +141,7 @@ export default function WarehouseTransfers() {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>{t('total_weight')}</CardDescription>
-            <CardTitle>{stats?.totalWeight?.toFixed(2) || 0} kg</CardTitle>
+            <CardTitle>{parseFloat(String(stats?.totalWeight)).toFixed(2) || 0} kg</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-xs text-muted-foreground">{t('past_30_days')}</p>
@@ -150,7 +150,7 @@ export default function WarehouseTransfers() {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>{t('total_volume')}</CardDescription>
-            <CardTitle>{stats?.totalVolume?.toFixed(2) || 0} m³</CardTitle>
+            <CardTitle>{parseFloat(String(stats?.totalVolume)).toFixed(2) || 0} m³</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-xs text-muted-foreground">{t('past_30_days')}</p>
@@ -249,8 +249,8 @@ export default function WarehouseTransfers() {
                   <TableCell>{transfer.sourceWarehouse.name}</TableCell>
                   <TableCell>{transfer.targetWarehouse.name}</TableCell>
                   <TableCell>{transfer.totalItems}</TableCell>
-                  <TableCell>{transfer.totalWeight.toFixed(2)} kg</TableCell>
-                  <TableCell>{transfer.totalVolume.toFixed(3)} m³</TableCell>
+                  <TableCell>{parseFloat(String(transfer.totalWeight)).toFixed(2)} kg</TableCell>
+                  <TableCell>{parseFloat(String(transfer.totalVolume)).toFixed(3)} m³</TableCell>
                   <TableCell>{getStatusBadge(transfer.status)}</TableCell>
                   <TableCell className="text-gray-500 text-sm">
                     {new Date(transfer.createdAt).toLocaleDateString()}
