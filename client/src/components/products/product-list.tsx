@@ -61,26 +61,30 @@ export function ProductListItem({ product }: ProductListItemProps) {
           </span>
           <span className="mx-2">•</span>
           <span>
-            {t('dimensions')}: <span className="text-gray-700">{product.singleLengthCm}×{product.singleWidthCm}×{product.singleHeightCm} cm</span>
+            {t('dimensions')}: <span className="text-gray-700">
+              {product.singleLengthCm !== undefined ? product.singleLengthCm : '0'}×
+              {product.singleWidthCm !== undefined ? product.singleWidthCm : '0'}×
+              {product.singleHeightCm !== undefined ? product.singleHeightCm : '0'} cm
+            </span>
           </span>
           <span className="mx-2">•</span>
           <span>
-            {t('weight')}: <span className="text-gray-700">{product.singleWeightKg.toFixed(2)} kg</span>
+            {t('weight')}: <span className="text-gray-700">{product.singleWeightKg !== undefined ? product.singleWeightKg.toFixed(2) : '0.00'} kg</span>
           </span>
           <span className="mx-2">•</span>
           <span>
-            {t('volume')}: <span className="text-gray-700">{product.singleVolumeM3.toFixed(3)} m³</span>
+            {t('volume')}: <span className="text-gray-700">{product.singleVolumeM3 !== undefined ? product.singleVolumeM3.toFixed(3) : '0.000'} m³</span>
           </span>
         </div>
       </div>
       <div className="ml-4 flex flex-col items-end">
         <div className="flex items-center">
           <div className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-            {t('stock')}: {product.stock}
+            {t('stock')}: {product.stock !== undefined ? product.stock : 0}
           </div>
         </div>
-        <div className="mt-2 text-sm text-gray-700">¥{product.price.toFixed(2)}</div>
-        <div className="mt-1 text-xs text-gray-500">{formatDate(product.updatedAt)}</div>
+        <div className="mt-2 text-sm text-gray-700">¥{product.price !== undefined ? product.price.toFixed(2) : '0.00'}</div>
+        <div className="mt-1 text-xs text-gray-500">{product.updatedAt ? formatDate(product.updatedAt) : formatDate(new Date())}</div>
       </div>
     </div>
   );

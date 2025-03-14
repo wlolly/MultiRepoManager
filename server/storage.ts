@@ -2413,5 +2413,5 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-// 切换到数据库存储方式
-export const storage = new DatabaseStorage();
+// 切换到内存存储方式（由于外部数据库连接问题，暂时使用内存存储）
+export const storage = new MemStorage();
