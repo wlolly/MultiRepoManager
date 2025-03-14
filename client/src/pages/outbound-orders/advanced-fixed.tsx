@@ -865,13 +865,13 @@ export default function AdvancedOutboundOrder() {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[50px]">#</TableHead>
+                      <TableHead className="w-[120px]">{t('unique_code')}</TableHead>
                       <TableHead>{t('product')}</TableHead>
                       <TableHead className="w-[100px]">{t('quantity')}</TableHead>
                       <TableHead className="w-[100px]">{t('package_count')}</TableHead>
-                      <TableHead className="w-[120px]">{t('unique_code')}</TableHead>
-                      <TableHead className="w-[120px]">{t('external_order_number')}</TableHead>
                       <TableHead className="w-[100px]">{t('weight')}</TableHead>
                       <TableHead className="w-[100px]">{t('volume')}</TableHead>
+                      <TableHead className="w-[120px]">{t('external_order_number')}</TableHead>
                       <TableHead className="w-[120px]">{t('remark')}</TableHead>
                       <TableHead className="w-[100px]">{t('actions')}</TableHead>
                     </TableRow>
@@ -880,6 +880,34 @@ export default function AdvancedOutboundOrder() {
                     {fields.map((field, index) => (
                       <TableRow key={field.id}>
                         <TableCell className="font-medium">{index + 1}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-1">
+                            <FormField
+                              control={form.control}
+                              name={`items.${index}.uniqueCode`}
+                              render={({ field }) => (
+                                <FormItem className="w-full">
+                                  <FormControl>
+                                    <Input 
+                                      {...field} 
+                                      placeholder={t('unique_code')}
+                                      onChange={(e) => handleUniqueCodeChange(e.target.value, index)}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <Button 
+                              type="button" 
+                              variant="ghost" 
+                              size="icon"
+                              onClick={() => openBarcodeScanner(index)}
+                            >
+                              <ScanLine className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
                         <TableCell>
                           <FormField
                             control={form.control}
@@ -957,51 +985,6 @@ export default function AdvancedOutboundOrder() {
                           />
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center space-x-1">
-                            <FormField
-                              control={form.control}
-                              name={`items.${index}.uniqueCode`}
-                              render={({ field }) => (
-                                <FormItem className="w-full">
-                                  <FormControl>
-                                    <Input 
-                                      {...field} 
-                                      placeholder={t('unique_code')}
-                                      onChange={(e) => handleUniqueCodeChange(e.target.value, index)}
-                                    />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <Button 
-                              type="button" 
-                              variant="ghost" 
-                              size="icon"
-                              onClick={() => openBarcodeScanner(index)}
-                            >
-                              <ScanLine className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <FormField
-                            control={form.control}
-                            name={`items.${index}.externalOrderNumber`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormControl>
-                                  <Input 
-                                    {...field} 
-                                    placeholder={t('external_order_number')}
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </TableCell>
-                        <TableCell>
                           <FormField
                             control={form.control}
                             name={`items.${index}.weight`}
@@ -1023,6 +1006,23 @@ export default function AdvancedOutboundOrder() {
                               <FormItem>
                                 <FormControl>
                                   <Input {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <FormField
+                            control={form.control}
+                            name={`items.${index}.externalOrderNumber`}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormControl>
+                                  <Input 
+                                    {...field} 
+                                    placeholder={t('external_order_number')}
+                                  />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
