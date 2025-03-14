@@ -80,6 +80,11 @@ export default function NewWarehouseTransfer() {
     queryKey: ["/api/products"],
   });
   
+  // 唯一码对应的产品查询
+  const findProductByUniqueCode = (uniqueCode: string) => {
+    return products.find(p => p.uniqueCode === uniqueCode);
+  };
+  
   // 调拨单表单
   const form = useForm<TransferFormValues>({
     resolver: zodResolver(transferSchema),
@@ -184,13 +189,36 @@ export default function NewWarehouseTransfer() {
       // 将扫描结果更新到对应的表单字段
       form.setValue(`items.${currentScanningIndex}.uniqueCode`, code);
       
+      // 查找对应的产品
+      const product = findProductByUniqueCode(code);
+      if (product) {
+        // 自动填充产品信息
+        form.setValue(`items.${currentScanningIndex}.productId`, product.id.toString());
+        
+        // 获取数量并计算重量和体积
+        const quantity = parseInt(form.getValues(`items.${currentScanningIndex}.quantity`) || "1");
+        
+        // 计算总重量和体积
+        const weight = product.singleWeightKg * quantity;
+        const volume = product.singleVolumeM3 * quantity;
+        
+        form.setValue(`items.${currentScanningIndex}.weight`, weight.toFixed(3));
+        form.setValue(`items.${currentScanningIndex}.volume`, volume.toFixed(3));
+        
+        toast({
+          title: t("product_found"),
+          description: `${t("product_found_description")}: ${product.name}`,
+        });
+      } else {
+        toast({
+          title: t("product_not_found"),
+          description: t("product_not_found_description"),
+          variant: "destructive",
+        });
+      }
+      
       // 关闭扫描对话框
       setIsBarcodeScannerOpen(false);
-      
-      toast({
-        title: t("unique_code_scanned"),
-        description: t("unique_code_scanned_success"),
-      });
     }
   };
   
