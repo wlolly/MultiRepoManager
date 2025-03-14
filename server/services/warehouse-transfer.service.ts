@@ -13,7 +13,7 @@ import {
   warehouseTransfers
 } from '../../shared/schema';
 import { IStorage } from '../storage';
-import { and, desc, eq } from 'drizzle-orm/mysql-core';
+import { and, desc, eq } from 'drizzle-orm';
 
 export class WarehouseTransferService {
   constructor(private storage: IStorage) {}
