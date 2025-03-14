@@ -184,6 +184,7 @@ function Sidebar() {
 function AppLayout({ children }: { children: React.ReactNode }) {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const { t } = useTranslation();
+  const [_, navigate] = useLocation();
   
   // 响应式布局处理
   const [isSmallScreen, setIsSmallScreen] = useState(false);
@@ -241,10 +242,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
                 className="block w-full rounded-md pl-10 py-2 border-gray-300 
                            focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 placeholder={t('search')}
-                onClick={() => { 
-                  const [_, setLocation] = useLocation();
-                  setLocation('/product-search');
-                }}
+                onClick={() => navigate('/product-search')}
               />
             </div>
           </div>

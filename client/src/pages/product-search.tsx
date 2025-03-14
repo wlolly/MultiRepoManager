@@ -64,27 +64,18 @@ export default function ProductSearch() {
     };
   }, [searchQuery]);
   
-  // 查询产品数据
-  const { data: products = [], isLoading } = useQuery<Product[]>({
-    queryKey: ["/api/products", debouncedQuery],
-    enabled: true,
-  });
-  
-  // 根据搜索词过滤产品
-  const filteredProducts = products.filter(product => {
-    if (!debouncedQuery) return false;
-    
-    // 模糊匹配产品名称
-    const nameMatch = product.name.toLowerCase().includes(debouncedQuery.toLowerCase());
-    
-    // 模糊匹配唯一码 - 允许部分匹配
-    const uniqueCodeMatch = product.uniqueCode && 
-      product.uniqueCode.toLowerCase().includes(debouncedQuery.toLowerCase());
-    
-    // 模糊匹配条形码
-    const barcodeMatch = product.barcode.toLowerCase().includes(debouncedQuery.toLowerCase());
-    
-    return nameMatch || uniqueCodeMatch || barcodeMatch;
+  // 查询产品数据 - 使用专门的搜索API
+  const { data: searchResults = [], isLoading } = useQuery<Product[]>({
+    queryKey: ["/api/products/search", debouncedQuery],
+    queryFn: async () => {
+      if (!debouncedQuery) return [];
+      const response = await fetch(`/api/products/search?q=${encodeURIComponent(debouncedQuery)}`);
+      if (!response.ok) {
+        throw new Error('搜索请求失败');
+      }
+      return response.json();
+    },
+    enabled: debouncedQuery.length > 0,
   });
   
   // 处理搜索表单提交
@@ -157,7 +148,7 @@ export default function ProductSearch() {
             </div>
           ) : debouncedQuery ? (
             // 搜索结果
-            filteredProducts.length > 0 ? (
+            searchResults.length > 0 ? (
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -170,7 +161,7 @@ export default function ProductSearch() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredProducts.map((product) => (
+                  {searchResults.map((product) => (
                     <TableRow 
                       key={product.id}
                       className="cursor-pointer hover:bg-muted/50"
