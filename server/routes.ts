@@ -1,4 +1,4 @@
-import express, { type Express, Request, Response } from "express";
+import express, { type Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { 
@@ -15,13 +15,55 @@ import {
   insertInboundOrderItemSchema,
   insertOutboundOrderItemSchema,
   insertEcommerceProductSchema,
-  insertApiConfigurationSchema
+  insertApiConfigurationSchema,
+  insertWarehouseTransferSchema
 } from "@shared/schema";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const apiRouter = express.Router();
+  
+  // 配置multer用于文件上传
+  // 确保上传目录存在
+  if (!fs.existsSync('./public/uploads')) {
+    fs.mkdirSync('./public/uploads', { recursive: true });
+  }
+  
+  // 配置存储
+  const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, './public/uploads')
+    },
+    filename: function (req, file, cb) {
+      // 生成文件名：时间戳-原始文件名
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      const extension = path.extname(file.originalname);
+      cb(null, uniqueSuffix + extension);
+    }
+  });
+  
+  // 文件类型过滤器
+  const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+    // 接受图片和PDF文件
+    if (file.mimetype.startsWith('image/') || file.mimetype === 'application/pdf') {
+      cb(null, true);
+    } else {
+      cb(new Error('不支持的文件类型，仅支持图片和PDF文件'));
+    }
+  };
+  
+  // 创建multer实例
+  const upload = multer({ 
+    storage: storage,
+    fileFilter: fileFilter,
+    limits: {
+      fileSize: 5 * 1024 * 1024 // 限制文件大小为5MB
+    }
+  });
   
   // Error handling middleware
   const handleZodError = (err: unknown, res: Response) => {
@@ -1409,7 +1451,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  apiRouter.post("/warehouse-transfers", async (req, res) => {
+  // 处理调拨单文件上传
+  apiRouter.post("/warehouse-transfers", upload.single('document'), async (req, res) => {
     try {
       const { sourceWarehouseId, targetWarehouseId, notes, items } = req.body;
       
