@@ -274,31 +274,12 @@ export default function InboundOrders() {
           </Button>
           
           {/* 创建入库单按钮 */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button>
-                <PlusIcon className="mr-2 h-4 w-4" />
-                {t('new_inbound_order')}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem asChild>
-                <Link href="/inbound-orders/new">
-                  {t('simple_inbound_order')}
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/inbound-orders/new-with-items">
-                  {t('inbound_order_with_items')}
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/inbound-orders/new-multi">
-                  {t('multi_item_inbound_order')}
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button asChild>
+            <Link href="/inbound-orders/new-multi">
+              <PlusIcon className="mr-2 h-4 w-4" />
+              {t('new_inbound_order')}
+            </Link>
+          </Button>
         </div>
       </div>
       
