@@ -24,6 +24,7 @@ import NewInboundOrder from "@/pages/inbound-orders/new";
 import NewOutboundOrder from "@/pages/outbound-orders/new";
 import NewInboundOrderWithItems from "@/pages/inbound-orders/new-with-items";
 import NewOutboundOrderWithItems from "@/pages/outbound-orders/new-with-items";
+import AdvancedOutboundOrder from "@/pages/outbound-orders/advanced-fixed";
 import WarehouseProducts from '@/pages/warehouse-products';
 import WarehouseTransfers from '@/pages/warehouse-transfers';
 import NewWarehouseTransfer from '@/pages/warehouse-transfers/new';
@@ -74,6 +75,7 @@ export default function App() {
             <Route path="/outbound-orders">{OutboundOrders}</Route>
             <Route path="/outbound-orders/new">{NewOutboundOrder}</Route>
             <Route path="/outbound-orders/new-with-items">{NewOutboundOrderWithItems}</Route>
+            <Route path="/outbound-orders/advanced">{AdvancedOutboundOrder}</Route>
             <Route path="/outbound-order/:id">{OutboundOrderDetail}</Route>
             <Route path="/warehouse-products">{WarehouseProducts}</Route>
             <Route path="/warehouse-transfers">{WarehouseTransfers}</Route>
