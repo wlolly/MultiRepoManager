@@ -61,6 +61,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { BarcodeScanner } from "@/components/BarcodeScanner";
 
 // 仓库接口
 interface Warehouse {
