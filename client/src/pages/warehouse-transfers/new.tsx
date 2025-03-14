@@ -1172,12 +1172,12 @@ export default function NewWarehouseTransfer() {
                   {isSubmitting ? t("creating_transfer") : t("create_transfer")}
                 </Button>
               </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-      
-      <Card>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+        
+        <Card>
         <CardHeader>
           <CardTitle>{t("warehouseTransfer.transfer_process")}</CardTitle>
           <CardDescription>
@@ -1235,9 +1235,9 @@ export default function NewWarehouseTransfer() {
             </ul>
           </div>
         </CardContent>
-      </Card>
-      
-      {/* 条码扫描对话框 */}
+        </Card>
+        
+        {/* 条码扫描对话框 */}
       <Dialog open={isBarcodeScannerOpen} onOpenChange={setIsBarcodeScannerOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
