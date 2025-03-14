@@ -172,6 +172,28 @@ export default function NewWarehouseTransfer() {
     });
   };
   
+  // 打开条码扫描器对话框
+  const openBarcodeScanner = (index: number) => {
+    setCurrentScanningIndex(index);
+    setIsBarcodeScannerOpen(true);
+  };
+  
+  // 处理唯一码扫描结果
+  const handleUniqueCodeScanned = (code: string) => {
+    if (currentScanningIndex !== null) {
+      // 将扫描结果更新到对应的表单字段
+      form.setValue(`items.${currentScanningIndex}.uniqueCode`, code);
+      
+      // 关闭扫描对话框
+      setIsBarcodeScannerOpen(false);
+      
+      toast({
+        title: t("unique_code_scanned"),
+        description: t("unique_code_scanned_success"),
+      });
+    }
+  };
+  
   // 移除商品行
   const handleRemoveItem = (index: number) => {
     if (fields.length > 1) {
@@ -234,24 +256,6 @@ export default function NewWarehouseTransfer() {
         totalVolume: acc.totalVolume + volume,
       };
     }, { totalQuantity: 0, totalPackages: 0, totalWeight: 0, totalVolume: 0 });
-  };
-  
-  // 打开条码扫描器对话框
-  const openBarcodeScanner = (index: number) => {
-    setCurrentScanningIndex(index);
-    setIsBarcodeScannerOpen(true);
-  };
-  
-  // 条码扫描处理
-  const handleUniqueCodeScanned = (code: string) => {
-    if (currentScanningIndex !== null) {
-      form.setValue(`items.${currentScanningIndex}.uniqueCode`, code);
-      setIsBarcodeScannerOpen(false);
-      toast({
-        title: t("unique_code_scanned"),
-        description: code,
-      });
-    }
   };
   
   // 计算汇总
@@ -688,6 +692,23 @@ export default function NewWarehouseTransfer() {
           </div>
         </CardContent>
       </Card>
+      
+      {/* 条码扫描对话框 */}
+      <Dialog open={isBarcodeScannerOpen} onOpenChange={setIsBarcodeScannerOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("scan_unique_code")}</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center py-4">
+            <BarcodeScanner 
+              onCodeDetected={handleUniqueCodeScanned}
+              label={t("scan_or_enter_code")}
+              placeholder={t("unique_code_placeholder")}
+              uniqueCodeMode={true}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
