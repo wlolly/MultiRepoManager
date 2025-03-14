@@ -17,12 +17,8 @@ export function Layout({ children, hideSidebar = false }: LayoutProps) {
 
   return (
     <div className="flex h-screen overflow-hidden">
-      {/* Desktop Sidebar - 仅当不是隐藏侧边栏时才显示 */}
-      {!hideSidebar && (
-        <div className="block">
-          <Sidebar />
-        </div>
-      )}
+      {/* 强制显示侧边栏 */}
+      <Sidebar />
       
       {/* Mobile Sidebar */}
       <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
