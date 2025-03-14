@@ -611,7 +611,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // 解析Excel文件
-      const parsedData = parseProductImportFile(req.file.path);
+      const parsedData = await parseProductImportFile(req.file.path);
       
       // 处理解析结果
       if (parsedData.errors.length > 0) {
