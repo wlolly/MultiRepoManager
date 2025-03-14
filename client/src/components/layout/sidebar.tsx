@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation } from "react-router-dom";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
@@ -14,7 +14,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { icon: "ri-dashboard-line", keyName: "dashboard", href: "/" },
   { icon: "ri-building-2-line", keyName: "warehouses", href: "/warehouses" },
-  { icon: "ri-shopping-bag-line", keyName: "my_products", href: "/my-products" },
+  { icon: "ri-shopping-bag-line", keyName: "my_products", href: "/products" },
   { icon: "ri-store-line", keyName: "warehouse_products", href: "/warehouse-products" },
   // 订单管理相关导航
   { icon: "ri-arrow-down-circle-line", keyName: "inbound_orders", href: "/inbound-orders" },
@@ -26,7 +26,8 @@ const navItems: NavItem[] = [
 ];
 
 export function Sidebar() {
-  const [location] = useLocation();
+  const location = useLocation();
+  const { pathname } = location;
   const { t } = useTranslation();
 
   interface Activity {
@@ -104,7 +105,7 @@ export function Sidebar() {
       </div>
       
       <div className="p-4">
-        <Link href="/new-product" className="bg-blue-600 hover:bg-blue-700 w-full py-2 px-4 rounded-md flex items-center justify-center transition">
+        <Link to="/products/new" className="bg-blue-600 hover:bg-blue-700 w-full py-2 px-4 rounded-md flex items-center justify-center transition">
           <i className="ri-add-line mr-2"></i> {t('new_product')}
         </Link>
       </div>
@@ -112,9 +113,9 @@ export function Sidebar() {
       <nav className="mt-2">
         <div className="px-4 py-2 text-gray-400 text-sm font-medium">{t('navigation')}</div>
         {navItems.map((item) => (
-          <Link key={item.href} href={item.href} className={cn(
+          <Link key={item.href} to={item.href} className={cn(
             "flex items-center py-2 px-4 transition",
-            location === item.href
+            pathname === item.href
               ? "bg-gray-800 text-blue-500" 
               : "text-gray-300 hover:bg-gray-800 hover:text-white"
           )}>
