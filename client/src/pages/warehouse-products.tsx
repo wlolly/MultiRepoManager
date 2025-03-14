@@ -170,6 +170,14 @@ export default function WarehouseProducts() {
           <p className="text-muted-foreground">{t('warehouse_products_description')}</p>
         </div>
         <div className="flex items-center space-x-3">
+          <Button 
+            onClick={handleCreateProduct}
+            className="flex items-center"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            {t('new_product')}
+          </Button>
+          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="flex items-center">
@@ -215,11 +223,6 @@ export default function WarehouseProducts() {
             accept=".xlsx"
             onChange={handleExcelImport}
           />
-          
-          <Button onClick={handleCreateProduct}>
-            <Plus className="mr-2 h-4 w-4" />
-            {t('new_product')}
-          </Button>
         </div>
       </div>
 
