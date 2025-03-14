@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { Layout } from "@/components/layout/layout";
 import { ProductList } from "@/components/products/product-list";
 import { ProductGrid } from "@/components/products/product-grid";
 import { Input } from "@/components/ui/input";
@@ -105,7 +104,7 @@ export default function WarehouseProducts() {
   };
 
   return (
-    <Layout>
+    <div className="container mx-auto py-6">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold">{t('warehouse_products')}</h1>
@@ -209,6 +208,6 @@ export default function WarehouseProducts() {
           </div>
         </CardContent>
       </Card>
-    </Layout>
+    </div>
   );
 }
