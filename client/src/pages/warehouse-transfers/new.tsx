@@ -21,6 +21,7 @@ import { ArrowLeftIcon, PlusIcon, MinusIcon, ArrowRightIcon, ScanLine, QrCode, C
 import { toast } from "@/lib/toast";
 import { apiRequest } from "@/lib/queryClient";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
+import { Layout } from "@/components/layout/layout";
 
 // 仓库接口定义
 interface Warehouse {

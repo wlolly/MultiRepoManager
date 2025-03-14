@@ -20,6 +20,7 @@ import {
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
+import { Layout } from "@/components/layout/layout";
 
 interface WarehouseTransfer {
   id: number;
@@ -161,120 +162,122 @@ export default function WarehouseTransfers() {
   };
 
   return (
-    <div className="container mx-auto py-6">
-      <div className="pb-5 border-b border-gray-200 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('warehouse_transfers')}</h1>
-          <p className="mt-1 text-gray-500 text-sm">{t('warehouse_transfers_description')}</p>
+    <Layout>
+      <div className="container mx-auto py-6">
+        <div className="pb-5 border-b border-gray-200 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{t('warehouse_transfers')}</h1>
+            <p className="mt-1 text-gray-500 text-sm">{t('warehouse_transfers_description')}</p>
+          </div>
+          <div className="mt-4 sm:mt-0">
+            <Button asChild>
+              <Link to="/warehouse-transfers/new">
+                <i className="ri-add-line mr-1"></i> {t('new_transfer')}
+              </Link>
+            </Button>
+          </div>
         </div>
-        <div className="mt-4 sm:mt-0">
-          <Button asChild>
-            <Link to="/warehouse-transfers/new">
-              <i className="ri-add-line mr-1"></i> {t('new_transfer')}
-            </Link>
-          </Button>
+
+        {renderStatsCards()}
+
+        <div className="mb-4 flex justify-between items-center">
+          <div className="flex space-x-2">
+            <Button 
+              variant={statusFilter === "all" ? "default" : "outline"} 
+              size="sm" 
+              onClick={() => setStatusFilter("all")}
+            >
+              {t('all')}
+            </Button>
+            <Button 
+              variant={statusFilter === "pending" ? "default" : "outline"} 
+              size="sm" 
+              onClick={() => setStatusFilter("pending")}
+            >
+              {t('pending')}
+            </Button>
+            <Button 
+              variant={statusFilter === "in_transit" ? "default" : "outline"} 
+              size="sm" 
+              onClick={() => setStatusFilter("in_transit")}
+            >
+              {t('in_transit')}
+            </Button>
+            <Button 
+              variant={statusFilter === "completed" ? "default" : "outline"} 
+              size="sm" 
+              onClick={() => setStatusFilter("completed")}
+            >
+              {t('completed')}
+            </Button>
+          </div>
         </div>
-      </div>
 
-      {renderStatsCards()}
-
-      <div className="mb-4 flex justify-between items-center">
-        <div className="flex space-x-2">
-          <Button 
-            variant={statusFilter === "all" ? "default" : "outline"} 
-            size="sm" 
-            onClick={() => setStatusFilter("all")}
-          >
-            {t('all')}
-          </Button>
-          <Button 
-            variant={statusFilter === "pending" ? "default" : "outline"} 
-            size="sm" 
-            onClick={() => setStatusFilter("pending")}
-          >
-            {t('pending')}
-          </Button>
-          <Button 
-            variant={statusFilter === "in_transit" ? "default" : "outline"} 
-            size="sm" 
-            onClick={() => setStatusFilter("in_transit")}
-          >
-            {t('in_transit')}
-          </Button>
-          <Button 
-            variant={statusFilter === "completed" ? "default" : "outline"} 
-            size="sm" 
-            onClick={() => setStatusFilter("completed")}
-          >
-            {t('completed')}
-          </Button>
-        </div>
-      </div>
-
-      <div className="bg-white shadow rounded-lg overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>{t('reference_number')}</TableHead>
-              <TableHead>{t('from_warehouse')}</TableHead>
-              <TableHead>{t('to_warehouse')}</TableHead>
-              <TableHead>{t('items')}</TableHead>
-              <TableHead>{t('total_weight')}</TableHead>
-              <TableHead>{t('total_volume')}</TableHead>
-              <TableHead>{t('status')}</TableHead>
-              <TableHead>{t('created_at')}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoadingTransfers ? (
-              // 加载中骨架屏
-              Array(5).fill(0).map((_, i) => (
-                <TableRow key={i}>
-                  {Array(8).fill(0).map((_, j) => (
-                    <TableCell key={j}>
-                      <Skeleton className="h-4 w-full" />
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : transfers && transfers.length > 0 ? (
-              // 有数据
-              transfers.map((transfer) => (
-                <TableRow key={transfer.id}>
-                  <TableCell className="font-medium">
-                    <Link to={`/warehouse-transfers/${transfer.id}`} className="text-blue-600 hover:text-blue-800">
-                      {transfer.referenceNumber}
-                    </Link>
-                  </TableCell>
-                  <TableCell>{transfer.sourceWarehouse.name}</TableCell>
-                  <TableCell>{transfer.targetWarehouse.name}</TableCell>
-                  <TableCell>{transfer.totalItems}</TableCell>
-                  <TableCell>{parseFloat(String(transfer.totalWeight)).toFixed(2)} kg</TableCell>
-                  <TableCell>{parseFloat(String(transfer.totalVolume)).toFixed(3)} m³</TableCell>
-                  <TableCell>{getStatusBadge(transfer.status)}</TableCell>
-                  <TableCell className="text-gray-500 text-sm">
-                    {new Date(transfer.createdAt).toLocaleDateString()}
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              // 无数据
+        <div className="bg-white shadow rounded-lg overflow-hidden">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-gray-500">
-                  <div className="flex flex-col items-center justify-center">
-                    <i className="ri-inbox-line text-4xl mb-2"></i>
-                    <p>{t('no_transfers_found')}</p>
-                    <p className="text-sm mt-1">{t('create_first_transfer')}</p>
-                    <Button asChild className="mt-4">
-                      <Link to="/warehouse-transfers/new">{t('create_transfer')}</Link>
-                    </Button>
-                  </div>
-                </TableCell>
+                <TableHead>{t('reference_number')}</TableHead>
+                <TableHead>{t('from_warehouse')}</TableHead>
+                <TableHead>{t('to_warehouse')}</TableHead>
+                <TableHead>{t('items')}</TableHead>
+                <TableHead>{t('total_weight')}</TableHead>
+                <TableHead>{t('total_volume')}</TableHead>
+                <TableHead>{t('status')}</TableHead>
+                <TableHead>{t('created_at')}</TableHead>
               </TableRow>
-            )}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {isLoadingTransfers ? (
+                // 加载中骨架屏
+                Array(5).fill(0).map((_, i) => (
+                  <TableRow key={i}>
+                    {Array(8).fill(0).map((_, j) => (
+                      <TableCell key={j}>
+                        <Skeleton className="h-4 w-full" />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : transfers && transfers.length > 0 ? (
+                // 有数据
+                transfers.map((transfer) => (
+                  <TableRow key={transfer.id}>
+                    <TableCell className="font-medium">
+                      <Link to={`/warehouse-transfers/${transfer.id}`} className="text-blue-600 hover:text-blue-800">
+                        {transfer.referenceNumber}
+                      </Link>
+                    </TableCell>
+                    <TableCell>{transfer.sourceWarehouse.name}</TableCell>
+                    <TableCell>{transfer.targetWarehouse.name}</TableCell>
+                    <TableCell>{transfer.totalItems}</TableCell>
+                    <TableCell>{parseFloat(String(transfer.totalWeight)).toFixed(2)} kg</TableCell>
+                    <TableCell>{parseFloat(String(transfer.totalVolume)).toFixed(3)} m³</TableCell>
+                    <TableCell>{getStatusBadge(transfer.status)}</TableCell>
+                    <TableCell className="text-gray-500 text-sm">
+                      {new Date(transfer.createdAt).toLocaleDateString()}
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                // 无数据
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                    <div className="flex flex-col items-center justify-center">
+                      <i className="ri-inbox-line text-4xl mb-2"></i>
+                      <p>{t('no_transfers_found')}</p>
+                      <p className="text-sm mt-1">{t('create_first_transfer')}</p>
+                      <Button asChild className="mt-4">
+                        <Link to="/warehouse-transfers/new">{t('create_transfer')}</Link>
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
-    </div>
+    </Layout>
   );
 }
