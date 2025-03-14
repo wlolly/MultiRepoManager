@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Layout } from "@/components/layout/layout";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -63,7 +62,7 @@ export default function Settings() {
   const { t } = useTranslation();
 
   return (
-    <Layout>
+    <>
       <div className="pb-5 border-b border-gray-200 mb-6">
         <h1 className="text-2xl font-bold text-gray-900">{t('settings.title', '系统设置')}</h1>
         <p className="mt-1 text-gray-500 text-sm">{t('settings.subtitle', '管理您的账户设置和偏好')}</p>
@@ -338,6 +337,6 @@ export default function Settings() {
           )}
         </div>
       </div>
-    </Layout>
+    </>
   );
 }
