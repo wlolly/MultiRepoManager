@@ -1,6 +1,6 @@
 import { useState, FormEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import { ArrowLeftIcon } from "@radix-ui/react-icons";
 
@@ -22,7 +22,7 @@ interface Warehouse {
 export default function NewOutboundOrder() {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // 表单状态
@@ -127,9 +127,9 @@ export default function NewOutboundOrder() {
       });
       
       if (data && data.id) {
-        navigate(`/outbound-order/${data.id}`);
+        setLocation(`/outbound-order/${data.id}`);
       } else {
-        navigate("/outbound-orders");
+        setLocation("/outbound-orders");
       }
       
     } catch (error: any) {
@@ -150,7 +150,7 @@ export default function NewOutboundOrder() {
         <Button 
           variant="outline" 
           size="sm" 
-          onClick={() => navigate("/outbound-orders")}
+          onClick={() => setLocation("/outbound-orders")}
         >
           <ArrowLeftIcon className="mr-2 h-4 w-4" />
           {t("back_to_outbound_orders")}
@@ -299,7 +299,7 @@ export default function NewOutboundOrder() {
               <Button 
                 type="button" 
                 variant="outline" 
-                onClick={() => navigate("/outbound-orders")}
+                onClick={() => setLocation("/outbound-orders")}
               >
                 {t("cancel")}
               </Button>
