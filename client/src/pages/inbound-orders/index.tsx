@@ -3,7 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
-import { Plus, Download, Filter, ArrowUpDown, Search } from "lucide-react";
+import { 
+  Plus, Download, Filter, ArrowUpDown, Search, FileUp, 
+  FileDown, FileText, FileSpreadsheet, Eye, Truck, 
+  RefreshCw, Check, X, Calendar, FileIcon, AlertCircle
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -143,10 +147,66 @@ export default function InboundOrders() {
     }
   };
   
+  // Excel模板下载
+  const handleDownloadTemplate = async () => {
+    try {
+      const response = await axios.get('/api/inbound-orders/template', {
+        responseType: 'blob' // 指定响应类型为 blob
+      });
+      // 创建一个URL对象指向blob
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'inbound_order_template.xlsx');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      // 释放URL对象
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: t("template_downloaded"),
+        description: t("template_download_success"),
+      });
+    } catch (error) {
+      console.error('Template download error:', error);
+      toast({
+        title: t("template_download_error"),
+        description: t("template_download_failed"),
+        variant: "destructive",
+      });
+    }
+  };
+  
+  // 打开导入对话框
+  const handleOpenImport = () => {
+    // 导入功能实现
+    navigate("/inbound-orders/import");
+  };
+  
   // 导出为Excel
-  const exportToExcel = () => {
-    // 导出功能实现
-    alert(t("export_not_implemented"));
+  const exportToExcel = (id?: number) => {
+    if (id) {
+      // 导出单个入库单
+      window.open(`/api/inbound-orders/${id}/export`, '_blank');
+    } else {
+      // 导出所有入库单
+      let url = `/api/inbound-orders/export`;
+      
+      // 添加过滤参数
+      const params = new URLSearchParams();
+      if (statusFilter) params.append('status', statusFilter);
+      if (typeFilter) params.append('type', typeFilter);
+      if (warehouseFilter) params.append('warehouse', warehouseFilter);
+      if (dateFilter) params.append('date', dateFilter);
+      if (searchQuery) params.append('search', searchQuery);
+      
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+      
+      window.open(url, '_blank');
+    }
   };
   
   // 处理创建新入库单
