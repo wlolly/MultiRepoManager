@@ -413,3 +413,77 @@ export const insertApiConfigurationSchema = createInsertSchema(apiConfigurations
 
 export type InsertApiConfiguration = z.infer<typeof insertApiConfigurationSchema>;
 export type ApiConfiguration = typeof apiConfigurations.$inferSelect;
+
+// 仓库调拨单表
+export const warehouseTransfers = mysqlTable("warehouse_transfers", {
+  id: int("id").primaryKey().autoincrement(),
+  referenceNumber: varchar("reference_number", { length: 50 }).notNull().unique(), // 调拨单号
+  sourceWarehouseId: int("source_warehouse_id").notNull().references(() => warehouses.id), // 源仓库ID
+  targetWarehouseId: int("target_warehouse_id").notNull().references(() => warehouses.id), // 目标仓库ID
+  totalItems: int("total_items").notNull().default(0), // 总商品数量
+  totalPackages: int("total_packages").notNull().default(0), // 总件数
+  totalWeight: decimal("total_weight", { precision: 10, scale: 3 }).notNull(), // 总重量
+  totalVolume: decimal("total_volume", { precision: 10, scale: 6 }).notNull(), // 总体积
+  status: varchar("status", { length: 50 }).notNull().default("pending"), // 状态：待处理、处理中、已完成、已取消
+  createdBy: int("created_by").notNull().references(() => users.id), // 创建人
+  createdAt: timestamp("created_at").defaultNow().notNull(), // 创建时间
+  completedAt: timestamp("completed_at"), // 完成时间
+  outboundOrderId: int("outbound_order_id").references(() => outboundOrders.id), // 出库单ID
+  inboundOrderId: int("inbound_order_id").references(() => inboundOrders.id), // 入库单ID
+  notes: text("notes"), // 备注
+});
+
+export const insertWarehouseTransferSchema = createInsertSchema(warehouseTransfers).pick({
+  referenceNumber: true,
+  sourceWarehouseId: true,
+  targetWarehouseId: true,
+  totalItems: true,
+  totalPackages: true,
+  totalWeight: true,
+  totalVolume: true,
+  status: true,
+  createdBy: true,
+  notes: true,
+}).omit({ createdBy: true }).extend({ 
+  createdBy: z.number().optional(),
+  items: z.array(z.object({
+    productId: z.string(),
+    uniqueCode: z.string().optional(),
+    quantity: z.string(),
+    packageCount: z.string(),
+    weight: z.string(),
+    volume: z.string(),
+  }))
+});
+
+export type InsertWarehouseTransfer = z.infer<typeof insertWarehouseTransferSchema>;
+export type WarehouseTransfer = typeof warehouseTransfers.$inferSelect;
+
+// 仓库调拨单明细表
+export const warehouseTransferItems = mysqlTable("warehouse_transfer_items", {
+  id: int("id").primaryKey().autoincrement(),
+  transferId: int("transfer_id").notNull().references(() => warehouseTransfers.id), // 调拨单ID
+  productId: int("product_id").notNull().references(() => products.id), // 商品ID
+  uniqueCode: varchar("unique_code", { length: 50 }), // 唯一码
+  quantity: int("quantity").notNull(), // 数量
+  packageCount: int("package_count").notNull(), // 件数
+  weight: decimal("weight", { precision: 10, scale: 3 }).notNull(), // 重量
+  volume: decimal("volume", { precision: 10, scale: 6 }).notNull(), // 体积
+  status: varchar("status", { length: 50 }).notNull().default("pending"), // 状态
+  remark: text("remark"), // 备注
+});
+
+export const insertWarehouseTransferItemSchema = createInsertSchema(warehouseTransferItems).pick({
+  transferId: true,
+  productId: true,
+  uniqueCode: true,
+  quantity: true,
+  packageCount: true,
+  weight: true,
+  volume: true,
+  status: true,
+  remark: true,
+});
+
+export type InsertWarehouseTransferItem = z.infer<typeof insertWarehouseTransferItemSchema>;
+export type WarehouseTransferItem = typeof warehouseTransferItems.$inferSelect;
