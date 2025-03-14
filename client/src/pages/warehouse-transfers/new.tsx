@@ -113,18 +113,28 @@ export default function NewWarehouseTransfer() {
         // 找到产品后，自动填充产品信息
         form.setValue(`items.${index}.productId`, product.id.toString());
         
-        // 获取数量并计算重量和体积
+        // 获取数量
         const quantity = parseInt(form.getValues(`items.${index}.quantity`) || "1");
         
-        // 设置默认件数为1
-        form.setValue(`items.${index}.packageCount`, "1");
+        // 计算件数 - 根据产品的bulkCapacity属性计算
+        // bulkCapacity是每件包装内可以容纳的产品数量
+        const bulkCapacity = product.bulkCapacity || 1; // 默认为1
+        const packageCount = Math.ceil(quantity / bulkCapacity);
         
-        // 计算总重量和体积 - 使用单件数据计算总值
-        const weight = product.singleWeightKg * quantity;
-        const volume = product.singleVolumeM3 * quantity;
+        // 更新件数
+        form.setValue(`items.${index}.packageCount`, packageCount.toString());
         
-        form.setValue(`items.${index}.weight`, weight.toFixed(3));
-        form.setValue(`items.${index}.volume`, volume.toFixed(3));
+        // 计算总重量 = 件数 * 每件重量
+        const weightPerPackage = product.bulkWeightKg || 0;
+        const totalWeight = packageCount * weightPerPackage;
+        
+        // 计算总体积 = 件数 * 每件体积
+        const volumePerPackage = product.bulkVolumeM3 || 0;
+        const totalVolume = packageCount * volumePerPackage;
+        
+        // 更新重量和体积，保留3位小数
+        form.setValue(`items.${index}.weight`, totalWeight.toFixed(3));
+        form.setValue(`items.${index}.volume`, totalVolume.toFixed(3));
         
         toast({
           title: t("product_found"),
@@ -294,17 +304,25 @@ export default function NewWarehouseTransfer() {
           // 获取数量，如果未设置则默认为1
           const quantity = parseInt(form.getValues(`items.${currentScanningIndex}.quantity`) || "1");
           
-          // 设置默认件数为1，如果未设置
-          if (!form.getValues(`items.${currentScanningIndex}.packageCount`)) {
-            form.setValue(`items.${currentScanningIndex}.packageCount`, "1");
-          }
+          // 计算件数 - 根据产品的bulkCapacity属性计算
+          // bulkCapacity是每件包装内可以容纳的产品数量
+          const bulkCapacity = product.bulkCapacity || 1; // 默认为1
+          const packageCount = Math.ceil(quantity / bulkCapacity);
           
-          // 计算总重量和体积
-          const weight = product.singleWeightKg * quantity;
-          const volume = product.singleVolumeM3 * quantity;
+          // 更新件数
+          form.setValue(`items.${currentScanningIndex}.packageCount`, packageCount.toString());
           
-          form.setValue(`items.${currentScanningIndex}.weight`, weight.toFixed(3));
-          form.setValue(`items.${currentScanningIndex}.volume`, volume.toFixed(3));
+          // 计算总重量 = 件数 * 每件重量
+          const weightPerPackage = product.bulkWeightKg || 0;
+          const totalWeight = packageCount * weightPerPackage;
+          
+          // 计算总体积 = 件数 * 每件体积
+          const volumePerPackage = product.bulkVolumeM3 || 0;
+          const totalVolume = packageCount * volumePerPackage;
+          
+          // 更新重量和体积，保留3位小数
+          form.setValue(`items.${currentScanningIndex}.weight`, totalWeight.toFixed(3));
+          form.setValue(`items.${currentScanningIndex}.volume`, totalVolume.toFixed(3));
           
           toast({
             title: t("product_found"),
@@ -378,7 +396,7 @@ export default function NewWarehouseTransfer() {
     }
   };
   
-  // 商品选择时自动计算重量和体积，并填充唯一码
+  // 商品选择时自动计算件数、重量和体积，并填充唯一码
   const handleProductChange = (value: string, index: number) => {
     // 设置产品ID
     form.setValue(`items.${index}.productId`, value);
@@ -389,18 +407,25 @@ export default function NewWarehouseTransfer() {
       // 获取当前数量，如果未设置则默认为1
       const quantity = parseInt(form.getValues(`items.${index}.quantity`) || "1");
       
-      // 计算总重量和体积
-      const weight = selectedProduct.singleWeightKg * quantity;
-      const volume = selectedProduct.singleVolumeM3 * quantity;
+      // 计算件数 - 根据产品的bulkCapacity属性计算
+      // bulkCapacity是每件包装内可以容纳的产品数量
+      const bulkCapacity = selectedProduct.bulkCapacity || 1; // 默认为1
+      const packageCount = Math.ceil(quantity / bulkCapacity);
       
-      // 更新重量和体积
-      form.setValue(`items.${index}.weight`, weight.toFixed(3));
-      form.setValue(`items.${index}.volume`, volume.toFixed(3));
+      // 更新件数
+      form.setValue(`items.${index}.packageCount`, packageCount.toString());
       
-      // 设置默认件数为1
-      if (!form.getValues(`items.${index}.packageCount`)) {
-        form.setValue(`items.${index}.packageCount`, "1");
-      }
+      // 计算总重量 = 件数 * 每件重量
+      const weightPerPackage = selectedProduct.bulkWeightKg || 0;
+      const totalWeight = packageCount * weightPerPackage;
+      
+      // 计算总体积 = 件数 * 每件体积
+      const volumePerPackage = selectedProduct.bulkVolumeM3 || 0;
+      const totalVolume = packageCount * volumePerPackage;
+      
+      // 更新重量和体积，保留3位小数
+      form.setValue(`items.${index}.weight`, totalWeight.toFixed(3));
+      form.setValue(`items.${index}.volume`, totalVolume.toFixed(3));
       
       // 检查是否已存在唯一码
       const currentUniqueCode = form.getValues(`items.${index}.uniqueCode`);
