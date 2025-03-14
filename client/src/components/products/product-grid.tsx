@@ -89,7 +89,7 @@ export function ProductCard({ product }: ProductCardProps) {
           {formatDate(product.updatedAt)}
         </div>
         <div className="text-sm font-medium text-blue-600">
-          ¥{product.price.toFixed(2)}
+          ¥{product.price !== undefined ? Number(product.price).toFixed(2) : '0.00'}
         </div>
       </CardFooter>
     </Card>

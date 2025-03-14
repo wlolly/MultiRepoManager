@@ -69,11 +69,11 @@ export function ProductListItem({ product }: ProductListItemProps) {
           </span>
           <span className="mx-2">•</span>
           <span>
-            {t('weight')}: <span className="text-gray-700">{product.singleWeightKg !== undefined ? product.singleWeightKg.toFixed(2) : '0.00'} kg</span>
+            {t('weight')}: <span className="text-gray-700">{product.singleWeightKg !== undefined ? Number(product.singleWeightKg).toFixed(2) : '0.00'} kg</span>
           </span>
           <span className="mx-2">•</span>
           <span>
-            {t('volume')}: <span className="text-gray-700">{product.singleVolumeM3 !== undefined ? product.singleVolumeM3.toFixed(3) : '0.000'} m³</span>
+            {t('volume')}: <span className="text-gray-700">{product.singleVolumeM3 !== undefined ? Number(product.singleVolumeM3).toFixed(3) : '0.000'} m³</span>
           </span>
         </div>
       </div>
@@ -83,7 +83,7 @@ export function ProductListItem({ product }: ProductListItemProps) {
             {t('stock')}: {product.stock !== undefined ? product.stock : 0}
           </div>
         </div>
-        <div className="mt-2 text-sm text-gray-700">¥{product.price !== undefined ? product.price.toFixed(2) : '0.00'}</div>
+        <div className="mt-2 text-sm text-gray-700">¥{product.price !== undefined ? Number(product.price).toFixed(2) : '0.00'}</div>
         <div className="mt-1 text-xs text-gray-500">{product.updatedAt ? formatDate(product.updatedAt) : formatDate(new Date())}</div>
       </div>
     </div>
