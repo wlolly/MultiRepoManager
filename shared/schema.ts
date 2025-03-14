@@ -261,17 +261,25 @@ export const inboundOrderItems = mysqlTable("inbound_order_items", {
   id: int("id").primaryKey().autoincrement(),
   inboundOrderId: int("inbound_order_id").notNull().references(() => inboundOrders.id), // 入库单ID
   productId: int("product_id").notNull().references(() => products.id), // 商品ID
+  productName: varchar("product_name", { length: 255 }).notNull(), // 商品名称
+  barcode: varchar("barcode", { length: 255 }).notNull(), // 条形码
   quantity: int("quantity").notNull(), // 数量
+  packageCount: int("package_count").notNull(), // 件数
   weight: decimal("weight", { precision: 10, scale: 3 }).notNull(), // 重量
   volume: decimal("volume", { precision: 10, scale: 6 }).notNull(), // 体积
+  remark: text("remark"), // 备注
 });
 
 export const insertInboundOrderItemSchema = createInsertSchema(inboundOrderItems).pick({
   inboundOrderId: true,
   productId: true,
+  productName: true,
+  barcode: true,
   quantity: true,
+  packageCount: true,
   weight: true,
   volume: true,
+  remark: true,
 });
 
 export type InsertInboundOrderItem = z.infer<typeof insertInboundOrderItemSchema>;
@@ -312,17 +320,25 @@ export const outboundOrderItems = mysqlTable("outbound_order_items", {
   id: int("id").primaryKey().autoincrement(),
   outboundOrderId: int("outbound_order_id").notNull().references(() => outboundOrders.id), // 出库单ID
   productId: int("product_id").notNull().references(() => products.id), // 商品ID
+  productName: varchar("product_name", { length: 255 }).notNull(), // 商品名称
+  barcode: varchar("barcode", { length: 255 }).notNull(), // 条形码
   quantity: int("quantity").notNull(), // 数量
+  packageCount: int("package_count").notNull(), // 件数
   weight: decimal("weight", { precision: 10, scale: 3 }).notNull(), // 重量
   volume: decimal("volume", { precision: 10, scale: 6 }).notNull(), // 体积
+  remark: text("remark"), // 备注
 });
 
 export const insertOutboundOrderItemSchema = createInsertSchema(outboundOrderItems).pick({
   outboundOrderId: true,
   productId: true,
+  productName: true,
+  barcode: true,
   quantity: true,
+  packageCount: true,
   weight: true,
   volume: true,
+  remark: true,
 });
 
 export type InsertOutboundOrderItem = z.infer<typeof insertOutboundOrderItemSchema>;

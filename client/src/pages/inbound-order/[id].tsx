@@ -49,10 +49,13 @@ interface InboundOrderItem {
   id: number;
   inboundOrderId: number;
   productId: number;
-  quantity: number;
+  productName: string; // 商品名称
+  barcode: string; // 条形码
+  quantity: number; // 数量
   packageCount: number; // 件数
-  weight: number;
-  volume: number;
+  weight: number; // 重量
+  volume: number; // 体积
+  remark?: string; // 备注
   product?: {
     id: number;
     name: string;
