@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -9,11 +9,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
-import { FileSpreadsheet, FileText, AlertCircle, Upload, ArrowLeft } from "lucide-react";
+import { FileSpreadsheet, FileText, AlertCircle, Upload, ArrowLeft, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import axios from "axios";
-import { apiRequest } from "@/lib/queryClient";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 // 预览数据接口
 interface ImportPreviewItem {
@@ -28,6 +29,13 @@ interface ImportPreviewItem {
   matched: boolean;
 }
 
+// 仓库接口
+interface Warehouse {
+  id: number;
+  name: string;
+  location: string;
+}
+
 export default function WarehouseTransferImport() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -37,6 +45,17 @@ export default function WarehouseTransferImport() {
   const [importErrors, setImportErrors] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [sourceWarehouseId, setSourceWarehouseId] = useState<string>("");
+  const [targetWarehouseId, setTargetWarehouseId] = useState<string>("");
+  const [notes, setNotes] = useState<string>("");
+  const [progress, setProgress] = useState<number>(0);
+  const [uploadStatus, setUploadStatus] = useState<"idle" | "preview" | "importing" | "complete">("idle");
+  
+  // 加载仓库数据
+  const { data: warehouses = [], isLoading: isLoadingWarehouses } = useQuery({
+    queryKey: ['/api/warehouses'],
+    enabled: true,
+  });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -85,12 +104,41 @@ export default function WarehouseTransferImport() {
     }
   };
 
+  // 更新进度效果
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (uploadStatus === "importing") {
+      interval = setInterval(() => {
+        setProgress((prev) => {
+          if (prev >= 95) {
+            clearInterval(interval);
+            return 95;
+          }
+          return prev + 5;
+        });
+      }, 300);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [uploadStatus]);
+
   const importMutation = useMutation({
     mutationFn: async () => {
       if (!file) return;
+      
+      if (!sourceWarehouseId || !targetWarehouseId) {
+        throw new Error(t("warehouseTransfer.select_warehouses"));
+      }
 
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("sourceWarehouseId", sourceWarehouseId);
+      formData.append("targetWarehouseId", targetWarehouseId);
+      formData.append("notes", notes);
+
+      setUploadStatus("importing");
+      setProgress(5);
 
       return apiRequest<{ id: number; referenceNumber: string }>(
         "/api/warehouse-transfers/import",
@@ -101,15 +149,22 @@ export default function WarehouseTransferImport() {
       );
     },
     onSuccess: (data) => {
+      setProgress(100);
+      setUploadStatus("complete");
+      queryClient.invalidateQueries({queryKey: ['/api/warehouse-transfers']});
       toast({
         title: t("warehouseTransfer.import_success"),
         description: t("warehouseTransfer.import_success_details", {
           ref: data?.referenceNumber,
         }),
       });
-      navigate(`/warehouse-transfers`);
+      setTimeout(() => {
+        navigate(`/warehouse-transfers`);
+      }, 1500);
     },
     onError: (error: any) => {
+      setUploadStatus("idle");
+      setProgress(0);
       toast({
         title: t("common.error"),
         description: error.message || t("warehouseTransfer.import_error"),
@@ -132,6 +187,25 @@ export default function WarehouseTransferImport() {
       toast({
         title: t("common.error"),
         description: t("warehouseTransfer.no_preview_data"),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!sourceWarehouseId || !targetWarehouseId) {
+      toast({
+        title: t("common.error"),
+        description: t("warehouseTransfer.select_warehouses"),
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // 检查源仓库和目标仓库是否相同
+    if (sourceWarehouseId === targetWarehouseId) {
+      toast({
+        title: t("common.error"),
+        description: t("warehouseTransfer.same_warehouse_error"),
         variant: "destructive",
       });
       return;
@@ -270,6 +344,89 @@ export default function WarehouseTransferImport() {
                     </ul>
                   </AlertDescription>
                 </Alert>
+              )}
+              
+              {/* 仓库选择 */}
+              {importPreview.length > 0 && (
+                <div className="grid gap-4 mt-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="source-warehouse">
+                        {t("warehouseTransfer.source_warehouse")} <span className="text-red-500">*</span>
+                      </Label>
+                      <Select
+                        value={sourceWarehouseId}
+                        onValueChange={setSourceWarehouseId}
+                        disabled={isImporting || isLoadingWarehouses}
+                      >
+                        <SelectTrigger id="source-warehouse">
+                          <SelectValue placeholder={t("warehouseTransfer.select_warehouse")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {warehouses.map((warehouse: Warehouse) => (
+                            <SelectItem key={warehouse.id} value={warehouse.id.toString()}>
+                              {warehouse.name} ({warehouse.location})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="target-warehouse">
+                        {t("warehouseTransfer.target_warehouse")} <span className="text-red-500">*</span>
+                      </Label>
+                      <Select
+                        value={targetWarehouseId}
+                        onValueChange={setTargetWarehouseId}
+                        disabled={isImporting || isLoadingWarehouses}
+                      >
+                        <SelectTrigger id="target-warehouse">
+                          <SelectValue placeholder={t("warehouseTransfer.select_warehouse")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {warehouses.map((warehouse: Warehouse) => (
+                            <SelectItem key={warehouse.id} value={warehouse.id.toString()}>
+                              {warehouse.name} ({warehouse.location})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="notes">{t("warehouseTransfer.notes")}</Label>
+                    <textarea
+                      id="notes"
+                      className="w-full min-h-[80px] p-2 border rounded-md resize-y"
+                      placeholder={t("warehouseTransfer.notes_placeholder")}
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      disabled={isImporting}
+                    />
+                  </div>
+                  
+                  {/* 进度条 */}
+                  {uploadStatus === "importing" && (
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <Label>{t("warehouseTransfer.import_progress")}</Label>
+                        <span className="text-sm text-muted-foreground">{progress}%</span>
+                      </div>
+                      <Progress value={progress} className="h-2" />
+                    </div>
+                  )}
+                  
+                  {uploadStatus === "complete" && (
+                    <Alert className="bg-green-50 border-green-200">
+                      <Check className="h-4 w-4 text-green-600" />
+                      <AlertTitle className="text-green-800">{t("warehouseTransfer.import_success")}</AlertTitle>
+                      <AlertDescription className="text-green-700">
+                        {t("warehouseTransfer.import_complete_message")}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </div>
               )}
               
               {importPreview.length > 0 && (
