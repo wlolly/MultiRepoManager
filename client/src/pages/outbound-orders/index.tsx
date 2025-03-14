@@ -510,6 +510,37 @@ export default function OutboundOrders() {
         </div>
         
         <div className="flex items-center space-x-2">
+          {/* Excel功能按钮 */}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleDownloadTemplate}
+            title={t("download_template_tooltip")}
+          >
+            <FileText className="mr-2 h-4 w-4" />
+            {t("download_template")}
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleOpenImport}
+            title={t("import_from_excel_tooltip")}
+          >
+            <FileUp className="mr-2 h-4 w-4" />
+            {t("import_from_excel")}
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => exportToExcel()}
+            title={t("export_to_excel_tooltip")}
+          >
+            <FileDown className="mr-2 h-4 w-4" />
+            {t("export_to_excel")}
+          </Button>
+          
           <Select value={warehouseFilter} onValueChange={setWarehouseFilter}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder={t("all_warehouses")} />
@@ -537,10 +568,7 @@ export default function OutboundOrders() {
             </SelectContent>
           </Select>
           
-          <Button variant="outline" size="sm" onClick={exportToExcel}>
-            <Download className="mr-2 h-4 w-4" />
-            {t("export")}
-          </Button>
+
         </div>
       </div>
       
