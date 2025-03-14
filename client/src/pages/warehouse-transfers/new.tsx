@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -83,7 +83,7 @@ type TransferFormValues = z.infer<typeof transferSchema>;
 export default function NewWarehouseTransfer() {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // 条码扫描对话框状态
@@ -253,7 +253,7 @@ export default function NewWarehouseTransfer() {
           ? t("warehouseTransfer.transfer_created_with_reference", { reference: response.referenceNumber })
           : t("warehouseTransfer.transfer_created_description"),
       });
-      navigate("/warehouse-transfers");
+      setLocation("/warehouse-transfers");
     },
     onError: (error) => {
       console.error("创建调拨单失败:", error);
