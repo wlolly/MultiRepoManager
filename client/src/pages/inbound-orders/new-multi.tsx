@@ -942,12 +942,12 @@ export default function NewMultiInboundOrder() {
                                     <div className="h-8 w-full bg-muted animate-pulse rounded"></div>
                                   ) : (
                                     <Combobox
-                                      items={products.map(product => ({
+                                      options={products.map(product => ({
                                         label: `${product.name} (${product.barcode})`,
                                         value: product.id.toString()
                                       }))}
                                       value={field.value}
-                                      onChange={(value) => handleProductChange(value, index)}
+                                      onValueChange={(value: string) => handleProductChange(value, index)}
                                       placeholder={t("select_product")}
                                       emptyText={t("no_product_found")}
                                       className="h-8"
