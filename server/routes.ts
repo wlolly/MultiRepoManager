@@ -349,7 +349,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Products routes
   apiRouter.get("/products", async (req, res) => {
     try {
-      const products = await storage.getProducts();
+      // Check for warehouse filter
+      const warehouseId = req.query.warehouseId ? parseInt(req.query.warehouseId as string) : undefined;
+      
+      // If warehouseId is provided, filter products by warehouse
+      const products = await storage.getProducts(warehouseId ? { warehouseId } : undefined);
       res.json(products);
     } catch (err) {
       handleZodError(err, res);
