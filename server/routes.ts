@@ -692,12 +692,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const createdItems = [];
       if (items && items.length > 0) {
         for (const item of items) {
+          // 获取产品信息来填充必要的字段
+          const product = await storage.getProduct(parseInt(item.productId));
+          if (!product) {
+            console.warn(`Invalid product ID: ${item.productId}, skipping`);
+            continue;
+          }
+          
           const itemData = {
             outboundOrderId: outboundOrder.id,
             productId: parseInt(item.productId),
-            quantity: item.quantity,
+            productName: product.name,
+            barcode: product.barcode,
+            externalOrderNumber: item.externalOrderNumber || null,
+            quantity: parseInt(item.quantity),
+            packageCount: parseInt(item.packageCount || item.quantity),
             weight: item.weight || "0",
-            volume: item.volume || "0"
+            volume: item.volume || "0",
+            remark: item.remark || null
           };
           
           const createdItem = await storage.createOutboundOrderItem(itemData);
@@ -783,12 +795,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           for (const item of items) {
             const itemData = {
               inboundOrderId: inboundOrder.id,
-              productId: item.productId,
+              productId: parseInt(item.productId),
               productName: item.productName,
               barcode: item.barcode,
               externalOrderNumber: item.externalOrderNumber || null,
-              quantity: item.quantity,
-              packageCount: item.packageCount || item.quantity,
+              quantity: parseInt(item.quantity),
+              packageCount: parseInt(item.packageCount || item.quantity),
               weight: item.weight || "0",
               volume: item.volume || "0",
               remark: item.remark || null
@@ -1167,9 +1179,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const itemData = {
             inboundOrderId: inboundOrder.id,
             productId: parseInt(productId),
+            productName: product.name,
+            barcode: product.barcode,
             quantity: quantity,
+            packageCount: parseInt(row.packageCount || row['Package Count'] || quantity),
+            externalOrderNumber: row.externalOrderNumber || row['External Order Number'] || null,
             weight: weight.toString(),
-            volume: volume.toString()
+            volume: volume.toString(),
+            remark: row.remark || row['Remark'] || null
           };
           
           // Create order item
@@ -1284,9 +1301,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const itemData = {
             outboundOrderId: outboundOrder.id,
             productId: parseInt(productId),
+            productName: product.name,
+            barcode: product.barcode,
             quantity: quantity,
+            packageCount: parseInt(row.packageCount || row['Package Count'] || quantity),
+            externalOrderNumber: row.externalOrderNumber || row['External Order Number'] || null,
             weight: weight.toString(),
-            volume: volume.toString()
+            volume: volume.toString(),
+            remark: row.remark || row['Remark'] || null
           };
           
           // Create order item
@@ -1390,13 +1412,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const inboundItems = [];
       
       for (const item of items) {
+        // 获取产品信息以填充必要字段
+        const product = await storage.getProduct(parseInt(item.productId));
+        if (!product) {
+          console.warn(`Invalid product ID: ${item.productId}, skipping`);
+          continue;
+        }
+
         // 添加出库单明细
         const outboundItem = await storage.createOutboundOrderItem({
           outboundOrderId: outboundOrder.id,
           productId: parseInt(item.productId),
-          quantity: item.quantity,
+          productName: product.name,
+          barcode: product.barcode,
+          quantity: parseInt(item.quantity),
+          packageCount: parseInt(item.packageCount || item.quantity),
+          externalOrderNumber: `TRANSFER-${Date.now()}`,
           weight: item.weight.toString(),
-          volume: item.volume.toString()
+          volume: item.volume.toString(),
+          remark: "调拨出库"
         });
         outboundItems.push(outboundItem);
         
@@ -1404,9 +1438,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const inboundItem = await storage.createInboundOrderItem({
           inboundOrderId: inboundOrder.id,
           productId: parseInt(item.productId),
-          quantity: item.quantity,
+          productName: product.name,
+          barcode: product.barcode,
+          quantity: parseInt(item.quantity),
+          packageCount: parseInt(item.packageCount || item.quantity),
+          externalOrderNumber: `TRANSFER-${Date.now()}`,
           weight: item.weight.toString(),
-          volume: item.volume.toString()
+          volume: item.volume.toString(),
+          remark: "调拨入库"
         });
         inboundItems.push(inboundItem);
       }
