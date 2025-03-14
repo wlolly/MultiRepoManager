@@ -89,6 +89,7 @@ const itemSchema = z.object({
   }),
   productName: z.string().min(1, "商品名称不能为空"),
   barcode: z.string().min(1, "条形码不能为空"),
+  uniqueCode: z.string().nullable().optional(),
   externalOrderNumber: z.string().nullable().optional(),
   quantity: z.number({
     required_error: "数量不能为空",
@@ -220,6 +221,7 @@ export default function NewInboundOrderWithItems() {
         productId: selectedProduct.id,
         productName: selectedProduct.name,
         barcode: selectedProduct.barcode,
+        uniqueCode: null,
         externalOrderNumber: null,
         quantity: 1,
         packageCount: 1,
@@ -241,6 +243,7 @@ export default function NewInboundOrderWithItems() {
       const currentQuantity = form.getValues(`items.${currentItemIndex}.quantity`);
       const currentPackageCount = form.getValues(`items.${currentItemIndex}.packageCount`);
       const externalOrderNumber = form.getValues(`items.${currentItemIndex}.externalOrderNumber`);
+      const uniqueCode = form.getValues(`items.${currentItemIndex}.uniqueCode`);
       const remark = form.getValues(`items.${currentItemIndex}.remark`);
       
       // 计算重量和体积
@@ -252,6 +255,7 @@ export default function NewInboundOrderWithItems() {
         productId: selectedProduct.id,
         productName: selectedProduct.name,
         barcode: selectedProduct.barcode,
+        uniqueCode,
         externalOrderNumber,
         quantity: currentQuantity,
         packageCount: currentPackageCount,
