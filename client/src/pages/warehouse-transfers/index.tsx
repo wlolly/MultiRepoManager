@@ -476,22 +476,22 @@ export default function WarehouseTransfers() {
       {/* 调拨单列表 */}
       <Card>
         <CardHeader>
-          <CardTitle>{t("warehouse_transfers_list")}</CardTitle>
+          <CardTitle>{t("warehouseTransfer.warehouse_transfers_list")}</CardTitle>
           <CardDescription>
-            {t("found_count_items", { count: displayedTransfers.length })}
+            {t("warehouseTransfer.found_count_items", { count: displayedTransfers.length })}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {isLoadingTransfers ? (
             <div className="flex items-center justify-center h-[200px]">
-              <p>{t("loading")}...</p>
+              <p>{t("warehouseTransfer.loading")}...</p>
             </div>
           ) : displayedTransfers.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-[200px] text-center">
-              <p className="text-muted-foreground mb-2">{t("no_transfers_found")}</p>
+              <p className="text-muted-foreground mb-2">{t("warehouseTransfer.no_transfers_found")}</p>
               <Button variant="outline" size="sm" onClick={handleCreateTransfer}>
                 <Plus className="mr-2 h-4 w-4" />
-                {t("create_first_transfer")}
+                {t("warehouseTransfer.create_first_transfer")}
               </Button>
             </div>
           ) : (
@@ -538,14 +538,14 @@ export default function WarehouseTransfers() {
         <CardFooter className="flex justify-between">
           <div className="text-sm text-muted-foreground">
             {searchQuery && filteredTransfers.length > 0 && 
-              t("showing_filtered_results", { count: filteredTransfers.length })}
+              t("warehouseTransfer.showing_filtered_results", { count: filteredTransfers.length })}
           </div>
           <div className="text-sm text-muted-foreground">
             {filteredTransfers.length > 0 && (
               <>
-                {t("current_page_total")}: {formatDate(new Date())}
+                {t("warehouseTransfer.current_page_total")}: {formatDate(new Date())}
                 <br />
-                {t("weight_volume_total")}: {totalWeight.toFixed(2)} kg / {totalVolume.toFixed(3)} m³
+                {t("warehouseTransfer.weight_volume_total")}: {totalWeight.toFixed(2)} kg / {totalVolume.toFixed(3)} m³
               </>
             )}
           </div>
