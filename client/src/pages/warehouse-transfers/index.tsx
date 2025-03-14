@@ -71,6 +71,7 @@ interface TransferStats {
 export default function WarehouseTransfers() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [dateFilter, setDateFilter] = useState<string>("");
@@ -549,6 +550,107 @@ export default function WarehouseTransfers() {
           </div>
         </CardFooter>
       </Card>
+
+      {/* Excel导入对话框 */}
+      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>{t("import_from_excel")}</DialogTitle>
+            <DialogDescription>
+              {t("import_excel_description")}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="grid w-full max-w-sm items-center gap-1.5">
+              <Label htmlFor="excel-file">{t("excel_file")}</Label>
+              <Input 
+                id="excel-file" 
+                type="file" 
+                accept=".xlsx,.xls" 
+                onChange={handleFileChange}
+              />
+              <p className="text-xs text-muted-foreground">
+                {t("supported_formats")}: .xlsx, .xls
+              </p>
+            </div>
+            
+            {importErrors.length > 0 && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>{t("import_errors")}</AlertTitle>
+                <AlertDescription>
+                  <ul className="list-disc pl-4 mt-2">
+                    {importErrors.map((error, index) => (
+                      <li key={index}>{error}</li>
+                    ))}
+                  </ul>
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            {importPreview.length > 0 && (
+              <div className="max-h-[400px] overflow-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[80px]">{t("row")}</TableHead>
+                      <TableHead>{t("product_name")}</TableHead>
+                      <TableHead>{t("barcode")}</TableHead>
+                      <TableHead className="text-right">{t("quantity")}</TableHead>
+                      <TableHead className="text-right">{t("packages")}</TableHead>
+                      <TableHead className="text-right">{t("status")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {importPreview.map((item, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{index + 1}</TableCell>
+                        <TableCell>{item.productName}</TableCell>
+                        <TableCell>{item.barcode}</TableCell>
+                        <TableCell className="text-right">{item.quantity}</TableCell>
+                        <TableCell className="text-right">{item.packageCount || 1}</TableCell>
+                        <TableCell className="text-right">
+                          {item.matched ? (
+                            <Badge variant="success">{t("matched")}</Badge>
+                          ) : (
+                            <Badge variant="destructive">{t("not_matched")}</Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter className="flex justify-between items-center">
+            <div>
+              {importPreview.length > 0 && (
+                <div className="text-sm text-muted-foreground">
+                  {t("valid_items")}: {importPreview.filter(item => item.matched).length}/{importPreview.length}
+                </div>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setImportDialogOpen(false)}
+              >
+                {t("cancel")}
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={!importFile || importPreview.length === 0 || importPreview.filter(item => item.matched).length === 0}
+                onClick={handleImportExcel}
+              >
+                {t("import")}
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
