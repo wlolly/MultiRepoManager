@@ -706,7 +706,7 @@ export default function NewWarehouseTransfer() {
   return (
     <div className="container mx-auto py-6">
       <div className="flex justify-between items-center mb-6">
-        <Button variant="outline" size="sm" onClick={() => navigate("/warehouse-transfers")}>
+        <Button variant="outline" size="sm" onClick={() => setLocation("/warehouse-transfers")}>
           <ArrowLeftIcon className="mr-2 h-4 w-4" />
           {t("back_to_warehouse_transfers")}
         </Button>

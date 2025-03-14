@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
 import axios from "axios";
@@ -67,7 +67,7 @@ interface OutboundStats {
 
 export default function OutboundOrders() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const [_, setLocation] = useLocation();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
@@ -212,7 +212,7 @@ export default function OutboundOrders() {
   // 打开导入对话框
   const handleOpenImport = () => {
     // 导入功能实现
-    navigate("/outbound-orders/import");
+    setLocation("/outbound-orders/import");
   };
   
   // 导出为Excel
@@ -243,12 +243,12 @@ export default function OutboundOrders() {
   
   // 处理创建新出库单
   const handleCreateOrder = () => {
-    navigate("/outbound-orders/new");
+    setLocation("/outbound-orders/new");
   };
   
   // 处理创建带明细的新出库单
   const handleCreateOrderWithItems = () => {
-    navigate("/outbound-orders/new-with-items");
+    setLocation("/outbound-orders/new-with-items");
   };
   
   // 处理查看出库单详情
