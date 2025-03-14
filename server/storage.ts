@@ -62,7 +62,7 @@ export interface IStorage {
   getProductByBarcode(barcode: string): Promise<Product | undefined>;
   createProduct(product: InsertProduct): Promise<Product>;
   updateProduct(id: number, product: Partial<Product>): Promise<Product | undefined>;
-  getProducts(): Promise<Product[]>;
+  getProducts(filter?: { warehouseId?: number, category?: string }): Promise<Product[]>;
   
   // 仓库相关方法
   getWarehouse(id: number): Promise<Warehouse | undefined>;
