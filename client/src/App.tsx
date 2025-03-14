@@ -40,6 +40,7 @@ import NewOutboundOrderWithItems from "./pages/outbound-orders/new-with-items";
 import AdvancedOutboundOrder from "./pages/outbound-orders/advanced";
 import NewInboundOrder from "./pages/inbound-orders/new";
 import NewInboundOrderWithItems from "./pages/inbound-orders/new-with-items";
+import NewMultiInboundOrder from "./pages/inbound-orders/new-multi";
 import ProductDetail from "./pages/products/product-detail";
 import ProductsPage from "./pages/products/index";
 import ProductSearch from "./pages/product-search";
@@ -329,6 +330,7 @@ export default function App() {
             <Route path="/inbound-order/:id" component={InboundOrder} />
             <Route path="/inbound-orders/new" component={NewInboundOrder} />
             <Route path="/inbound-orders/new-with-items" component={NewInboundOrderWithItems} />
+            <Route path="/inbound-orders/new-multi" component={NewMultiInboundOrder} />
             
             {/* 出库单页面 */}
             <Route path="/outbound-orders" component={OutboundOrders} />
