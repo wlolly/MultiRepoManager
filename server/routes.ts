@@ -349,11 +349,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Products routes
   apiRouter.get("/products", async (req, res) => {
     try {
-      // Check for warehouse filter
-      const warehouseId = req.query.warehouseId ? parseInt(req.query.warehouseId as string) : undefined;
+      // Build filter object based on query parameters
+      const filter: { warehouseId?: number, category?: string } = {};
       
-      // If warehouseId is provided, filter products by warehouse
-      const products = await storage.getProducts(warehouseId ? { warehouseId } : undefined);
+      // Check for warehouse filter
+      if (req.query.warehouseId) {
+        filter.warehouseId = parseInt(req.query.warehouseId as string);
+      }
+      
+      // Check for category filter
+      if (req.query.category) {
+        filter.category = req.query.category as string;
+      }
+      
+      // Get products with applied filters
+      const products = await storage.getProducts(Object.keys(filter).length > 0 ? filter : undefined);
       res.json(products);
     } catch (err) {
       handleZodError(err, res);
