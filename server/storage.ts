@@ -1604,6 +1604,9 @@ export class DatabaseStorage implements IStorage {
     lowStockProducts: number;
     totalValue: number;
     avgPrice: number;
+    totalPackages: number; // 总件数
+    totalWeight: number;   // 总重量(kg)
+    totalVolume: number;   // 总体积(m3)
   }> {
     // 获取所有产品
     const allProducts = await db.select().from(products);
@@ -1621,20 +1624,38 @@ export class DatabaseStorage implements IStorage {
     
     // 计算总价值 (库存 * 价格)
     const totalValue = allProducts.reduce((sum, product) => {
-      return sum + (product.stock * product.price);
+      return sum + (product.stock * parseFloat(product.price));
     }, 0);
     
     // 计算平均价格
     const avgPrice = allProducts.length > 0 
-      ? allProducts.reduce((sum, product) => sum + product.price, 0) / allProducts.length
+      ? allProducts.reduce((sum, product) => sum + parseFloat(product.price), 0) / allProducts.length
       : 0;
+      
+    // 计算总件数 (按每个商品库存计算)
+    const totalPackages = allProducts.reduce((sum, product) => {
+      return sum + product.stock;
+    }, 0);
+    
+    // 计算总重量 (kg) (每件商品的重量 * 库存)
+    const totalWeight = allProducts.reduce((sum, product) => {
+      return sum + (parseFloat(product.singleWeightKg) * product.stock);
+    }, 0);
+    
+    // 计算总体积 (m3) (每件商品的体积 * 库存)
+    const totalVolume = allProducts.reduce((sum, product) => {
+      return sum + (parseFloat(product.singleVolumeM3) * product.stock);
+    }, 0);
     
     return {
       totalProducts: allProducts.length,
       totalCategories: categories.size,
       lowStockProducts,
       totalValue,
-      avgPrice
+      avgPrice,
+      totalPackages,
+      totalWeight,
+      totalVolume
     };
   }
 
