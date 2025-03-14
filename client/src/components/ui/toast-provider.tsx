@@ -94,5 +94,15 @@ export function useToast() {
   if (!context) {
     throw new Error("useToast must be used within a ToastProvider");
   }
-  return context;
+  
+  // 添加toast方法，使其与全局window.toast兼容
+  return {
+    ...context,
+    toast: {
+      success: (message: string) => context.addToast({ title: "成功", description: message, type: "success" }),
+      error: (message: string) => context.addToast({ title: "错误", description: message, type: "error" }),
+      warning: (message: string) => context.addToast({ title: "警告", description: message, type: "warning" }),
+      info: (message: string) => context.addToast({ title: "提示", description: message, type: "default" })
+    }
+  };
 }
