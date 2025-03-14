@@ -175,8 +175,13 @@ export type Activity = typeof activities.$inferSelect;
 export const products = mysqlTable("products", {
   id: int("id").primaryKey().autoincrement(), // 商品ID
   name: varchar("name", { length: 255 }).notNull(), // 商品名称
+  description: text("description"), // 商品描述
   barcode: varchar("barcode", { length: 255 }).notNull().unique(), // 条码
   uniqueCode: varchar("unique_code", { length: 255 }), // 唯一码，用于与电商平台匹配
+  category: varchar("category", { length: 100 }), // 商品类别
+  stock: int("stock").notNull().default(0), // 库存数量
+  price: decimal("price", { precision: 10, scale: 2 }).notNull().default("0"), // 售价
+  cost: decimal("cost", { precision: 10, scale: 2 }).notNull().default("0"), // 成本
   singleLengthCm: decimal("single_length_cm", { precision: 10, scale: 2 }).notNull(), // 单件尺寸（长CM）
   singleWidthCm: decimal("single_width_cm", { precision: 10, scale: 2 }).notNull(), // 单件尺寸（宽CM）
   singleHeightCm: decimal("single_height_cm", { precision: 10, scale: 2 }).notNull(), // 单件尺寸（高CM）
@@ -193,8 +198,13 @@ export const products = mysqlTable("products", {
 
 export const insertProductSchema = createInsertSchema(products).pick({
   name: true,
+  description: true,
   barcode: true,
   uniqueCode: true,
+  category: true,
+  stock: true,
+  price: true,
+  cost: true,
   singleLengthCm: true,
   singleWidthCm: true,
   singleHeightCm: true,

@@ -912,6 +912,9 @@ export class MemStorage implements IStorage {
     lowStockProducts: number;
     totalValue: number;
     avgPrice: number;
+    totalPackages: number; // 总件数
+    totalWeight: number;   // 总重量(kg)
+    totalVolume: number;   // 总体积(m3)
   }> {
     const products = Array.from(this.productsMap.values());
     
@@ -928,20 +931,38 @@ export class MemStorage implements IStorage {
     
     // 计算总价值 (库存 * 价格)
     const totalValue = products.reduce((sum, product) => {
-      return sum + (product.stock * product.price);
+      return sum + (product.stock * Number(product.price));
     }, 0);
     
     // 计算平均价格
     const avgPrice = products.length > 0 
-      ? products.reduce((sum, product) => sum + product.price, 0) / products.length
+      ? products.reduce((sum, product) => sum + Number(product.price), 0) / products.length
       : 0;
+    
+    // 计算总件数 (按每个商品库存计算)
+    const totalPackages = products.reduce((sum, product) => {
+      return sum + product.stock;
+    }, 0);
+    
+    // 计算总重量 (kg) (每件商品的重量 * 库存)
+    const totalWeight = products.reduce((sum, product) => {
+      return sum + (Number(product.singleWeightKg) * product.stock);
+    }, 0);
+    
+    // 计算总体积 (m3) (每件商品的体积 * 库存)
+    const totalVolume = products.reduce((sum, product) => {
+      return sum + (Number(product.singleVolumeM3) * product.stock);
+    }, 0);
     
     return {
       totalProducts: products.length,
       totalCategories: categories.size,
       lowStockProducts,
       totalValue,
-      avgPrice
+      avgPrice,
+      totalPackages,
+      totalWeight,
+      totalVolume
     };
   }
   

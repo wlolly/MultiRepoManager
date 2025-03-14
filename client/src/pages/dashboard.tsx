@@ -69,6 +69,11 @@ export default function Dashboard() {
     totalWarehouses: number;
     categoriesCount: number;
     recentOperations: number;
+    totalPackages: number;     // 总件数
+    totalWeight: number;       // 总重量(kg)
+    totalVolume: number;       // 总体积(m3)
+    totalValue: number;        // 总值
+    avgPrice: number;          // 平均价格
   }
 
   // Fetch products with filters
@@ -144,6 +149,42 @@ export default function Dashboard() {
             icon="ri-file-list-3-line" 
             color="yellow" 
           />
+        </div>
+        
+        <div className="mb-6">
+          <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">{t('inventory_stats')}</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+            <StatsCard 
+              title={t('total_packages')} 
+              value={isLoadingStats ? "..." : stats?.totalPackages || 0} 
+              icon="ri-inbox-line" 
+              color="indigo" 
+            />
+            <StatsCard 
+              title={t('total_weight')} 
+              value={isLoadingStats ? "..." : `${(stats?.totalWeight || 0).toFixed(2)} kg`} 
+              icon="ri-scales-line" 
+              color="red" 
+            />
+            <StatsCard 
+              title={t('total_volume')} 
+              value={isLoadingStats ? "..." : `${(stats?.totalVolume || 0).toFixed(3)} m³`} 
+              icon="ri-cube-line" 
+              color="orange" 
+            />
+            <StatsCard 
+              title={t('total_value')} 
+              value={isLoadingStats ? "..." : `¥${(stats?.totalValue || 0).toFixed(2)}`} 
+              icon="ri-money-cny-circle-line" 
+              color="emerald" 
+            />
+            <StatsCard 
+              title={t('avg_price')} 
+              value={isLoadingStats ? "..." : `¥${(stats?.avgPrice || 0).toFixed(2)}`} 
+              icon="ri-price-tag-line" 
+              color="pink" 
+            />
+          </div>
         </div>
 
         <div className="mb-6">
