@@ -92,7 +92,8 @@ export function ProductListItem({ product }: ProductListItemProps) {
             {t('stock')}: {product.stock !== undefined ? product.stock : 0}
           </div>
         </div>
-        <div className="mt-2 text-sm text-gray-700">¥{product.price !== undefined ? Number(product.price).toFixed(2) : '0.00'}</div>
+        <div className="mt-2 text-sm text-gray-700">{t('wholesale_price')}: {product.price !== undefined ? Number(product.price).toFixed(2) : '0.00'}</div>
+        <div className="mt-1 text-xs text-gray-700">{t('agent_price')}: {product.cost !== undefined ? Number(product.cost).toFixed(2) : '0.00'}</div>
         <div className="mt-1 text-xs text-gray-500">{product.updatedAt ? formatDate(product.updatedAt) : formatDate(new Date())}</div>
       </div>
     </div>
