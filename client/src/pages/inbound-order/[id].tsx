@@ -51,6 +51,7 @@ interface InboundOrderItem {
   productId: number;
   productName: string; // 商品名称
   barcode: string; // 条形码
+  externalOrderNumber?: string; // 外部订单号
   quantity: number; // 数量
   packageCount: number; // 件数
   weight: number; // 重量
@@ -85,6 +86,7 @@ interface Warehouse {
 // 添加商品表单Schema
 const itemSchema = z.object({
   productId: z.string().min(1, { message: "商品是必填项" }),
+  externalOrderNumber: z.string().optional(),
   quantity: z.string().min(1, { message: "数量是必填项" }).transform(val => parseInt(val)),
   packageCount: z.string().min(1, { message: "件数是必填项" }).transform(val => parseInt(val)),
   weight: z.string().min(1, { message: "重量是必填项" }).transform(val => parseFloat(val)),
