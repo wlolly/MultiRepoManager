@@ -113,7 +113,6 @@ export const useToast = () => {
     dispatch({
       type: "ADD_TOAST",
       toast: {
-        id,
         title,
         description,
         variant,
@@ -158,7 +157,6 @@ export const toast = ({
       listener({
         type: "ADD_TOAST",
         toast: {
-          id,
           title,
           description,
           variant,
