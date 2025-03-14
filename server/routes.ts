@@ -1061,6 +1061,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
       handleZodError(err, res);
     }
   });
+
+  // 电商平台产品相关路由
+  // 匹配电商平台产品与系统产品
+  apiRouter.get("/ecommerce-products/match", async (req, res) => {
+    try {
+      const { platformSource } = req.query;
+      
+      if (!platformSource || typeof platformSource !== 'string') {
+        return res.status(400).json({ error: "Platform source is required" });
+      }
+      
+      const matchResult = await storage.matchPlatformProducts(platformSource);
+      res.json(matchResult);
+    } catch (err) {
+      console.error("Error matching platform products:", err);
+      res.status(500).json({ error: "Error matching platform products" });
+    }
+  });
+  
+  // 获取电商平台产品列表
+  apiRouter.get("/ecommerce-products", async (req, res) => {
+    try {
+      const { platformSource, matchedProductId } = req.query;
+      const filter: { platformSource?: string, matchedProductId?: number } = {};
+      
+      if (platformSource && typeof platformSource === 'string') {
+        filter.platformSource = platformSource;
+      }
+      
+      if (matchedProductId && typeof matchedProductId === 'string') {
+        const id = parseInt(matchedProductId);
+        if (!isNaN(id)) {
+          filter.matchedProductId = id;
+        }
+      }
+      
+      const products = await storage.getEcommerceProducts(filter);
+      res.json(products);
+    } catch (err) {
+      console.error("Error getting ecommerce products:", err);
+      res.status(500).json({ error: "Error getting ecommerce products" });
+    }
+  });
   
   // Excel import/export routes
   // Import products from Excel
