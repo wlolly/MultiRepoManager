@@ -1,4 +1,5 @@
 import React from "react";
+import { useLocation } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDate } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
@@ -43,11 +44,19 @@ interface ProductListItemProps {
 
 export function ProductListItem({ product }: ProductListItemProps) {
   const { t } = useTranslation();
+  const [_, navigate] = useLocation();
+  
+  const handleViewDetails = () => {
+    navigate(`/products/${product.id}`);
+  };
   
   return (
-    <div className="flex items-center py-4 border-b">
+    <div 
+      className="flex items-center py-4 border-b hover:bg-gray-50 cursor-pointer transition-colors"
+      onClick={handleViewDetails}
+    >
       <div className="flex-1">
-        <h3 className="text-lg font-medium text-gray-900">
+        <h3 className="text-lg font-medium text-gray-900 hover:text-blue-600 transition-colors">
           {product.name}
         </h3>
         <p className="text-sm text-gray-500 mt-1">{product.description}</p>
