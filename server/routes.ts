@@ -23,6 +23,11 @@ import { fromZodError } from "zod-validation-error";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { 
+  createTransferImportTemplate, 
+  parseTransferImportFile, 
+  exportTransferToExcel 
+} from "./utils/excel-handler";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const apiRouter = express.Router();
@@ -1707,6 +1712,106 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (err) {
       handleZodError(err, res);
+    }
+  });
+  
+  // Excel模板下载路由
+  apiRouter.get("/warehouse-transfers/template", async (req, res) => {
+    try {
+      // 创建模板文件
+      const templatePath = createTransferImportTemplate();
+      
+      // 发送文件给客户端
+      res.download(templatePath, 'warehouse_transfer_template.xlsx');
+    } catch (err) {
+      console.error("创建模板文件失败:", err);
+      res.status(500).json({ message: "创建模板文件失败", error: err.message });
+    }
+  });
+  
+  // Excel导入路由 - 使用multer处理文件上传
+  apiRouter.post("/warehouse-transfers/import", upload.single('file'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "请上传Excel文件" });
+      }
+      
+      // 解析导入的Excel文件
+      const { items, errors } = parseTransferImportFile(req.file.path);
+      
+      // 如果有验证错误，返回错误信息
+      if (errors.length > 0) {
+        return res.status(400).json({ 
+          message: "导入文件包含错误",
+          errors,
+          itemsCount: items.length,
+          // 如果有有效的项目，一并返回
+          items: items.length > 0 ? items : undefined
+        });
+      }
+      
+      // 返回成功导入的项目
+      res.status(200).json({
+        message: "成功解析Excel文件",
+        itemsCount: items.length,
+        items
+      });
+      
+    } catch (err) {
+      console.error("导入Excel文件失败:", err);
+      res.status(500).json({ message: "导入Excel文件失败", error: err.message });
+    }
+  });
+  
+  // Excel导出路由
+  apiRouter.get("/warehouse-transfers/:id/export", async (req, res) => {
+    try {
+      const transferId = parseInt(req.params.id);
+      const transfer = await storage.getWarehouseTransfer(transferId);
+      
+      if (!transfer) {
+        return res.status(404).json({ message: "调拨单不存在" });
+      }
+      
+      // 获取调拨单项目
+      const items = await storage.getWarehouseTransferItems(transferId);
+      
+      // 获取源仓库和目标仓库
+      const sourceWarehouse = await storage.getWarehouse(transfer.sourceWarehouseId);
+      const targetWarehouse = await storage.getWarehouse(transfer.targetWarehouseId);
+      
+      if (!sourceWarehouse || !targetWarehouse) {
+        return res.status(400).json({ message: "仓库信息不完整" });
+      }
+      
+      // 获取所有相关商品
+      const productIds = items.map(item => item.productId);
+      const productPromises = productIds.map(id => storage.getProduct(id));
+      const productsArray = await Promise.all(productPromises);
+      
+      // 转换为对象，以便于通过ID查找
+      const products: Record<number, any> = {};
+      productsArray.forEach(product => {
+        if (product) {
+          products[product.id] = product;
+        }
+      });
+      
+      // 导出Excel文件
+      const filePath = exportTransferToExcel(
+        transfer, 
+        items, 
+        sourceWarehouse, 
+        targetWarehouse, 
+        products
+      );
+      
+      // 发送文件给客户端
+      res.download(filePath, `transfer_${transfer.referenceNumber}.xlsx`);
+      
+    } catch (err) {
+      console.error("导出Excel文件失败:", err);
+      res.status(500).json({ message: "导出Excel文件失败", error: err.message });
     }
   });
 
