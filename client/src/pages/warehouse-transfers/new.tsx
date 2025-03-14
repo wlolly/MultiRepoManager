@@ -369,67 +369,67 @@ export default function NewWarehouseTransfer() {
                 </div>
                 
                 <div className="space-y-4">
+                  <div className="grid grid-cols-7 gap-2 px-2 py-1 bg-muted font-medium text-sm">
+                    <div className="col-span-2">{t("product")}</div>
+                    <div>{t("quantity")}</div>
+                    <div>{t("package_count")}</div>
+                    <div>{t("weight")} (kg)</div>
+                    <div>{t("volume")} (m³)</div>
+                    <div></div>
+                  </div>
+                  
                   {fields.map((field, index) => (
-                    <div key={field.id} className="border p-4 rounded-md relative">
-                      <div className="absolute top-2 right-2">
-                        <Button 
-                          type="button" 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => handleRemoveItem(index)}
-                        >
-                          <MinusIcon className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div key={field.id} className="grid grid-cols-7 gap-2 items-center p-2 border rounded-md">
+                      {/* 商品 */}
+                      <div className="col-span-2">
                         <FormField
                           control={form.control}
                           name={`items.${index}.productId`}
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>{t("product")}</FormLabel>
-                              <Select 
-                                onValueChange={(value) => handleProductChange(value, index)} 
-                                defaultValue={field.value}
-                              >
-                                <FormControl>
+                            <FormItem className="space-y-0">
+                              <FormControl>
+                                <Select 
+                                  onValueChange={(value) => handleProductChange(value, index)} 
+                                  defaultValue={field.value}
+                                >
                                   <SelectTrigger>
                                     <SelectValue placeholder={t("select_product")} />
                                   </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {isLoadingProducts ? (
-                                    <SelectItem value="loading" disabled>
-                                      {t("loading")}
-                                    </SelectItem>
-                                  ) : products.length === 0 ? (
-                                    <SelectItem value="no-products" disabled>
-                                      {t("no_products")}
-                                    </SelectItem>
-                                  ) : (
-                                    products.map((product) => (
-                                      <SelectItem 
-                                        key={product.id} 
-                                        value={product.id.toString()}
-                                      >
-                                        {product.name} - {product.barcode}
+                                  <SelectContent>
+                                    {isLoadingProducts ? (
+                                      <SelectItem value="loading" disabled>
+                                        {t("loading")}
                                       </SelectItem>
-                                    ))
-                                  )}
-                                </SelectContent>
-                              </Select>
+                                    ) : products.length === 0 ? (
+                                      <SelectItem value="no-products" disabled>
+                                        {t("no_products")}
+                                      </SelectItem>
+                                    ) : (
+                                      products.map((product) => (
+                                        <SelectItem 
+                                          key={product.id} 
+                                          value={product.id.toString()}
+                                        >
+                                          {product.name} - {product.barcode}
+                                        </SelectItem>
+                                      ))
+                                    )}
+                                  </SelectContent>
+                                </Select>
+                              </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
-                        
+                      </div>
+                      
+                      {/* 数量 */}
+                      <div>
                         <FormField
                           control={form.control}
                           name={`items.${index}.quantity`}
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>{t("quantity")}</FormLabel>
+                            <FormItem className="space-y-0">
                               <FormControl>
                                 <Input 
                                   type="number" 
@@ -437,6 +437,7 @@ export default function NewWarehouseTransfer() {
                                   placeholder="1" 
                                   {...field} 
                                   onChange={(e) => handleQuantityChange(e.target.value, index)}
+                                  className="w-full"
                                 />
                               </FormControl>
                               <FormMessage />
@@ -445,32 +446,35 @@ export default function NewWarehouseTransfer() {
                         />
                       </div>
                       
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {/* 件数 */}
+                      <div>
                         <FormField
                           control={form.control}
                           name={`items.${index}.packageCount`}
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>{t("package_count")}</FormLabel>
+                            <FormItem className="space-y-0">
                               <FormControl>
                                 <Input 
                                   type="number" 
                                   min="1" 
                                   placeholder="1" 
                                   {...field} 
+                                  className="w-full"
                                 />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
-                        
+                      </div>
+                      
+                      {/* 重量 */}
+                      <div>
                         <FormField
                           control={form.control}
                           name={`items.${index}.weight`}
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>{t("weight")} (kg)</FormLabel>
+                            <FormItem className="space-y-0">
                               <FormControl>
                                 <Input 
                                   type="number" 
@@ -478,19 +482,22 @@ export default function NewWarehouseTransfer() {
                                   min="0" 
                                   placeholder="0" 
                                   {...field} 
+                                  className="w-full"
                                 />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
-                        
+                      </div>
+                      
+                      {/* 体积 */}
+                      <div>
                         <FormField
                           control={form.control}
                           name={`items.${index}.volume`}
                           render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>{t("volume")} (m³)</FormLabel>
+                            <FormItem className="space-y-0">
                               <FormControl>
                                 <Input 
                                   type="number" 
@@ -498,12 +505,26 @@ export default function NewWarehouseTransfer() {
                                   min="0" 
                                   placeholder="0" 
                                   {...field} 
+                                  className="w-full"
                                 />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
+                      </div>
+                      
+                      {/* 删除按钮 */}
+                      <div className="flex justify-center">
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => handleRemoveItem(index)}
+                          className="h-8 w-8"
+                        >
+                          <MinusIcon className="h-4 w-4 text-destructive" />
+                        </Button>
                       </div>
                     </div>
                   ))}
