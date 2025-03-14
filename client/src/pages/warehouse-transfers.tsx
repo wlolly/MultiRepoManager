@@ -20,7 +20,7 @@ import {
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
-import { Layout } from "@/components/layout/layout";
+
 
 interface WarehouseTransfer {
   id: number;
@@ -162,7 +162,6 @@ export default function WarehouseTransfers() {
   };
 
   return (
-    <Layout>
       <div className="container mx-auto py-6">
         <div className="pb-5 border-b border-gray-200 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center">
           <div>
@@ -278,6 +277,5 @@ export default function WarehouseTransfers() {
           </Table>
         </div>
       </div>
-    </Layout>
   );
 }
