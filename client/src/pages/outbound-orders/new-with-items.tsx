@@ -351,6 +351,58 @@ export default function NewOutboundOrderWithItems() {
     }
   };
 
+  // 处理扫码结果
+  const handleBarcodeScanned = (code: string) => {
+    if (currentScanItemIndex !== null) {
+      // 将扫码结果填入对应的唯一码字段
+      form.setValue(`items.${currentScanItemIndex}.uniqueCode`, code);
+      
+      // 关闭扫码对话框
+      setIsScanningBarcode(false);
+      setCurrentScanItemIndex(null);
+      
+      toast({
+        title: t("success"),
+        description: t("unique_code_scanned_successfully"),
+      });
+    }
+  };
+
+  // 扫码对话框组件
+  const BarcodeScannerDialog = () => (
+    <Dialog open={isScanningBarcode} onOpenChange={setIsScanningBarcode}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{t("scan_unique_code")}</DialogTitle>
+          <DialogDescription>
+            {t("scan_unique_code_description")}
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="py-4">
+          <BarcodeScanner
+            onCodeDetected={handleBarcodeScanned}
+            label={t("unique_code")}
+            placeholder={t("scan_or_enter_unique_code")}
+            uniqueCodeMode={true}
+          />
+        </div>
+        
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setIsScanningBarcode(false);
+              setCurrentScanItemIndex(null);
+            }}
+          >
+            {t("cancel")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+
   // 选择商品对话框
   const ProductSelectionDialog = () => (
     <Dialog open={productDialogOpen} onOpenChange={setProductDialogOpen}>
@@ -1002,6 +1054,7 @@ export default function NewOutboundOrderWithItems() {
       </Form>
 
       {ProductSelectionDialog()}
+      {BarcodeScannerDialog()}
     </div>
   );
 }
