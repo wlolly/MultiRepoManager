@@ -1495,7 +1495,33 @@ export class DatabaseStorage implements IStorage {
   // 入库单相关方法
   async getInboundOrder(id: number): Promise<InboundOrder | undefined> {
     const [inboundOrder] = await db.select().from(inboundOrders).where(eq(inboundOrders.id, id));
-    return inboundOrder || undefined;
+    
+    if (!inboundOrder) return undefined;
+    
+    // 获取关联数据
+    // 获取订单项目
+    const items = await this.getInboundOrderItems(id);
+    // 获取商品详情
+    for (const item of items) {
+      if (item.productId) {
+        item.product = await this.getProduct(item.productId);
+      }
+    }
+    
+    // 获取仓库信息
+    if (inboundOrder.warehouseId) {
+      inboundOrder.warehouse = await this.getWarehouse(inboundOrder.warehouseId);
+    }
+    
+    // 获取创建者信息
+    if (inboundOrder.createdBy) {
+      inboundOrder.creator = await this.getUser(inboundOrder.createdBy);
+    }
+    
+    // 添加项目到订单
+    inboundOrder.items = items;
+    
+    return inboundOrder;
   }
 
   async getInboundOrderByNumber(orderNumber: string): Promise<InboundOrder | undefined> {
@@ -1539,7 +1565,25 @@ export class DatabaseStorage implements IStorage {
     }
 
     query = query.orderBy(desc(inboundOrders.createdAt));
-    return await query;
+    const orders = await query;
+    
+    // 为每个订单加载关联数据
+    for (const order of orders) {
+      // 获取订单项目
+      order.items = await this.getInboundOrderItems(order.id);
+      
+      // 获取仓库信息
+      if (order.warehouseId) {
+        order.warehouse = await this.getWarehouse(order.warehouseId);
+      }
+      
+      // 获取创建者信息
+      if (order.createdBy) {
+        order.creator = await this.getUser(order.createdBy);
+      }
+    }
+    
+    return orders;
   }
 
   // 入库单明细相关方法
@@ -1584,7 +1628,33 @@ export class DatabaseStorage implements IStorage {
   // 出库单相关方法
   async getOutboundOrder(id: number): Promise<OutboundOrder | undefined> {
     const [outboundOrder] = await db.select().from(outboundOrders).where(eq(outboundOrders.id, id));
-    return outboundOrder || undefined;
+    
+    if (!outboundOrder) return undefined;
+    
+    // 获取关联数据
+    // 获取订单项目
+    const items = await this.getOutboundOrderItems(id);
+    // 获取商品详情
+    for (const item of items) {
+      if (item.productId) {
+        item.product = await this.getProduct(item.productId);
+      }
+    }
+    
+    // 获取仓库信息
+    if (outboundOrder.warehouseId) {
+      outboundOrder.warehouse = await this.getWarehouse(outboundOrder.warehouseId);
+    }
+    
+    // 获取创建者信息
+    if (outboundOrder.createdBy) {
+      outboundOrder.creator = await this.getUser(outboundOrder.createdBy);
+    }
+    
+    // 添加项目到订单
+    outboundOrder.items = items;
+    
+    return outboundOrder;
   }
 
   async getOutboundOrderByNumber(orderNumber: string): Promise<OutboundOrder | undefined> {
@@ -1628,7 +1698,25 @@ export class DatabaseStorage implements IStorage {
     }
 
     query = query.orderBy(desc(outboundOrders.createdAt));
-    return await query;
+    const orders = await query;
+    
+    // 为每个订单加载关联数据
+    for (const order of orders) {
+      // 获取订单项目
+      order.items = await this.getOutboundOrderItems(order.id);
+      
+      // 获取仓库信息
+      if (order.warehouseId) {
+        order.warehouse = await this.getWarehouse(order.warehouseId);
+      }
+      
+      // 获取创建者信息
+      if (order.createdBy) {
+        order.creator = await this.getUser(order.createdBy);
+      }
+    }
+    
+    return orders;
   }
 
   // 出库单明细相关方法
