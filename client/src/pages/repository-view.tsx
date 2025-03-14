@@ -7,13 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { useParams, Link } from "wouter";
 
 export default function RepositoryView() {
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState("overview");
-  const { toast } = useToast();
 
   // Fetch repository data
   const { data: repository, isLoading: isLoadingRepo } = useQuery({
