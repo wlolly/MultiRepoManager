@@ -1226,9 +1226,9 @@ export class MemStorage implements IStorage {
     let unmatched = 0;
     
     for (const product of platformProducts) {
-      if (product.platformProductCode) {
+      if (product.platformCode) {
         // 处理平台产品编码
-        const matchedCode = this.processProductCode(product.platformProductCode);
+        const matchedCode = this.processProductCode(product.platformCode);
         // 查找匹配的系统产品
         const matchedProducts = await this.findProductsByMatchedCode(matchedCode);
         
@@ -1236,13 +1236,13 @@ export class MemStorage implements IStorage {
           // 匹配到系统产品，更新平台产品的匹配状态
           await this.updateEcommerceProduct(product.id, {
             matchedProductId: matchedProducts[0].id,
-            isMatched: true
+            matchedProductId: true ? matchedProducts[0].id : null
           });
           matched++;
         } else {
           // 未匹配到系统产品
           await this.updateEcommerceProduct(product.id, {
-            isMatched: false
+            matchedProductId: null
           });
           unmatched++;
         }
@@ -1917,13 +1917,13 @@ export class DatabaseStorage implements IStorage {
   
   async getEcommerceProductByPlatformId(platformId: string): Promise<EcommerceProduct | undefined> {
     const [product] = await db.select().from(ecommerceProducts)
-      .where(eq(ecommerceProducts.platformProductId, platformId));
+      .where(eq(ecommerceProducts.platformId, platformId));
     return product || undefined;
   }
   
   async getEcommerceProductByPlatformCode(platformCode: string): Promise<EcommerceProduct | undefined> {
     const [product] = await db.select().from(ecommerceProducts)
-      .where(eq(ecommerceProducts.platformProductCode, platformCode));
+      .where(eq(ecommerceProducts.platformCode, platformCode));
     return product || undefined;
   }
   
@@ -1993,9 +1993,9 @@ export class DatabaseStorage implements IStorage {
     let unmatched = 0;
     
     for (const product of platformProducts) {
-      if (product.platformProductCode) {
+      if (product.platformCode) {
         // 处理平台产品编码
-        const matchedCode = this.processProductCode(product.platformProductCode);
+        const matchedCode = this.processProductCode(product.platformCode);
         // 查找匹配的系统产品
         const matchedProducts = await this.findProductsByMatchedCode(matchedCode);
         
@@ -2003,13 +2003,13 @@ export class DatabaseStorage implements IStorage {
           // 匹配到系统产品，更新平台产品的匹配状态
           await this.updateEcommerceProduct(product.id, {
             matchedProductId: matchedProducts[0].id,
-            isMatched: true
+            matchedProductId: true ? matchedProducts[0].id : null
           });
           matched++;
         } else {
           // 未匹配到系统产品
           await this.updateEcommerceProduct(product.id, {
-            isMatched: false
+            matchedProductId: false ? matchedProducts[0].id : null
           });
           unmatched++;
         }
