@@ -85,20 +85,22 @@ export function ProductCard({ product }: ProductCardProps) {
             <i className="ri-barcode-line mr-1 text-gray-500"></i>
             <span className="text-gray-600">{product.barcode}</span>
           </div>
-          <div className="flex items-center text-xs">
-            <i className="ri-store-2-line mr-1 text-gray-500"></i>
-            <span className="text-gray-600">{product.warehouse?.name || '未分配仓库'}</span>
-          </div>
+
         </div>
       </CardContent>
       
-      <CardFooter className="flex justify-between pt-2 pb-4 px-6">
-        <div className="text-sm text-gray-500">
+      <CardFooter className="flex flex-col pt-2 pb-4 px-6">
+        <div className="flex justify-between w-full">
+          <div className="text-sm text-gray-700">
+            {t('wholesale_price')}: {product.price !== undefined ? Number(product.price).toFixed(2) : '0.00'}
+          </div>
+          <div className="text-sm text-gray-700">
+            {t('agent_price')}: {product.cost !== undefined ? Number(product.cost).toFixed(2) : '0.00'}
+          </div>
+        </div>
+        <div className="text-xs text-gray-500 mt-1">
           <i className="ri-time-line mr-1"></i>
           {formatDate(product.updatedAt)}
-        </div>
-        <div className="text-sm font-medium text-blue-600">
-          ¥{product.price !== undefined ? Number(product.price).toFixed(2) : '0.00'}
         </div>
       </CardFooter>
     </Card>
@@ -128,9 +130,14 @@ export function ProductGrid({ products, isLoading }: ProductGridProps) {
                   <Skeleton className="h-3 w-1/2" />
                 </div>
               </CardContent>
-              <CardFooter className="flex justify-between pt-2 pb-4 px-6">
-                <Skeleton className="h-3 w-1/3" />
-                <Skeleton className="h-3 w-1/4" />
+              <CardFooter className="flex flex-col pt-2 pb-4 px-6">
+                <div className="flex justify-between w-full">
+                  <Skeleton className="h-3 w-1/3" />
+                  <Skeleton className="h-3 w-1/3" />
+                </div>
+                <div className="mt-1">
+                  <Skeleton className="h-3 w-1/4" />
+                </div>
               </CardFooter>
             </Card>
           ))}
