@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
-import { Plus, Download, Filter, ArrowUpDown, Search } from "lucide-react";
+import { Plus, Download, Filter, ArrowUpDown, Search, FileUp, FileDown, FileText } from "lucide-react";
+import axios from "axios";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +13,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/utils";
 
 // 调拨单接口定义
@@ -125,10 +129,145 @@ export default function WarehouseTransfers() {
     }
   };
   
-  // 导出为Excel
-  const exportToExcel = () => {
-    // 导出功能实现
-    alert(t("export_not_implemented"));
+  // Excel模板下载
+  const handleDownloadTemplate = async () => {
+    try {
+      const response = await axios.get('/api/warehouse-transfers/template', {
+        responseType: 'blob' // 指定响应类型为 blob
+      });
+      // 创建一个URL对象指向blob
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'warehouse_transfer_template.xlsx');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      // 释放URL对象
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: t("template_downloaded"),
+        description: t("template_download_success"),
+      });
+    } catch (error) {
+      console.error('Template download error:', error);
+      toast({
+        title: t("download_failed"),
+        description: t("template_download_error"),
+        variant: "destructive",
+      });
+    }
+  };
+  
+  // 导出单个调拨单到Excel
+  const exportTransferToExcel = async (transferId: number) => {
+    try {
+      const response = await axios.get(`/api/warehouse-transfers/${transferId}/export`, {
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // 尝试从响应头获取文件名
+      const contentDisposition = response.headers['content-disposition'];
+      let filename = 'transfer_export.xlsx';
+      
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+        if (filenameMatch && filenameMatch[1]) {
+          filename = filenameMatch[1];
+        }
+      }
+      
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: t("export_successful"),
+        description: t("transfer_export_success"),
+      });
+    } catch (error) {
+      console.error('Export error:', error);
+      toast({
+        title: t("export_failed"),
+        description: t("transfer_export_error"),
+        variant: "destructive",
+      });
+    }
+  };
+  
+  // 显示导入对话框
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importErrors, setImportErrors] = useState<string[]>([]);
+  const [importPreview, setImportPreview] = useState<any[]>([]);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  
+  // 处理文件选择变更
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setImportFile(e.target.files[0]);
+      setImportErrors([]);
+      setImportPreview([]);
+    }
+  };
+  
+  // 处理Excel文件上传
+  const handleImportExcel = async () => {
+    if (!importFile) {
+      toast({
+        title: t("no_file_selected"),
+        description: t("please_select_file"),
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const formData = new FormData();
+    formData.append('file', importFile);
+    
+    try {
+      const response = await axios.post('/api/warehouse-transfers/import', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      if (response.data.errors && response.data.errors.length > 0) {
+        setImportErrors(response.data.errors);
+        if (response.data.items && response.data.items.length > 0) {
+          setImportPreview(response.data.items);
+        }
+        return;
+      }
+      
+      // 如果没有错误，设置预览
+      if (response.data.items && response.data.items.length > 0) {
+        setImportPreview(response.data.items);
+        toast({
+          title: t("import_successful"),
+          description: t("data_preview_ready"),
+        });
+      } else {
+        toast({
+          title: t("import_successful"),
+          description: t("no_items_found"),
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Import error:', error);
+      toast({
+        title: t("import_failed"),
+        description: t("import_error"),
+        variant: "destructive",
+      });
+    }
   };
   
   // 处理创建新调拨单
@@ -285,10 +424,42 @@ export default function WarehouseTransfers() {
             </SelectContent>
           </Select>
           
-          <Button variant="outline" size="sm" onClick={exportToExcel}>
-            <Download className="mr-2 h-4 w-4" />
-            {t("export")}
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <FileDown className="mr-2 h-4 w-4" />
+                {t("excel_options")}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuLabel>{t("excel_operations")}</DropdownMenuLabel>
+              <DropdownMenuItem onClick={handleDownloadTemplate}>
+                <FileText className="mr-2 h-4 w-4" />
+                {t("download_template")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setImportDialogOpen(true)}>
+                <FileUp className="mr-2 h-4 w-4" />
+                {t("import_from_excel")}
+              </DropdownMenuItem>
+              {displayedTransfers.length > 0 && (
+                <DropdownMenuSeparator />
+              )}
+              {displayedTransfers.length > 0 && displayedTransfers.map((transfer) => (
+                <DropdownMenuItem 
+                  key={transfer.id}
+                  onClick={() => exportTransferToExcel(transfer.id)}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  {t("export_transfer", { ref: transfer.referenceNumber })}
+                </DropdownMenuItem>
+              )).slice(0, 5)}
+              {displayedTransfers.length > 5 && (
+                <DropdownMenuItem disabled>
+                  {t("more_items_available")}
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
       
