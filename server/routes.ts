@@ -433,6 +433,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Agent handling route
+  apiRouter.post("/agent/query", async (req, res) => {
+    try {
+      const { query } = req.body;
+      console.log("[Agent] Received query:", query);
+      
+      // Add your agent processing logic here
+      const response = {
+        success: true,
+        reply: `Agent processed: ${query}`,
+        timestamp: new Date().toISOString()
+      };
+      
+      console.log("[Agent] Sending response:", response);
+      res.json(response);
+    } catch (err) {
+      console.error("[Agent] Error:", err);
+      res.status(500).json({
+        success: false,
+        error: "Failed to process agent request"
+      });
+    }
+  });
+
   apiRouter.post("/inbound-orders", async (req, res) => {
     try {
       // 增加必要的字段
