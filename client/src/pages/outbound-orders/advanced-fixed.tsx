@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ArrowLeftIcon, PlusIcon, MinusIcon, ArrowRightIcon, ScanLine } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Combobox } from "@/components/ui/combobox";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 
@@ -914,34 +915,31 @@ export default function AdvancedOutboundOrder() {
                             name={`items.${index}.productId`}
                             render={({ field }) => (
                               <FormItem>
-                                <Select 
-                                  value={field.value} 
-                                  onValueChange={(value) => handleProductChange(value, index)}
-                                >
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder={t('select_product')} />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    {isLoadingProducts ? (
-                                      <SelectItem value="loading" disabled>
-                                        {t('loading')}...
-                                      </SelectItem>
-                                    ) : (
-                                      products
+                                <FormControl>
+                                  {isLoadingProducts ? (
+                                    <Button variant="outline" className="w-full" disabled>
+                                      {t('loading')}...
+                                    </Button>
+                                  ) : products.length === 0 ? (
+                                    <Button variant="outline" className="w-full" disabled>
+                                      {t('no_products')}
+                                    </Button>
+                                  ) : (
+                                    <Combobox
+                                      options={products
                                         .filter(product => product.stock > 0)
-                                        .map(product => (
-                                          <SelectItem 
-                                            key={product.id} 
-                                            value={product.id.toString()}
-                                          >
-                                            {product.name} - {product.barcode}
-                                          </SelectItem>
-                                        ))
-                                    )}
-                                  </SelectContent>
-                                </Select>
+                                        .map(product => ({
+                                          value: product.id.toString(),
+                                          label: `${product.name} - ${product.barcode}${product.uniqueCode ? ` (唯一码: ${product.uniqueCode})` : ''}`
+                                      }))}
+                                      value={field.value}
+                                      onValueChange={(value) => handleProductChange(value, index)}
+                                      placeholder={t('select_product')}
+                                      searchPlaceholder={t('search_product')}
+                                      emptyText={t('no_matching_products')}
+                                    />
+                                  )}
+                                </FormControl>
                                 <FormMessage />
                               </FormItem>
                             )}
