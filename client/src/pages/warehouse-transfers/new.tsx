@@ -89,7 +89,7 @@ export default function NewWarehouseTransfer() {
   // 唯一码输入变更处理
   const handleUniqueCodeChange = (value: string, index: number) => {
     // 设置唯一码值，确保只有数字
-    const numericValue = value.replace(/\D/g, '');
+    const numericValue = value.replace(/\D/g, '').substring(0, 5);
     form.setValue(`items.${index}.uniqueCode`, numericValue);
     
     // 如果唯一码是1-5位数字，则查找对应产品
@@ -114,17 +114,35 @@ export default function NewWarehouseTransfer() {
         form.setValue(`items.${index}.volume`, volume.toFixed(3));
         
         toast({
-          title: "找到产品",
-          description: `根据唯一码找到产品: ${product.name}`,
+          title: t("product_found"),
+          description: `${t("product_found_by_code")}: ${product.name}`,
         });
+        
+        // 触发表单更新，确保UI反映当前状态
+        form.trigger(`items.${index}.productId`);
+        form.trigger(`items.${index}.quantity`);
+        form.trigger(`items.${index}.packageCount`);
+        form.trigger(`items.${index}.weight`);
+        form.trigger(`items.${index}.volume`);
       } else if (numericValue.length === 5) {
         // 只有当输入完整的5位唯一码且找不到产品时才提示
         toast({
-          title: "未找到产品",
-          description: `未找到匹配唯一码 ${numericValue} 的产品`,
+          title: t("product_not_found"),
+          description: t("no_product_with_unique_code", { code: numericValue }),
           variant: "destructive",
         });
+        
+        // 清空相关产品信息
+        form.setValue(`items.${index}.productId`, "");
+        form.trigger(`items.${index}.productId`);
       }
+    } else if (value && !/^\d+$/.test(value)) {
+      // 如果输入了非数字字符，给出提示（但我们已经在上面过滤掉非数字，这里只是确保用户知道）
+      toast({
+        title: t("input_corrected"),
+        description: t("unique_code_must_be_numeric"),
+        variant: "warning",
+      });
     }
   };
   
@@ -258,8 +276,11 @@ export default function NewWarehouseTransfer() {
           
           toast({
             title: t("product_found"),
-            description: `${t("product_found_description")}: ${product.name}`,
+            description: `${t("product_found_by_code")}: ${product.name}`,
           });
+          
+          // 触发表单验证，确保UI更新
+          form.trigger(`items.${currentScanningIndex}.productId`);
         } else {
           toast({
             title: t("product_not_found"),
@@ -307,31 +328,70 @@ export default function NewWarehouseTransfer() {
       form.setValue(`items.${index}.weight`, weight.toFixed(3));
       form.setValue(`items.${index}.volume`, volume.toFixed(3));
       
+      // 设置默认件数为1
+      form.setValue(`items.${index}.packageCount`, "1");
+      
       // 自动填充唯一码
       if (selectedProduct.uniqueCode) {
         form.setValue(`items.${index}.uniqueCode`, selectedProduct.uniqueCode);
         toast({
-          title: "已自动填充唯一码",
-          description: `产品 ${selectedProduct.name} 的唯一码: ${selectedProduct.uniqueCode}`,
+          title: t("unique_code_auto_filled"),
+          description: `${t("product")} ${selectedProduct.name} ${t("unique_code")}: ${selectedProduct.uniqueCode}`,
         });
+      } else {
+        // 如果产品没有唯一码，则清空唯一码字段
+        form.setValue(`items.${index}.uniqueCode`, "");
       }
+      
+      // 触发表单验证
+      form.trigger(`items.${index}.productId`);
     }
   };
   
   // 数量变更时更新重量和体积
   const handleQuantityChange = (value: string, index: number) => {
-    form.setValue(`items.${index}.quantity`, value);
+    // 确保数值有效
+    const numericValue = value.replace(/[^\d]/g, '');
+    
+    // 设置经过验证的数值
+    form.setValue(`items.${index}.quantity`, numericValue || "1");
+    
     const productId = form.getValues(`items.${index}.productId`);
     if (productId) {
       const selectedProduct = products.find(p => p.id === parseInt(productId));
       if (selectedProduct) {
-        const quantity = parseInt(value || "1");
+        const quantity = parseInt(numericValue || "1");
+        
+        // 设置默认件数为1
+        if (!form.getValues(`items.${index}.packageCount`)) {
+          form.setValue(`items.${index}.packageCount`, "1");
+        }
+        
         // 计算总重量和体积
         const weight = selectedProduct.singleWeightKg * quantity;
         const volume = selectedProduct.singleVolumeM3 * quantity;
         
         form.setValue(`items.${index}.weight`, weight.toFixed(3));
         form.setValue(`items.${index}.volume`, volume.toFixed(3));
+        
+        // 自动更新表单验证状态
+        form.trigger(`items.${index}.quantity`);
+        form.trigger(`items.${index}.packageCount`);
+        form.trigger(`items.${index}.weight`);
+        form.trigger(`items.${index}.volume`);
+        
+        // 更新总数量显示
+        const totals = calculateTotals();
+        // 这里我们不需要手动更新UI显示，因为表单触发和React的状态更新会自动处理
+      }
+    } else {
+      // 如果没有选择产品，给出提示
+      if (numericValue && parseInt(numericValue) > 1) {
+        toast({
+          title: t("product_required"),
+          description: t("select_product_first"),
+          variant: "warning",
+        });
       }
     }
   };
