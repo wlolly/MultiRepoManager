@@ -251,6 +251,11 @@ export default function OutboundOrders() {
     setLocation("/outbound-orders/new-with-items");
   };
   
+  // 处理导航到高级出库单页面
+  const handleAdvancedOrder = () => {
+    setLocation("/outbound-orders/advanced");
+  };
+  
   // 处理查看出库单详情
   const handleViewOrder = (id: number) => {
     setLocation(`/outbound-order/${id}`);
@@ -264,6 +269,10 @@ export default function OutboundOrders() {
           <p className="text-muted-foreground">{t("outbound_orders_description")}</p>
         </div>
         <div className="flex space-x-2">
+          <Button onClick={handleAdvancedOrder} variant="default" className="bg-green-600 hover:bg-green-700">
+            <Truck className="mr-2 h-4 w-4" />
+            {t("advanced_outbound_order") || "高级出库单"}
+          </Button>
           <Button onClick={handleCreateOrderWithItems} variant="default">
             <Plus className="mr-2 h-4 w-4" />
             {t("new_outbound_order_with_items")}
@@ -598,10 +607,16 @@ export default function OutboundOrders() {
           ) : displayedOrders.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-[200px] text-center">
               <p className="text-muted-foreground mb-2">{t("no_orders_found")}</p>
-              <Button variant="outline" size="sm" onClick={handleCreateOrder}>
-                <Plus className="mr-2 h-4 w-4" />
-                {t("create_first_order")}
-              </Button>
+              <div className="flex space-x-2">
+                <Button variant="default" size="sm" onClick={handleAdvancedOrder} className="bg-green-600 hover:bg-green-700">
+                  <Truck className="mr-2 h-4 w-4" />
+                  {t("try_advanced_outbound") || "尝试高级出库单"}
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleCreateOrder}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  {t("create_first_order")}
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="rounded-md border">
