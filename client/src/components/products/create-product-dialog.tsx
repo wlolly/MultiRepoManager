@@ -365,7 +365,20 @@ export function CreateProductDialog({ open, onOpenChange, currentUserId }: Creat
                 </div>
               </div>
               
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="bulkQuantity">{t('bulk_quantity') || "每件包装数量"}</Label>
+                  <Input
+                    id="bulkQuantity"
+                    type="number"
+                    min="1"
+                    {...form.register("bulkQuantity", { valueAsNumber: true })}
+                    placeholder="1"
+                  />
+                  {form.formState.errors.bulkQuantity && (
+                    <p className="text-sm text-red-500">{form.formState.errors.bulkQuantity.message}</p>
+                  )}
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="bulkWeightKg">{t('bulk_weight')} (kg)</Label>
                   <Input

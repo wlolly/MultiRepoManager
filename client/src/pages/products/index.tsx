@@ -51,6 +51,7 @@ interface Product {
   singleVolumeM3: number;    // 单件立方（M3）
   
   // 整件包装信息（映射到数据库中的bulk前缀字段）
+  bulkQuantity: number;      // 每件包装内的产品数量
   bulkLengthCm: number;      // 整件尺寸（长CM）
   bulkWidthCm: number;       // 整件尺寸（宽CM）
   bulkHeightCm: number;      // 整件尺寸（高CM）
