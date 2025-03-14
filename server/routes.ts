@@ -1736,11 +1736,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Excel导入路由 - 使用multer处理文件上传
+  // Excel预览路由 - 解析Excel但不导入数据
+  apiRouter.post("/warehouse-transfers/preview-import", upload.single('file'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "请上传Excel文件" });
+      }
+      
+      // 解析导入的Excel文件
+      const { items, errors } = parseTransferImportFile(req.file.path);
+      
+      // 获取所有产品ID并匹配数据库中的产品
+      const productIds = items
+        .filter(item => item.productId)
+        .map(item => item.productId as number);
+      
+      // 获取产品数据（如果有产品ID）
+      let matchedProducts: Record<number, any> = {};
+      if (productIds.length > 0) {
+        const productPromises = productIds.map(id => storage.getProduct(id));
+        const products = await Promise.all(productPromises);
+        
+        products.forEach(product => {
+          if (product) {
+            matchedProducts[product.id] = product;
+          }
+        });
+      }
+      
+      // 处理预览数据，添加匹配信息
+      const preview = items.map((item, index) => {
+        const matched = item.productId ? !!matchedProducts[item.productId] : false;
+        const productName = item.productId && matchedProducts[item.productId] 
+          ? matchedProducts[item.productId].name 
+          : item.productName || '未知产品';
+        const barcode = item.productId && matchedProducts[item.productId]
+          ? matchedProducts[item.productId].barcode
+          : '';
+          
+        return {
+          row: index + 2, // 从Excel的第2行开始（第1行是表头）
+          productName,
+          barcode,
+          quantity: item.quantity,
+          packageCount: item.packageCount,
+          weight: item.weight || 0,
+          volume: item.volume || 0,
+          status: matched ? '已匹配' : '未匹配',
+          matched
+        };
+      });
+      
+      // 返回预览数据
+      res.status(200).json({
+        preview,
+        errors
+      });
+      
+    } catch (err) {
+      console.error("预览Excel文件失败:", err);
+      res.status(500).json({ message: "预览Excel文件失败", error: err.message });
+    }
+  });
+  
+  // Excel导入路由 - 使用multer处理文件上传并创建调拨单
   apiRouter.post("/warehouse-transfers/import", upload.single('file'), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: "请上传Excel文件" });
+      }
+      
+      // 获取源仓库和目标仓库ID
+      const sourceWarehouseId = parseInt(req.body.sourceWarehouseId);
+      const targetWarehouseId = parseInt(req.body.targetWarehouseId);
+      const notes = req.body.notes || '';
+      
+      if (isNaN(sourceWarehouseId) || isNaN(targetWarehouseId)) {
+        return res.status(400).json({ message: "请提供有效的源仓库和目标仓库ID" });
       }
       
       // 解析导入的Excel文件
@@ -1757,11 +1829,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // 返回成功导入的项目
-      res.status(200).json({
-        message: "成功解析Excel文件",
-        itemsCount: items.length,
-        items
+      // 计算总数据
+      let totalWeight = 0;
+      let totalVolume = 0;
+      let totalItems = items.length;
+      let totalPackages = 0;
+      
+      items.forEach(item => {
+        totalPackages += item.packageCount;
+        if (item.weight) totalWeight += item.weight;
+        if (item.volume) totalVolume += item.volume;
+      });
+      
+      // 创建调拨单
+      const transfer = await storage.createWarehouseTransfer({
+        sourceWarehouseId,
+        targetWarehouseId,
+        totalItems,
+        totalPackages,
+        totalWeight: totalWeight.toString(),
+        totalVolume: totalVolume.toString(),
+        status: "pending",
+        notes,
+        createdBy: 1, // 默认用户ID
+      });
+      
+      // 添加调拨单项目
+      for (const item of items) {
+        if (!item.productId) continue;
+        
+        await storage.createWarehouseTransferItem({
+          transferId: transfer.id,
+          productId: item.productId,
+          quantity: item.quantity,
+          packageCount: item.packageCount,
+          weight: item.weight ? item.weight.toString() : "0",
+          volume: item.volume ? item.volume.toString() : "0",
+          uniqueCode: item.uniqueCode,
+          remark: item.remark
+        });
+      }
+      
+      // 返回创建的调拨单信息
+      res.status(201).json({
+        message: "成功创建仓库调拨单",
+        id: transfer.id,
+        referenceNumber: transfer.referenceNumber,
+        totalItems,
+        status: transfer.status
       });
       
     } catch (err) {
