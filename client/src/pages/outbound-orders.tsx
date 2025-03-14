@@ -273,12 +273,31 @@ export default function OutboundOrders() {
           </Button>
           
           {/* 创建出库单按钮 */}
-          <Button asChild>
-            <Link href="/outbound-orders/new">
-              <PlusIcon className="mr-2 h-4 w-4" />
-              {t('new_outbound_order')}
-            </Link>
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button>
+                <PlusIcon className="mr-2 h-4 w-4" />
+                {t('new_outbound_order')}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem asChild>
+                <Link href="/outbound-orders/new">
+                  {t('simple_outbound_order')}
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/outbound-orders/new-with-items">
+                  {t('outbound_order_with_items')}
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/outbound-orders/advanced">
+                  {t('advanced_outbound_order')}
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
       
