@@ -386,27 +386,15 @@ export default function AdvancedOutboundOrder() {
             toast.error(t("no_product_with_unique_code", { code: numericCode }));
           } else {
             // 不完整的唯一码
-            toast({
-              title: t("incomplete_unique_code"),
-              description: t("continue_scanning_or_select_product"),
-              variant: "warning",
-            });
+            toast.warning(t("continue_scanning_or_select_product"));
           }
         }
       } else if (code && !/^\\d+$/.test(code)) {
         // 扫描结果包含非数字字符
-        toast({
-          title: t("invalid_barcode"),
-          description: t("barcode_must_be_numeric"),
-          variant: "destructive",
-        });
+        toast.error(t("barcode_must_be_numeric"));
       } else if (!code) {
         // 扫描结果为空
-        toast({
-          title: t("scan_failed"),
-          description: t("please_try_again"),
-          variant: "destructive",
-        });
+        toast.error(t("please_try_again"));
       }
       
       // 关闭扫描对话框
@@ -577,11 +565,7 @@ export default function AdvancedOutboundOrder() {
         }
       } catch (err) {
         console.error("访问摄像头失败:", err);
-        toast({
-          title: t("camera_error"),
-          description: t("camera_access_failed"),
-          variant: "destructive",
-        });
+        toast.error(t("camera_access_failed"));
       }
     };
     
@@ -612,10 +596,7 @@ export default function AdvancedOutboundOrder() {
           }
           
           // 提示用户
-          toast({
-            title: t("photo_captured"),
-            description: t("photo_saved_as_document"),
-          });
+          toast.success(t("photo_saved_as_document"));
         }
       }
     };
