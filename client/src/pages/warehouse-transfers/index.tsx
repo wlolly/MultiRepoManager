@@ -449,7 +449,7 @@ export default function WarehouseTransfers() {
             <FileSpreadsheet className="mr-2 h-4 w-4" />
             {t("warehouseTransfer.download_template")}
           </Button>
-          <Button variant="outline" onClick={() => navigate('/warehouse-transfers/import')}>
+          <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
             <FileSpreadsheet className="mr-2 h-4 w-4" />
             {t("warehouseTransfer.import_from_excel")}
           </Button>
