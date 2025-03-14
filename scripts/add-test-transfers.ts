@@ -3,6 +3,7 @@
  * 用于创建演示用的仓库调拨单及其明细项
  */
 import { db } from '../server/db';
+import { eq } from 'drizzle-orm';
 import { 
   warehouseTransfers, 
   warehouseTransferItems, 
@@ -196,13 +197,12 @@ async function main() {
       ]);
     }
     
-    // 先检查是否已经存在测试调拨单数据
-    const existingTransfers = await db.select().from(warehouseTransfers).limit(1);
-    
-    if (existingTransfers.length > 0) {
-      console.log('已存在调拨单数据，跳过测试数据创建');
-      return;
-    }
+    // 强制创建测试调拨单数据（无论是否已存在）
+    // 先清空调拨单明细表和调拨单表
+    console.log('清空现有调拨单数据...');
+    await db.delete(warehouseTransferItems);
+    await db.delete(warehouseTransfers);
+    console.log('开始创建新的测试调拨单数据...');
     
     // 生成测试调拨单 1 - 已完成状态
     await db.insert(warehouseTransfers).values({
@@ -332,7 +332,7 @@ async function main() {
     // 获取刚插入的调拨单ID
     const [transfer3] = await db.select({ id: warehouseTransfers.id })
       .from(warehouseTransfers)
-      .where(warehouseTransfers.referenceNumber.equals('TRF-GZ-20250314-0001'));
+      .where(eq(warehouseTransfers.referenceNumber, 'TRF-GZ-20250314-0001'));
     
     // 为调拨单3添加明细项
     await db.insert(warehouseTransferItems).values([
