@@ -323,13 +323,13 @@ export function parseProductImportFile(filePath: string): {
         singleWidthCm: parsedSingleWidthCm,
         singleHeightCm: parsedSingleHeightCm,
         singleWeightKg: parsedSingleWeightKg,
-        singleVolumeM3: singleVolumeM3,
+        singleVolumeM3,
         bulkQuantity: parsedBulkQuantity,
         bulkLengthCm: parsedBulkLengthCm,
         bulkWidthCm: parsedBulkWidthCm,
         bulkHeightCm: parsedBulkHeightCm,
         bulkWeightKg: parsedBulkWeightKg,
-        bulkVolumeM3: bulkVolumeM3,
+        bulkVolumeM3,
         warehouseId: parsedWarehouseId
       });
     }

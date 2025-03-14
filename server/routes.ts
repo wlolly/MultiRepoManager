@@ -550,6 +550,118 @@ export async function registerRoutes(app: Express): Promise<Server> {
       handleZodError(err, res);
     }
   });
+
+  // Excel导入/导出相关路由
+  // 创建产品Excel导入模板
+  apiRouter.get("/products/excel/template", async (req, res) => {
+    try {
+      const templatePath = createProductImportTemplate();
+      res.download(templatePath, 'product_import_template.xlsx');
+    } catch (err) {
+      console.error("创建Excel模板出错:", err);
+      res.status(500).json({ error: "创建Excel模板失败" });
+    }
+  });
+
+  // 导出产品数据到Excel
+  apiRouter.get("/products/excel/export", async (req, res) => {
+    try {
+      // 获取过滤条件
+      const filter: { warehouseId?: number, category?: string } = {};
+      
+      if (req.query.warehouseId) {
+        filter.warehouseId = parseInt(req.query.warehouseId as string);
+      }
+      
+      if (req.query.category) {
+        filter.category = req.query.category as string;
+      }
+      
+      // 获取产品数据
+      const products = await storage.getProducts(Object.keys(filter).length > 0 ? filter : undefined);
+      
+      // 获取所有仓库，用于在Excel中显示仓库名称
+      const warehouses = await storage.getWarehouses();
+      const warehouseMap: Record<number, string> = {};
+      
+      warehouses.forEach(warehouse => {
+        warehouseMap[warehouse.id] = warehouse.name;
+      });
+      
+      // 导出为Excel
+      const excelPath = exportProductsToExcel(products, warehouseMap);
+      
+      // 设置下载文件名
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = `products_export_${timestamp}.xlsx`;
+      
+      res.download(excelPath, filename);
+    } catch (err) {
+      console.error("导出产品数据出错:", err);
+      res.status(500).json({ error: "导出产品数据失败" });
+    }
+  });
+
+  // 导入产品数据（从Excel）
+  apiRouter.post("/products/excel/import", upload.single('file'), async (req, res) => {
+    try {
+      // 检查是否上传了文件
+      if (!req.file) {
+        return res.status(400).json({ error: "未上传文件" });
+      }
+      
+      // 解析Excel文件
+      const parsedData = parseProductImportFile(req.file.path);
+      
+      // 处理解析结果
+      if (parsedData.errors.length > 0) {
+        return res.status(400).json({
+          success: false,
+          errors: parsedData.errors,
+          message: "Excel文件解析出现错误"
+        });
+      }
+      
+      // 导入产品到数据库
+      const importResults = {
+        success: true,
+        created: 0,
+        updated: 0,
+        errors: [] as string[],
+        products: [] as any[]
+      };
+      
+      for (const productData of parsedData.products) {
+        try {
+          // 检查是否存在相同条形码的产品
+          const existingProduct = await storage.getProductByBarcode(productData.barcode);
+          
+          if (existingProduct) {
+            // 更新现有产品
+            const updated = await storage.updateProduct(existingProduct.id, productData);
+            if (updated) {
+              importResults.updated++;
+              importResults.products.push(updated);
+            } else {
+              importResults.errors.push(`无法更新产品: ${productData.name} (${productData.barcode})`);
+            }
+          } else {
+            // 创建新产品
+            const created = await storage.createProduct(productData);
+            importResults.created++;
+            importResults.products.push(created);
+          }
+        } catch (error) {
+          importResults.errors.push(`处理产品时出错 ${productData.name}: ${(error as Error).message}`);
+        }
+      }
+      
+      res.json(importResults);
+    } catch (err) {
+      console.error("导入产品数据出错:", err);
+      res.status(500).json({ error: "导入产品数据失败", details: (err as Error).message });
+    }
+  });
   
   // Inbound orders routes
   apiRouter.get("/inbound-orders", async (req, res) => {
