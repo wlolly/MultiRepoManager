@@ -64,10 +64,20 @@ export default function NewOutboundOrder() {
   
   // 提交表单处理函数
   const onSubmit = async (data: FormValues) => {
+    console.log("Form submission started", data);
     setIsSubmitting(true);
     
     try {
       // 提交数据到API
+      console.log("Submitting to API:", {
+        orderNumber: data.orderNumber,
+        warehouseId: parseInt(data.warehouseId),
+        status: data.status,
+        orderType: data.orderType,
+        destinationType: data.destinationType,
+        notes: data.notes || ""
+      });
+      
       const response = await apiRequest<any>("/api/outbound-orders", {
         method: "POST",
         body: JSON.stringify({
@@ -79,6 +89,8 @@ export default function NewOutboundOrder() {
           notes: data.notes || ""
         }),
       });
+      
+      console.log("API response:", response);
       
       toast({
         title: t("outbound_order_created"),
