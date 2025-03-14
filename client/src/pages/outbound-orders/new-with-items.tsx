@@ -176,19 +176,12 @@ export default function NewOutboundOrderWithItems() {
         body: JSON.stringify(data),
       }),
     onSuccess: () => {
-      toast({
-        title: t("success"),
-        description: t("outbound_order_created"),
-      });
+      toast.success(t("outbound_order_created"));
       queryClient.invalidateQueries({queryKey: ["/api/outbound-orders"]});
       setLocation("/outbound-orders");
     },
     onError: (error) => {
-      toast({
-        title: t("error"),
-        description: t("create_outbound_order_failed"),
-        variant: "destructive",
-      });
+      toast.error(t("create_outbound_order_failed"));
       console.error(error);
     },
   });
@@ -250,10 +243,7 @@ export default function NewOutboundOrderWithItems() {
       });
       
       // 成功提示
-      toast({
-        title: t("success"),
-        description: t("product_added_successfully"),
-      });
+      toast.success(t("product_added_successfully"));
       
       // 重置状态
       setSelectedProduct(null);
@@ -334,10 +324,7 @@ export default function NewOutboundOrderWithItems() {
       });
       
       // 成功提示
-      toast({
-        title: t("success"),
-        description: t("product_updated_successfully"),
-      });
+      toast.success(t("product_updated_successfully"));
       
       // 重置状态
       setSelectedProduct(null);
@@ -521,10 +508,7 @@ export default function NewOutboundOrderWithItems() {
       setCurrentScanItemIndex(null);
       
       // 成功提示
-      toast({
-        title: t("success"),
-        description: t("unique_code_scanned_successfully"),
-      });
+      toast.success(t("unique_code_scanned_successfully"));
     } catch (error) {
       console.error("处理扫码结果时发生错误:", error);
       toast({
