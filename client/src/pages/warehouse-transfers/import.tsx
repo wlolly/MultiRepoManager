@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -9,12 +9,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
-import { FileSpreadsheet, FileText, AlertCircle, Upload, ArrowLeft, Check } from "lucide-react";
+import { FileSpreadsheet, FileDown, FileUp, AlertCircle, ArrowLeft, ArrowRight, Check, MinusIcon, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { ExcelButtons } from "@/components/ExcelButtons";
 
 // 预览数据接口
 interface ImportPreviewItem {
@@ -38,7 +39,7 @@ interface Warehouse {
 
 export default function WarehouseTransferImport() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [file, setFile] = useState<File | null>(null);
   const [importPreview, setImportPreview] = useState<ImportPreviewItem[]>([]);
@@ -159,7 +160,7 @@ export default function WarehouseTransferImport() {
         }),
       });
       setTimeout(() => {
-        navigate(`/warehouse-transfers`);
+        setLocation(`/warehouse-transfers`);
       }, 1500);
     },
     onError: (error: any) => {
@@ -263,7 +264,7 @@ export default function WarehouseTransferImport() {
           <p className="text-muted-foreground">{t("warehouseTransfer.import_excel_description")}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => navigate("/warehouse-transfers")}>
+          <Button variant="outline" onClick={() => setLocation("/warehouse-transfers")}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             {t("common.back")}
           </Button>
@@ -478,7 +479,7 @@ export default function WarehouseTransferImport() {
           <CardFooter className="flex justify-end gap-2">
             <Button
               variant="outline"
-              onClick={() => navigate("/warehouse-transfers")}
+              onClick={() => setLocation("/warehouse-transfers")}
             >
               {t("common.cancel")}
             </Button>
