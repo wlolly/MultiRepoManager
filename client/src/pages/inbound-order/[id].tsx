@@ -89,6 +89,7 @@ const itemSchema = z.object({
   packageCount: z.string().min(1, { message: "件数是必填项" }).transform(val => parseInt(val)),
   weight: z.string().min(1, { message: "重量是必填项" }).transform(val => parseFloat(val)),
   volume: z.string().min(1, { message: "体积是必填项" }).transform(val => parseFloat(val)),
+  remark: z.string().optional(),
 });
 
 // 更新入库单表单Schema
@@ -148,7 +149,8 @@ export default function InboundOrderDetail() {
       quantity: "1",
       packageCount: "1",
       weight: "0",
-      volume: "0"
+      volume: "0",
+      remark: ""
     }
   });
   
@@ -176,15 +178,19 @@ export default function InboundOrderDetail() {
   // 添加入库单明细
   const addItemMutation = useMutation({
     mutationFn: (data: ItemFormValues) => {
+      const selectedProduct = products.find(p => p.id === parseInt(data.productId));
       return apiRequest<InboundOrderItem>(`/api/inbound-orders/${id}/items`, {
         method: "POST",
         body: JSON.stringify({
           inboundOrderId: parseInt(id),
           productId: parseInt(data.productId),
+          productName: selectedProduct?.name || "",
+          barcode: selectedProduct?.barcode || "",
           quantity: data.quantity,
           packageCount: data.packageCount,
           weight: data.weight,
-          volume: data.volume
+          volume: data.volume,
+          remark: data.remark
         }),
       });
     },
@@ -199,7 +205,8 @@ export default function InboundOrderDetail() {
         quantity: "1",
         packageCount: "1",
         weight: "0",
-        volume: "0"
+        volume: "0",
+        remark: ""
       });
       setIsAddingItem(false);
     },
