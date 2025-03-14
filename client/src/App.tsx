@@ -35,8 +35,6 @@ import NewWarehouseTransfer from "./pages/warehouse-transfers/new";
 import WarehouseTransferImport from "./pages/warehouse-transfers/import";
 import OutboundOrder from "./pages/outbound-order/[id]";
 import InboundOrder from "./pages/inbound-order/[id]";
-import NewOutboundOrder from "./pages/outbound-orders/new";
-import NewOutboundOrderWithItems from "./pages/outbound-orders/new-with-items";
 import AdvancedOutboundOrder from "./pages/outbound-orders/advanced";
 import NewInboundOrder from "./pages/inbound-orders/new";
 import NewInboundOrderWithItems from "./pages/inbound-orders/new-with-items";
@@ -335,8 +333,6 @@ export default function App() {
             {/* 出库单页面 */}
             <Route path="/outbound-orders" component={OutboundOrders} />
             <Route path="/outbound-order/:id" component={OutboundOrder} />
-            <Route path="/outbound-orders/new" component={NewOutboundOrder} />
-            <Route path="/outbound-orders/new-with-items" component={NewOutboundOrderWithItems} />
             <Route path="/outbound-orders/advanced" component={AdvancedOutboundOrder} />
             
             {/* 仓库调拨单页面 */}
