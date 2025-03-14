@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
 import { Plus, Download, Filter, ArrowUpDown, Search } from "lucide-react";
 
-import { Layout } from "@/components/layout/layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -166,7 +165,6 @@ export default function InboundOrders() {
   };
   
   return (
-    <Layout>
       <div className="container mx-auto py-6">
         <div className="flex justify-between items-center mb-6">
           <div>
