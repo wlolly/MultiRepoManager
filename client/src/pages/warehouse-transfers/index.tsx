@@ -236,12 +236,16 @@ export default function WarehouseTransfers() {
   
   // 导出所有筛选后的调拨单到Excel
   const exportAllTransfersToExcel = () => {
+    console.log("Exporting all transfers...", filteredTransfers.length);
+    
     if (filteredTransfers.length === 0) {
       toast.error(t("warehouseTransfer.no_data_to_export"));
       return;
     }
     
     try {
+      console.log("Starting export process...");
+      
       // 准备要导出的数据
       const exportData = filteredTransfers.map(transfer => ({
         [t("warehouseTransfer.reference_number")]: transfer.referenceNumber,
@@ -256,18 +260,29 @@ export default function WarehouseTransfers() {
         [t("warehouseTransfer.notes")]: transfer.notes || '',
       }));
       
+      console.log("Export data prepared:", exportData.length);
+      
       // 创建工作簿和工作表
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(exportData);
-      
-      // 添加工作表到工作簿
-      XLSX.utils.book_append_sheet(wb, ws, t("warehouseTransfer.transfers_list"));
-      
-      // 导出Excel文件
-      const dateStr = new Date().toISOString().split('T')[0];
-      XLSX.writeFile(wb, `${t("warehouseTransfer.transfers_export")}_${dateStr}.xlsx`);
-      
-      toast.success(t("warehouseTransfer.export_all_success"));
+      try {
+        const wb = XLSX.utils.book_new();
+        console.log("Workbook created");
+        const ws = XLSX.utils.json_to_sheet(exportData);
+        console.log("Worksheet created");
+        
+        // 添加工作表到工作簿
+        XLSX.utils.book_append_sheet(wb, ws, t("warehouseTransfer.transfers_list"));
+        console.log("Sheet appended to workbook");
+        
+        // 导出Excel文件
+        const dateStr = new Date().toISOString().split('T')[0];
+        XLSX.writeFile(wb, `${t("warehouseTransfer.transfers_export")}_${dateStr}.xlsx`);
+        console.log("Excel file written");
+        
+        toast.success(t("warehouseTransfer.export_all_success"));
+      } catch (xlsxError) {
+        console.error("XLSX Operation Error:", xlsxError);
+        toast.error("Excel操作失败，请确保已安装xlsx库: " + xlsxError.toString());
+      }
     } catch (error) {
       console.error('Bulk export error:', error);
       toast.error(t("warehouseTransfer.export_all_error"));
