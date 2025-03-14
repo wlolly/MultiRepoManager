@@ -644,8 +644,12 @@ export function CreateWarehouseProductDialog({
                 {t('scan_barcode_description')}
               </DialogDescription>
             </DialogHeader>
-            <div className="flex items-center justify-center p-4">
-              <BarcodeScanner onBarcodeScanned={handleBarcodeScanned} />
+            <div className="flex flex-col items-center py-4">
+              <BarcodeScanner 
+                onBarcodeScanned={handleBarcodeScanned}
+                label={t('scan_or_enter_barcode')}
+                placeholder={t('barcode_placeholder')}
+              />
             </div>
           </DialogContent>
         </Dialog>
