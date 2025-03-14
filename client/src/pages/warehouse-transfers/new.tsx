@@ -1238,22 +1238,22 @@ export default function NewWarehouseTransfer() {
         </Card>
         
         {/* 条码扫描对话框 */}
-      <Dialog open={isBarcodeScannerOpen} onOpenChange={setIsBarcodeScannerOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t("warehouseTransfer.scan_unique_code")}</DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-col items-center py-4">
-            <BarcodeScanner 
-              onCodeDetected={handleUniqueCodeScanned}
-              label={t("warehouseTransfer.scan_or_enter_code")}
-              placeholder={t("warehouseTransfer.unique_code_placeholder")}
-              uniqueCodeMode={true}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+        <Dialog open={isBarcodeScannerOpen} onOpenChange={setIsBarcodeScannerOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{t("warehouseTransfer.scan_unique_code")}</DialogTitle>
+            </DialogHeader>
+            <div className="flex flex-col items-center py-4">
+              <BarcodeScanner 
+                onCodeDetected={handleUniqueCodeScanned}
+                label={t("warehouseTransfer.scan_or_enter_code")}
+                placeholder={t("warehouseTransfer.unique_code_placeholder")}
+                uniqueCodeMode={true}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
     </Layout>
   );
 }
