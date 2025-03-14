@@ -5,9 +5,10 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 interface LayoutProps {
   children: React.ReactNode;
+  hideSidebar?: boolean; // 添加一个属性来控制是否显示侧边栏
 }
 
-export function Layout({ children }: LayoutProps) {
+export function Layout({ children, hideSidebar = false }: LayoutProps) {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   const toggleMobileSidebar = () => {
@@ -16,8 +17,12 @@ export function Layout({ children }: LayoutProps) {
 
   return (
     <div className="flex h-screen overflow-hidden">
-      {/* Desktop Sidebar */}
-      <Sidebar />
+      {/* Desktop Sidebar - 仅当不是隐藏侧边栏时才显示 */}
+      {!hideSidebar && (
+        <div className="hidden md:block">
+          <Sidebar />
+        </div>
+      )}
       
       {/* Mobile Sidebar */}
       <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
