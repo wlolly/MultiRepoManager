@@ -6,6 +6,7 @@
 import { db } from "../db";
 import { eq } from "drizzle-orm";
 import { outboundOrderItems, inboundOrderItems } from "../../shared/schema";
+import { executeSqlSafely } from "./sql-helper";
 
 /**
  * 处理SQL查询结果为数组
@@ -54,7 +55,7 @@ export async function getOutboundOrderItemsSafe(outboundOrderId: number) {
     // 如果发生错误（很可能是字段不存在），使用兼容方式查询
     console.warn('使用兼容模式查询outbound_order_items表:', error);
     
-    // 使用原始SQL查询，显式选择可能存在的字段
+    // 使用安全参数化查询，防止SQL注入
     const sql = `
       SELECT 
         id, 
@@ -69,25 +70,11 @@ export async function getOutboundOrderItemsSafe(outboundOrderId: number) {
         volume,
         NULL as remark
       FROM outbound_order_items 
-      WHERE outbound_order_id = ${outboundOrderId}
+      WHERE outbound_order_id = ?
     `;
-    console.log('执行SQL查询:', sql);
-    const result = await db.execute(sql);
     
-    // 返回查询结果，处理各种可能的返回格式
-    if (Array.isArray(result)) {
-      return result;
-    } else if (result && typeof result === 'object') {
-      if (Array.isArray(result.rows)) {
-        return result.rows;
-      } else if (Array.isArray(result.data)) {
-        return result.data;
-      }
-    }
-    
-    // 如果无法确定格式，返回空数组
-    console.warn('无法解析查询结果，返回空数组');
-    return [];
+    // 使用参数化查询并统一处理结果
+    return await executeSqlSafely(sql, [outboundOrderId]);
   }
 }
 
@@ -107,7 +94,7 @@ export async function getInboundOrderItemsSafe(inboundOrderId: number) {
     // 如果发生错误（很可能是字段不存在），使用兼容方式查询
     console.warn('使用兼容模式查询inbound_order_items表:', error);
     
-    // 使用原始SQL查询，显式选择可能存在的字段
+    // 使用安全参数化查询，防止SQL注入
     const sql = `
       SELECT 
         id, 
@@ -122,24 +109,10 @@ export async function getInboundOrderItemsSafe(inboundOrderId: number) {
         volume,
         NULL as remark
       FROM inbound_order_items 
-      WHERE inbound_order_id = ${inboundOrderId}
+      WHERE inbound_order_id = ?
     `;
-    console.log('执行SQL查询:', sql);
-    const result = await db.execute(sql);
     
-    // 返回查询结果，处理各种可能的返回格式
-    if (Array.isArray(result)) {
-      return result;
-    } else if (result && typeof result === 'object') {
-      if (Array.isArray(result.rows)) {
-        return result.rows;
-      } else if (Array.isArray(result.data)) {
-        return result.data;
-      }
-    }
-    
-    // 如果无法确定格式，返回空数组
-    console.warn('无法解析查询结果，返回空数组');
-    return [];
+    // 使用参数化查询并统一处理结果
+    return await executeSqlSafely(sql, [inboundOrderId]);
   }
 }
