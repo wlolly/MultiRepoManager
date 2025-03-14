@@ -378,7 +378,7 @@ export default function NewWarehouseTransfer() {
                           size="sm" 
                           onClick={() => handleRemoveItem(index)}
                         >
-                          <MinusCircleIcon className="h-4 w-4 text-destructive" />
+                          <MinusIcon className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
                       
