@@ -351,7 +351,7 @@ export default function WarehouseTransfers() {
       <div className="flex flex-col md:flex-row gap-4 mb-6">
         <div className="flex items-center space-x-2 flex-1">
           <Input
-            placeholder={t("search_transfers")}
+            placeholder={t("warehouseTransfer.search_transfers")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="max-w-sm"
@@ -360,7 +360,7 @@ export default function WarehouseTransfers() {
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
                 <Filter className="mr-2 h-4 w-4" />
-                {t("filter")}
+                {t("warehouseTransfer.filter")}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-[200px]">
@@ -368,31 +368,31 @@ export default function WarehouseTransfers() {
                 checked={statusFilter === ""}
                 onCheckedChange={() => setStatusFilter("")}
               >
-                {t("all_statuses")}
+                {t("warehouseTransfer.all_statuses")}
               </DropdownMenuCheckboxItem>
               <DropdownMenuCheckboxItem
                 checked={statusFilter === "pending"}
                 onCheckedChange={() => setStatusFilter("pending")}
               >
-                {t("pending")}
+                {t("warehouseTransfer.pending")}
               </DropdownMenuCheckboxItem>
               <DropdownMenuCheckboxItem
                 checked={statusFilter === "processing"}
                 onCheckedChange={() => setStatusFilter("processing")}
               >
-                {t("processing")}
+                {t("warehouseTransfer.processing")}
               </DropdownMenuCheckboxItem>
               <DropdownMenuCheckboxItem
                 checked={statusFilter === "completed"}
                 onCheckedChange={() => setStatusFilter("completed")}
               >
-                {t("completed")}
+                {t("warehouseTransfer.completed")}
               </DropdownMenuCheckboxItem>
               <DropdownMenuCheckboxItem
                 checked={statusFilter === "cancelled"}
                 onCheckedChange={() => setStatusFilter("cancelled")}
               >
-                {t("cancelled")}
+                {t("warehouseTransfer.cancelled")}
               </DropdownMenuCheckboxItem>
             </DropdownMenuContent>
           </DropdownMenu>
