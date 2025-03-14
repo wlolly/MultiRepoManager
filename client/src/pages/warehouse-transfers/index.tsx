@@ -149,14 +149,14 @@ export default function WarehouseTransfers() {
       window.URL.revokeObjectURL(url);
       
       toast({
-        title: t("template_downloaded"),
-        description: t("template_download_success"),
+        title: t("warehouseTransfer.template_downloaded"),
+        description: t("warehouseTransfer.template_download_success"),
       });
     } catch (error) {
       console.error('Template download error:', error);
       toast({
-        title: t("download_failed"),
-        description: t("template_download_error"),
+        title: t("warehouseTransfer.download_failed"),
+        description: t("warehouseTransfer.template_download_error"),
         variant: "destructive",
       });
     }
@@ -191,14 +191,14 @@ export default function WarehouseTransfers() {
       window.URL.revokeObjectURL(url);
       
       toast({
-        title: t("export_successful"),
-        description: t("transfer_export_success"),
+        title: t("warehouseTransfer.export_successful"),
+        description: t("warehouseTransfer.transfer_export_success"),
       });
     } catch (error) {
       console.error('Export error:', error);
       toast({
-        title: t("export_failed"),
-        description: t("transfer_export_error"),
+        title: t("warehouseTransfer.export_failed"),
+        description: t("warehouseTransfer.transfer_export_error"),
         variant: "destructive",
       });
     }
@@ -252,21 +252,21 @@ export default function WarehouseTransfers() {
       if (response.data.items && response.data.items.length > 0) {
         setImportPreview(response.data.items);
         toast({
-          title: t("import_successful"),
-          description: t("data_preview_ready"),
+          title: t("warehouseTransfer.import_successful"),
+          description: t("warehouseTransfer.data_preview_ready"),
         });
       } else {
         toast({
-          title: t("import_successful"),
-          description: t("no_items_found"),
+          title: t("warehouseTransfer.import_successful"),
+          description: t("warehouseTransfer.no_items_found"),
           variant: "destructive",
         });
       }
     } catch (error) {
       console.error('Import error:', error);
       toast({
-        title: t("import_failed"),
-        description: t("import_error"),
+        title: t("warehouseTransfer.import_failed"),
+        description: t("warehouseTransfer.import_error"),
         variant: "destructive",
       });
     }
@@ -556,15 +556,15 @@ export default function WarehouseTransfers() {
       <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
-            <DialogTitle>{t("import_from_excel")}</DialogTitle>
+            <DialogTitle>{t("warehouseTransfer.import_from_excel")}</DialogTitle>
             <DialogDescription>
-              {t("import_excel_description")}
+              {t("warehouseTransfer.import_excel_description")}
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4">
             <div className="grid w-full max-w-sm items-center gap-1.5">
-              <Label htmlFor="excel-file">{t("excel_file")}</Label>
+              <Label htmlFor="excel-file">{t("warehouseTransfer.excel_file")}</Label>
               <Input 
                 id="excel-file" 
                 type="file" 
@@ -572,14 +572,14 @@ export default function WarehouseTransfers() {
                 onChange={handleFileChange}
               />
               <p className="text-xs text-muted-foreground">
-                {t("supported_formats")}: .xlsx, .xls
+                {t("warehouseTransfer.supported_formats")}: .xlsx, .xls
               </p>
             </div>
             
             {importErrors.length > 0 && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
-                <AlertTitle>{t("import_errors")}</AlertTitle>
+                <AlertTitle>{t("warehouseTransfer.import_errors")}</AlertTitle>
                 <AlertDescription>
                   <ul className="list-disc pl-4 mt-2">
                     {importErrors.map((error, index) => (
@@ -595,12 +595,12 @@ export default function WarehouseTransfers() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[80px]">{t("row")}</TableHead>
-                      <TableHead>{t("product_name")}</TableHead>
-                      <TableHead>{t("barcode")}</TableHead>
-                      <TableHead className="text-right">{t("quantity")}</TableHead>
-                      <TableHead className="text-right">{t("packages")}</TableHead>
-                      <TableHead className="text-right">{t("status")}</TableHead>
+                      <TableHead className="w-[80px]">{t("warehouseTransfer.row")}</TableHead>
+                      <TableHead>{t("warehouseTransfer.product_name")}</TableHead>
+                      <TableHead>{t("warehouseTransfer.barcode")}</TableHead>
+                      <TableHead className="text-right">{t("warehouseTransfer.quantity")}</TableHead>
+                      <TableHead className="text-right">{t("warehouseTransfer.packages")}</TableHead>
+                      <TableHead className="text-right">{t("warehouseTransfer.status")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -613,9 +613,9 @@ export default function WarehouseTransfers() {
                         <TableCell className="text-right">{item.packageCount || 1}</TableCell>
                         <TableCell className="text-right">
                           {item.matched ? (
-                            <Badge variant="success">{t("matched")}</Badge>
+                            <Badge variant="success">{t("warehouseTransfer.matched")}</Badge>
                           ) : (
-                            <Badge variant="destructive">{t("not_matched")}</Badge>
+                            <Badge variant="destructive">{t("warehouseTransfer.not_matched")}</Badge>
                           )}
                         </TableCell>
                       </TableRow>
@@ -630,7 +630,7 @@ export default function WarehouseTransfers() {
             <div>
               {importPreview.length > 0 && (
                 <div className="text-sm text-muted-foreground">
-                  {t("valid_items")}: {importPreview.filter(item => item.matched).length}/{importPreview.length}
+                  {t("warehouseTransfer.valid_items")}: {importPreview.filter(item => item.matched).length}/{importPreview.length}
                 </div>
               )}
             </div>
