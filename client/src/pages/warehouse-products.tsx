@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Layout } from "@/components/layout/layout";
 import { ProductList } from "@/components/products/product-list";
 import { ProductGrid } from "@/components/products/product-grid";
-import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { 
   Select, 
   SelectContent, 
@@ -10,13 +10,21 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Grid, List } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { useLocation } from "wouter";
 
 export default function WarehouseProducts() {
   const { t } = useTranslation();
+  const [location, navigate] = useLocation();
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [warehouseFilter, setWarehouseFilter] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState<string>("");
 
   // 定义接口类型
   interface Product {
@@ -61,76 +69,146 @@ export default function WarehouseProducts() {
   }
 
   // Fetch products with warehouse filter
-  const { data: products, isLoading: isLoadingProducts } = useQuery<Product[]>({
-    queryKey: ["/api/products", { warehouseId: warehouseFilter !== "all" ? warehouseFilter : undefined }],
+  const { data: products = [], isLoading: isLoadingProducts } = useQuery<Product[]>({
+    queryKey: ["/api/products", { 
+      warehouseId: warehouseFilter !== "all" ? warehouseFilter : undefined,
+      category: categoryFilter !== "all" ? categoryFilter : undefined
+    }],
   });
 
   // Fetch warehouses
-  const { data: warehouses, isLoading: isLoadingWarehouses } = useQuery<Warehouse[]>({
+  const { data: warehouses = [], isLoading: isLoadingWarehouses } = useQuery<Warehouse[]>({
     queryKey: ["/api/warehouses"],
   });
 
+  // Get unique categories from products
+  const categories = products && products.length > 0
+    ? [...new Set(products.map(product => product.category))].sort()
+    : [];
+
+  // Filter products by search query
+  const filteredProducts = products.filter(product => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      product.name.toLowerCase().includes(query) ||
+      product.barcode.toLowerCase().includes(query) ||
+      product.description.toLowerCase().includes(query) ||
+      product.category.toLowerCase().includes(query)
+    );
+  });
+
+  // Handle creating a new product
+  const handleCreateProduct = () => {
+    // 导航到创建新产品页面
+    navigate("/products/new");
+  };
+
   return (
     <Layout>
-      <div className="pb-5 border-b border-gray-200 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+      <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('warehouse_products')}</h1>
-          <p className="mt-1 text-gray-500 text-sm">{t('warehouse_products_description')}</p>
+          <h1 className="text-2xl font-bold">{t('warehouse_products')}</h1>
+          <p className="text-muted-foreground">{t('warehouse_products_description')}</p>
         </div>
-        <div className="mt-4 sm:mt-0 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-          <Select value={warehouseFilter} onValueChange={setWarehouseFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder={t('warehouse')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('all_warehouses')}</SelectItem>
-              {!isLoadingWarehouses && warehouses?.map((warehouse) => (
-                <SelectItem key={warehouse.id} value={warehouse.id.toString()}>
-                  {warehouse.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <Button onClick={handleCreateProduct}>
+          <Plus className="mr-2 h-4 w-4" />
+          {t('new_product')}
+        </Button>
       </div>
 
-      <div className="mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg leading-6 font-medium text-gray-900">{t('products')}</h3>
-          <div className="flex space-x-3">
-            <Button
-              variant={viewMode === "list" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setViewMode("list")}
-              className="flex items-center"
-            >
-              <i className="ri-list-check-2 mr-1.5"></i> {t('list_view')}
-            </Button>
-            <Button
-              variant={viewMode === "grid" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setViewMode("grid")}
-              className="flex items-center"
-            >
-              <i className="ri-grid-line mr-1.5"></i> {t('grid_view')}
-            </Button>
+      {/* 仓库商品 */}
+      <Card className="mb-6">
+        <CardHeader className="pb-3">
+          <CardTitle>{t('warehouse_products')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+            <div className="w-full md:w-1/3">
+              <Input
+                placeholder={t('search_products')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              <Select value={warehouseFilter} onValueChange={setWarehouseFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder={t('all_warehouses')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('all_warehouses')}</SelectItem>
+                  {warehouses.map((warehouse) => (
+                    <SelectItem key={warehouse.id} value={warehouse.id.toString()}>
+                      {warehouse.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder={t('category')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('all_categories')}</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              <div className="flex gap-1">
+                <Button
+                  variant={viewMode === "list" ? "default" : "outline"}
+                  size="icon"
+                  onClick={() => setViewMode("list")}
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === "grid" ? "default" : "outline"}
+                  size="icon"
+                  onClick={() => setViewMode("grid")}
+                >
+                  <Grid className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           </div>
-        </div>
-        
-        {viewMode === "list" ? (
-          <ProductList 
-            products={products || []} 
-            isLoading={isLoadingProducts} 
-            title={t('warehouse_products')}
-            subtitle={t('warehouse_products_subtitle')}
-          />
-        ) : (
-          <ProductGrid 
-            products={products || []} 
-            isLoading={isLoadingProducts} 
-          />
-        )}
-      </div>
+
+          <div>
+            {viewMode === "list" ? (
+              <ProductList 
+                products={filteredProducts || []} 
+                isLoading={isLoadingProducts} 
+                title={t('warehouse_products')}
+                subtitle={t('warehouse_products_subtitle')}
+              />
+            ) : (
+              <ProductGrid 
+                products={filteredProducts || []} 
+                isLoading={isLoadingProducts} 
+              />
+            )}
+            {!isLoadingProducts && filteredProducts.length === 0 && (
+              <div className="text-center py-10">
+                <p className="text-muted-foreground">{t('no_products_found')}</p>
+                <Button 
+                  className="mt-4" 
+                  variant="outline" 
+                  onClick={handleCreateProduct}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  {t('add_first_product')}
+                </Button>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </Layout>
   );
 }
