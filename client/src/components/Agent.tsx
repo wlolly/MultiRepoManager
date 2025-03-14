@@ -94,7 +94,28 @@ export function Agent() {
   };
 
   const handleResponse = (responseData: any) => {
+    // 检查响应是否包含错误提示
+    if (responseData.error) {
+      setMessages(prev => [...prev, 
+        { role: 'user', content: input },
+        { role: 'assistant', content: `错误: ${responseData.error}. 建议: 请检查输入是否正确，或稍后重试。` }
+      ]);
+      return;
+    }
+    
+    // 检查响应是否需要特别提醒
+    if (responseData.warning) {
+      setMessages(prev => [...prev, 
+        { role: 'user', content: input },
+        { role: 'assistant', content: `提醒: ${responseData.warning}` }
+      ]);
+      return;
+    }
+    
     setMessages(prev => [...prev, 
+      { role: 'user', content: input },
+      { role: 'assistant', content: responseData.reply }
+    ]);ges(prev => [...prev, 
       { role: 'user', content: input },
       { role: 'assistant', content: responseData.reply }
     ]);
