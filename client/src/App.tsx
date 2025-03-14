@@ -27,6 +27,7 @@ import NewOutboundOrderWithItems from "@/pages/outbound-orders/new-with-items";
 import WarehouseProducts from '@/pages/warehouse-products';
 import WarehouseTransfers from '@/pages/warehouse-transfers';
 import NewWarehouseTransfer from '@/pages/warehouse-transfers/new';
+import WarehouseTransferImport from '@/pages/warehouse-transfers/import';
 import DebugOutboundOrder from '@/pages/outbound-orders/debug';
 import { useEffect } from "react";
 import "./i18n";
@@ -77,6 +78,7 @@ export default function App() {
             <Route path="/warehouse-products" element={<WarehouseProducts />} />
             <Route path="/warehouse-transfers" element={<WarehouseTransfers />} />
             <Route path="/warehouse-transfers/new" element={<NewWarehouseTransfer />} />
+            <Route path="/warehouse-transfers/import" element={<WarehouseTransferImport />} />
             <Route path="/outbound-orders/debug" element={<DebugOutboundOrder />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
