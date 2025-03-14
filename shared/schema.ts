@@ -251,6 +251,8 @@ export const insertInboundOrderSchema = createInsertSchema(inboundOrders).pick({
   status: true,
   orderType: true,
   notes: true,
+}).omit({ createdBy: true }).extend({ 
+  createdBy: z.number().optional() 
 });
 
 export type InsertInboundOrder = z.infer<typeof insertInboundOrderSchema>;
@@ -312,6 +314,8 @@ export const insertOutboundOrderSchema = createInsertSchema(outboundOrders).pick
   orderType: true,
   destinationType: true,
   notes: true,
+}).omit({ createdBy: true }).extend({ 
+  createdBy: z.number().optional() 
 });
 
 export type InsertOutboundOrder = z.infer<typeof insertOutboundOrderSchema>;
