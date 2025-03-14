@@ -742,6 +742,11 @@ export default function NewWarehouseTransfer() {
                                   placeholder="1" 
                                   {...field} 
                                   className="w-full"
+                                  onChange={(e) => {
+                                    field.onChange(e);
+                                    // 手动更新件数时不直接计算重量和体积，但需要更新汇总信息
+                                    calculateTotals();
+                                  }}
                                 />
                               </FormControl>
                               <FormMessage />
@@ -765,6 +770,11 @@ export default function NewWarehouseTransfer() {
                                   placeholder="0" 
                                   {...field} 
                                   className="w-full"
+                                  onChange={(e) => {
+                                    field.onChange(e);
+                                    // 手动更新重量时更新汇总信息
+                                    calculateTotals();
+                                  }}
                                 />
                               </FormControl>
                               <FormMessage />
