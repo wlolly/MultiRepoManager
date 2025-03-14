@@ -1447,11 +1447,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 仓库调拨相关路由
   apiRouter.get("/warehouse-transfers", async (req, res) => {
     try {
-      // 获取调拨单列表
-      // 实际中这里应该从数据库查询调拨单
-      // 由于我们尚未实现仓库调拨的存储方法，这里返回一个空数组
-      res.json([]);
+      // 获取查询参数
+      const sourceWarehouseId = req.query.sourceWarehouseId ? parseInt(req.query.sourceWarehouseId as string) : undefined;
+      const targetWarehouseId = req.query.targetWarehouseId ? parseInt(req.query.targetWarehouseId as string) : undefined;
+      const status = req.query.status as string | undefined;
+      
+      // 从数据库查询调拨单列表
+      const transfers = await storage.getWarehouseTransfers({
+        sourceWarehouseId,
+        targetWarehouseId,
+        status
+      });
+      
+      // 返回数据
+      res.json(transfers);
     } catch (err) {
+      console.error("获取仓库调拨列表失败:", err);
       handleZodError(err, res);
     }
   });
@@ -1700,17 +1711,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   apiRouter.get("/warehouse-transfers/stats", async (req, res) => {
     try {
-      // 实际中这里应该从数据库获取统计数据
-      // 由于我们尚未实现仓库调拨的存储方法，这里返回模拟数据
-      res.json({
-        totalTransfers: 0,
-        pendingTransfers: 0,
-        completedTransfers: 0,
-        totalWeight: 0,
-        totalVolume: 0,
-        recentTransfers: 0
-      });
+      // 从数据库获取统计数据
+      const stats = await storage.getWarehouseTransferStats();
+      
+      // 返回调拨单统计数据
+      res.json(stats);
     } catch (err) {
+      console.error("获取仓库调拨统计数据失败:", err);
       handleZodError(err, res);
     }
   });
