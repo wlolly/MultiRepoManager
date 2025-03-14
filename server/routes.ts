@@ -2600,6 +2600,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Mount the API router
   app.use("/api", apiRouter);
 
+  // 添加调试端点
+  app.get('/api/debug', (req, res) => {
+    res.json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+      server: {
+        platform: process.platform,
+        nodejs: process.version
+      }
+    });
+  });
+  
+  // 添加简单的HTML测试页面
+  app.get('/test-page', (req, res) => {
+    res.send(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>服务器测试页面</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+            h1 { color: #333; }
+            .container { max-width: 800px; margin: 0 auto; }
+            .box { border: 1px solid #ddd; padding: 20px; border-radius: 5px; margin-bottom: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>服务器测试页面</h1>
+            <div class="box">
+              <p>如果您能看到这个页面，表示服务器能够正确提供HTML内容。</p>
+              <p>当前时间：${new Date().toLocaleString()}</p>
+            </div>
+            <script>
+              console.log('测试页面已加载');
+              document.body.insertAdjacentHTML('beforeend', 
+                '<div class="box">JavaScript正常运行</div>');
+            </script>
+          </div>
+        </body>
+      </html>
+    `);
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
