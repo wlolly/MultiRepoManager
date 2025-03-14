@@ -2,11 +2,13 @@ import React from 'react';
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { Route, Switch } from "wouter";
 import "./i18n";
 import { ToastProvider } from "./components/ui/toast-provider";
 import { Toaster } from "./components/ui/toaster";
 import { ToastExample } from "./components/ToastFix";
 import ToastUsageExample from "./components/ToastUsageExample";
+import TestToast from "./pages/test-toast";
 import toast from "./lib/toast";
 
 // 创建一个简单的应用组件来测试基本渲染
@@ -94,7 +96,10 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
-        <SimpleApp />
+        <Switch>
+          <Route path="/test-toast" component={TestToast} />
+          <Route path="/" component={SimpleApp} />
+        </Switch>
         <Toaster />
       </ToastProvider>
     </QueryClientProvider>
