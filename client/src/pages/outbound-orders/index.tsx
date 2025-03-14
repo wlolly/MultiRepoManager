@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useLocation } from "wouter";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
 import { Plus, Download, Filter, ArrowUpDown, Search } from "lucide-react";
@@ -62,7 +62,7 @@ interface OutboundStats {
 
 export default function OutboundOrders() {
   const { t } = useTranslation();
-  const [location, navigate] = useLocation();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [typeFilter, setTypeFilter] = useState<string>("");
@@ -120,7 +120,7 @@ export default function OutboundOrders() {
       case 'completed':
         return 'success';
       case 'processing':
-        return 'warning';
+        return 'secondary';
       case 'cancelled':
         return 'destructive';
       default:
