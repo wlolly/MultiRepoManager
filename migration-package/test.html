@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>仓库管理系统 - 测试页面</title>
+  <style>
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: #f8fafc;
+      color: #1e293b;
+      margin: 0;
+      padding: 0;
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    
+    h1 {
+      color: #2563eb;
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .subtitle {
+      color: #64748b;
+      font-size: 1.1rem;
+    }
+    
+    .card {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .card h2 {
+      margin-top: 0;
+      color: #334155;
+      font-size: 1.5rem;
+      border-bottom: 1px solid #f1f5f9;
+      padding-bottom: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    
+    .status-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    
+    .status-item:last-child {
+      border-bottom: none;
+    }
+    
+    .label {
+      font-weight: 500;
+    }
+    
+    .success {
+      color: #10b981;
+      font-weight: 600;
+    }
+    
+    .warning {
+      color: #f59e0b;
+      font-weight: 600;
+    }
+    
+    .error {
+      color: #ef4444;
+      font-weight: 600;
+    }
+    
+    .info {
+      color: #3b82f6;
+      font-weight: 600;
+    }
+    
+    .button {
+      display: inline-block;
+      background: #2563eb;
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 500;
+      margin-right: 1rem;
+      transition: background-color 0.2s;
+    }
+    
+    .button:hover {
+      background: #1d4ed8;
+    }
+    
+    .button.secondary {
+      background: #64748b;
+    }
+    
+    .button.secondary:hover {
+      background: #475569;
+    }
+    
+    footer {
+      text-align: center;
+      margin-top: 3rem;
+      padding-top: 1rem;
+      border-top: 1px solid #e2e8f0;
+      color: #64748b;
+      font-size: 0.875rem;
+    }
+    
+    @media (max-width: 640px) {
+      .container {
+        padding: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>仓库管理系统 - 测试页面</h1>
+      <p class="subtitle">用于验证环境和渲染功能</p>
+    </header>
+    
+    <div class="card">
+      <h2>系统状态</h2>
+      <div class="status-item">
+        <span class="label">HTML渲染:</span>
+        <span class="success">正常 ✅</span>
+      </div>
+      <div class="status-item">
+        <span class="label">CSS样式:</span>
+        <span class="success">正常 ✅</span>
+      </div>
+      <div class="status-item">
+        <span class="label">JavaScript:</span>
+        <span id="js-status">检查中...</span>
+      </div>
+      <div class="status-item">
+        <span class="label">API连接:</span>
+        <span id="api-status">检查中...</span>
+      </div>
+    </div>
+    
+    <div class="card">
+      <h2>系统信息</h2>
+      <div class="status-item">
+        <span class="label">浏览器:</span>
+        <span id="browser-info">正在加载...</span>
+      </div>
+      <div class="status-item">
+        <span class="label">当前URL:</span>
+        <span id="current-url">正在加载...</span>
+      </div>
+      <div class="status-item">
+        <span class="label">页面加载时间:</span>
+        <span id="page-load-time">正在加载...</span>
+      </div>
+      <div class="status-item">
+        <span class="label">服务器时间:</span>
+        <span id="server-time">等待API响应...</span>
+      </div>
+    </div>
+    
+    <div class="card">
+      <h2>API测试</h2>
+      <p>点击以下按钮测试API连接:</p>
+      <a href="#" class="button" id="test-health-api">测试健康检查API</a>
+      <a href="#" class="button secondary" id="test-data-api">测试数据API</a>
+      
+      <div id="api-result" style="margin-top: 1rem; display: none;">
+        <h3>API响应:</h3>
+        <pre id="api-response" style="background: #f1f5f9; padding: 1rem; border-radius: 4px; overflow: auto;"></pre>
+      </div>
+    </div>
+    
+    <footer>
+      仓库管理系统 © 2025 | 当前时间: <span id="current-time">正在加载...</span>
+    </footer>
+  </div>
+  
+  <script>
+    // 更新JavaScript状态
+    document.getElementById('js-status').textContent = '正常 ✅';
+    document.getElementById('js-status').className = 'success';
+    
+    // 更新系统信息
+    document.getElementById('browser-info').textContent = navigator.userAgent;
+    document.getElementById('current-url').textContent = window.location.href;
+    document.getElementById('page-load-time').textContent = new Date().toLocaleString();
+    document.getElementById('current-time').textContent = new Date().toLocaleString();
+    
+    // 测试API连接
+    fetch('/api/health')
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById('api-status').textContent = '正常 ✅';
+        document.getElementById('api-status').className = 'success';
+        document.getElementById('server-time').textContent = new Date(data.serverTime).toLocaleString();
+      })
+      .catch(error => {
+        document.getElementById('api-status').textContent = '连接失败 ❌';
+        document.getElementById('api-status').className = 'error';
+        console.error('API连接失败:', error);
+      });
+    
+    // API测试按钮
+    document.getElementById('test-health-api').addEventListener('click', function(e) {
+      e.preventDefault();
+      testApi('/api/health');
+    });
+    
+    document.getElementById('test-data-api').addEventListener('click', function(e) {
+      e.preventDefault();
+      testApi('/api/test');
+    });
+    
+    function testApi(url) {
+      const resultDiv = document.getElementById('api-result');
+      const responseEl = document.getElementById('api-response');
+      
+      resultDiv.style.display = 'block';
+      responseEl.textContent = '正在请求...';
+      
+      fetch(url)
+        .then(response => response.json())
+        .then(data => {
+          responseEl.textContent = JSON.stringify(data, null, 2);
+        })
+        .catch(error => {
+          responseEl.textContent = '错误: ' + error.message;
+        });
+    }
+    
+    // 每分钟更新时间
+    setInterval(() => {
+      document.getElementById('current-time').textContent = new Date().toLocaleString();
+    }, 60000);
+  </script>
+</body>
+</html>
