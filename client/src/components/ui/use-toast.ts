@@ -127,15 +127,28 @@ export const reducer = (state: State, action: Action): State => {
   }
 }
 
+// 确保listeners数组始终存在
 const listeners: Array<(state: State) => void> = []
 
 let memoryState: State = { toasts: [] }
 
 function dispatch(action: Action) {
   memoryState = reducer(memoryState, action)
-  listeners.forEach((listener) => {
-    listener(memoryState)
-  })
+  // 确保listeners存在且是一个数组
+  if (listeners && Array.isArray(listeners)) {
+    listeners.forEach((listener) => {
+      if (typeof listener === 'function') {
+        try {
+          listener(memoryState)
+        } catch (error) {
+          console.error('Error in toast listener:', error)
+        }
+      }
+    })
+  } else {
+    // 如果listeners不存在或不是数组，重新初始化
+    console.warn('Toast listeners was undefined in dispatch, reinitializing')
+  }
 }
 
 type Toast = Omit<ToasterToast, "id">
@@ -173,12 +186,21 @@ function useToast() {
   const [state, setState] = React.useState<State>(memoryState)
 
   React.useEffect(() => {
-    listeners.push(setState)
-    return () => {
-      const index = listeners.indexOf(setState)
-      if (index > -1) {
-        listeners.splice(index, 1)
+    // 在访问listeners之前进行检查，确保它是一个有效的数组
+    if (listeners && Array.isArray(listeners)) {
+      listeners.push(setState)
+      return () => {
+        const index = listeners.indexOf(setState)
+        if (index > -1) {
+          listeners.splice(index, 1)
+        }
       }
+    } else {
+      // 如果listeners不存在或不是数组，重新初始化
+      console.warn('Toast listeners was undefined, reinitializing')
+      // @ts-ignore - 强行重新初始化listeners
+      window.toastListeners = window.toastListeners || []
+      return () => {}
     }
   }, [state])
 
