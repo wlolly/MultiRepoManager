@@ -5,12 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
+// 导入全局toast工具，不再使用hooks
+import toast from "../../lib/toast";
 
 export default function DebugOutboundOrder() {
   const { t } = useTranslation();
   const [, setLocation] = useLocation();
-  const { toast } = useToast();
   const [orderNumber, setOrderNumber] = useState(`OUT-${Date.now()}`);
   const [warehouseId, setWarehouseId] = useState("1");
   const [isLoading, setIsLoading] = useState(false);
@@ -51,26 +51,18 @@ export default function DebugOutboundOrder() {
       
       if (res.ok) {
         const data = JSON.parse(text);
-        toast({
-          title: "成功",
-          description: `出库单已创建，ID: ${data.id}`,
-        });
+        // 使用全局toast方法
+        toast.success(`出库单已创建，ID: ${data.id}`);
       } else {
-        toast({
-          variant: "destructive",
-          title: "错误",
-          description: `创建失败: ${res.status}`,
-        });
+        // 使用全局toast方法
+        toast.error(`创建失败: ${res.status}`);
       }
     } catch (error: any) {
       console.error("错误:", error);
       setResponse(`错误:\n${error.message}`);
       
-      toast({
-        variant: "destructive",
-        title: "错误",
-        description: error.message,
-      });
+      // 使用全局toast方法
+      toast.error(error.message);
     } finally {
       setIsLoading(false);
     }
