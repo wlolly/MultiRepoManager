@@ -202,6 +202,13 @@
     "kk": "Шығыс ордерлер",
     "uz": "Chiqish buyurtmalari"
   },
+  "warehouse_transfers": {
+    "zh": "仓库调拨",
+    "en": "Warehouse Transfers",
+    "ru": "Перемещения на складе",
+    "kk": "Қойма аударымдары",
+    "uz": "Ombor transferlari"
+  },
   "new_inbound_order": {
     "zh": "创建入库单",
     "en": "Create Inbound Order",
