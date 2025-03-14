@@ -21,7 +21,6 @@ import { ArrowLeftIcon, PlusIcon, MinusIcon, ArrowRightIcon, ScanLine, QrCode, C
 import { toast } from "@/lib/toast";
 import { apiRequest } from "@/lib/queryClient";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
-import { Layout } from "@/components/layout/layout";
 
 // 仓库接口定义
 interface Warehouse {
@@ -704,7 +703,6 @@ export default function NewWarehouseTransfer() {
   const { totalQuantity, totalPackages, totalWeight, totalVolume } = calculateTotals();
   
   return (
-    <Layout>
       <div className="container mx-auto py-6">
         <div className="flex justify-between items-center mb-6">
           <Button variant="outline" size="sm" onClick={() => setLocation("/warehouse-transfers")}>
@@ -1254,6 +1252,5 @@ export default function NewWarehouseTransfer() {
           </DialogContent>
         </Dialog>
       </div>
-    </Layout>
   );
 }
