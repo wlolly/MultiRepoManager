@@ -26,8 +26,9 @@ import NewInboundOrderWithItems from "@/pages/inbound-orders/new-with-items";
 import NewOutboundOrderWithItems from "@/pages/outbound-orders/new-with-items";
 import WarehouseProducts from '@/pages/warehouse-products';
 import WarehouseTransfers from '@/pages/warehouse-transfers';
+import NewWarehouseTransfer from '@/pages/warehouse-transfers/new';
 import DebugOutboundOrder from '@/pages/outbound-orders/debug';
-import { useEffect, lazy } from "react";
+import { useEffect } from "react";
 import "./i18n";
 
 export default function App() {
@@ -75,7 +76,7 @@ export default function App() {
             <Route path="/outbound-order/:id" element={<OutboundOrderDetail />} />
             <Route path="/warehouse-products" element={<WarehouseProducts />} />
             <Route path="/warehouse-transfers" element={<WarehouseTransfers />} />
-            <Route path="/warehouse-transfers/new" element={lazy(() => import('@/pages/warehouse-transfers/new'))} />
+            <Route path="/warehouse-transfers/new" element={<NewWarehouseTransfer />} />
             <Route path="/outbound-orders/debug" element={<DebugOutboundOrder />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
