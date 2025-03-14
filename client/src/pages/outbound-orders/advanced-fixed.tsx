@@ -953,10 +953,12 @@ export default function AdvancedOutboundOrder() {
                               <FormItem>
                                 <FormControl>
                                   <Input 
-                                    type="number" 
-                                    min="1" 
+                                    type="text" 
+                                    inputMode="numeric" 
+                                    placeholder="1" 
                                     {...field} 
                                     onChange={(e) => handleQuantityChange(e.target.value, index)} 
+                                    className="w-full"
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -972,9 +974,11 @@ export default function AdvancedOutboundOrder() {
                               <FormItem>
                                 <FormControl>
                                   <Input 
-                                    type="number" 
-                                    min="1" 
+                                    type="text" 
+                                    inputMode="numeric" 
+                                    placeholder="1" 
                                     {...field} 
+                                    className="w-full"
                                   />
                                 </FormControl>
                                 <FormMessage />
