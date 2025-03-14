@@ -1,15 +1,15 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { v4 as uuidv4 } from 'uuid';
 import { 
   Plus, Trash2, Save, ArrowLeft, Package, Search, 
   PlusCircle, Calculator, RotateCw, ListFilter, X,
-  ScanLine
+  ScanLine, MinusIcon, ArrowRightIcon, QrCode, Camera
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -61,7 +61,8 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/queryClient";
+import { useQueryClient } from "@tanstack/react-query";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 
 // 仓库接口
@@ -123,7 +124,7 @@ type FormValues = z.infer<typeof createInboundOrderSchema>;
 
 export default function NewInboundOrderWithItems() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const [, navigate] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
