@@ -92,8 +92,24 @@ type OutboundOrderFormValues = z.infer<typeof outboundOrderSchema>;
 
 export default function AdvancedOutboundOrder() {
   const { t } = useTranslation();
-  const { toast } = useToast();
+  const { addToast } = useToast();
   const [, setLocation] = useLocation();
+  
+  // 创建toast函数
+  const toast = {
+    success: (message: string) => {
+      addToast({ title: t('success'), description: message, type: "success" });
+    },
+    error: (message: string) => {
+      addToast({ title: t('error'), description: message, type: "error" });
+    },
+    warning: (message: string) => {
+      addToast({ title: t('warning'), description: message, type: "warning" });
+    },
+    info: (message: string) => {
+      addToast({ title: t('info'), description: message, type: "default" });
+    }
+  };
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // 条码扫描对话框状态
