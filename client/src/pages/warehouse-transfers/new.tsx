@@ -18,7 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Combobox } from "@/components/ui/combobox";
 import { ArrowLeftIcon, PlusIcon, MinusIcon, ArrowRightIcon, ScanLine, QrCode, Camera } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { apiRequest } from "@/lib/queryClient";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 
@@ -82,7 +82,6 @@ type TransferFormValues = z.infer<typeof transferSchema>;
 
 export default function NewWarehouseTransfer() {
   const { t } = useTranslation();
-  const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
