@@ -528,29 +528,29 @@ export default function WarehouseTransfers() {
         </div>
       )}
       
-      {/* Excel导入导出按钮 */}
+      {/* 功能解释说明 */}
       <div className="bg-accent/20 p-4 rounded-lg mb-6 flex flex-wrap gap-4 items-center">
         <div className="flex-1">
           <h3 className="text-lg font-medium mb-1">{t("warehouseTransfer.excel_operations")}</h3>
           <p className="text-sm text-muted-foreground">{t("warehouseTransfer.excel_description")}</p>
         </div>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={handleDownloadTemplate}
-            className="flex items-center"
-          >
-            <FileSpreadsheet className="mr-2 h-4 w-4" />
-            {t("warehouseTransfer.download_template")}
-          </Button>
-          <Button
-            variant="default"
-            onClick={() => setImportDialogOpen(true)}
-            className="flex items-center"
-          >
-            <FileSpreadsheet className="mr-2 h-4 w-4" />
-            {t("warehouseTransfer.import_from_excel")}
-          </Button>
+          <ExcelButtons 
+            onDownloadTemplate={handleDownloadTemplate}
+            onImport={() => setImportDialogOpen(true)}
+            onExport={() => {
+              if (filteredTransfers.length > 0) {
+                exportAllTransfersToExcel();
+              } else {
+                toast.error(t("warehouseTransfer.no_data_to_export"));
+              }
+            }}
+            tooltips={{
+              template: t("warehouseTransfer.download_template_tooltip"),
+              import: t("warehouseTransfer.import_tooltip"),
+              export: t("warehouseTransfer.export_tooltip")
+            }}
+          />
         </div>
       </div>
 
@@ -633,42 +633,7 @@ export default function WarehouseTransfers() {
             </SelectContent>
           </Select>
           
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <FileSpreadsheet className="mr-2 h-4 w-4" />
-                {t("warehouseTransfer.excel_options")}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuLabel>{t("warehouseTransfer.excel_operations")}</DropdownMenuLabel>
-              <DropdownMenuItem onClick={handleDownloadTemplate}>
-                <Download className="mr-2 h-4 w-4" />
-                {t("warehouseTransfer.download_template")}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setImportDialogOpen(true)}>
-                <FileUp className="mr-2 h-4 w-4" />
-                {t("warehouseTransfer.import_from_excel")}
-              </DropdownMenuItem>
-              {displayedTransfers.length > 0 && (
-                <DropdownMenuSeparator />
-              )}
-              {displayedTransfers.length > 0 && displayedTransfers.map((transfer) => (
-                <DropdownMenuItem 
-                  key={transfer.id}
-                  onClick={() => exportTransferToExcel(transfer.id)}
-                >
-                  <FileSpreadsheet className="mr-2 h-4 w-4" />
-                  {t("warehouseTransfer.export_transfer", { ref: transfer.referenceNumber })}
-                </DropdownMenuItem>
-              )).slice(0, 5)}
-              {displayedTransfers.length > 5 && (
-                <DropdownMenuItem disabled>
-                  {t("warehouseTransfer.more_items_available")}
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* 单个调拨单导出选项已移至全局Excel按钮 */}
         </div>
       </div>
       
