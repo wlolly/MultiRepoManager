@@ -1754,10 +1754,15 @@ export class DatabaseStorage implements IStorage {
 
   // 入库单明细相关方法
   async getInboundOrderItems(inboundOrderId: number): Promise<InboundOrderItem[]> {
-    return await db
-      .select()
-      .from(inboundOrderItems)
-      .where(eq(inboundOrderItems.inboundOrderId, inboundOrderId));
+    try {
+      // 引入安全查询处理器
+      const { getInboundOrderItemsSafe } = await import("./utils/missing-field-handler");
+      return await getInboundOrderItemsSafe(inboundOrderId);
+    } catch (error) {
+      console.error("获取入库单明细时出错:", error);
+      // 出错时返回空数组，避免应用崩溃
+      return [];
+    }
   }
 
   async createInboundOrderItem(insertInboundOrderItem: InsertInboundOrderItem): Promise<InboundOrderItem> {
@@ -2008,10 +2013,15 @@ export class DatabaseStorage implements IStorage {
 
   // 出库单明细相关方法
   async getOutboundOrderItems(outboundOrderId: number): Promise<OutboundOrderItem[]> {
-    return await db
-      .select()
-      .from(outboundOrderItems)
-      .where(eq(outboundOrderItems.outboundOrderId, outboundOrderId));
+    try {
+      // 引入安全查询处理器
+      const { getOutboundOrderItemsSafe } = await import("./utils/missing-field-handler");
+      return await getOutboundOrderItemsSafe(outboundOrderId);
+    } catch (error) {
+      console.error("获取出库单明细时出错:", error);
+      // 出错时返回空数组，避免应用崩溃
+      return [];
+    }
   }
 
   async createOutboundOrderItem(insertOutboundOrderItem: InsertOutboundOrderItem): Promise<OutboundOrderItem> {
