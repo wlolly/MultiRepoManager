@@ -154,6 +154,11 @@ export default function InboundOrders() {
     navigate("/inbound-orders/new");
   };
   
+  // 处理创建带明细的新入库单
+  const handleCreateOrderWithItems = () => {
+    navigate("/inbound-orders/new-with-items");
+  };
+  
   // 处理查看入库单详情
   const handleViewOrder = (id: number) => {
     navigate(`/inbound-order/${id}`);
@@ -166,10 +171,16 @@ export default function InboundOrders() {
           <h1 className="text-2xl font-bold">{t("inbound_orders")}</h1>
           <p className="text-muted-foreground">{t("inbound_orders_description")}</p>
         </div>
-        <Button onClick={handleCreateOrder}>
-          <Plus className="mr-2 h-4 w-4" />
-          {t("new_inbound_order")}
-        </Button>
+        <div className="flex space-x-2">
+          <Button onClick={handleCreateOrderWithItems} variant="default">
+            <Plus className="mr-2 h-4 w-4" />
+            {t("new_inbound_order_with_items")}
+          </Button>
+          <Button onClick={handleCreateOrder} variant="outline">
+            <Plus className="mr-2 h-4 w-4" />
+            {t("new_inbound_order")}
+          </Button>
+        </div>
       </div>
       
       {/* 统计卡片 */}
