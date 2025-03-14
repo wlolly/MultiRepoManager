@@ -315,10 +315,7 @@ export default function WarehouseTransfers() {
       });
       
       if (response.data.id) {
-        toast({
-          title: t("warehouseTransfer.import_successful"),
-          description: t("warehouseTransfer.transfer_created", { ref: response.data.referenceNumber }),
-        });
+        toast.success(t("warehouseTransfer.transfer_created", { ref: response.data.referenceNumber }));
         
         // 关闭对话框并刷新列表
         setImportDialogOpen(false);
@@ -338,11 +335,7 @@ export default function WarehouseTransfers() {
         errorMsg = error.response.data.errors[0] || errorMsg;
       }
       
-      toast({
-        title: t("warehouseTransfer.import_error"),
-        description: errorMsg,
-        variant: "destructive",
-      });
+      toast.error(errorMsg);
     }
   };
   
