@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Router, Route, Switch } from 'wouter';
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -55,33 +55,33 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <Router>
         <Layout>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/my-repositories" element={<MyRepositories />} />
-            <Route path="/team-repositories" element={<TeamRepositories />} />
-            <Route path="/users" element={<Users />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/repository/:id" element={<Repository />} />
-            <Route path="/new-repository" element={<NewRepository />} />
-            <Route path="/search" element={<Search />} />
-            <Route path="/warehouses" element={<Warehouses />} />
-            <Route path="/api-configurations" element={<ApiConfigurations />} />
-            <Route path="/products" element={<ProductsPage />} />
-            <Route path="/inbound-orders" element={<InboundOrders />} />
-            <Route path="/inbound-orders/new" element={<NewInboundOrder />} />
-            <Route path="/inbound-orders/new-with-items" element={<NewInboundOrderWithItems />} />
-            <Route path="/inbound-order/:id" element={<InboundOrderDetail />} />
-            <Route path="/outbound-orders" element={<OutboundOrders />} />
-            <Route path="/outbound-orders/new" element={<NewOutboundOrder />} />
-            <Route path="/outbound-orders/new-with-items" element={<NewOutboundOrderWithItems />} />
-            <Route path="/outbound-order/:id" element={<OutboundOrderDetail />} />
-            <Route path="/warehouse-products" element={<WarehouseProducts />} />
-            <Route path="/warehouse-transfers" element={<WarehouseTransfers />} />
-            <Route path="/warehouse-transfers/new" element={<NewWarehouseTransfer />} />
-            <Route path="/warehouse-transfers/import" element={<WarehouseTransferImport />} />
-            <Route path="/outbound-orders/debug" element={<DebugOutboundOrder />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <Switch>
+            <Route path="/">{Dashboard}</Route>
+            <Route path="/my-repositories">{MyRepositories}</Route>
+            <Route path="/team-repositories">{TeamRepositories}</Route>
+            <Route path="/users">{Users}</Route>
+            <Route path="/settings">{Settings}</Route>
+            <Route path="/repository/:id">{Repository}</Route>
+            <Route path="/new-repository">{NewRepository}</Route>
+            <Route path="/search">{Search}</Route>
+            <Route path="/warehouses">{Warehouses}</Route>
+            <Route path="/api-configurations">{ApiConfigurations}</Route>
+            <Route path="/products">{ProductsPage}</Route>
+            <Route path="/inbound-orders">{InboundOrders}</Route>
+            <Route path="/inbound-orders/new">{NewInboundOrder}</Route>
+            <Route path="/inbound-orders/new-with-items">{NewInboundOrderWithItems}</Route>
+            <Route path="/inbound-order/:id">{InboundOrderDetail}</Route>
+            <Route path="/outbound-orders">{OutboundOrders}</Route>
+            <Route path="/outbound-orders/new">{NewOutboundOrder}</Route>
+            <Route path="/outbound-orders/new-with-items">{NewOutboundOrderWithItems}</Route>
+            <Route path="/outbound-order/:id">{OutboundOrderDetail}</Route>
+            <Route path="/warehouse-products">{WarehouseProducts}</Route>
+            <Route path="/warehouse-transfers">{WarehouseTransfers}</Route>
+            <Route path="/warehouse-transfers/new">{NewWarehouseTransfer}</Route>
+            <Route path="/warehouse-transfers/import">{WarehouseTransferImport}</Route>
+            <Route path="/outbound-orders/debug">{DebugOutboundOrder}</Route>
+            <Route>{NotFound}</Route>
+          </Switch>
         </Layout>
         <Agent />
         <Toaster />
