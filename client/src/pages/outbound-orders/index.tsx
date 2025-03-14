@@ -253,7 +253,7 @@ export default function OutboundOrders() {
   
   // 处理查看出库单详情
   const handleViewOrder = (id: number) => {
-    navigate(`/outbound-order/${id}`);
+    setLocation(`/outbound-order/${id}`);
   };
   
   return (
