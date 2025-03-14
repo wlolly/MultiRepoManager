@@ -75,6 +75,7 @@ export default function App() {
             <Route path="/outbound-order/:id" element={<OutboundOrderDetail />} />
             <Route path="/warehouse-products" element={<WarehouseProducts />} />
             <Route path="/warehouse-transfers" element={<WarehouseTransfers />} />
+            <Route path="/warehouse-transfers/new" element={lazy(() => import('@/pages/warehouse-transfers/new'))} />
             <Route path="/outbound-orders/debug" element={<DebugOutboundOrder />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
