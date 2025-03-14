@@ -1,4 +1,29 @@
+import express from 'express';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const app = express();
+const PORT = process.env.PORT || 5555;
+
+// 基本的中间件
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// 静态文件服务
+app.use(express.static(path.join(__dirname, 'public')));
+
+// 创建一个简单的HTML测试页面
+const testHtmlDir = path.join(__dirname, 'public');
+if (!fs.existsSync(testHtmlDir)) {
+  fs.mkdirSync(testHtmlDir, { recursive: true });
+}
+
+const testHtmlPath = path.join(testHtmlDir, 'test.html');
+const testHtmlContent = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -106,3 +131,25 @@
   </script>
 </body>
 </html>
+`;
+
+fs.writeFileSync(testHtmlPath, testHtmlContent);
+
+// API路由
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+app.get('/api/test', (req, res) => {
+  res.json({ 
+    message: '测试API响应成功',
+    time: new Date().toISOString(),
+    env: process.env.NODE_ENV || 'development'
+  });
+});
+
+// 启动服务器
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`测试应用服务器运行在: http://localhost:${PORT}`);
+  console.log(`请访问 http://localhost:${PORT}/test.html 查看测试页面`);
+});
