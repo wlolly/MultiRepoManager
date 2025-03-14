@@ -7,7 +7,7 @@ import {
   Plus, Download, Filter, ArrowUpDown, Search, FileUp, 
   FileDown, FileText, FileSpreadsheet, Eye, Truck, 
   RefreshCw, Check, X, Calendar, FileIcon, AlertCircle,
-  Warehouse, TruckLoading
+  Warehouse
 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import axios from "axios";
@@ -22,7 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { useToast } from "@/hooks/use-toast";
+import toast from "../../lib/toast";
 import { formatDate } from "@/lib/utils";
 
 // 调拨单接口定义
@@ -77,7 +77,6 @@ interface TransferStats {
 export default function WarehouseTransfers() {
   const { t } = useTranslation();
   const [_, navigate] = useLocation();
-  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [dateFilter, setDateFilter] = useState<string>("");
@@ -191,17 +190,10 @@ export default function WarehouseTransfers() {
       // 释放URL对象
       window.URL.revokeObjectURL(url);
       
-      toast({
-        title: t("warehouseTransfer.template_downloaded"),
-        description: t("warehouseTransfer.template_download_success"),
-      });
+      toast.success(t("warehouseTransfer.template_download_success"));
     } catch (error) {
       console.error('Template download error:', error);
-      toast({
-        title: t("warehouseTransfer.download_failed"),
-        description: t("warehouseTransfer.template_download_error"),
-        variant: "destructive",
-      });
+      toast.error(t("warehouseTransfer.template_download_error"));
     }
   };
   
