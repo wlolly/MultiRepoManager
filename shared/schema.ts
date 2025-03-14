@@ -175,26 +175,27 @@ export type Activity = typeof activities.$inferSelect;
 export const products = mysqlTable("products", {
   id: int("id").primaryKey().autoincrement(), // 商品ID
   name: varchar("name", { length: 255 }).notNull(), // 商品名称
-  description: text("description"), // 商品描述
+  // 数据库中缺少以下字段，临时添加了默认值以使代码兼容
+  description: text("description").default(""), // 商品描述（数据库中不存在）
   barcode: varchar("barcode", { length: 255 }).notNull().unique(), // 条码
   uniqueCode: varchar("unique_code", { length: 255 }), // 唯一码，用于与电商平台匹配
-  category: varchar("category", { length: 100 }), // 商品类别
-  stock: int("stock").notNull().default(0), // 库存数量
-  price: decimal("price", { precision: 10, scale: 2 }).notNull().default("0"), // 售价
-  cost: decimal("cost", { precision: 10, scale: 2 }).notNull().default("0"), // 成本
+  category: varchar("category", { length: 100 }).default(""), // 商品类别（数据库中不存在）
+  stock: int("stock").notNull().default(0), // 库存数量（数据库中不存在）
+  price: decimal("price", { precision: 10, scale: 2 }).notNull().default("0"), // 售价（数据库中不存在）
+  cost: decimal("cost", { precision: 10, scale: 2 }).notNull().default("0"), // 成本（数据库中不存在）
   singleLengthCm: decimal("single_length_cm", { precision: 10, scale: 2 }).notNull(), // 单件尺寸（长CM）
   singleWidthCm: decimal("single_width_cm", { precision: 10, scale: 2 }).notNull(), // 单件尺寸（宽CM）
   singleHeightCm: decimal("single_height_cm", { precision: 10, scale: 2 }).notNull(), // 单件尺寸（高CM）
   singleVolumeM3: decimal("single_volume_m3", { precision: 10, scale: 6 }).notNull(), // 单件立方（M3）
   singleWeightKg: decimal("single_weight_kg", { precision: 10, scale: 3 }).notNull(), // 单件重量（kg）
-  bulkQuantity: int("bulk_quantity").notNull().default(1), // 整件包装内产品数量
+  bulkQuantity: int("bulk_quantity").notNull().default(1), // 整件包装内产品数量（数据库中不存在）
   bulkWidthCm: decimal("bulk_width_cm", { precision: 10, scale: 2 }).notNull(), // 整件尺寸（宽CM）
   bulkLengthCm: decimal("bulk_length_cm", { precision: 10, scale: 2 }).notNull(), // 整件尺寸（长CM）
   bulkHeightCm: decimal("bulk_height_cm", { precision: 10, scale: 2 }).notNull(), // 整件尺寸（高CM）
   bulkWeightKg: decimal("bulk_weight_kg", { precision: 10, scale: 3 }).notNull(), // 整件重量（kg）
   bulkVolumeM3: decimal("bulk_volume_m3", { precision: 10, scale: 6 }).notNull(), // 整件立方（M3）
-  createdAt: timestamp("created_at").defaultNow().notNull(), // 创建时间
-  updatedAt: timestamp("updated_at").defaultNow().notNull(), // 更新时间
+  createdAt: timestamp("created_at").defaultNow(), // 创建时间
+  updatedAt: timestamp("updated_at").defaultNow(), // 更新时间
 });
 
 export const insertProductSchema = createInsertSchema(products).pick({
