@@ -147,10 +147,7 @@ export default function AdvancedOutboundOrder() {
         form.setValue(`items.${index}.weight`, totalWeight.toFixed(3));
         form.setValue(`items.${index}.volume`, totalVolume.toFixed(3));
         
-        toast({
-          title: t("product_found"),
-          description: `${t("product_found_by_code")}: ${product.name}`,
-        });
+        toast.success(`${t("product_found_by_code")}: ${product.name}`);
         
         // 触发表单更新，确保UI反映当前状态
         form.trigger(`items.${index}.productId`);
@@ -160,11 +157,7 @@ export default function AdvancedOutboundOrder() {
         form.trigger(`items.${index}.volume`);
       } else if (numericValue.length === 5) {
         // 只有当输入完整的5位唯一码且找不到产品时才提示
-        toast({
-          title: t("product_not_found"),
-          description: t("no_product_with_unique_code", { code: numericValue }),
-          variant: "destructive",
-        });
+        toast.error(t("no_product_with_unique_code", { code: numericValue }));
         
         // 清空相关产品信息
         form.setValue(`items.${index}.productId`, "");
@@ -172,11 +165,7 @@ export default function AdvancedOutboundOrder() {
       }
     } else if (value && !/^\\d+$/.test(value)) {
       // 如果输入了非数字字符，给出提示（但我们已经在上面过滤掉非数字，这里只是确保用户知道）
-      toast({
-        title: t("input_corrected"),
-        description: t("unique_code_must_be_numeric"),
-        variant: "warning",
-      });
+      toast.warning(t("unique_code_must_be_numeric"));
     }
   };
   

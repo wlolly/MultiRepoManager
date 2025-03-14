@@ -195,14 +195,10 @@ export default function OutboundOrders() {
       // 释放URL对象
       window.URL.revokeObjectURL(url);
       
-      toast.success(t("template_download_success"), {
-        title: t("template_downloaded"),
-      });
+      toast.success(t("template_download_success"));
     } catch (error) {
       console.error('Template download error:', error);
-      toast.error(t("template_download_failed"), {
-        title: t("template_download_error"),
-      });
+      toast.error(t("template_download_failed"));
     }
   };
   
