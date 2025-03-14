@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
-import { Plus, Download, Filter, ArrowUpDown, Search, FileUp, FileDown, FileText, AlertCircle, X } from "lucide-react";
+import { Plus, Download, Filter, ArrowUpDown, Search, FileUp, FileDown, FileText, AlertCircle, X, FileInput as FileImport } from "lucide-react";
 import axios from "axios";
 
 import { Button } from "@/components/ui/button";
@@ -563,6 +563,27 @@ export default function WarehouseTransfers() {
           </DialogHeader>
           
           <div className="space-y-4">
+            {/* 导入步骤指南 */}
+            <div className="bg-muted p-4 rounded-lg mb-4">
+              <h3 className="font-medium mb-2">导入操作步骤：</h3>
+              <ol className="list-decimal pl-5 space-y-1 text-sm">
+                <li>先下载<Button 
+                  variant="link" 
+                  className="h-auto p-0 text-sm font-medium underline" 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleDownloadTemplate();
+                  }}
+                >导入模板</Button>并按格式填写</li>
+                <li>上传填写好的Excel文件</li>
+                <li>系统将验证数据并显示预览</li>
+                <li>确认无误后点击"导入"完成操作</li>
+              </ol>
+              <div className="mt-2 text-xs text-muted-foreground">
+                <strong>注意：</strong> 导入的数据需要符合1C财务系统的格式要求，请确保数据准确性
+              </div>
+            </div>
+            
             <div className="grid w-full max-w-sm items-center gap-1.5">
               <Label htmlFor="excel-file">{t("warehouseTransfer.excel_file")}</Label>
               <Input 
@@ -571,9 +592,20 @@ export default function WarehouseTransfers() {
                 accept=".xlsx,.xls" 
                 onChange={handleFileChange}
               />
-              <p className="text-xs text-muted-foreground">
-                {t("warehouseTransfer.supported_formats")}: .xlsx, .xls
-              </p>
+              <div className="flex justify-between items-center">
+                <p className="text-xs text-muted-foreground">
+                  {t("warehouseTransfer.supported_formats")}: .xlsx, .xls
+                </p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleDownloadTemplate}
+                  className="h-8 text-xs ml-2"
+                >
+                  <FileText className="mr-2 h-3 w-3" />
+                  下载导入模板
+                </Button>
+              </div>
             </div>
             
             {importErrors.length > 0 && (
@@ -626,15 +658,41 @@ export default function WarehouseTransfers() {
             )}
           </div>
           
-          <DialogFooter className="flex justify-between items-center">
-            <div>
+          <DialogFooter className="flex-col sm:flex-row justify-between gap-4">
+            <div className="w-full">
               {importPreview.length > 0 && (
-                <div className="text-sm text-muted-foreground">
-                  {t("warehouseTransfer.valid_items")}: {importPreview.filter(item => item.matched).length}/{importPreview.length}
+                <div className="flex flex-col space-y-1">
+                  <div className="text-sm">
+                    <span className="font-medium">{t("warehouseTransfer.valid_items")}:</span>{" "}
+                    <Badge variant={importPreview.filter(item => item.matched).length === 0 ? "destructive" : "success"}>
+                      {importPreview.filter(item => item.matched).length}/{importPreview.length}
+                    </Badge>
+                  </div>
+                  {importPreview.filter(item => !item.matched).length > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      <AlertCircle className="h-3 w-3 inline mr-1" />
+                      存在未匹配的商品，请确认条形码是否正确或在系统中添加相应商品
+                    </p>
+                  )}
+                </div>
+              )}
+              
+              {/* 操作步骤引导 */}
+              {importFile && importPreview.length > 0 && (
+                <div className="mt-4 bg-muted rounded-md p-3 text-xs">
+                  <h4 className="font-medium mb-1">导入后将执行以下操作：</h4>
+                  <ol className="list-decimal list-inside space-y-1">
+                    <li>创建仓库调拨单记录</li>
+                    <li>自动生成调拨单编号</li>
+                    <li>创建源仓库的出库单</li>
+                    <li>创建目标仓库的入库单</li>
+                    <li>记录调拨商品明细</li>
+                  </ol>
                 </div>
               )}
             </div>
-            <div className="flex gap-2">
+            
+            <div className="flex gap-2 self-end">
               <Button 
                 variant="outline" 
                 onClick={() => setImportDialogOpen(false)}
@@ -646,6 +704,7 @@ export default function WarehouseTransfers() {
                 disabled={!importFile || importPreview.length === 0 || importPreview.filter(item => item.matched).length === 0}
                 onClick={handleImportExcel}
               >
+                <FileImport className="mr-2 h-4 w-4" />
                 {t("warehouseTransfer.import")}
               </Button>
             </div>
