@@ -11,8 +11,8 @@ interface Product {
   barcode: string;
   category: string;
   stock: number;
-  price: number;
-  cost: number;
+  price: number; // 批发价
+  cost: number;  // 代理价
   
   // 单件尺寸和重量信息（映射到数据库中的single前缀字段）
   singleLengthCm: number;    // 单件尺寸（长CM）
