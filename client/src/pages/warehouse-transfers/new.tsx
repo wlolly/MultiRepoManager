@@ -236,6 +236,9 @@ export default function NewWarehouseTransfer() {
       volume: "0",
       uniqueCode: "" // 添加唯一码字段，初始为空
     });
+    
+    // 添加商品后重新计算汇总数据
+    setTimeout(() => calculateTotals(), 0);
   };
   
   // 打开条码扫描器对话框
@@ -344,6 +347,9 @@ export default function NewWarehouseTransfer() {
   const handleRemoveItem = (index: number) => {
     if (fields.length > 1) {
       remove(index);
+      
+      // 移除商品后重新计算汇总数据
+      setTimeout(() => calculateTotals(), 0);
     } else {
       toast({
         title: t("validation_error"),
@@ -798,6 +804,11 @@ export default function NewWarehouseTransfer() {
                                   placeholder="0" 
                                   {...field} 
                                   className="w-full"
+                                  onChange={(e) => {
+                                    field.onChange(e);
+                                    // 手动更新体积时更新汇总信息
+                                    calculateTotals();
+                                  }}
                                 />
                               </FormControl>
                               <FormMessage />
