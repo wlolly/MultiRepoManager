@@ -347,6 +347,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Products routes
+  // 获取产品统计信息
+  apiRouter.get("/products/stats", async (req, res) => {
+    try {
+      const stats = await storage.getProductsStats();
+      res.json(stats);
+    } catch (err) {
+      console.error("Error getting product stats:", err);
+      handleZodError(err, res);
+    }
+  });
+  
   apiRouter.get("/products", async (req, res) => {
     try {
       // Build filter object based on query parameters

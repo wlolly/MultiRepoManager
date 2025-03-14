@@ -1534,6 +1534,46 @@ export class DatabaseStorage implements IStorage {
     return await query;
   }
 
+  async getProductsStats(): Promise<{
+    totalProducts: number;
+    totalCategories: number;
+    lowStockProducts: number;
+    totalValue: number;
+    avgPrice: number;
+  }> {
+    // 获取所有产品
+    const allProducts = await db.select().from(products);
+    
+    // 获取所有唯一分类
+    const categories = new Set<string>();
+    for (const product of allProducts) {
+      if (product.category) {
+        categories.add(product.category);
+      }
+    }
+    
+    // 计算库存低的产品数量 (库存少于10的产品)
+    const lowStockProducts = allProducts.filter(product => product.stock < 10).length;
+    
+    // 计算总价值 (库存 * 价格)
+    const totalValue = allProducts.reduce((sum, product) => {
+      return sum + (product.stock * product.price);
+    }, 0);
+    
+    // 计算平均价格
+    const avgPrice = allProducts.length > 0 
+      ? allProducts.reduce((sum, product) => sum + product.price, 0) / allProducts.length
+      : 0;
+    
+    return {
+      totalProducts: allProducts.length,
+      totalCategories: categories.size,
+      lowStockProducts,
+      totalValue,
+      avgPrice
+    };
+  }
+
   // 仓库相关方法
   async getWarehouse(id: number): Promise<Warehouse | undefined> {
     const [warehouse] = await db.select().from(warehouses).where(eq(warehouses.id, id));
