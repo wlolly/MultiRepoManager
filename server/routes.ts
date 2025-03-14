@@ -34,7 +34,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
   
   // 配置存储
-  const storage = multer.diskStorage({
+  const multerStorage = multer.diskStorage({
     destination: function (req, file, cb) {
       cb(null, './public/uploads')
     },
@@ -58,7 +58,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // 创建multer实例
   const upload = multer({ 
-    storage: storage,
+    storage: multerStorage,
     fileFilter: fileFilter,
     limits: {
       fileSize: 5 * 1024 * 1024 // 限制文件大小为5MB
