@@ -130,16 +130,20 @@ export function createProductImportTemplate(): string {
   const filename = 'product_import_template.xlsx';
   const filePath = path.join(TEMPLATE_DIR, filename);
   
-  // 写入文件
-  workbook.xlsx.writeFile(filePath)
-    .then(() => {
-      console.log(`产品导入模板已创建: ${filePath}`);
-    })
-    .catch(err => {
-      console.error('创建产品导入模板失败:', err);
-    });
+  // 确保目录存在
+  if (!fs.existsSync(path.dirname(filePath))) {
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  }
   
-  return filePath;
+  // 写入文件 - 使用同步方法确保文件在返回前已创建
+  try {
+    workbook.xlsx.writeFile(filePath);
+    console.log(`产品导入模板已创建: ${filePath}`);
+    return filePath;
+  } catch (err) {
+    console.error('创建产品导入模板失败:', err);
+    throw err; // 抛出错误以便上层处理
+  }
 }
 
 /**

@@ -556,10 +556,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   apiRouter.get("/products/excel/template", async (req, res) => {
     try {
       const templatePath = createProductImportTemplate();
-      res.download(templatePath, 'product_import_template.xlsx');
+      
+      // 确保目录和文件存在
+      if (fs.existsSync(templatePath)) {
+        res.download(templatePath, 'product_import_template.xlsx');
+      } else {
+        res.status(500).json({ error: "模板文件创建失败" });
+      }
     } catch (err) {
       console.error("创建Excel模板出错:", err);
-      res.status(500).json({ error: "创建Excel模板失败" });
+      res.status(500).json({ error: "创建Excel模板失败", details: (err as Error).message });
     }
   });
 
@@ -589,13 +595,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // 导出为Excel
-      const excelPath = exportProductsToExcel(products, warehouseMap);
+      const excelPath = await exportProductsToExcel(products, warehouseMap);
       
       // 设置下载文件名
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const filename = `products_export_${timestamp}.xlsx`;
       
-      res.download(excelPath, filename);
+      // 确保文件存在
+      if (fs.existsSync(excelPath)) {
+        res.download(excelPath, filename);
+      } else {
+        res.status(500).json({ error: "导出文件创建失败" });
+      }
     } catch (err) {
       console.error("导出产品数据出错:", err);
       res.status(500).json({ error: "导出产品数据失败" });
