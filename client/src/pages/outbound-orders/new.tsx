@@ -1,20 +1,16 @@
-import { useState } from "react";
+import { useState, FormEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
 import { ArrowLeftIcon } from "@radix-ui/react-icons";
 
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
 
 // 仓库接口定义
 interface Warehouse {
@@ -23,121 +19,121 @@ interface Warehouse {
   location: string;
 }
 
-// 创建出库单表单Schema
-const createOutboundOrderSchema = z.object({
-  orderNumber: z.string()
-    .min(1, { message: "Order number is required" })
-    .max(50, { message: "Order number must be 50 characters or less" }),
-  warehouseId: z.string().min(1, { message: "Warehouse is required" }),
-  status: z.string().default("pending"),
-  orderType: z.string().default("sale"),
-  destinationType: z.string().default("customer"),
-  notes: z.string().optional(),
-});
-
-// 表单类型
-type FormValues = z.infer<typeof createOutboundOrderSchema>;
-
 export default function NewOutboundOrder() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
+  // 表单状态
+  const [orderNumber, setOrderNumber] = useState("");
+  const [warehouseId, setWarehouseId] = useState("");
+  const [status, setStatus] = useState("pending");
+  const [orderType, setOrderType] = useState("sale");
+  const [destinationType, setDestinationType] = useState("customer");
+  const [notes, setNotes] = useState("");
+  
   // 获取仓库数据
   const { data: warehouses = [], isLoading: isLoadingWarehouses } = useQuery<Warehouse[]>({
     queryKey: ["/api/warehouses"],
   });
   
-  // 创建表单实例
-  const form = useForm<FormValues>({
-    resolver: zodResolver(createOutboundOrderSchema),
-    defaultValues: {
-      orderNumber: "",
-      warehouseId: "",
-      status: "pending",
-      orderType: "sale",
-      destinationType: "customer",
-      notes: ""
-    },
-  });
+  // 自动生成订单号
+  const generateOrderNumber = () => {
+    const prefix = "OUT";
+    const timestamp = Date.now().toString().slice(-8);
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, "0");
+    return `${prefix}${timestamp}${random}`;
+  };
   
-  // 提交表单处理函数
-  const onSubmit = async (data: FormValues) => {
-    console.log("Form submission started", data);
+  // 处理自动生成
+  const handleAutoGenerate = () => {
+    setOrderNumber(generateOrderNumber());
+  };
+  
+  // 表单提交处理
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    console.log("表单提交开始");
+    
+    // 验证表单
+    if (!orderNumber) {
+      toast({
+        variant: "destructive",
+        title: t("validation_error"),
+        description: t("order_number_required"),
+      });
+      return;
+    }
+    
+    if (!warehouseId) {
+      toast({
+        variant: "destructive",
+        title: t("validation_error"),
+        description: t("warehouse_required"),
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
-      // 添加totalWeight和totalVolume，它们在API中是必需的
-      const apiPayload = {
-        orderNumber: data.orderNumber,
-        warehouseId: parseInt(data.warehouseId),
-        status: data.status,
-        orderType: data.orderType,
-        destinationType: data.destinationType,
-        notes: data.notes || "",
-        totalWeight: "0", // 这些字段在没有明细项时是必需的
-        totalVolume: "0", // 这些字段在没有明细项时是必需的
-        items: [] // 空数组，因为这是简单创建
+      const payload = {
+        orderNumber,
+        warehouseId: parseInt(warehouseId),
+        status,
+        orderType,
+        destinationType,
+        notes: notes || "",
+        totalWeight: "0",
+        totalVolume: "0",
+        items: []
       };
       
-      // 调试日志，检查发送的数据
-      console.log("正在提交到API:", apiPayload);
+      console.log("提交到API的数据:", payload);
       
-      // 直接使用fetch而不是apiRequest，以便更好地调试
-      const rawResponse = await fetch("/api/outbound-orders", {
+      const response = await fetch("/api/outbound-orders", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(apiPayload),
+        body: JSON.stringify(payload),
         credentials: "include"
       });
       
-      console.log("原始API响应状态:", rawResponse.status);
+      console.log("API响应状态:", response.status);
       
-      // 尝试解析响应
-      let responseText: string;
-      let response: any;
+      // 解析响应
+      const responseText = await response.text();
+      console.log("原始响应内容:", responseText);
       
+      let data;
       try {
-        responseText = await rawResponse.text();
-        console.log("原始响应文本:", responseText);
-        
-        if (responseText) {
-          response = JSON.parse(responseText);
-        } else {
-          console.warn("API返回了空响应");
-          response = {};
-        }
-      } catch (parseError) {
-        console.error("解析API响应失败:", parseError);
-        console.log("无法解析的响应文本:", responseText!);
-        throw new Error("无法解析API响应");
+        data = responseText ? JSON.parse(responseText) : {};
+      } catch (e) {
+        console.error("解析响应失败:", e);
+        throw new Error("无法解析服务器响应");
       }
       
-      if (!rawResponse.ok) {
-        console.error("API请求失败:", response);
-        throw new Error(response.error || "创建出库单失败");
+      if (!response.ok) {
+        throw new Error(data.error || "创建出库单失败");
       }
       
-      console.log("API响应:", response);
+      console.log("API响应数据:", data);
       
       toast({
-        title: t("outbound_order_created"),
-        description: t("outbound_order_created_description"),
+        title: t("success"),
+        description: t("outbound_order_created"),
       });
       
-      // 创建成功后跳转到订单详情页
-      if (response && response.id) {
-        navigate(`/outbound-order/${response.id}`);
+      if (data && data.id) {
+        navigate(`/outbound-order/${data.id}`);
       } else {
-        // 如果没有ID，返回列表页
         navigate("/outbound-orders");
       }
-    } catch (error: any) {
-      console.error("创建出库单时出错:", error);
       
+    } catch (error: any) {
+      console.error("出库单创建错误:", error);
       toast({
         variant: "destructive",
         title: t("error"),
@@ -148,23 +144,14 @@ export default function NewOutboundOrder() {
     }
   };
   
-  // 生成订单号
-  const generateOrderNumber = () => {
-    const prefix = "OUT";
-    const timestamp = Date.now().toString().slice(-8);
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, "0");
-    return `${prefix}${timestamp}${random}`;
-  };
-  
-  // 自动生成订单号
-  const handleAutoGenerate = () => {
-    form.setValue("orderNumber", generateOrderNumber());
-  };
-  
   return (
     <div className="container mx-auto py-6">
       <div className="mb-6">
-        <Button variant="outline" size="sm" onClick={() => navigate("/outbound-orders")}>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => navigate("/outbound-orders")}
+        >
           <ArrowLeftIcon className="mr-2 h-4 w-4" />
           {t("back_to_outbound_orders")}
         </Button>
@@ -178,210 +165,152 @@ export default function NewOutboundOrder() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form 
-              onSubmit={form.handleSubmit((data) => {
-                console.log("Form data validated, submitting:", data);
-                onSubmit(data);
-              })}
-              className="space-y-6"
-            >
-              <div className="flex items-end gap-4">
-                <FormField
-                  control={form.control}
-                  name="orderNumber"
-                  render={({ field }) => (
-                    <FormItem className="flex-1">
-                      <FormLabel>{t("order_number")}</FormLabel>
-                      <FormControl>
-                        <Input placeholder={t("order_number_placeholder")} {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* 订单号 */}
+            <div className="flex items-end gap-4">
+              <div className="flex-1 space-y-2">
+                <Label htmlFor="orderNumber">{t("order_number")}</Label>
+                <Input 
+                  id="orderNumber"
+                  value={orderNumber}
+                  onChange={(e) => setOrderNumber(e.target.value)}
+                  placeholder={t("order_number_placeholder")}
                 />
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  className="mb-[2px]" 
-                  onClick={handleAutoGenerate}
-                >
-                  {t("auto_generate")}
-                </Button>
               </div>
-              
-              <FormField
-                control={form.control}
-                name="warehouseId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("warehouse")}</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t("select_warehouse")} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {isLoadingWarehouses ? (
-                          <SelectItem value="loading" disabled>
-                            {t("loading")}
-                          </SelectItem>
-                        ) : warehouses.length === 0 ? (
-                          <SelectItem value="no-warehouses" disabled>
-                            {t("no_warehouses")}
-                          </SelectItem>
-                        ) : (
-                          warehouses.map((warehouse) => (
-                            <SelectItem 
-                              key={warehouse.id} 
-                              value={warehouse.id.toString()}
-                            >
-                              {warehouse.name} - {warehouse.location}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      {t("select_warehouse_description")}
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
+              <Button 
+                type="button" 
+                variant="outline" 
+                className="mb-[2px]" 
+                onClick={handleAutoGenerate}
+              >
+                {t("auto_generate")}
+              </Button>
+            </div>
+            
+            {/* 仓库 */}
+            <div className="space-y-2">
+              <Label htmlFor="warehouseId">{t("warehouse")}</Label>
+              <Select 
+                value={warehouseId} 
+                onValueChange={setWarehouseId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t("select_warehouse")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {isLoadingWarehouses ? (
+                    <SelectItem value="loading" disabled>
+                      {t("loading")}
+                    </SelectItem>
+                  ) : warehouses.length === 0 ? (
+                    <SelectItem value="no-warehouses" disabled>
+                      {t("no_warehouses")}
+                    </SelectItem>
+                  ) : (
+                    warehouses.map((warehouse) => (
+                      <SelectItem 
+                        key={warehouse.id} 
+                        value={warehouse.id.toString()}
+                      >
+                        {warehouse.name} - {warehouse.location}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-muted-foreground">{t("select_warehouse_description")}</p>
+            </div>
+            
+            {/* 状态 */}
+            <div className="space-y-2">
+              <Label htmlFor="status">{t("status")}</Label>
+              <Select 
+                value={status} 
+                onValueChange={setStatus}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t("select_status")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">{t("pending")}</SelectItem>
+                  <SelectItem value="processing">{t("processing")}</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-muted-foreground">{t("status_description")}</p>
+            </div>
+            
+            {/* 订单类型 */}
+            <div className="space-y-2">
+              <Label htmlFor="orderType">{t("order_type")}</Label>
+              <Select 
+                value={orderType} 
+                onValueChange={setOrderType}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t("select_order_type")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sale">{t("outbound_sales")}</SelectItem>
+                  <SelectItem value="return">{t("outbound_return")}</SelectItem>
+                  <SelectItem value="transfer">{t("outbound_transfer")}</SelectItem>
+                  <SelectItem value="scrap">{t("outbound_scrap")}</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-muted-foreground">{t("order_type_description")}</p>
+            </div>
+            
+            {/* 目的地类型 */}
+            <div className="space-y-2">
+              <Label htmlFor="destinationType">{t("destination_type")}</Label>
+              <Select 
+                value={destinationType} 
+                onValueChange={setDestinationType}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t("select_destination_type")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="customer">{t("destination_customer")}</SelectItem>
+                  <SelectItem value="retail">{t("destination_retail")}</SelectItem>
+                  <SelectItem value="wholesale">{t("destination_wholesale")}</SelectItem>
+                  <SelectItem value="transfer">{t("destination_transfer")}</SelectItem>
+                  <SelectItem value="supplier">{t("destination_supplier")}</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-muted-foreground">{t("destination_type_description")}</p>
+            </div>
+            
+            {/* 备注 */}
+            <div className="space-y-2">
+              <Label htmlFor="notes">{t("notes")}</Label>
+              <Textarea 
+                id="notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder={t("notes_placeholder")}
+                className="resize-none"
+                rows={4}
               />
-              
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("status")}</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t("select_status")} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="pending">{t("pending")}</SelectItem>
-                        <SelectItem value="processing">{t("processing")}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      {t("status_description")}
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="orderType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("order_type")}</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t("select_order_type")} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="sale">{t("outbound_sales")}</SelectItem>
-                        <SelectItem value="return">{t("outbound_return")}</SelectItem>
-                        <SelectItem value="transfer">{t("outbound_transfer")}</SelectItem>
-                        <SelectItem value="scrap">{t("outbound_scrap")}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      {t("order_type_description")}
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="destinationType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("destination_type")}</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t("select_destination_type")} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="customer">{t("destination_customer")}</SelectItem>
-                        <SelectItem value="retail">{t("destination_retail")}</SelectItem>
-                        <SelectItem value="wholesale">{t("destination_wholesale")}</SelectItem>
-                        <SelectItem value="transfer">{t("destination_transfer")}</SelectItem>
-                        <SelectItem value="supplier">{t("destination_supplier")}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      {t("destination_type_description")}
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="notes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("notes")}</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder={t("notes_placeholder")} 
-                        className="resize-none" 
-                        rows={4}
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      {t("notes_description")}
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <div className="flex justify-end space-x-4">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => navigate("/outbound-orders")}
-                >
-                  {t("cancel")}
-                </Button>
-                <Button 
-                  type="submit" 
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? t("creating") : t("create")}
-                </Button>
-              </div>
-            </form>
-          </Form>
+              <p className="text-sm text-muted-foreground">{t("notes_description")}</p>
+            </div>
+            
+            {/* 按钮 */}
+            <div className="flex justify-end space-x-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => navigate("/outbound-orders")}
+              >
+                {t("cancel")}
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? t("creating") : t("create")}
+              </Button>
+            </div>
+          </form>
         </CardContent>
       </Card>
     </div>
