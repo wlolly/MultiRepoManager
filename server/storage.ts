@@ -837,8 +837,24 @@ export class MemStorage implements IStorage {
     return updatedProduct;
   }
   
-  async getProducts(): Promise<Product[]> {
-    return Array.from(this.productsMap.values());
+  async getProducts(filter?: { warehouseId?: number, category?: string }): Promise<Product[]> {
+    let products = Array.from(this.productsMap.values());
+    
+    if (filter) {
+      if (filter.warehouseId !== undefined) {
+        products = products.filter(product => 
+          product.warehouseId === filter.warehouseId
+        );
+      }
+      
+      if (filter.category && filter.category !== "all") {
+        products = products.filter(product => 
+          product.category === filter.category
+        );
+      }
+    }
+    
+    return products;
   }
   
   // 仓库相关方法
@@ -1456,8 +1472,20 @@ export class DatabaseStorage implements IStorage {
     return await this.getProduct(id);
   }
 
-  async getProducts(): Promise<Product[]> {
-    return await db.select().from(products);
+  async getProducts(filter?: { warehouseId?: number, category?: string }): Promise<Product[]> {
+    let query = db.select().from(products);
+    
+    if (filter) {
+      if (filter.warehouseId !== undefined) {
+        query = query.where(eq(products.warehouseId, filter.warehouseId));
+      }
+      
+      if (filter.category && filter.category !== "all") {
+        query = query.where(eq(products.category, filter.category));
+      }
+    }
+    
+    return await query;
   }
 
   // 仓库相关方法
