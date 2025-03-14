@@ -129,10 +129,10 @@ function Sidebar() {
   };
 
   return (
-    <div className="h-full bg-gray-900 text-white w-64 overflow-y-auto">
+    <div className="h-full bg-gray-900 text-white w-full md:w-64 overflow-y-auto">
       <div className="p-4 flex items-center border-b border-gray-800">
         <i className="ri-archive-drawer-line text-2xl mr-2 text-blue-500"></i>
-        <h1 className="text-xl font-semibold">{t('app_name')}</h1>
+        <h1 className="text-xl font-semibold truncate">{t('app_name')}</h1>
       </div>
       
       <div className="p-4">
@@ -145,12 +145,13 @@ function Sidebar() {
         <div className="px-4 py-2 text-gray-400 text-sm font-medium">{t('navigation')}</div>
         {navItems.map((item) => (
           <Link key={item.href} to={item.href} className={cn(
-            "flex items-center py-2 px-4 transition",
+            "flex items-center py-2 px-4 transition whitespace-nowrap overflow-hidden",
             pathname === item.href
               ? "bg-gray-800 text-blue-500" 
               : "text-gray-300 hover:bg-gray-800 hover:text-white"
           )}>
-            <i className={`${item.icon} mr-3`}></i> {t(item.keyName)}
+            <i className={`${item.icon} mr-3 flex-shrink-0`}></i> 
+            <span className="truncate">{t(item.keyName)}</span>
           </Link>
         ))}
       </nav>
@@ -160,11 +161,11 @@ function Sidebar() {
         {activities && activities.length > 0 ? (
           activities.map((activity) => (
             <div key={activity.id} className="flex items-start mb-3">
-              <span className={`${getActivityColor(activity.type)} mt-1`}>
+              <span className={`${getActivityColor(activity.type)} mt-1 flex-shrink-0`}>
                 <i className={getActivityIcon(activity.type)}></i>
               </span>
-              <div className="ml-2">
-                <p className="text-gray-300">{activity.summary}</p>
+              <div className="ml-2 min-w-0">
+                <p className="text-gray-300 truncate">{activity.summary}</p>
                 <p className="text-gray-500 text-xs">{formatTimeAgo(activity.createdAt)}</p>
               </div>
             </div>
@@ -181,17 +182,38 @@ function Sidebar() {
 function AppLayout({ children }: { children: React.ReactNode }) {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const { t } = useTranslation();
+  
+  // 响应式布局处理
+  const [isSmallScreen, setIsSmallScreen] = useState(false);
+  
+  useEffect(() => {
+    // 检测当前屏幕尺寸
+    const checkScreenSize = () => {
+      setIsSmallScreen(window.innerWidth < 768);
+    };
+    
+    // 初始检测
+    checkScreenSize();
+    
+    // 监听窗口尺寸变化
+    window.addEventListener('resize', checkScreenSize);
+    
+    // 组件卸载时移除监听
+    return () => {
+      window.removeEventListener('resize', checkScreenSize);
+    };
+  }, []);
 
   return (
     <div className="flex h-screen overflow-hidden">
       {/* 桌面侧边栏 - 在md以上显示 */}
-      <div className="hidden md:block">
+      <div className={`hidden md:block ${isSmallScreen ? 'w-16' : 'w-64'} transition-all duration-300`}>
         <Sidebar />
       </div>
       
       {/* 移动侧边栏 - 点击菜单按钮时显示 */}
       <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
-        <SheetContent side="left" className="p-0 w-64">
+        <SheetContent side="left" className="p-0 w-full max-w-[280px]">
           <Sidebar />
         </SheetContent>
       </Sheet>
@@ -199,7 +221,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
       {/* 主内容区域 */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* 顶部导航栏 */}
-        <header className="bg-white border-b border-gray-200 h-16 flex items-center px-4 md:px-6">
+        <header className="bg-white border-b border-gray-200 h-16 flex items-center px-4 md:px-6 sticky top-0 z-10">
           <button 
             className="md:hidden mr-4 text-gray-500 hover:text-gray-700"
             onClick={() => setIsMobileSidebarOpen(true)}
