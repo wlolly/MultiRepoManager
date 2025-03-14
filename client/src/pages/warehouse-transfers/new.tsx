@@ -16,6 +16,7 @@ import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, Tabl
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Combobox } from "@/components/ui/combobox";
 import { ArrowLeftIcon, PlusIcon, MinusIcon, ArrowRightIcon, ScanLine, QrCode } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -546,7 +547,7 @@ export default function NewWarehouseTransfer() {
                         />
                       </div>
 
-                      {/* 商品 */}
+                      {/* 商品 - 可搜索下拉框 */}
                       <div className="col-span-3">
                         <FormField
                           control={form.control}
@@ -554,34 +555,27 @@ export default function NewWarehouseTransfer() {
                           render={({ field }) => (
                             <FormItem className="space-y-0">
                               <FormControl>
-                                <Select 
-                                  onValueChange={(value) => handleProductChange(value, index)} 
-                                  defaultValue={field.value}
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue placeholder={t("select_product")} />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {isLoadingProducts ? (
-                                      <SelectItem value="loading" disabled>
-                                        {t("loading")}
-                                      </SelectItem>
-                                    ) : products.length === 0 ? (
-                                      <SelectItem value="no-products" disabled>
-                                        {t("no_products")}
-                                      </SelectItem>
-                                    ) : (
-                                      products.map((product) => (
-                                        <SelectItem 
-                                          key={product.id} 
-                                          value={product.id.toString()}
-                                        >
-                                          {product.name} - {product.barcode}
-                                        </SelectItem>
-                                      ))
-                                    )}
-                                  </SelectContent>
-                                </Select>
+                                {isLoadingProducts ? (
+                                  <Button variant="outline" className="w-full" disabled>
+                                    {t("loading")}
+                                  </Button>
+                                ) : products.length === 0 ? (
+                                  <Button variant="outline" className="w-full" disabled>
+                                    {t("no_products")}
+                                  </Button>
+                                ) : (
+                                  <Combobox
+                                    options={products.map(product => ({
+                                      value: product.id.toString(),
+                                      label: `${product.name} - ${product.barcode}${product.uniqueCode ? ` (唯一码: ${product.uniqueCode})` : ''}`
+                                    }))}
+                                    value={field.value}
+                                    onValueChange={(value) => handleProductChange(value, index)}
+                                    placeholder={t("select_product")}
+                                    searchPlaceholder={t("search_product")}
+                                    emptyText={t("no_matching_products")}
+                                  />
+                                )}
                               </FormControl>
                               <FormMessage />
                             </FormItem>
