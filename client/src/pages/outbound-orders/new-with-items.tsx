@@ -216,10 +216,24 @@ export default function NewOutboundOrderWithItems() {
 
   // 添加商品项
   const handleAddItem = () => {
-    if (selectedProduct) {
+    try {
+      if (!selectedProduct) {
+        console.error("未选择产品");
+        toast({
+          title: t("error"),
+          description: t("no_product_selected"),
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // 处理计算逻辑，防止NaN
+      const singleWeightKg = typeof selectedProduct.singleWeightKg === 'number' ? selectedProduct.singleWeightKg : 0;
+      const singleVolumeM3 = typeof selectedProduct.singleVolumeM3 === 'number' ? selectedProduct.singleVolumeM3 : 0;
+      
       // 计算重量和体积
-      const weight = (selectedProduct.singleWeightKg).toString();
-      const volume = (selectedProduct.singleVolumeM3).toString();
+      const weight = singleWeightKg.toString();
+      const volume = singleVolumeM3.toString();
       
       append({
         id: uuidv4(),
@@ -235,25 +249,75 @@ export default function NewOutboundOrderWithItems() {
         remark: null,
       });
       
+      // 成功提示
+      toast({
+        title: t("success"),
+        description: t("product_added_successfully"),
+      });
+      
+      // 重置状态
       setSelectedProduct(null);
       setSearchTerm("");
       setProductDialogOpen(false);
+    } catch (error) {
+      console.error("添加商品项时发生错误:", error);
+      toast({
+        title: t("error"),
+        description: t("failed_to_add_product"),
+        variant: "destructive",
+      });
     }
   };
 
   // 编辑商品项
   const handleEditItem = () => {
-    if (selectedProduct && currentItemIndex !== null) {
+    try {
+      if (!selectedProduct) {
+        console.error("未选择产品");
+        toast({
+          title: t("error"),
+          description: t("no_product_selected"),
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (currentItemIndex === null || currentItemIndex < 0 || currentItemIndex >= fields.length) {
+        console.error("无效的项目索引", currentItemIndex);
+        toast({
+          title: t("error"),
+          description: t("invalid_item_index"),
+          variant: "destructive",
+        });
+        return;
+      }
+      
       const currentItem = fields[currentItemIndex];
-      const currentQuantity = form.getValues(`items.${currentItemIndex}.quantity`);
-      const currentPackageCount = form.getValues(`items.${currentItemIndex}.packageCount`);
-      const uniqueCode = form.getValues(`items.${currentItemIndex}.uniqueCode`);
-      const externalOrderNumber = form.getValues(`items.${currentItemIndex}.externalOrderNumber`);
-      const remark = form.getValues(`items.${currentItemIndex}.remark`);
+      if (!currentItem || !currentItem.id) {
+        console.error("无效的项目数据", currentItem);
+        toast({
+          title: t("error"),
+          description: t("invalid_item_data"),
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // 安全获取表单值，提供默认值防止undefined或null
+      const currentQuantity = form.getValues(`items.${currentItemIndex}.quantity`) || 1;
+      const currentPackageCount = form.getValues(`items.${currentItemIndex}.packageCount`) || 1;
+      const uniqueCode = form.getValues(`items.${currentItemIndex}.uniqueCode`) || null;
+      const externalOrderNumber = form.getValues(`items.${currentItemIndex}.externalOrderNumber`) || null;
+      const remark = form.getValues(`items.${currentItemIndex}.remark`) || null;
+      
+      // 处理计算逻辑，防止NaN
+      const singleWeightKg = typeof selectedProduct.singleWeightKg === 'number' ? selectedProduct.singleWeightKg : 0;
+      const singleVolumeM3 = typeof selectedProduct.singleVolumeM3 === 'number' ? selectedProduct.singleVolumeM3 : 0;
+      const quantity = typeof currentQuantity === 'number' ? currentQuantity : 1;
       
       // 计算重量和体积
-      const weight = (selectedProduct.singleWeightKg * currentQuantity).toString();
-      const volume = (selectedProduct.singleVolumeM3 * currentQuantity).toString();
+      const weight = (singleWeightKg * quantity).toString();
+      const volume = (singleVolumeM3 * quantity).toString();
       
       update(currentItemIndex, {
         id: currentItem.id,
@@ -269,10 +333,24 @@ export default function NewOutboundOrderWithItems() {
         remark,
       });
       
+      // 成功提示
+      toast({
+        title: t("success"),
+        description: t("product_updated_successfully"),
+      });
+      
+      // 重置状态
       setSelectedProduct(null);
       setSearchTerm("");
       setCurrentItemIndex(null);
       setProductDialogOpen(false);
+    } catch (error) {
+      console.error("编辑商品项时发生错误:", error);
+      toast({
+        title: t("error"),
+        description: t("failed_to_update_product"),
+        variant: "destructive",
+      });
     }
   };
 
@@ -412,7 +490,29 @@ export default function NewOutboundOrderWithItems() {
 
   // 处理扫码结果
   const handleBarcodeScanned = (code: string) => {
-    if (currentScanItemIndex !== null) {
+    try {
+      if (currentScanItemIndex === null || currentScanItemIndex < 0 || currentScanItemIndex >= fields.length) {
+        console.error("无效的扫码项目索引", currentScanItemIndex);
+        toast({
+          title: t("error"),
+          description: t("invalid_scan_item_index"),
+          variant: "destructive",
+        });
+        setIsScanningBarcode(false);
+        setCurrentScanItemIndex(null);
+        return;
+      }
+      
+      if (!code || typeof code !== 'string') {
+        console.error("无效的条码值", code);
+        toast({
+          title: t("error"),
+          description: t("invalid_barcode_value"),
+          variant: "destructive",
+        });
+        return;
+      }
+      
       // 将扫码结果填入对应的唯一码字段
       form.setValue(`items.${currentScanItemIndex}.uniqueCode`, code);
       
@@ -420,10 +520,22 @@ export default function NewOutboundOrderWithItems() {
       setIsScanningBarcode(false);
       setCurrentScanItemIndex(null);
       
+      // 成功提示
       toast({
         title: t("success"),
         description: t("unique_code_scanned_successfully"),
       });
+    } catch (error) {
+      console.error("处理扫码结果时发生错误:", error);
+      toast({
+        title: t("error"),
+        description: t("scan_processing_error"),
+        variant: "destructive",
+      });
+      
+      // 出错时也关闭扫码对话框
+      setIsScanningBarcode(false);
+      setCurrentScanItemIndex(null);
     }
   };
 
