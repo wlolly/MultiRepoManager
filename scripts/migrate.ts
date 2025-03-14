@@ -393,6 +393,55 @@ async function createAllTables(db: any) {
     `);
     console.log('ecommerce_products 表已创建');
     
+    // 创建仓库调拨单表
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS \`warehouse_transfers\` (
+        \`id\` INT AUTO_INCREMENT PRIMARY KEY,
+        \`reference_number\` VARCHAR(255) NOT NULL UNIQUE,
+        \`source_warehouse_id\` INT NOT NULL,
+        \`target_warehouse_id\` INT NOT NULL,
+        \`total_items\` INT NOT NULL,
+        \`total_packages\` INT NOT NULL,
+        \`total_weight\` DECIMAL(10, 3) NOT NULL,
+        \`total_volume\` DECIMAL(10, 6) NOT NULL,
+        \`status\` VARCHAR(50) NOT NULL DEFAULT 'pending',
+        \`created_by\` INT NOT NULL,
+        \`created_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        \`completed_at\` TIMESTAMP NULL,
+        \`outbound_order_id\` INT,
+        \`inbound_order_id\` INT,
+        \`notes\` TEXT,
+        \`document_file_path\` VARCHAR(255),
+        \`document_file_name\` VARCHAR(255),
+        \`document_file_type\` VARCHAR(50),
+        \`document_uploaded_at\` TIMESTAMP NULL,
+        FOREIGN KEY (\`source_warehouse_id\`) REFERENCES \`warehouses\`(\`id\`),
+        FOREIGN KEY (\`target_warehouse_id\`) REFERENCES \`warehouses\`(\`id\`),
+        FOREIGN KEY (\`created_by\`) REFERENCES \`users\`(\`id\`),
+        FOREIGN KEY (\`outbound_order_id\`) REFERENCES \`outbound_orders\`(\`id\`) ON DELETE SET NULL,
+        FOREIGN KEY (\`inbound_order_id\`) REFERENCES \`inbound_orders\`(\`id\`) ON DELETE SET NULL
+      )
+    `);
+    console.log('warehouse_transfers 表已创建');
+    
+    // 创建仓库调拨单明细表
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS \`warehouse_transfer_items\` (
+        \`id\` INT AUTO_INCREMENT PRIMARY KEY,
+        \`transfer_id\` INT NOT NULL,
+        \`product_id\` INT NOT NULL,
+        \`quantity\` INT NOT NULL,
+        \`package_count\` INT NOT NULL,
+        \`weight\` DECIMAL(10, 3) NOT NULL,
+        \`volume\` DECIMAL(10, 6) NOT NULL,
+        \`unique_code\` VARCHAR(255),
+        \`remark\` TEXT,
+        FOREIGN KEY (\`transfer_id\`) REFERENCES \`warehouse_transfers\`(\`id\`) ON DELETE CASCADE,
+        FOREIGN KEY (\`product_id\`) REFERENCES \`products\`(\`id\`)
+      )
+    `);
+    console.log('warehouse_transfer_items 表已创建');
+    
   } catch (error) {
     console.error('创建表失败:', error);
     throw error;
