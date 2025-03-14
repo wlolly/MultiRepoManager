@@ -523,6 +523,66 @@ export default function NewWarehouseTransfer() {
     }, 300);
   };
   
+  // 处理重量变更（添加防抖机制）
+  const handleWeightChange = (value: string, index: number) => {
+    console.log("重量变更:", value, index); // 添加日志调试
+    
+    // 确保数值有效
+    const numericValue = value.replace(/[^\d.]/g, '');
+    
+    // 设置经过验证的数值（不小于0）
+    const validValue = numericValue && parseFloat(numericValue) >= 0 ? numericValue : "0";
+    form.setValue(`items.${index}.weight`, validValue);
+    
+    // 手动更新重量字段但不直接影响其他字段
+    form.trigger(`items.${index}.weight`);
+    
+    // 清除之前的计时器（如果存在）
+    if (weightDebounceTimerRef.current !== null) {
+      window.clearTimeout(weightDebounceTimerRef.current);
+    }
+    
+    // 设置新的计时器，300ms后执行汇总计算
+    weightDebounceTimerRef.current = window.setTimeout(() => {
+      // 使用requestAnimationFrame确保在DOM更新后执行
+      requestAnimationFrame(() => {
+        calculateTotals();
+        console.log("重量汇总已重新计算", form.getValues());
+        weightDebounceTimerRef.current = null;
+      });
+    }, 300);
+  };
+  
+  // 处理体积变更（添加防抖机制）
+  const handleVolumeChange = (value: string, index: number) => {
+    console.log("体积变更:", value, index); // 添加日志调试
+    
+    // 确保数值有效
+    const numericValue = value.replace(/[^\d.]/g, '');
+    
+    // 设置经过验证的数值（不小于0）
+    const validValue = numericValue && parseFloat(numericValue) >= 0 ? numericValue : "0";
+    form.setValue(`items.${index}.volume`, validValue);
+    
+    // 手动更新体积字段但不直接影响其他字段
+    form.trigger(`items.${index}.volume`);
+    
+    // 清除之前的计时器（如果存在）
+    if (volumeDebounceTimerRef.current !== null) {
+      window.clearTimeout(volumeDebounceTimerRef.current);
+    }
+    
+    // 设置新的计时器，300ms后执行汇总计算
+    volumeDebounceTimerRef.current = window.setTimeout(() => {
+      // 使用requestAnimationFrame确保在DOM更新后执行
+      requestAnimationFrame(() => {
+        calculateTotals();
+        console.log("体积汇总已重新计算", form.getValues());
+        volumeDebounceTimerRef.current = null;
+      });
+    }, 300);
+  };
+  
   // 计算总数量、件数、重量和体积
   const calculateTotals = () => {
     const items = form.getValues("items");
