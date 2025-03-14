@@ -4,7 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { Layout } from "@/components/layout/layout";
 import { Agent } from './components/Agent';
-import { NotFound } from './components/NotFound';
+import NotFound from '@/pages/not-found';
 import Dashboard from "@/pages/dashboard";
 import MyRepositories from "@/pages/my-repositories";
 import TeamRepositories from "@/pages/team-repositories";
