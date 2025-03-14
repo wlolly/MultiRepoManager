@@ -125,9 +125,9 @@ export default function ProductsPage() {
     return matchesSearch && matchesCategory && matchesWarehouse;
   });
   
-  // 计算库存值
+  // 计算库存值(使用代理价)
   const calculateStockValue = (products: Product[]) => {
-    return products.reduce((acc, product) => acc + (product.price * product.stock), 0);
+    return products.reduce((acc, product) => acc + (product.cost * product.stock), 0);
   };
   
   // 获取当前用户ID（硬编码用于演示）
