@@ -181,7 +181,7 @@ export default function NewOutboundOrderWithItems() {
         description: t("outbound_order_created"),
       });
       queryClient.invalidateQueries({queryKey: ["/api/outbound-orders"]});
-      navigate("/outbound-orders");
+      setLocation("/outbound-orders");
     },
     onError: (error) => {
       toast({
@@ -518,7 +518,7 @@ export default function NewOutboundOrderWithItems() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate("/outbound-orders")}
+            onClick={() => setLocation("/outbound-orders")}
             className="mr-4"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -792,7 +792,7 @@ export default function NewOutboundOrderWithItems() {
                   type="button"
                   variant="outline"
                   className="w-full"
-                  onClick={() => navigate("/outbound-orders")}
+                  onClick={() => setLocation("/outbound-orders")}
                 >
                   <X className="h-4 w-4 mr-2" />
                   {t("cancel")}
