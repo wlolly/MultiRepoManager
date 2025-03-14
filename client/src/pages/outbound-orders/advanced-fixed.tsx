@@ -419,26 +419,15 @@ export default function AdvancedOutboundOrder() {
             toast.error(t("no_product_with_unique_code", { code: numericCode }));
           } else {
             // 不完整的唯一码
-            toast({
-              title: t("incomplete_unique_code"),
-              description: t("continue_scanning_or_select_product"),
-            });
+            toast.info(t("continue_scanning_or_select_product"));
           }
         }
       } else if (code && !/^\d+$/.test(code)) {
         // 扫描结果包含非数字字符
-        toast({
-          title: t("invalid_barcode"),
-          description: t("barcode_must_be_numeric"),
-          variant: "destructive",
-        });
+        toast.error(t("barcode_must_be_numeric"));
       } else if (!code) {
         // 扫描结果为空
-        toast({
-          title: t("scan_failed"),
-          description: t("please_try_again"),
-          variant: "destructive",
-        });
+        toast.error(t("please_try_again"));
       }
       
       // 关闭扫描对话框
@@ -460,11 +449,7 @@ export default function AdvancedOutboundOrder() {
         console.log("删除项目后汇总数据已更新");
       });
     } else {
-      toast({
-        title: t("validation_error"),
-        description: t("min_one_item_required"),
-        variant: "destructive",
-      });
+      toast.error(t("min_one_item_required"));
     }
   };
   
