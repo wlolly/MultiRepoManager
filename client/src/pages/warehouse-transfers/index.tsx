@@ -289,10 +289,20 @@ export default function WarehouseTransfers() {
           <h1 className="text-2xl font-bold">{t("warehouseTransfer.title")}</h1>
           <p className="text-muted-foreground">{t("warehouseTransfer.subtitle")}</p>
         </div>
-        <Button onClick={handleCreateTransfer}>
-          <Plus className="mr-2 h-4 w-4" />
-          {t("warehouseTransfer.new_warehouse_transfer")}
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleDownloadTemplate}>
+            <FileDown className="mr-2 h-4 w-4" />
+            {t("warehouseTransfer.download_template")}
+          </Button>
+          <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
+            <FileUp className="mr-2 h-4 w-4" />
+            {t("warehouseTransfer.import_from_excel")}
+          </Button>
+          <Button onClick={handleCreateTransfer}>
+            <Plus className="mr-2 h-4 w-4" />
+            {t("warehouseTransfer.new_warehouse_transfer")}
+          </Button>
+        </div>
       </div>
       
       {/* 统计卡片 */}
