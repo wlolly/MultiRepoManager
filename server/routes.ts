@@ -26,7 +26,8 @@ import fs from "fs";
 import { 
   createTransferImportTemplate, 
   parseTransferImportFile, 
-  exportTransferToExcel 
+  exportTransferToExcel,
+  exportMultipleTransfersToExcel
 } from "./utils/excel-handler";
 import {
   createProductImportTemplate,

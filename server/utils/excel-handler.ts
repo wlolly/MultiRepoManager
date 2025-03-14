@@ -207,6 +207,83 @@ export function parseTransferImportFile(filePath: string): {
 }
 
 /**
+ * 导出多个调拨单到Excel文件
+ * @param transfers 调拨单数据列表
+ * @returns 导出文件路径
+ */
+export function exportMultipleTransfersToExcel(transfers: Array<{
+  id: number;
+  referenceNumber: string;
+  sourceWarehouseId: number;
+  targetWarehouseId: number;
+  createdAt: string;
+  status: string;
+  totalItems: number;
+  totalWeight: number;
+  totalVolume: number;
+  totalPackages: number;
+  notes?: string;
+  sourceWarehouse: {
+    id: number;
+    name: string;
+    location: string;
+  };
+  targetWarehouse: {
+    id: number;
+    name: string;
+    location: string;
+  };
+  creator?: {
+    id: number;
+    username: string;
+    fullName?: string;
+  };
+}>): string {
+  // 创建工作簿
+  const wb = XLSX.utils.book_new();
+  
+  // 准备数据
+  const headers = [
+    '调拨单号', '源仓库', '目标仓库', '状态', '总数量', '总件数', '总重量(kg)', '总体积(m³)', '创建日期', '创建人', '备注'
+  ];
+  
+  const data = transfers.map(transfer => [
+    transfer.referenceNumber,
+    transfer.sourceWarehouse.name,
+    transfer.targetWarehouse.name,
+    transfer.status,
+    transfer.totalItems,
+    transfer.totalPackages,
+    transfer.totalWeight,
+    transfer.totalVolume,
+    new Date(transfer.createdAt).toLocaleString('zh-CN'),
+    transfer.creator?.fullName || transfer.creator?.username || '',
+    transfer.notes || ''
+  ]);
+  
+  // 创建工作表
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+  
+  // 设置列宽
+  ws['!cols'] = [
+    { width: 15 }, { width: 15 }, { width: 15 }, { width: 10 }, 
+    { width: 8 }, { width: 8 }, { width: 10 }, { width: 10 }, 
+    { width: 20 }, { width: 15 }, { width: 30 }
+  ];
+  
+  // 添加工作表到工作簿
+  XLSX.utils.book_append_sheet(wb, ws, '调拨单列表');
+  
+  // 保存工作簿到文件
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const filename = `transfers_export_${timestamp}.xlsx`;
+  const filePath = path.join(EXPORT_DIR, filename);
+  XLSX.writeFile(wb, filePath);
+  
+  return filePath;
+}
+
+/**
  * 创建仓库调拨单导出文件 (1C财务系统兼容格式)
  * @param transfer 调拨单数据
  * @param items 调拨单项目

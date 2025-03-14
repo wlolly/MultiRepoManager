@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import axios from "axios";
-import * as XLSX from "xlsx";
+
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -234,8 +234,8 @@ export default function WarehouseTransfers() {
     }
   };
   
-  // 导出所有筛选后的调拨单到Excel
-  const exportAllTransfersToExcel = () => {
+  // 导出所有筛选后的调拨单到Excel（通过后端API调用）
+  const exportAllTransfersToExcel = async () => {
     console.log("Exporting all transfers...", filteredTransfers.length);
     
     if (filteredTransfers.length === 0) {
@@ -245,44 +245,36 @@ export default function WarehouseTransfers() {
     
     try {
       console.log("Starting export process...");
+      toast.success(t("warehouseTransfer.preparing_export"));
       
-      // 准备要导出的数据
-      const exportData = filteredTransfers.map(transfer => ({
-        [t("warehouseTransfer.reference_number")]: transfer.referenceNumber,
-        [t("warehouseTransfer.source_warehouse")]: transfer.sourceWarehouse.name,
-        [t("warehouseTransfer.target_warehouse")]: transfer.targetWarehouse.name,
-        [t("warehouseTransfer.status")]: t(`warehouseTransfer.status.${transfer.status}`),
-        [t("warehouseTransfer.items")]: transfer.totalItems,
-        [t("warehouseTransfer.weight")]: transfer.totalWeight.toFixed(2) + " kg",
-        [t("warehouseTransfer.volume")]: transfer.totalVolume.toFixed(3) + " m³",
-        [t("warehouseTransfer.created_at")]: formatDate(transfer.createdAt),
-        [t("warehouseTransfer.creator")]: transfer.creator?.fullName || transfer.creator?.username,
-        [t("warehouseTransfer.notes")]: transfer.notes || '',
-      }));
+      // 构建过滤参数，与当前视图相同的过滤条件
+      const params = new URLSearchParams();
+      if (statusFilter) params.append('status', statusFilter);
+      if (warehouseFilter) params.append('warehouseId', warehouseFilter);
+      if (dateFilter) params.append('dateFilter', dateFilter);
+      if (searchQuery) params.append('query', searchQuery);
       
-      console.log("Export data prepared:", exportData.length);
+      // 调用后端API导出Excel
+      const response = await axios.get(`/api/warehouse-transfers/export-all?${params.toString()}`, {
+        responseType: 'blob'
+      });
       
-      // 创建工作簿和工作表
-      try {
-        const wb = XLSX.utils.book_new();
-        console.log("Workbook created");
-        const ws = XLSX.utils.json_to_sheet(exportData);
-        console.log("Worksheet created");
-        
-        // 添加工作表到工作簿
-        XLSX.utils.book_append_sheet(wb, ws, t("warehouseTransfer.transfers_list"));
-        console.log("Sheet appended to workbook");
-        
-        // 导出Excel文件
-        const dateStr = new Date().toISOString().split('T')[0];
-        XLSX.writeFile(wb, `${t("warehouseTransfer.transfers_export")}_${dateStr}.xlsx`);
-        console.log("Excel file written");
-        
-        toast.success(t("warehouseTransfer.export_all_success"));
-      } catch (xlsxError) {
-        console.error("XLSX Operation Error:", xlsxError);
-        toast.error("Excel操作失败，请确保已安装xlsx库: " + xlsxError.toString());
-      }
+      // 下载文件
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // 设置文件名称
+      const dateStr = new Date().toISOString().split('T')[0];
+      const filename = `${t("warehouseTransfer.transfers_export")}_${dateStr}.xlsx`;
+      
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      toast.success(t("warehouseTransfer.export_all_success"));
     } catch (error) {
       console.error('Bulk export error:', error);
       toast.error(t("warehouseTransfer.export_all_error"));
