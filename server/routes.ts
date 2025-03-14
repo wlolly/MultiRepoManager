@@ -1004,6 +1004,177 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // 高级出库单创建 - 支持文件上传和更多元数据
+  apiRouter.post("/outbound-orders/advanced", upload.single('document'), async (req, res) => {
+    try {
+      // 解析请求体（注意：由于使用multer，对于multipart/form-data请求，
+      // JSON数据需要作为字符串传入，因此需要解析items字段）
+      const { 
+        orderNumber, 
+        warehouseId, 
+        status, 
+        orderType = "sale", 
+        destinationType = "customer", 
+        notes 
+      } = req.body;
+      
+      let items = req.body.items;
+      
+      // 如果items是字符串，则解析为JSON对象
+      if (typeof items === 'string') {
+        try {
+          items = JSON.parse(items);
+        } catch (parseError) {
+          return res.status(400).json({ error: "无效的商品列表格式" });
+        }
+      }
+      
+      // 验证仓库ID
+      const parsedWarehouseId = parseInt(warehouseId);
+      
+      if (isNaN(parsedWarehouseId)) {
+        return res.status(400).json({ error: "无效的仓库ID" });
+      }
+      
+      // 验证商品列表
+      if (!items || !Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ error: "出库单必须包含至少一个商品" });
+      }
+      
+      // 验证orderType是否为有效的枚举值
+      const validOrderTypes = ["sale", "return", "transfer", "scrap"];
+      const validatedOrderType = validOrderTypes.includes(orderType) ? orderType : "sale";
+      
+      // 验证destinationType是否为有效的枚举值
+      const validDestinationTypes = ["customer", "retail", "wholesale", "transfer", "supplier", "other"];
+      const validatedDestinationType = validDestinationTypes.includes(destinationType) ? destinationType : "customer";
+      
+      // 验证并处理商品列表
+      const processedItems = items.map(item => {
+        // 安全地转换数字字段
+        const weight = (typeof item.weight === 'number') ? item.weight.toString() : (item.weight || "0");
+        const volume = (typeof item.volume === 'number') ? item.volume.toString() : (item.volume || "0");
+        const quantity = item.quantity ? parseInt(item.quantity) : 0;
+        const packageCount = item.packageCount ? parseInt(item.packageCount) : quantity;
+        
+        return {
+          ...item,
+          weight,
+          volume,
+          quantity,
+          packageCount
+        };
+      });
+      
+      // 计算总重量和体积
+      const totalWeight = processedItems
+        .reduce((sum, item) => sum + parseFloat(item.weight), 0)
+        .toString();
+        
+      const totalVolume = processedItems
+        .reduce((sum, item) => sum + parseFloat(item.volume), 0)
+        .toString();
+      
+      // 获取底单文件信息（如果有上传）
+      let documentFilePath = null;
+      let documentFileName = null;
+      let documentFileType = null;
+      let documentUploadedAt = null;
+      
+      if (req.file) {
+        documentFilePath = req.file.path;
+        documentFileName = req.file.originalname;
+        documentFileType = req.file.mimetype;
+        documentUploadedAt = new Date();
+        
+        console.log("文件上传成功:", {
+          path: documentFilePath,
+          name: documentFileName,
+          type: documentFileType
+        });
+      }
+      
+      // 创建出库单基本数据
+      const outboundOrderData = {
+        orderNumber,
+        warehouseId: parsedWarehouseId,
+        totalWeight,
+        totalVolume,
+        createdBy: 1, // 假设用户ID为1，实际应从会话或请求中获取
+        status: status || "pending",
+        notes: notes || "",
+        orderType: validatedOrderType,
+        destinationType: validatedDestinationType,
+        documentFilePath,
+        documentFileName,
+        documentFileType,
+        documentUploadedAt
+      };
+      
+      try {
+        // 创建出库单
+        const outboundOrder = await storage.createOutboundOrder(outboundOrderData);
+        
+        // 添加明细项
+        const createdItems = [];
+        const errorMessages = [];
+        
+        for (const item of processedItems) {
+          try {
+            // 解析产品ID
+            const productId = parseInt(item.productId);
+            if (isNaN(productId)) {
+              errorMessages.push(`产品ID "${item.productId}" 无效，已跳过`);
+              continue;
+            }
+            
+            // 获取产品信息以填充必要字段
+            const product = await storage.getProduct(productId);
+            if (!product) {
+              errorMessages.push(`未找到ID为 ${productId} 的产品，已跳过`);
+              continue;
+            }
+            
+            // 添加出库单明细
+            const outboundItem = await storage.createOutboundOrderItem({
+              outboundOrderId: outboundOrder.id,
+              productId,
+              productName: product.name,
+              barcode: product.barcode,
+              quantity: item.quantity,
+              packageCount: item.packageCount,
+              externalOrderNumber: item.externalOrderNumber || null,
+              weight: item.weight,
+              volume: item.volume,
+              remark: item.remark || null
+            });
+            
+            createdItems.push(outboundItem);
+          } catch (itemError) {
+            console.error("处理出库单商品失败:", itemError);
+            errorMessages.push(`处理商品失败: ${(itemError as Error).message}`);
+          }
+        }
+        
+        // 返回创建的数据
+        res.status(201).json({
+          message: "出库单创建成功" + (errorMessages.length > 0 ? "，但有部分商品处理失败" : ""),
+          orderNumber,
+          documentUploaded: !!req.file,
+          errors: errorMessages.length > 0 ? errorMessages : undefined,
+          outboundOrder,
+          items: createdItems
+        });
+      } catch (error) {
+        console.error("创建出库单记录失败:", error);
+        throw error;
+      }
+    } catch (err) {
+      console.error("处理高级出库单请求错误:", err);
+      handleZodError(err, res);
+    }
+  });
+
   // Outbound order items routes
   apiRouter.get("/outbound-orders/:orderId/items", async (req, res) => {
     try {
