@@ -60,6 +60,7 @@ export function CreateProductDialog({ open, onOpenChange, currentUserId }: Creat
       name: "",
       description: "",
       barcode: "",
+      uniqueCode: "", // 添加商品唯一码默认值
       category: "",
       stock: 0,
       price: 0,
@@ -146,6 +147,20 @@ export function CreateProductDialog({ open, onOpenChange, currentUserId }: Creat
                 <p className="text-sm text-red-500">{form.formState.errors.barcode.message}</p>
               )}
             </div>
+          </div>
+          
+          {/* 唯一码扫描组件 */}
+          <div className="space-y-2">
+            <BarcodeScanner
+              label={t('unique_code') || "商品唯一码"}
+              placeholder={t('unique_code_placeholder') || "请扫描或输入唯一码"}
+              initialValue={form.watch("uniqueCode")}
+              onCodeDetected={(code) => form.setValue("uniqueCode", code)}
+              uniqueCodeMode={true}
+            />
+            {form.formState.errors.uniqueCode && (
+              <p className="text-sm text-red-500">{form.formState.errors.uniqueCode.message}</p>
+            )}
           </div>
           
           <div className="space-y-2">
