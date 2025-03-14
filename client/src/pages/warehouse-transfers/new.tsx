@@ -839,8 +839,8 @@ export default function NewWarehouseTransfer() {
                             <FormItem className="space-y-0">
                               <FormControl>
                                 <Input 
-                                  type="number" 
-                                  min="1" 
+                                  type="text" 
+                                  inputMode="numeric" 
                                   placeholder="1" 
                                   {...field} 
                                   onChange={(e) => handleQuantityChange(e.target.value, index)}
@@ -862,8 +862,8 @@ export default function NewWarehouseTransfer() {
                             <FormItem className="space-y-0">
                               <FormControl>
                                 <Input 
-                                  type="number" 
-                                  min="1" 
+                                  type="text" 
+                                  inputMode="numeric" 
                                   placeholder="1" 
                                   {...field} 
                                   className="w-full"
@@ -888,9 +888,8 @@ export default function NewWarehouseTransfer() {
                             <FormItem className="space-y-0">
                               <FormControl>
                                 <Input 
-                                  type="number" 
-                                  step="0.001" 
-                                  min="0" 
+                                  type="text" 
+                                  inputMode="decimal" 
                                   placeholder="0" 
                                   {...field} 
                                   className="w-full"
@@ -916,9 +915,8 @@ export default function NewWarehouseTransfer() {
                             <FormItem className="space-y-0">
                               <FormControl>
                                 <Input 
-                                  type="number" 
-                                  step="0.001" 
-                                  min="0" 
+                                  type="text" 
+                                  inputMode="decimal" 
                                   placeholder="0" 
                                   {...field} 
                                   className="w-full"
