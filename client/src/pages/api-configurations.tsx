@@ -402,7 +402,6 @@ async function syncProducts(config: ApiConfiguration): Promise<{
 // Main API Configurations component
 export default function ApiConfigurations() {
   const { t } = useTranslation();
-  const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isTestingApi, setIsTestingApi] = useState<Record<number, boolean>>({});
   const [isSyncingProducts, setIsSyncingProducts] = useState<Record<number, boolean>>({});
@@ -425,24 +424,13 @@ export default function ApiConfigurations() {
       
       // Show toast with result
       if (isSuccessful) {
-        toast({
-          title: t("api_test_successful"),
-          description: t("api_test_successful_description"),
-        });
+        toast.success(t("api_test_successful_description"));
       } else {
-        toast({
-          title: t("api_test_failed"),
-          description: t("api_test_failed_description"),
-          variant: "destructive",
-        });
+        toast.error(t("api_test_failed_description"));
       }
     } catch (error: any) {
       console.error("Error testing API connection:", error);
-      toast({
-        title: t("api_test_error"),
-        description: error.message || t("unknown_error"),
-        variant: "destructive",
-      });
+      toast.error(error.message || t("api_test_error"));
     } finally {
       // Reset loading state
       setIsTestingApi(prev => ({ ...prev, [config.id]: false }));
@@ -459,30 +447,20 @@ export default function ApiConfigurations() {
       
       // Show toast with result
       if (result.success) {
-        toast({
-          title: t("product_sync_successful"),
-          description: result.stats 
-            ? t("product_sync_stats", { 
-                total: result.stats.total,
-                matched: result.stats.matched,
-                unmatched: result.stats.unmatched 
-              })
-            : t("product_sync_successful_description"),
-        });
+        const message = result.stats 
+          ? t("product_sync_stats", { 
+              total: result.stats.total,
+              matched: result.stats.matched,
+              unmatched: result.stats.unmatched 
+            })
+          : t("product_sync_successful_description");
+        toast.success(message);
       } else {
-        toast({
-          title: t("product_sync_failed"),
-          description: result.message || t("product_sync_failed_description"),
-          variant: "destructive",
-        });
+        toast.error(result.message || t("product_sync_failed_description"));
       }
     } catch (error: any) {
       console.error("Error syncing products:", error);
-      toast({
-        title: t("product_sync_error"),
-        description: error.message || t("unknown_error"),
-        variant: "destructive",
-      });
+      toast.error(error.message || t("product_sync_error"));
     } finally {
       // Reset loading state
       setIsSyncingProducts(prev => ({ ...prev, [config.id]: false }));
@@ -498,21 +476,14 @@ export default function ApiConfigurations() {
     },
     onSuccess: () => {
       // Show success toast
-      toast({
-        title: t("api_config_deleted"),
-        description: t("api_config_deleted_description"),
-      });
+      toast.success(t("api_config_deleted_description"));
       
       // Refresh API configurations list
       queryClient.invalidateQueries({ queryKey: ["/api/api-configurations"] });
     },
     onError: (error: any) => {
       console.error("Error deleting API configuration:", error);
-      toast({
-        title: t("api_config_deletion_failed"),
-        description: error.message || t("unknown_error"),
-        variant: "destructive",
-      });
+      toast.error(error.message || t("api_config_deletion_failed"));
     },
   });
   
