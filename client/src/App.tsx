@@ -26,6 +26,7 @@ import ApiConfigurations from "./pages/api-configurations";
 
 // 仓库系统页面
 import WarehouseProducts from "./pages/warehouse-products";
+import NewWarehouseProduct from "./pages/warehouse-products/new";
 import Warehouses from "./pages/warehouses";
 import InboundOrders from "./pages/inbound-orders";
 import OutboundOrders from "./pages/outbound-orders";
@@ -318,6 +319,7 @@ export default function App() {
             {/* 仓库管理系统页面 */}
             <Route path="/warehouses" component={Warehouses} />
             <Route path="/warehouse-products" component={WarehouseProducts} />
+            <Route path="/warehouse-products/new" component={NewWarehouseProduct} />
             <Route path="/products" component={ProductsPage} />
             <Route path="/products/product-detail/:id" component={ProductDetail} />
             <Route path="/product-search" component={ProductSearch} />
