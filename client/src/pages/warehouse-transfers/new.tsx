@@ -363,7 +363,7 @@ export default function NewWarehouseTransfer() {
                     size="sm" 
                     onClick={handleAddItem}
                   >
-                    <PlusCircleIcon className="mr-2 h-4 w-4" />
+                    <PlusIcon className="mr-2 h-4 w-4" />
                     {t("add_item")}
                   </Button>
                 </div>
