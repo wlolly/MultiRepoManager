@@ -300,7 +300,7 @@ async function main() {
       },
       {
         transferId: transfer2.id,
-        productId: 4,
+        productId: 2, // 使用ID为2的产品，而不是4
         quantity: 5,
         packageCount: 5,
         weight: '39.9',
@@ -338,7 +338,7 @@ async function main() {
     await db.insert(warehouseTransferItems).values([
       {
         transferId: transfer3.id,
-        productId: 5,
+        productId: 3, // 使用ID为3的产品，而不是5
         quantity: 3,
         packageCount: 3,
         weight: '15.0',
