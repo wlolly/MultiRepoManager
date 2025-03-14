@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { Layout } from "@/components/layout/layout";
 import { 
   Table, 
   TableBody, 
@@ -162,7 +161,7 @@ export default function WarehouseTransfers() {
   };
 
   return (
-    <Layout>
+    <div className="container mx-auto py-6">
       <div className="pb-5 border-b border-gray-200 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{t('warehouse_transfers')}</h1>
@@ -276,6 +275,6 @@ export default function WarehouseTransfers() {
           </TableBody>
         </Table>
       </div>
-    </Layout>
+    </div>
   );
 }
