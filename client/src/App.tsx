@@ -55,6 +55,7 @@ function Router() {
       <Route path="/outbound-order/:id" component={OutboundOrderDetail} />
       <Route component={NotFound} />
     </Switch>
+    <Agent />
   );
 }
 

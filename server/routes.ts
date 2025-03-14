@@ -436,13 +436,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Agent handling route
   apiRouter.post("/agent/query", async (req, res) => {
     try {
-      const { query } = req.body;
+      const { query, history } = req.body;
       console.log("[Agent] Received query:", query);
+      console.log("[Agent] Chat history:", history);
       
-      // Add your agent processing logic here
+      // TODO: 将聊天记录和查询发送给实际的 Agent 处理
       const response = {
         success: true,
-        reply: `Agent processed: ${query}`,
+        reply: `我已收到您的消息: ${query}`,
         timestamp: new Date().toISOString()
       };
       
