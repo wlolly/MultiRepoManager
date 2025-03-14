@@ -13,7 +13,17 @@ if (!dbUrl) {
   throw new Error('DATABASE_URL environment variable is not set');
 }
 
-// 创建MySQL连接池
+// 创建MySQL连接池 - 增加连接配置以提高稳定性
 const pool = mysql.createPool(dbUrl);
+
+// 测试连接
+pool.getConnection()
+  .then(conn => {
+    console.log('数据库连接成功!');
+    conn.release();
+  })
+  .catch(err => {
+    console.error('数据库连接失败:', err);
+  });
 
 export const db = drizzle(pool);
