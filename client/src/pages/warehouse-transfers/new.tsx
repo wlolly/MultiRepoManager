@@ -817,13 +817,13 @@ export default function NewWarehouseTransfer() {
                     <FormLabel>{t("notes")}</FormLabel>
                     <FormControl>
                       <Textarea 
-                        placeholder={t("transfer_notes_placeholder")} 
+                        placeholder={t("warehouseTransfer.transfer_notes_placeholder")} 
                         className="resize-none" 
                         rows={3}
                         {...field} 
                       />
                     </FormControl>
-                    <FormDescription>{t("transfer_notes_description")}</FormDescription>
+                    <FormDescription>{t("warehouseTransfer.transfer_notes_description")}</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -922,7 +922,7 @@ export default function NewWarehouseTransfer() {
               
               <div>
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-medium">{t("transfer_items")}</h3>
+                  <h3 className="text-lg font-medium">{t("warehouseTransfer.transfer_items")}</h3>
                   <Button 
                     type="button" 
                     variant="outline" 
@@ -1141,7 +1141,7 @@ export default function NewWarehouseTransfer() {
               </div>
               
               <div className="bg-muted p-4 rounded-md">
-                <h3 className="text-lg font-medium mb-2">{t("transfer_summary")}</h3>
+                <h3 className="text-lg font-medium mb-2">{t("warehouseTransfer.transfer_summary")}</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
                     <p className="text-sm text-muted-foreground">{t("total_quantity")}</p>
@@ -1178,15 +1178,15 @@ export default function NewWarehouseTransfer() {
       
       <Card>
         <CardHeader>
-          <CardTitle>{t("transfer_process")}</CardTitle>
+          <CardTitle>{t("warehouseTransfer.transfer_process")}</CardTitle>
           <CardDescription>
-            {t("transfer_process_description")}
+            {t("warehouseTransfer.transfer_process_description")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8 py-4">
             <div className="text-center">
-              <div className="mb-2 text-lg font-medium">{t("source_warehouse")}</div>
+              <div className="mb-2 text-lg font-medium">{t("warehouseTransfer.source_warehouse")}</div>
               <div className="bg-primary/10 p-6 rounded-lg">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-12 w-12 mx-auto text-primary">
                   <path d="M3 9h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z" />
@@ -1205,13 +1205,13 @@ export default function NewWarehouseTransfer() {
               </div>
               <div className="text-center my-2">
                 <Badge variant="outline" className="font-semibold">
-                  {t("transfer_order")}
+                  {t("warehouseTransfer.transfer_order")}
                 </Badge>
               </div>
             </div>
             
             <div className="text-center">
-              <div className="mb-2 text-lg font-medium">{t("target_warehouse")}</div>
+              <div className="mb-2 text-lg font-medium">{t("warehouseTransfer.target_warehouse")}</div>
               <div className="bg-primary/10 p-6 rounded-lg">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-12 w-12 mx-auto text-primary">
                   <path d="M3 9h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z" />
@@ -1223,14 +1223,14 @@ export default function NewWarehouseTransfer() {
           
           <div className="mt-6 border-t pt-4">
             <p className="text-muted-foreground">
-              {t("transfer_explanation")}
+              {t("warehouseTransfer.transfer_explanation")}
             </p>
             
             <ul className="mt-4 space-y-2 list-disc pl-5">
-              <li>{t("transfer_step_1")}</li>
-              <li>{t("transfer_step_2")}</li>
-              <li>{t("transfer_step_3")}</li>
-              <li>{t("transfer_step_4")}</li>
+              <li>{t("warehouseTransfer.transfer_step_1")}</li>
+              <li>{t("warehouseTransfer.transfer_step_2")}</li>
+              <li>{t("warehouseTransfer.transfer_step_3")}</li>
+              <li>{t("warehouseTransfer.transfer_step_4")}</li>
             </ul>
           </div>
         </CardContent>
@@ -1240,13 +1240,13 @@ export default function NewWarehouseTransfer() {
       <Dialog open={isBarcodeScannerOpen} onOpenChange={setIsBarcodeScannerOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{t("scan_unique_code")}</DialogTitle>
+            <DialogTitle>{t("warehouseTransfer.scan_unique_code")}</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col items-center py-4">
             <BarcodeScanner 
               onCodeDetected={handleUniqueCodeScanned}
-              label={t("scan_or_enter_code")}
-              placeholder={t("unique_code_placeholder")}
+              label={t("warehouseTransfer.scan_or_enter_code")}
+              placeholder={t("warehouseTransfer.unique_code_placeholder")}
               uniqueCodeMode={true}
             />
           </div>
