@@ -90,6 +90,7 @@ const itemSchema = z.object({
   }),
   productName: z.string().min(1, "商品名称不能为空"),
   barcode: z.string().min(1, "条形码不能为空"),
+  uniqueCode: z.string().nullable().optional(),
   externalOrderNumber: z.string().nullable().optional(),
   quantity: z.number({
     required_error: "数量不能为空",
@@ -133,6 +134,8 @@ export default function NewOutboundOrderWithItems() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [currentItemIndex, setCurrentItemIndex] = useState<number | null>(null);
   const [productDialogOpen, setProductDialogOpen] = useState(false);
+  const [isScanningBarcode, setIsScanningBarcode] = useState(false);
+  const [currentScanItemIndex, setCurrentScanItemIndex] = useState<number | null>(null);
   
   // 获取仓库列表
   const { data: warehouses = [] } = useQuery<Warehouse[]>({
@@ -223,6 +226,7 @@ export default function NewOutboundOrderWithItems() {
         productId: selectedProduct.id,
         productName: selectedProduct.name,
         barcode: selectedProduct.barcode,
+        uniqueCode: null,
         externalOrderNumber: null,
         quantity: 1,
         packageCount: 1,
@@ -243,6 +247,7 @@ export default function NewOutboundOrderWithItems() {
       const currentItem = fields[currentItemIndex];
       const currentQuantity = form.getValues(`items.${currentItemIndex}.quantity`);
       const currentPackageCount = form.getValues(`items.${currentItemIndex}.packageCount`);
+      const uniqueCode = form.getValues(`items.${currentItemIndex}.uniqueCode`);
       const externalOrderNumber = form.getValues(`items.${currentItemIndex}.externalOrderNumber`);
       const remark = form.getValues(`items.${currentItemIndex}.remark`);
       
@@ -255,6 +260,7 @@ export default function NewOutboundOrderWithItems() {
         productId: selectedProduct.id,
         productName: selectedProduct.name,
         barcode: selectedProduct.barcode,
+        uniqueCode,
         externalOrderNumber,
         quantity: currentQuantity,
         packageCount: currentPackageCount,
@@ -790,6 +796,7 @@ export default function NewOutboundOrderWithItems() {
                         <TableHead className="w-[80px]">{t("no")}</TableHead>
                         <TableHead>{t("product_name")}</TableHead>
                         <TableHead>{t("barcode")}</TableHead>
+                        <TableHead>{t("unique_code")}</TableHead>
                         <TableHead>{t("external_order_number")}</TableHead>
                         <TableHead className="text-right">{t("quantity")}</TableHead>
                         <TableHead className="text-right">{t("package_count")}</TableHead>
@@ -806,6 +813,40 @@ export default function NewOutboundOrderWithItems() {
                             {item.productName}
                           </TableCell>
                           <TableCell>{item.barcode}</TableCell>
+                          <TableCell>
+                            <FormField
+                              control={form.control}
+                              name={`items.${index}.uniqueCode`}
+                              render={({ field }) => (
+                                <FormItem className="m-0">
+                                  <FormControl>
+                                    <div className="relative">
+                                      <Input
+                                        {...field}
+                                        value={field.value || ""}
+                                        placeholder={t("unique_code")}
+                                        className="h-8 pr-8"
+                                      />
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="absolute right-0 top-0 h-8 w-8"
+                                        onClick={() => {
+                                          // 打开扫码对话框
+                                          setCurrentScanItemIndex(index);
+                                          setIsScanningBarcode(true);
+                                        }}
+                                      >
+                                        <ScanLine className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  </FormControl>
+                                  <FormMessage className="text-xs" />
+                                </FormItem>
+                              )}
+                            />
+                          </TableCell>
                           <TableCell>
                             <FormField
                               control={form.control}
