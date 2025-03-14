@@ -24,6 +24,8 @@ import NewInboundOrder from "@/pages/inbound-orders/new";
 import NewOutboundOrder from "@/pages/outbound-orders/new";
 import NewInboundOrderWithItems from "@/pages/inbound-orders/new-with-items";
 import NewOutboundOrderWithItems from "@/pages/outbound-orders/new-with-items";
+import WarehouseProducts from '@/pages/warehouse-products';
+import WarehouseTransfers from '@/pages/warehouse-transfers';
 import { useEffect } from "react";
 import "./i18n";
 
@@ -70,6 +72,8 @@ export default function App() {
             <Route path="/outbound-orders/new" element={<NewOutboundOrder />} />
             <Route path="/outbound-orders/new-with-items" element={<NewOutboundOrderWithItems />} />
             <Route path="/outbound-order/:id" element={<OutboundOrderDetail />} />
+            <Route path="/warehouse-products" element={<WarehouseProducts />} />
+            <Route path="/warehouse-transfers" element={<WarehouseTransfers />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Layout>
