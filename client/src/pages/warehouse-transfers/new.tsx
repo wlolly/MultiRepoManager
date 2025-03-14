@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useLocation } from "wouter";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,7 +15,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeftIcon, PlusCircledIcon, MinusCircledIcon, ArrowRightIcon } from "@radix-ui/react-icons";
+import { ArrowLeftIcon, PlusIcon, MinusIcon, ArrowRightIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -59,7 +59,7 @@ type TransferFormValues = z.infer<typeof transferSchema>;
 export default function NewWarehouseTransfer() {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const [location, navigate] = useLocation();
+  const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // 获取仓库列表
