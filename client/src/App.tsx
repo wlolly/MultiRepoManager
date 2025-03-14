@@ -6,6 +6,7 @@ import "./i18n";
 import { ToastProvider } from "./components/ui/toast-provider";
 import { Toaster } from "./components/ui/toaster";
 import { ToastExample } from "./components/ToastFix";
+import ToastUsageExample from "./components/ToastUsageExample";
 import toast from "./lib/toast";
 
 // 创建一个简单的应用组件来测试基本渲染
@@ -55,10 +56,15 @@ function SimpleApp() {
           </button>
         </div>
         
-        {/* 测试Toast组件 */}
-        <div className="p-6 bg-white rounded-lg shadow-sm">
-          <h2 className="text-lg font-semibold mb-2">使用Toast组件测试</h2>
+        {/* 测试Toast组件调用方式 */}
+        <div className="p-6 bg-white rounded-lg shadow-sm mb-4">
+          <h2 className="text-lg font-semibold mb-2">使用Hook方式的Toast组件</h2>
           <ToastExample />
+        </div>
+        
+        {/* 展示推荐的全局Toast使用方式 */}
+        <div className="p-6 bg-white rounded-lg shadow-sm">
+          <ToastUsageExample />
         </div>
       </main>
     </div>
