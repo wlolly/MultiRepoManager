@@ -484,8 +484,14 @@ export default function NewWarehouseTransfer() {
     }, 200);
   };
   
-  // 防抖计时器引用
-  const debounceTimerRef = useRef<number | null>(null);
+  // 件数防抖计时器引用
+  const packageDebounceTimerRef = useRef<number | null>(null);
+  
+  // 重量防抖计时器引用
+  const weightDebounceTimerRef = useRef<number | null>(null);
+  
+  // 体积防抖计时器引用
+  const volumeDebounceTimerRef = useRef<number | null>(null);
   
   // 件数变更时更新汇总数据（添加防抖机制）
   const handlePackageCountChange = (value: string, index: number) => {
@@ -502,17 +508,17 @@ export default function NewWarehouseTransfer() {
     form.trigger(`items.${index}.packageCount`);
     
     // 清除之前的计时器（如果存在）
-    if (debounceTimerRef.current !== null) {
-      window.clearTimeout(debounceTimerRef.current);
+    if (packageDebounceTimerRef.current !== null) {
+      window.clearTimeout(packageDebounceTimerRef.current);
     }
     
     // 设置新的计时器，300ms后执行汇总计算
-    debounceTimerRef.current = window.setTimeout(() => {
+    packageDebounceTimerRef.current = window.setTimeout(() => {
       // 使用requestAnimationFrame确保在DOM更新后执行
       requestAnimationFrame(() => {
         calculateTotals();
         console.log("件数汇总已重新计算", form.getValues());
-        debounceTimerRef.current = null;
+        packageDebounceTimerRef.current = null;
       });
     }, 300);
   };
@@ -830,8 +836,8 @@ export default function NewWarehouseTransfer() {
                                   className="w-full"
                                   onChange={(e) => {
                                     field.onChange(e);
-                                    // 手动更新重量时更新汇总信息
-                                    calculateTotals();
+                                    // 调用重量变更处理函数
+                                    handleWeightChange(e.target.value, index);
                                   }}
                                 />
                               </FormControl>
@@ -858,8 +864,8 @@ export default function NewWarehouseTransfer() {
                                   className="w-full"
                                   onChange={(e) => {
                                     field.onChange(e);
-                                    // 手动更新体积时更新汇总信息
-                                    calculateTotals();
+                                    // 调用体积变更处理函数
+                                    handleVolumeChange(e.target.value, index);
                                   }}
                                 />
                               </FormControl>
