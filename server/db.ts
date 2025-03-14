@@ -14,7 +14,19 @@ if (!dbUrl) {
 }
 
 // 创建MySQL连接池 - 增加连接配置以提高稳定性
-const pool = mysql.createPool(dbUrl);
+const pool = mysql.createPool({
+  host: '77.243.80.129',
+  port: 3307,
+  user: 'root',
+  password: '@Hzca1575@',
+  database: 'wlolly',
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+  connectTimeout: 60000, // 60s connection timeout
+  keepAliveInitialDelay: 10000,
+  enableKeepAlive: true
+});
 
 // 测试连接
 pool.getConnection()
