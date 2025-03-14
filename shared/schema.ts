@@ -176,7 +176,8 @@ export const products = mysqlTable("products", {
   id: int("id").primaryKey().autoincrement(), // 商品ID
   name: varchar("name", { length: 255 }).notNull(), // 商品名称
   barcode: varchar("barcode", { length: 255 }).notNull().unique(), // 条码
-  uniqueCode: varchar("unique_code", { length: 255 }), // 唯一码，用于与电商平台匹配
+  // 暂时注释掉唯一码字段，直到数据库结构更新
+  // uniqueCode: varchar("unique_code", { length: 255 }), // 唯一码，用于与电商平台匹配
   singleLengthCm: decimal("single_length_cm", { precision: 10, scale: 2 }).notNull(), // 单件尺寸（长CM）
   singleWidthCm: decimal("single_width_cm", { precision: 10, scale: 2 }).notNull(), // 单件尺寸（宽CM）
   singleHeightCm: decimal("single_height_cm", { precision: 10, scale: 2 }).notNull(), // 单件尺寸（高CM）
@@ -194,7 +195,8 @@ export const products = mysqlTable("products", {
 export const insertProductSchema = createInsertSchema(products).pick({
   name: true,
   barcode: true,
-  uniqueCode: true,
+  // 暂时注释掉唯一码字段，直到数据库结构更新
+  // uniqueCode: true,
   singleLengthCm: true,
   singleWidthCm: true,
   singleHeightCm: true,
