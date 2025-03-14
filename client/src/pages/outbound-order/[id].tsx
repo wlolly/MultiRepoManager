@@ -87,6 +87,7 @@ interface Warehouse {
 // 添加商品表单Schema
 const itemSchema = z.object({
   productId: z.string().min(1, { message: "商品是必填项" }),
+  externalOrderNumber: z.string().optional(), // 外部订单号（可选）
   quantity: z.string().min(1, { message: "数量是必填项" }).transform(val => parseInt(val)),
   packageCount: z.string().min(1, { message: "件数是必填项" }).transform(val => parseInt(val)),
   weight: z.string().min(1, { message: "重量是必填项" }).transform(val => parseFloat(val)),
@@ -148,6 +149,7 @@ export default function OutboundOrderDetail() {
     resolver: zodResolver(itemSchema),
     defaultValues: {
       productId: "",
+      externalOrderNumber: "",
       quantity: "1",
       packageCount: "1",
       weight: "0",
@@ -201,6 +203,7 @@ export default function OutboundOrderDetail() {
       });
       itemForm.reset({
         productId: "",
+        externalOrderNumber: "",
         quantity: "1",
         packageCount: "1",
         weight: "0",
