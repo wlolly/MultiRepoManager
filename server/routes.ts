@@ -1886,46 +1886,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 为每个入库单添加明细
       const inboundItemPromises = [];
       for (const order of inboundOrders) {
-        // 每个入库单添加1-3个产品
-        const itemCount = Math.floor(Math.random() * 3) + 1;
-        
-        for (let i = 0; i < itemCount; i++) {
-          const product = products[Math.floor(Math.random() * products.length)];
-          const quantity = Math.floor(Math.random() * 100) + 1;
-          const packageCount = Math.ceil(quantity / 10);
+        try {
+          // 每个入库单添加1-3个产品
+          const itemCount = Math.floor(Math.random() * 3) + 1;
           
-          // 计算重量和体积
-          const weight = (parseFloat(product.singleWeightKg) * quantity).toFixed(2);
-          const volume = (parseFloat(product.singleVolumeM3) * quantity).toFixed(6);
+          let totalWeight = 0;
+          let totalVolume = 0;
           
-          inboundItemPromises.push(
-            storage.createInboundOrderItem({
-              inboundOrderId: order.id,
-              productId: product.id,
-              productName: product.name,
-              barcode: product.barcode,
-              quantity,
-              packageCount,
-              weight,
-              volume,
-              externalOrderNumber: `PO${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
-              remark: `入库备注 #${i+1}`
-            })
-          );
+          for (let i = 0; i < itemCount; i++) {
+            if (products.length === 0) {
+              console.log('没有可用的产品，无法创建入库单明细');
+              continue;
+            }
+            
+            const product = products[Math.floor(Math.random() * products.length)];
+            const quantity = Math.floor(Math.random() * 100) + 1;
+            const packageCount = Math.ceil(quantity / 10);
+            
+            // 计算重量和体积
+            const weightValue = parseFloat(product.singleWeightKg) * quantity;
+            const volumeValue = parseFloat(product.singleVolumeM3) * quantity;
+            
+            const weight = weightValue.toFixed(2);
+            const volume = volumeValue.toFixed(6);
+            
+            // 累加总重量和总体积
+            totalWeight += weightValue;
+            totalVolume += volumeValue;
+            
+            try {
+              const inboundItem = await storage.createInboundOrderItem({
+                inboundOrderId: order.id,
+                productId: product.id,
+                productName: product.name,
+                barcode: product.barcode,
+                quantity,
+                packageCount,
+                weight,
+                volume,
+                externalOrderNumber: `PO${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
+                remark: `入库备注 #${i+1}`
+              });
+              
+              inboundItemPromises.push(inboundItem);
+            } catch (error) {
+              console.error(`创建入库单明细失败:`, error);
+            }
+          }
           
-          // 更新入库单总重量和总体积
-          order.totalWeight = (parseFloat(order.totalWeight) + parseFloat(weight)).toFixed(2);
-          order.totalVolume = (parseFloat(order.totalVolume) + parseFloat(volume)).toFixed(6);
+          // 更新入库单总数据
+          if (inboundItemPromises.length > 0) {
+            await storage.updateInboundOrder(order.id, {
+              totalWeight: totalWeight.toFixed(2),
+              totalVolume: totalVolume.toFixed(6)
+            });
+          }
+        } catch (error) {
+          console.error(`处理入库单 ${order.id} 的明细时出错:`, error);
         }
-        
-        // 更新入库单总数据
-        await storage.updateInboundOrder(order.id, {
-          totalWeight: order.totalWeight,
-          totalVolume: order.totalVolume
-        });
       }
-      
-      await Promise.all(inboundItemPromises);
       
       // 创建出库单
       const outboundOrders = [];
@@ -1970,46 +1989,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 为每个出库单添加明细
       const outboundItemPromises = [];
       for (const order of outboundOrders) {
-        // 每个出库单添加1-3个产品
-        const itemCount = Math.floor(Math.random() * 3) + 1;
-        
-        for (let i = 0; i < itemCount; i++) {
-          const product = products[Math.floor(Math.random() * products.length)];
-          const quantity = Math.floor(Math.random() * 50) + 1;
-          const packageCount = Math.ceil(quantity / 10);
+        try {
+          // 每个出库单添加1-3个产品
+          const itemCount = Math.floor(Math.random() * 3) + 1;
           
-          // 计算重量和体积
-          const weight = (parseFloat(product.singleWeightKg) * quantity).toFixed(2);
-          const volume = (parseFloat(product.singleVolumeM3) * quantity).toFixed(6);
+          let totalWeight = 0;
+          let totalVolume = 0;
           
-          outboundItemPromises.push(
-            storage.createOutboundOrderItem({
-              outboundOrderId: order.id,
-              productId: product.id,
-              productName: product.name,
-              barcode: product.barcode,
-              quantity,
-              packageCount,
-              weight,
-              volume,
-              externalOrderNumber: `SO${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
-              remark: `出库备注 #${i+1}`
-            })
-          );
+          for (let i = 0; i < itemCount; i++) {
+            if (products.length === 0) {
+              console.log('没有可用的产品，无法创建出库单明细');
+              continue;
+            }
+            
+            const product = products[Math.floor(Math.random() * products.length)];
+            const quantity = Math.floor(Math.random() * 50) + 1;
+            const packageCount = Math.ceil(quantity / 10);
+            
+            // 计算重量和体积
+            const weightValue = parseFloat(product.singleWeightKg) * quantity;
+            const volumeValue = parseFloat(product.singleVolumeM3) * quantity;
+            
+            const weight = weightValue.toFixed(2);
+            const volume = volumeValue.toFixed(6);
+            
+            // 累加总重量和总体积
+            totalWeight += weightValue;
+            totalVolume += volumeValue;
+            
+            try {
+              const outboundItem = await storage.createOutboundOrderItem({
+                outboundOrderId: order.id,
+                productId: product.id,
+                productName: product.name,
+                barcode: product.barcode,
+                quantity,
+                packageCount,
+                weight,
+                volume,
+                externalOrderNumber: `SO${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
+                remark: `出库备注 #${i+1}`
+              });
+              
+              outboundItemPromises.push(outboundItem);
+            } catch (error) {
+              console.error(`创建出库单明细失败:`, error);
+            }
+          }
           
-          // 更新出库单总重量和总体积
-          order.totalWeight = (parseFloat(order.totalWeight) + parseFloat(weight)).toFixed(2);
-          order.totalVolume = (parseFloat(order.totalVolume) + parseFloat(volume)).toFixed(6);
+          // 更新出库单总数据
+          if (outboundItemPromises.length > 0) {
+            await storage.updateOutboundOrder(order.id, {
+              totalWeight: totalWeight.toFixed(2),
+              totalVolume: totalVolume.toFixed(6)
+            });
+          }
+        } catch (error) {
+          console.error(`处理出库单 ${order.id} 的明细时出错:`, error);
         }
-        
-        // 更新出库单总数据
-        await storage.updateOutboundOrder(order.id, {
-          totalWeight: order.totalWeight,
-          totalVolume: order.totalVolume
-        });
       }
-      
-      await Promise.all(outboundItemPromises);
       
       // 返回创建的数据统计
       res.json({
@@ -2019,9 +2057,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         outboundOrders: outboundOrders.length
       });
       
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error initializing test data:', err);
-      res.status(500).json({ error: 'Failed to initialize test data', message: err.message });
+      
+      // 确保错误对象有message属性
+      const errorMessage = err && err.message ? err.message : '未知错误';
+      res.status(500).json({ error: 'Failed to initialize test data', message: errorMessage });
     }
   });
 
