@@ -422,7 +422,10 @@ export default function NewWarehouseTransfer() {
     }
   };
   
-  // 数量变更时更新重量和体积
+  // 数量变更防抖计时器引用
+  const quantityDebounceTimerRef = useRef<number | null>(null);
+  
+  // 数量变更时更新重量和体积（添加防抖机制）
   const handleQuantityChange = (value: string, index: number) => {
     // 确保数值有效
     const numericValue = value.replace(/[^\d]/g, '');
@@ -430,47 +433,61 @@ export default function NewWarehouseTransfer() {
     // 设置经过验证的数值
     form.setValue(`items.${index}.quantity`, numericValue || "1");
     
-    const productId = form.getValues(`items.${index}.productId`);
-    if (productId) {
-      const selectedProduct = products.find(p => p.id === parseInt(productId));
-      if (selectedProduct) {
-        const quantity = parseInt(numericValue || "1");
-        
-        // 设置默认件数为1
-        if (!form.getValues(`items.${index}.packageCount`)) {
-          form.setValue(`items.${index}.packageCount`, "1");
-        }
-        
-        // 计算总重量和体积
-        const weight = selectedProduct.singleWeightKg * quantity;
-        const volume = selectedProduct.singleVolumeM3 * quantity;
-        
-        form.setValue(`items.${index}.weight`, weight.toFixed(3));
-        form.setValue(`items.${index}.volume`, volume.toFixed(3));
-        
-        // 自动更新表单验证状态
-        form.trigger(`items.${index}.quantity`);
-        form.trigger(`items.${index}.packageCount`);
-        form.trigger(`items.${index}.weight`);
-        form.trigger(`items.${index}.volume`);
-        
-        // 更新总数量显示
-        const totals = calculateTotals();
-        // 这里我们不需要手动更新UI显示，因为表单触发和React的状态更新会自动处理
-      }
-    } else {
-      // 如果没有选择产品，给出提示
-      if (numericValue && parseInt(numericValue) > 1) {
-        toast({
-          title: t("product_required"),
-          description: t("select_product_first"),
-          variant: "warning",
-        });
-      }
+    // 清除之前的计时器（如果存在）
+    if (quantityDebounceTimerRef.current !== null) {
+      window.clearTimeout(quantityDebounceTimerRef.current);
     }
+    
+    // 设置新的计时器，200ms后执行计算
+    quantityDebounceTimerRef.current = window.setTimeout(() => {
+      const productId = form.getValues(`items.${index}.productId`);
+      if (productId) {
+        const selectedProduct = products.find(p => p.id === parseInt(productId));
+        if (selectedProduct) {
+          const quantity = parseInt(numericValue || "1");
+          
+          // 设置默认件数为1
+          if (!form.getValues(`items.${index}.packageCount`)) {
+            form.setValue(`items.${index}.packageCount`, "1");
+          }
+          
+          // 计算总重量和体积
+          const weight = selectedProduct.singleWeightKg * quantity;
+          const volume = selectedProduct.singleVolumeM3 * quantity;
+          
+          form.setValue(`items.${index}.weight`, weight.toFixed(3));
+          form.setValue(`items.${index}.volume`, volume.toFixed(3));
+          
+          // 自动更新表单验证状态
+          form.trigger(`items.${index}.quantity`);
+          form.trigger(`items.${index}.packageCount`);
+          form.trigger(`items.${index}.weight`);
+          form.trigger(`items.${index}.volume`);
+          
+          // 使用requestAnimationFrame确保在DOM更新后执行
+          requestAnimationFrame(() => {
+            calculateTotals();
+            console.log("数量变更后汇总已更新", form.getValues());
+            quantityDebounceTimerRef.current = null;
+          });
+        }
+      } else {
+        // 如果没有选择产品，给出提示
+        if (numericValue && parseInt(numericValue) > 1) {
+          toast({
+            title: t("product_required"),
+            description: t("select_product_first"),
+            variant: "warning",
+          });
+        }
+      }
+    }, 200);
   };
   
-  // 件数变更时更新汇总数据
+  // 防抖计时器引用
+  const debounceTimerRef = useRef<number | null>(null);
+  
+  // 件数变更时更新汇总数据（添加防抖机制）
   const handlePackageCountChange = (value: string, index: number) => {
     console.log("件数变更:", value, index); // 添加日志调试
     
@@ -484,11 +501,20 @@ export default function NewWarehouseTransfer() {
     // 手动更新件数不直接计算重量和体积，但需要更新汇总信息
     form.trigger(`items.${index}.packageCount`);
     
-    // 更新总计数据，使用requestAnimationFrame确保在DOM更新后执行
-    requestAnimationFrame(() => {
-      calculateTotals();
-      console.log("件数汇总已重新计算", form.getValues());
-    });
+    // 清除之前的计时器（如果存在）
+    if (debounceTimerRef.current !== null) {
+      window.clearTimeout(debounceTimerRef.current);
+    }
+    
+    // 设置新的计时器，300ms后执行汇总计算
+    debounceTimerRef.current = window.setTimeout(() => {
+      // 使用requestAnimationFrame确保在DOM更新后执行
+      requestAnimationFrame(() => {
+        calculateTotals();
+        console.log("件数汇总已重新计算", form.getValues());
+        debounceTimerRef.current = null;
+      });
+    }, 300);
   };
   
   // 计算总数量、件数、重量和体积
