@@ -108,7 +108,7 @@ export default function InboundOrders() {
       case 'completed':
         return 'success';
       case 'processing':
-        return 'warning';
+        return 'secondary'; // 修改为支持的变体类型
       case 'cancelled':
         return 'destructive';
       default:
@@ -166,23 +166,24 @@ export default function InboundOrders() {
   };
   
   return (
-    <div className="container mx-auto py-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">{t("inbound_orders")}</h1>
-          <p className="text-muted-foreground">{t("inbound_orders_description")}</p>
+    <Layout>
+      <div className="container mx-auto py-6">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-2xl font-bold">{t("inbound_orders")}</h1>
+            <p className="text-muted-foreground">{t("inbound_orders_description")}</p>
+          </div>
+          <div className="flex space-x-2">
+            <Button onClick={handleCreateOrderWithItems} variant="default">
+              <Plus className="mr-2 h-4 w-4" />
+              {t("new_inbound_order_with_items")}
+            </Button>
+            <Button onClick={handleCreateOrder} variant="outline">
+              <Plus className="mr-2 h-4 w-4" />
+              {t("new_inbound_order")}
+            </Button>
+          </div>
         </div>
-        <div className="flex space-x-2">
-          <Button onClick={handleCreateOrderWithItems} variant="default">
-            <Plus className="mr-2 h-4 w-4" />
-            {t("new_inbound_order_with_items")}
-          </Button>
-          <Button onClick={handleCreateOrder} variant="outline">
-            <Plus className="mr-2 h-4 w-4" />
-            {t("new_inbound_order")}
-          </Button>
-        </div>
-      </div>
       
       {/* 统计卡片 */}
       {stats && (
@@ -478,5 +479,6 @@ export default function InboundOrders() {
         </CardFooter>
       </Card>
     </div>
+  </Layout>
   );
 }
