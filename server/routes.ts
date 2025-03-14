@@ -28,6 +28,11 @@ import {
   parseTransferImportFile, 
   exportTransferToExcel 
 } from "./utils/excel-handler";
+import {
+  createProductImportTemplate,
+  parseProductImportFile,
+  exportProductsToExcel
+} from "./utils/product-excel-handler";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const apiRouter = express.Router();
@@ -62,11 +67,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // 文件类型过滤器
   const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-    // 接受图片和PDF文件
-    if (file.mimetype.startsWith('image/') || file.mimetype === 'application/pdf') {
+    // 接受图片、PDF和Excel文件
+    if (
+      file.mimetype.startsWith('image/') || 
+      file.mimetype === 'application/pdf' ||
+      file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+      file.mimetype === 'application/vnd.ms-excel'
+    ) {
       cb(null, true);
     } else {
-      cb(new Error('不支持的文件类型，仅支持图片和PDF文件'));
+      cb(new Error('不支持的文件类型，仅支持图片、PDF和Excel文件'));
     }
   };
   
