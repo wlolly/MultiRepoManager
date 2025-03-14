@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 
 // UI Components
@@ -120,7 +120,6 @@ function CreateApiConfigurationDialog({
   onOpenChange: (open: boolean) => void 
 }) {
   const { t } = useTranslation();
-  const { toast } = useToast();
   
   // Form handling
   const form = useForm<ApiConfigurationFormValues>({
@@ -146,10 +145,7 @@ function CreateApiConfigurationDialog({
     },
     onSuccess: () => {
       // Show success toast
-      toast({
-        title: t("api_config_created"),
-        description: t("api_config_created_description"),
-      });
+      toast.success(t("api_config_created_description"));
       
       // Reset form and close dialog
       form.reset();
@@ -160,11 +156,7 @@ function CreateApiConfigurationDialog({
     },
     onError: (error) => {
       console.error("Error creating API configuration:", error);
-      toast({
-        title: t("api_config_creation_failed"),
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message || t("api_config_creation_failed"));
     },
   });
   
