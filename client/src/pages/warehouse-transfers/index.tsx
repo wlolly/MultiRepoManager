@@ -223,8 +223,8 @@ export default function WarehouseTransfers() {
   const handleImportExcel = async () => {
     if (!importFile) {
       toast({
-        title: t("no_file_selected"),
-        description: t("please_select_file"),
+        title: t("warehouseTransfer.no_file_selected"),
+        description: t("warehouseTransfer.please_select_file"),
         variant: "destructive",
       });
       return;
@@ -286,12 +286,12 @@ export default function WarehouseTransfers() {
     <div className="container mx-auto py-6">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold">{t("warehouse_transfers")}</h1>
-          <p className="text-muted-foreground">{t("warehouse_transfers_description")}</p>
+          <h1 className="text-2xl font-bold">{t("warehouseTransfer.title")}</h1>
+          <p className="text-muted-foreground">{t("warehouseTransfer.subtitle")}</p>
         </div>
         <Button onClick={handleCreateTransfer}>
           <Plus className="mr-2 h-4 w-4" />
-          {t("new_transfer")}
+          {t("warehouseTransfer.new_warehouse_transfer")}
         </Button>
       </div>
       
@@ -301,7 +301,7 @@ export default function WarehouseTransfers() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                {t("total_transfers")}
+                {t("warehouseTransfer.total_transfers")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -312,7 +312,7 @@ export default function WarehouseTransfers() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                {t("pending_transfers")}
+                {t("warehouseTransfer.pending_transfers")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -326,7 +326,7 @@ export default function WarehouseTransfers() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                {t("total_weight")}
+                {t("warehouseTransfer.total_weight")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -337,7 +337,7 @@ export default function WarehouseTransfers() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                {t("total_volume")}
+                {t("warehouseTransfer.total_volume")}
               </CardTitle>
             </CardHeader>
             <CardContent>
