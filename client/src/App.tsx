@@ -40,6 +40,7 @@ import AdvancedOutboundOrder from "./pages/outbound-orders/advanced";
 import NewInboundOrder from "./pages/inbound-orders/new";
 import NewInboundOrderWithItems from "./pages/inbound-orders/new-with-items";
 import ProductDetail from "./pages/products/product-detail";
+import ProductsPage from "./pages/products/index";
 
 // 导航项定义
 const navItems = [
@@ -314,6 +315,7 @@ export default function App() {
             {/* 仓库管理系统页面 */}
             <Route path="/warehouses" component={Warehouses} />
             <Route path="/warehouse-products" component={WarehouseProducts} />
+            <Route path="/products" component={ProductsPage} />
             <Route path="/products/product-detail/:id" component={ProductDetail} />
             
             {/* 入库单页面 */}
