@@ -120,7 +120,7 @@ export default function DebugOutboundOrder() {
           <div className="flex justify-end">
             <Button 
               variant="outline" 
-              onClick={() => navigate("/outbound-orders")}
+              onClick={() => setLocation("/outbound-orders")}
             >
               返回出库单列表
             </Button>
