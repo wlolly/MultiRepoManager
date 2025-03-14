@@ -62,9 +62,12 @@ const outboundOrderSchema = z.object({
   destinationType: z.string().default("customer"),
   notes: z.string().optional(),
   // 底单文件，可以是上传的图片或文档
-  documentImage: z.instanceof(FileList).optional().transform(fileList => 
-    fileList && fileList.length > 0 ? fileList : undefined
-  ),
+  documentImage: z.instanceof(FileList).optional().transform(fileList => {
+    // 安全处理 - 确保fileList存在且有长度属性
+    return fileList && typeof fileList === 'object' && 'length' in fileList && fileList.length > 0 
+      ? fileList 
+      : undefined;
+  }),
   // 如果是拍照，可以存储base64格式的图像数据
   photoData: z.string().optional(),
   items: z.array(
@@ -252,16 +255,26 @@ export default function AdvancedOutboundOrder() {
       // 添加商品数据
       formData.append('items', JSON.stringify(itemsArray));
       
-      // 如果有上传的底单文件，添加到FormData
-      if (data.documentImage && data.documentImage.length > 0) {
-        formData.append('document', data.documentImage[0]);
-      }
-      // 如果有拍照底单数据，转换为文件并添加
-      else if (data.photoData) {
-        // 将base64图像数据转换为文件
-        const blob = dataURItoBlob(data.photoData);
-        const file = new File([blob], 'photo.jpg', { type: 'image/jpeg' });
-        formData.append('document', file);
+      // 安全地处理上传的底单文件
+      try {
+        // 如果有上传的底单文件，添加到FormData
+        if (data.documentImage && data.documentImage.length > 0) {
+          console.log('Adding document file from upload:', data.documentImage[0].name);
+          formData.append('document', data.documentImage[0]);
+        }
+        // 如果有拍照底单数据，转换为文件并添加
+        else if (data.photoData && typeof data.photoData === 'string') {
+          console.log('Converting photo data to file');
+          // 将base64图像数据转换为文件
+          const blob = dataURItoBlob(data.photoData);
+          const file = new File([blob], 'photo.jpg', { type: 'image/jpeg' });
+          formData.append('document', file);
+        } else {
+          console.log('No document image provided');
+        }
+      } catch (error) {
+        console.error('Error processing document image:', error);
+        // 继续处理，不阻止提交
       }
       
       // 使用FormData发送到服务器
@@ -561,41 +574,72 @@ export default function AdvancedOutboundOrder() {
   
   // 计算所有项目的总重量和总体积
   const calculateTotals = () => {
-    const items = form.getValues("items");
-    
-    // 计算总重量
-    const totalWeight = items.reduce((sum, item) => {
-      return sum + (parseFloat(item.weight?.toString() || "0") || 0);
-    }, 0);
-    
-    // 计算总体积
-    const totalVolume = items.reduce((sum, item) => {
-      return sum + (parseFloat(item.volume?.toString() || "0") || 0);
-    }, 0);
-    
-    console.log("计算的总重量:", totalWeight, "总体积:", totalVolume);
-    
-    // 更新状态用于显示
-    form.setValue("totalWeight", totalWeight.toFixed(3));
-    form.setValue("totalVolume", totalVolume.toFixed(3));
+    try {
+      const items = form.getValues("items");
+      if (!items || !Array.isArray(items)) {
+        console.error("Invalid items array:", items);
+        return;
+      }
+      
+      // 计算总重量
+      const totalWeight = items.reduce((sum, item) => {
+        if (!item) return sum;
+        const weight = parseFloat(item.weight?.toString() || "0") || 0;
+        return sum + weight;
+      }, 0);
+      
+      // 计算总体积
+      const totalVolume = items.reduce((sum, item) => {
+        if (!item) return sum;
+        const volume = parseFloat(item.volume?.toString() || "0") || 0;
+        return sum + volume;
+      }, 0);
+      
+      console.log("计算的总重量:", totalWeight, "总体积:", totalVolume);
+      
+      // 更新表单状态用于显示 - 使用字符串
+      form.setValue("totalWeight", totalWeight.toFixed(3).toString());
+      form.setValue("totalVolume", totalVolume.toFixed(3).toString());
+    } catch (error) {
+      console.error("计算总计时出错:", error);
+    }
   };
   
   // 拍照功能 - 将Base64图像数据转换为Blob对象
   const dataURItoBlob = (dataURI: string): Blob => {
-    // 从Base64字符串中提取MIME类型和数据部分
-    const byteString = atob(dataURI.split(',')[1]);
-    const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
-    
-    // 将Base64数据转换为Uint8Array
-    const ab = new ArrayBuffer(byteString.length);
-    const ia = new Uint8Array(ab);
-    
-    for (let i = 0; i < byteString.length; i++) {
-      ia[i] = byteString.charCodeAt(i);
+    // 验证dataURI是否有效
+    if (!dataURI || typeof dataURI !== 'string' || !dataURI.includes(',')) {
+      console.error('Invalid dataURI format:', dataURI);
+      // 返回一个空的Blob作为fallback
+      return new Blob([], { type: 'image/jpeg' });
     }
     
-    // 创建并返回Blob对象
-    return new Blob([ab], { type: mimeString });
+    try {
+      // 从Base64字符串中提取MIME类型和数据部分
+      const parts = dataURI.split(',');
+      const byteString = atob(parts[1]);
+      
+      // 安全地提取MIME类型
+      let mimeString = 'image/jpeg'; // 默认mime类型
+      if (parts[0].includes(':') && parts[0].includes(';')) {
+        mimeString = parts[0].split(':')[1].split(';')[0];
+      }
+      
+      // 将Base64数据转换为Uint8Array
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      
+      for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+      }
+      
+      // 创建并返回Blob对象
+      return new Blob([ab], { type: mimeString });
+    } catch (error) {
+      console.error('Error converting dataURI to Blob:', error);
+      // 返回一个空的Blob作为fallback
+      return new Blob([], { type: 'image/jpeg' });
+    }
   };
 
   return (
