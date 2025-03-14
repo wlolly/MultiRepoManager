@@ -172,10 +172,8 @@ export function CreateWarehouseProductDialog({
   // 条码扫描处理
   const handleBarcodeScanned = (barcode: string) => {
     form.setValue("barcode", barcode);
-    toast({
-      title: t('barcode_scanned'),
-      description: barcode,
-    });
+    // 使用正确的toast API
+    toast.success(`${t('barcode_scanned')}: ${barcode}`);
   };
   
   // 自动计算整件信息
