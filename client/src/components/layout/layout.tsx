@@ -19,7 +19,7 @@ export function Layout({ children, hideSidebar = false }: LayoutProps) {
     <div className="flex h-screen overflow-hidden">
       {/* Desktop Sidebar - 仅当不是隐藏侧边栏时才显示 */}
       {!hideSidebar && (
-        <div className="hidden md:block">
+        <div className="block">
           <Sidebar />
         </div>
       )}
