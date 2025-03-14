@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -80,10 +80,10 @@ export function Header({ onMenuClick }: HeaderProps) {
               <DropdownMenuLabel>{t('my_account')}</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link href="/profile">{t('profile')}</Link>
+                <Link to="/profile">{t('profile')}</Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href="/settings">{t('settings')}</Link>
+                <Link to="/settings">{t('settings')}</Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem>{t('logout')}</DropdownMenuItem>
