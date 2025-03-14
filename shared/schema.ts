@@ -491,7 +491,7 @@ export const warehouseTransferItems = mysqlTable("warehouse_transfer_items", {
   packageCount: int("package_count").notNull(), // 件数
   weight: decimal("weight", { precision: 10, scale: 3 }).notNull(), // 重量
   volume: decimal("volume", { precision: 10, scale: 6 }).notNull(), // 体积
-  status: varchar("status", { length: 50 }).notNull().default("pending"), // 状态
+  // status字段在数据库表中不存在，已移除
   remark: text("remark"), // 备注
 });
 
@@ -503,7 +503,7 @@ export const insertWarehouseTransferItemSchema = createInsertSchema(warehouseTra
   packageCount: true,
   weight: true,
   volume: true,
-  status: true,
+  // status字段在数据库表中不存在，已移除
   remark: true,
 });
 
