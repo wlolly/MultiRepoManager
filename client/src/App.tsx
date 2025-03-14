@@ -13,6 +13,8 @@ import NewRepository from "@/pages/new-repository";
 import Search from "@/pages/search";
 import Warehouses from "@/pages/warehouses";
 import ApiConfigurations from "@/pages/api-configurations";
+// 商品管理页面
+import ProductsPage from "@/pages/products";
 // 订单管理相关页面
 import InboundOrders from "@/pages/inbound-orders";
 import OutboundOrders from "@/pages/outbound-orders";
@@ -20,6 +22,8 @@ import InboundOrderDetail from "@/pages/inbound-order/[id]";
 import OutboundOrderDetail from "@/pages/outbound-order/[id]";
 import NewInboundOrder from "@/pages/inbound-orders/new";
 import NewOutboundOrder from "@/pages/outbound-orders/new";
+import NewInboundOrderWithItems from "@/pages/inbound-orders/new-with-items";
+import NewOutboundOrderWithItems from "@/pages/outbound-orders/new-with-items";
 import { useEffect } from "react";
 import { Layout } from "@/components/layout/layout";
 // 引入预先配置好的i18n实例
@@ -38,12 +42,16 @@ function Router() {
       <Route path="/search" component={Search} />
       <Route path="/warehouses" component={Warehouses} />
       <Route path="/api-configurations" component={ApiConfigurations} />
+      {/* 商品管理路由 */}
+      <Route path="/products" component={ProductsPage} />
       {/* 订单管理路由 */}
       <Route path="/inbound-orders" component={InboundOrders} />
       <Route path="/inbound-orders/new" component={NewInboundOrder} />
+      <Route path="/inbound-orders/new-with-items" component={NewInboundOrderWithItems} />
       <Route path="/inbound-order/:id" component={InboundOrderDetail} />
       <Route path="/outbound-orders" component={OutboundOrders} />
       <Route path="/outbound-orders/new" component={NewOutboundOrder} />
+      <Route path="/outbound-orders/new-with-items" component={NewOutboundOrderWithItems} />
       <Route path="/outbound-order/:id" component={OutboundOrderDetail} />
       <Route component={NotFound} />
     </Switch>
