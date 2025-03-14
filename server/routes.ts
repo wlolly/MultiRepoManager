@@ -417,7 +417,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   apiRouter.get("/products", async (req, res) => {
     try {
       // Build filter object based on query parameters
-      const filter: { warehouseId?: number, category?: string } = {};
+      const filter: { warehouseId?: number, category?: string, query?: string } = {};
       
       // Check for warehouse filter
       if (req.query.warehouseId) {
@@ -429,10 +429,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
         filter.category = req.query.category as string;
       }
       
+      // Check for search query (for name, barcode, or uniqueCode partial match)
+      if (req.query.query) {
+        filter.query = req.query.query as string;
+      }
+      
       // Get products with applied filters
       const products = await storage.getProducts(Object.keys(filter).length > 0 ? filter : undefined);
-      res.json(products);
+      
+      // If search query is provided, filter results in memory for partial matches
+      let filteredProducts = products;
+      if (filter.query) {
+        const query = filter.query.toLowerCase();
+        filteredProducts = products.filter(product => {
+          // 模糊匹配产品名称
+          const nameMatch = product.name.toLowerCase().includes(query);
+          
+          // 模糊匹配唯一码
+          const uniqueCodeMatch = product.uniqueCode && 
+            product.uniqueCode.toLowerCase().includes(query);
+          
+          // 模糊匹配条形码
+          const barcodeMatch = product.barcode.toLowerCase().includes(query);
+          
+          return nameMatch || uniqueCodeMatch || barcodeMatch;
+        });
+      }
+      
+      res.json(filteredProducts);
     } catch (err) {
+      handleZodError(err, res);
+    }
+  });
+  
+  // 产品搜索路由 - 专门用于模糊匹配
+  apiRouter.get("/products/search", async (req, res) => {
+    try {
+      const query = req.query.q as string;
+      
+      if (!query || query.trim() === '') {
+        return res.json([]);
+      }
+      
+      // 获取所有产品
+      const products = await storage.getProducts();
+      
+      // 在内存中过滤符合搜索条件的产品
+      const searchQuery = query.toLowerCase();
+      const matchedProducts = products.filter(product => {
+        // 模糊匹配产品名称
+        const nameMatch = product.name.toLowerCase().includes(searchQuery);
+        
+        // 模糊匹配唯一码
+        const uniqueCodeMatch = product.uniqueCode && 
+          product.uniqueCode.toLowerCase().includes(searchQuery);
+        
+        // 模糊匹配条形码
+        const barcodeMatch = product.barcode.toLowerCase().includes(searchQuery);
+        
+        return nameMatch || uniqueCodeMatch || barcodeMatch;
+      });
+      
+      res.json(matchedProducts);
+    } catch (err) {
+      console.error("Error searching products:", err);
       handleZodError(err, res);
     }
   });
