@@ -39,7 +39,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import * as XLSX from 'xlsx';
 
 // 入库单接口定义
@@ -91,7 +91,7 @@ interface Warehouse {
 
 export default function InboundOrders() {
   const { t } = useTranslation();
-  const { toast } = useToast();
+
   const [searchQuery, setSearchQuery] = useState("");
   const [warehouseFilter, setWarehouseFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -138,10 +138,7 @@ export default function InboundOrders() {
     // 导出Excel文件
     XLSX.writeFile(wb, `${t('inbound_orders')}_${new Date().toISOString().split('T')[0]}.xlsx`);
     
-    toast({
-      title: t('export_success'),
-      description: t('file_saved_description'),
-    });
+    toast.success(t('export_success') + ": " + t('file_saved_description'));
   };
   
   // 导入Excel功能
@@ -179,19 +176,12 @@ export default function InboundOrders() {
         });
         
         if (response.ok) {
-          toast({
-            title: t('import_success'),
-            description: t('data_imported_description'),
-          });
+          toast.success(t('import_success') + ": " + t('data_imported_description'));
           // 刷新数据
           // queryClient.invalidateQueries({queryKey: ["/api/inbound-orders"]});
         } else {
           const error = await response.json();
-          toast({
-            title: t('import_failed'),
-            description: error.message || t('import_failed_description'),
-            variant: "destructive",
-          });
+          toast.error(t('import_failed') + ": " + (error.message || t('import_failed_description')));
         }
       } catch (error) {
         toast({
