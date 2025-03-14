@@ -1774,6 +1774,233 @@ export async function registerRoutes(app: Express): Promise<Server> {
       handleZodError(err, res);
     }
   });
+  
+  // 管理员专用接口 - 初始化测试数据
+  apiRouter.post("/admin/initialize-test-data", async (req, res) => {
+    try {
+      const warehouseNames = ['上海仓库', '北京仓库', '广州仓库', '深圳仓库'];
+      const warehouseLocations = ['上海市浦东新区', '北京市朝阳区', '广州市天河区', '深圳市南山区'];
+      const capacities = ['5000', '8000', '6000', '4000'];
+      
+      // 创建仓库
+      const warehousePromises = [];
+      for (let i = 0; i < warehouseNames.length; i++) {
+        warehousePromises.push(
+          storage.createWarehouse({
+            name: warehouseNames[i],
+            location: warehouseLocations[i],
+            capacity: capacities[i]
+          })
+        );
+      }
+      const warehouses = await Promise.all(warehousePromises);
+      
+      // 创建产品
+      const productData = [
+        { name: '手机壳', barcode: 'P00001', singleLengthCm: '15', singleWidthCm: '8', singleHeightCm: '1', singleWeightKg: '0.05', uniqueCode: 'UC00001' },
+        { name: '保护膜', barcode: 'P00002', singleLengthCm: '15', singleWidthCm: '8', singleHeightCm: '0.1', singleWeightKg: '0.01', uniqueCode: 'UC00002' },
+        { name: '充电器', barcode: 'P00003', singleLengthCm: '10', singleWidthCm: '5', singleHeightCm: '5', singleWeightKg: '0.2', uniqueCode: 'UC00003' },
+        { name: '数据线', barcode: 'P00004', singleLengthCm: '100', singleWidthCm: '2', singleHeightCm: '2', singleWeightKg: '0.05', uniqueCode: 'UC00004' },
+        { name: '耳机', barcode: 'P00005', singleLengthCm: '5', singleWidthCm: '5', singleHeightCm: '2', singleWeightKg: '0.03', uniqueCode: 'UC00005' },
+        { name: '手机', barcode: 'P00006', singleLengthCm: '15', singleWidthCm: '7', singleHeightCm: '1', singleWeightKg: '0.2', uniqueCode: 'UC00006' },
+        { name: '平板电脑', barcode: 'P00007', singleLengthCm: '25', singleWidthCm: '18', singleHeightCm: '1', singleWeightKg: '0.5', uniqueCode: 'UC00007' },
+        { name: '笔记本电脑', barcode: 'P00008', singleLengthCm: '35', singleWidthCm: '25', singleHeightCm: '2', singleWeightKg: '2', uniqueCode: 'UC00008' }
+      ];
+      
+      const productPromises = [];
+      for (let product of productData) {
+        // 计算体积，转换为立方米
+        const singleVolumeM3 = (
+          parseFloat(product.singleLengthCm) * 
+          parseFloat(product.singleWidthCm) * 
+          parseFloat(product.singleHeightCm) / 
+          1000000
+        ).toFixed(6);
+        
+        // 设置整件包装数据（示例：整件包装为10个单品）
+        const bulkLengthCm = (parseFloat(product.singleLengthCm) * 2).toFixed(2);
+        const bulkWidthCm = (parseFloat(product.singleWidthCm) * 2).toFixed(2);
+        const bulkHeightCm = (parseFloat(product.singleHeightCm) * 5).toFixed(2);
+        const bulkWeightKg = (parseFloat(product.singleWeightKg) * 10).toFixed(2);
+        const bulkVolumeM3 = (
+          parseFloat(bulkLengthCm) * 
+          parseFloat(bulkWidthCm) * 
+          parseFloat(bulkHeightCm) / 
+          1000000
+        ).toFixed(6);
+        
+        productPromises.push(
+          storage.createProduct({
+            name: product.name,
+            barcode: product.barcode,
+            singleLengthCm: product.singleLengthCm,
+            singleWidthCm: product.singleWidthCm,
+            singleHeightCm: product.singleHeightCm,
+            singleVolumeM3,
+            singleWeightKg: product.singleWeightKg,
+            bulkLengthCm,
+            bulkWidthCm,
+            bulkHeightCm,
+            bulkWeightKg,
+            bulkVolumeM3,
+            uniqueCode: product.uniqueCode
+          })
+        );
+      }
+      
+      const products = await Promise.all(productPromises);
+      
+      // 创建入库单
+      const inboundOrderPromises = [];
+      for (let i = 0; i < 5; i++) {
+        const warehouseId = warehouses[Math.floor(Math.random() * warehouses.length)].id;
+        const orderNumber = `IN${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
+        
+        inboundOrderPromises.push(
+          storage.createInboundOrder({
+            warehouseId,
+            orderNumber,
+            totalWeight: '0',
+            totalVolume: '0',
+            status: 'pending',
+            createdBy: 1,
+            orderType: 'purchase',
+            notes: `测试入库单 #${i+1}`
+          })
+        );
+      }
+      
+      const inboundOrders = await Promise.all(inboundOrderPromises);
+      
+      // 为每个入库单添加明细
+      const inboundItemPromises = [];
+      for (const order of inboundOrders) {
+        // 每个入库单添加1-3个产品
+        const itemCount = Math.floor(Math.random() * 3) + 1;
+        
+        for (let i = 0; i < itemCount; i++) {
+          const product = products[Math.floor(Math.random() * products.length)];
+          const quantity = Math.floor(Math.random() * 100) + 1;
+          const packageCount = Math.ceil(quantity / 10);
+          
+          // 计算重量和体积
+          const weight = (parseFloat(product.singleWeightKg) * quantity).toFixed(2);
+          const volume = (parseFloat(product.singleVolumeM3) * quantity).toFixed(6);
+          
+          inboundItemPromises.push(
+            storage.createInboundOrderItem({
+              inboundOrderId: order.id,
+              productId: product.id,
+              productName: product.name,
+              barcode: product.barcode,
+              quantity,
+              packageCount,
+              weight,
+              volume,
+              externalOrderNumber: `PO${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
+              remark: `入库备注 #${i+1}`
+            })
+          );
+          
+          // 更新入库单总重量和总体积
+          order.totalWeight = (parseFloat(order.totalWeight) + parseFloat(weight)).toFixed(2);
+          order.totalVolume = (parseFloat(order.totalVolume) + parseFloat(volume)).toFixed(6);
+        }
+        
+        // 更新入库单总数据
+        await storage.updateInboundOrder(order.id, {
+          totalWeight: order.totalWeight,
+          totalVolume: order.totalVolume
+        });
+      }
+      
+      await Promise.all(inboundItemPromises);
+      
+      // 创建出库单
+      const outboundOrderPromises = [];
+      const orderTypes = ['sale', 'return', 'transfer', 'scrap'];
+      const destinationTypes = ['customer', 'retail', 'wholesale', 'transfer', 'supplier', 'destruction'];
+      
+      for (let i = 0; i < 5; i++) {
+        const warehouseId = warehouses[Math.floor(Math.random() * warehouses.length)].id;
+        const orderNumber = `OUT${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
+        const orderType = orderTypes[Math.floor(Math.random() * orderTypes.length)];
+        const destinationType = destinationTypes[Math.floor(Math.random() * destinationTypes.length)];
+        
+        outboundOrderPromises.push(
+          storage.createOutboundOrder({
+            warehouseId,
+            orderNumber,
+            totalWeight: '0',
+            totalVolume: '0',
+            status: 'pending',
+            createdBy: 1,
+            orderType,
+            destinationType,
+            notes: `测试出库单 #${i+1}`
+          })
+        );
+      }
+      
+      const outboundOrders = await Promise.all(outboundOrderPromises);
+      
+      // 为每个出库单添加明细
+      const outboundItemPromises = [];
+      for (const order of outboundOrders) {
+        // 每个出库单添加1-3个产品
+        const itemCount = Math.floor(Math.random() * 3) + 1;
+        
+        for (let i = 0; i < itemCount; i++) {
+          const product = products[Math.floor(Math.random() * products.length)];
+          const quantity = Math.floor(Math.random() * 50) + 1;
+          const packageCount = Math.ceil(quantity / 10);
+          
+          // 计算重量和体积
+          const weight = (parseFloat(product.singleWeightKg) * quantity).toFixed(2);
+          const volume = (parseFloat(product.singleVolumeM3) * quantity).toFixed(6);
+          
+          outboundItemPromises.push(
+            storage.createOutboundOrderItem({
+              outboundOrderId: order.id,
+              productId: product.id,
+              productName: product.name,
+              barcode: product.barcode,
+              quantity,
+              packageCount,
+              weight,
+              volume,
+              externalOrderNumber: `SO${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
+              remark: `出库备注 #${i+1}`
+            })
+          );
+          
+          // 更新出库单总重量和总体积
+          order.totalWeight = (parseFloat(order.totalWeight) + parseFloat(weight)).toFixed(2);
+          order.totalVolume = (parseFloat(order.totalVolume) + parseFloat(volume)).toFixed(6);
+        }
+        
+        // 更新出库单总数据
+        await storage.updateOutboundOrder(order.id, {
+          totalWeight: order.totalWeight,
+          totalVolume: order.totalVolume
+        });
+      }
+      
+      await Promise.all(outboundItemPromises);
+      
+      // 返回创建的数据统计
+      res.json({
+        warehouses: warehouses.length,
+        products: products.length,
+        inboundOrders: inboundOrders.length,
+        outboundOrders: outboundOrders.length
+      });
+      
+    } catch (err) {
+      console.error('Error initializing test data:', err);
+      res.status(500).json({ error: 'Failed to initialize test data', message: err.message });
+    }
+  });
 
   // Mount the API router
   app.use("/api", apiRouter);
