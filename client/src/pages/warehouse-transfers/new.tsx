@@ -17,7 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Combobox } from "@/components/ui/combobox";
-import { ArrowLeftIcon, PlusIcon, MinusIcon, ArrowRightIcon, ScanLine, QrCode } from "lucide-react";
+import { ArrowLeftIcon, PlusIcon, MinusIcon, ArrowRightIcon, ScanLine, QrCode, Camera } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
@@ -59,6 +59,12 @@ const transferSchema = z.object({
   sourceWarehouseId: z.string().min(1, { message: "来源仓库是必填项" }),
   targetWarehouseId: z.string().min(1, { message: "目标仓库是必填项" }),
   notes: z.string().optional(),
+  // 底单文件，可以是上传的图片或文档
+  documentImage: z.instanceof(FileList).optional().transform(fileList => 
+    fileList && fileList.length > 0 ? fileList : undefined
+  ),
+  // 如果是拍照，可以存储base64格式的图像数据
+  photoData: z.string().optional(),
   items: z.array(
     z.object({
       productId: z.string().min(1, { message: "商品是必填项" }),
@@ -176,6 +182,8 @@ export default function NewWarehouseTransfer() {
       sourceWarehouseId: "",
       targetWarehouseId: "",
       notes: "",
+      documentImage: undefined, // 底单文件上传
+      photoData: "", // 底单拍照数据
       items: [
         {
           productId: "",
@@ -197,22 +205,45 @@ export default function NewWarehouseTransfer() {
   
   // 创建调拨单（同时创建出库单和入库单）
   const createTransferMutation = useMutation({
-    mutationFn: (data: TransferFormValues) => {
+    mutationFn: async (data: TransferFormValues) => {
+      // 创建FormData对象用于文件上传
+      const formData = new FormData();
+      
+      // 添加基本的调拨单数据
+      const transferData = {
+        sourceWarehouseId: parseInt(data.sourceWarehouseId),
+        targetWarehouseId: parseInt(data.targetWarehouseId),
+        notes: data.notes,
+        items: data.items.map(item => ({
+          productId: parseInt(item.productId),
+          quantity: item.quantity,
+          packageCount: item.packageCount,
+          weight: item.weight,
+          volume: item.volume,
+          uniqueCode: item.uniqueCode || null // 添加唯一码数据，如果为空则传null
+        }))
+      };
+      
+      // 添加主要数据到FormData
+      formData.append('transferData', JSON.stringify(transferData));
+      
+      // 如果有底单文件，添加到FormData
+      if (data.documentImage && data.documentImage.length > 0) {
+        formData.append('documentImage', data.documentImage[0]);
+      }
+      
+      // 如果有拍照底单数据，添加到FormData
+      if (data.photoData) {
+        formData.append('photoData', data.photoData);
+      }
+      
+      // 使用FormData发送到服务器
       return apiRequest("/api/warehouse-transfers", {
         method: "POST",
-        body: JSON.stringify({
-          sourceWarehouseId: parseInt(data.sourceWarehouseId),
-          targetWarehouseId: parseInt(data.targetWarehouseId),
-          notes: data.notes,
-          items: data.items.map(item => ({
-            productId: parseInt(item.productId),
-            quantity: item.quantity,
-            packageCount: item.packageCount,
-            weight: item.weight,
-            volume: item.volume,
-            uniqueCode: item.uniqueCode || null // 添加唯一码数据，如果为空则传null
-          }))
-        }),
+        body: formData, // 直接发送FormData对象，不需要JSON.stringify
+        headers: {
+          // 不需要设置Content-Type，浏览器会自动设置为multipart/form-data
+        },
       });
     },
     onSuccess: (response) => {
@@ -775,6 +806,97 @@ export default function NewWarehouseTransfer() {
                   </FormItem>
                 )}
               />
+              
+              {/* 底单文件上传区域 */}
+              <div className="space-y-4 my-6 p-4 border rounded-lg bg-muted/20">
+                <h3 className="text-lg font-medium">{t("document_upload")}</h3>
+                <p className="text-sm text-muted-foreground">{t("document_upload_description")}</p>
+                
+                {/* 文件上传字段 */}
+                <FormField
+                  control={form.control}
+                  name="documentImage"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("upload_document")}</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="file"
+                          accept="image/*,application/pdf"
+                          onChange={(e) => {
+                            field.onChange(e.target.files);
+                            // 如果选择了文件且之前有拍照数据，清除拍照数据
+                            if (e.target.files && e.target.files.length > 0 && form.getValues("photoData")) {
+                              form.setValue("photoData", "");
+                            }
+                          }}
+                          className="cursor-pointer"
+                        />
+                      </FormControl>
+                      <FormDescription>{t("document_file_types")}</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                {/* 分隔线 */}
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t"></span>
+                  </div>
+                  <div className="relative flex justify-center text-xs">
+                    <span className="bg-background px-2 text-muted-foreground">{t("or")}</span>
+                  </div>
+                </div>
+                
+                {/* 底单拍照按钮 */}
+                <div className="text-center">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => {
+                      // 实现拍照功能
+                      // 如果浏览器支持，可以打开摄像头
+                      // 这里简化为提示用户
+                      toast({
+                        title: t("camera_feature"),
+                        description: t("camera_feature_not_implemented"),
+                        variant: "default",
+                      });
+                      
+                      // 如果实际上传了文件，清除文件选择
+                      if (form.getValues("documentImage")) {
+                        form.setValue("documentImage", undefined);
+                      }
+                    }}
+                  >
+                    <Camera className="mr-2 h-4 w-4" />
+                    {t("take_photo")}
+                  </Button>
+                </div>
+                
+                {/* 预览区域 - 如果选择了文件或拍照则显示 */}
+                {(form.getValues("documentImage") || form.getValues("photoData")) && (
+                  <div className="mt-4 p-2 border rounded bg-background">
+                    <p className="text-sm font-medium mb-2">{t("document_preview")}</p>
+                    {form.getValues("documentImage") && (
+                      <div className="text-sm text-muted-foreground">
+                        {t("file_selected")}: {form.getValues("documentImage")[0]?.name}
+                      </div>
+                    )}
+                    {form.getValues("photoData") && (
+                      <div className="max-w-sm mx-auto">
+                        <img 
+                          src={form.getValues("photoData")} 
+                          alt={t("captured_photo")} 
+                          className="max-h-40 object-contain mx-auto" 
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
               
               <div>
                 <div className="flex justify-between items-center mb-4">
