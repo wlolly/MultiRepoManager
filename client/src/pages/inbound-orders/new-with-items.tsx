@@ -726,6 +726,7 @@ export default function NewInboundOrderWithItems() {
                         <TableHead className="w-[80px]">{t("no")}</TableHead>
                         <TableHead>{t("product_name")}</TableHead>
                         <TableHead>{t("barcode")}</TableHead>
+                        <TableHead>{t("unique_code")}</TableHead>
                         <TableHead>{t("external_order_number")}</TableHead>
                         <TableHead className="text-right">{t("quantity")}</TableHead>
                         <TableHead className="text-right">{t("package_count")}</TableHead>
