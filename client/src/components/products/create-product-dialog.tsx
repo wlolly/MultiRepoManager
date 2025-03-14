@@ -19,6 +19,7 @@ const createProductSchema = z.object({
   name: z.string().min(1, "商品名称不能为空"),
   description: z.string().optional(),
   barcode: z.string().min(1, "商品条码不能为空"),
+  uniqueCode: z.string().optional(), // 商品唯一码，用于与电商平台匹配
   category: z.string().min(1, "商品分类不能为空"),
   stock: z.number().min(0, "库存不能为负数"),
   price: z.number().min(0, "售价不能为负数"),
