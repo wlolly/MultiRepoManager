@@ -82,7 +82,7 @@ const inboundOrderSchema = z.object({
 // 表单类型定义
 type InboundOrderFormValues = z.infer<typeof inboundOrderSchema>;
 
-export default function NewMultiInboundOrder() {
+export default function NewInboundOrderWithItems() {
   const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -288,7 +288,7 @@ export default function NewMultiInboundOrder() {
       }
       
       // 使用FormData发送到服务器
-      return apiRequest("/api/inbound-orders/multi", {
+      return apiRequest("/api/inbound-orders/with-items", {
         method: "POST",
         body: formData, // 直接发送FormData对象，不需要JSON.stringify
       });
