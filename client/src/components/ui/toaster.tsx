@@ -9,7 +9,9 @@ import {
 import { useToast } from "@/components/ui/use-toast"
 
 export function Toaster() {
-  const { toasts } = useToast()
+  // 使用重构后的hook
+  const { state } = useToast();
+  const { toasts } = state;
 
   return (
     <ToastProvider>
