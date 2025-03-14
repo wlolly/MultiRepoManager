@@ -1,474 +1,759 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
-import { useForm, useFieldArray } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery } from "@tanstack/react-query";
 import { z } from "zod";
-import { v4 as uuidv4 } from 'uuid';
-import { 
-  Plus, Trash2, Save, ArrowLeft, Package, Search, 
-  PlusCircle, Calculator, RotateCw, ListFilter, X,
-  ScanLine, MinusIcon, ArrowRightIcon, QrCode, Camera
-} from "lucide-react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm, useFieldArray } from "react-hook-form";
 
-import { Button } from "@/components/ui/button";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogClose,
-} from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Combobox } from "@/components/ui/combobox";
+import { ArrowLeftIcon, PlusIcon, MinusIcon, ArrowRightIcon, ScanLine, QrCode, Camera, TruckIcon } from "lucide-react";
+import { toast } from "@/lib/toast";
 import { apiRequest } from "@/lib/queryClient";
-import { useQueryClient } from "@tanstack/react-query";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 
-// 仓库接口
+// 仓库接口定义
 interface Warehouse {
   id: number;
   name: string;
   location: string;
 }
 
-// 商品接口
+// 商品接口定义
 interface Product {
   id: number;
   name: string;
   barcode: string;
+  uniqueCode?: string;
   category: string;
   stock: number;
+  
+  // 单件信息
   singleWeightKg: number;
   singleVolumeM3: number;
+  singleLengthCm?: number;
+  singleWidthCm?: number;
+  singleHeightCm?: number;
+  
+  // 整件包装信息
+  bulkWeightKg: number;
+  bulkVolumeM3: number;
+  bulkLengthCm?: number;
+  bulkWidthCm?: number;
+  bulkHeightCm?: number;
+  bulkQuantity?: number; // 每件包装内的产品数量，默认为1
 }
 
-// 入库单项目表单验证
-const itemSchema = z.object({
-  id: z.string().optional(),
-  productId: z.number({
-    required_error: "请选择商品",
-  }),
-  productName: z.string().min(1, "商品名称不能为空"),
-  barcode: z.string().min(1, "条形码不能为空"),
-  uniqueCode: z.string().nullable().optional(),
-  externalOrderNumber: z.string().nullable().optional(),
-  quantity: z.number({
-    required_error: "数量不能为空",
-    invalid_type_error: "请输入有效的数字",
-  }).min(1, "数量必须大于0"),
-  packageCount: z.number({
-    required_error: "件数不能为空",
-    invalid_type_error: "请输入有效的数字",
-  }).min(1, "件数必须大于0"),
-  weight: z.string().min(1, "重量不能为空"),
-  volume: z.string().min(1, "体积不能为空"),
-  remark: z.string().nullable().optional(),
-});
-
-// 入库单表单验证
-const createInboundOrderSchema = z.object({
-  orderNumber: z.string().min(1, "订单号不能为空"),
-  warehouseId: z.number({
-    required_error: "请选择仓库",
-  }),
-  totalWeight: z.string().min(1, "总重量不能为空"),
-  totalVolume: z.string().min(1, "总体积不能为空"),
+// 入库单表单Schema
+const inboundOrderSchema = z.object({
+  warehouseId: z.string().min(1, { message: "仓库是必填项" }),
+  orderNumber: z.string().min(1, { message: "订单号是必填项" }),
   status: z.string().default("pending"),
-  orderType: z.enum(["purchase", "return", "transfer", "production"]).nullable().default("purchase"),
-  notes: z.string().nullable().optional(),
-  items: z.array(itemSchema).min(1, "至少需要添加一个商品"),
+  notes: z.string().optional(),
+  // 底单文件，可以是上传的图片或文档
+  documentImage: z.instanceof(FileList).optional().transform(fileList => 
+    fileList && fileList.length > 0 ? fileList : undefined
+  ),
+  // 如果是拍照，可以存储base64格式的图像数据
+  photoData: z.string().optional(),
+  items: z.array(
+    z.object({
+      productId: z.string().min(1, { message: "商品是必填项" }),
+      quantity: z.string().min(1, { message: "数量是必填项" }).transform(val => parseInt(val)),
+      packageCount: z.string().min(1, { message: "件数是必填项" }).transform(val => parseInt(val)),
+      weight: z.string().min(0, { message: "重量不能为负" }).transform(val => parseFloat(val)),
+      volume: z.string().min(0, { message: "体积不能为负" }).transform(val => parseFloat(val)),
+      uniqueCode: z.string().optional(), // 商品唯一码，可选
+      remark: z.string().optional(), // 备注，可选
+    })
+  ).min(1, { message: "至少需要添加一个商品" }),
 });
 
-type FormValues = z.infer<typeof createInboundOrderSchema>;
+// 表单类型定义
+type InboundOrderFormValues = z.infer<typeof inboundOrderSchema>;
 
-export default function NewInboundOrderWithItems() {
+export default function NewMultiInboundOrder() {
   const { t } = useTranslation();
-  const [, navigate] = useLocation();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const [searchTerm, setSearchTerm] = useState("");
-  const [searchResults, setSearchResults] = useState<Product[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [currentItemIndex, setCurrentItemIndex] = useState<number | null>(null);
-  const [productDialogOpen, setProductDialogOpen] = useState(false);
-  const [openBarcodeScanner, setOpenBarcodeScanner] = useState(false);
-  const [currentScanningField, setCurrentScanningField] = useState<{type: string, index?: number} | null>(null);
+  // 汇总数据
+  const [totalQuantity, setTotalQuantity] = useState(0);
+  const [totalPackages, setTotalPackages] = useState(0);
+  const [totalWeight, setTotalWeight] = useState(0);
+  const [totalVolume, setTotalVolume] = useState(0);
+  
+  // 条码扫描对话框状态
+  const [isBarcodeScannerOpen, setIsBarcodeScannerOpen] = useState(false);
+  const [currentScanningIndex, setCurrentScanningIndex] = useState<number | null>(null);
   
   // 获取仓库列表
-  const { data: warehouses = [] } = useQuery<Warehouse[]>({
+  const { data: warehouses = [], isLoading: isLoadingWarehouses } = useQuery<Warehouse[]>({
     queryKey: ["/api/warehouses"],
   });
-
+  
   // 获取商品列表
-  const { data: products = [] } = useQuery<Product[]>({
+  const { data: products = [], isLoading: isLoadingProducts } = useQuery<Product[]>({
     queryKey: ["/api/products"],
   });
-
-  // 新建入库单表单
-  const form = useForm<FormValues>({
-    resolver: zodResolver(createInboundOrderSchema),
+  
+  // 唯一码对应的产品查询
+  const findProductByUniqueCode = (uniqueCode: string) => {
+    return products.find(p => p.uniqueCode === uniqueCode);
+  };
+  
+  // 唯一码输入变更处理
+  const handleUniqueCodeChange = (value: string, index: number) => {
+    // 设置唯一码值，确保只有数字
+    const numericValue = value.replace(/\D/g, '').substring(0, 5);
+    form.setValue(`items.${index}.uniqueCode`, numericValue);
+    
+    // 如果唯一码是1-5位数字，则查找对应产品
+    if (numericValue && /^\d{1,5}$/.test(numericValue)) {
+      // 查找对应的产品
+      const product = findProductByUniqueCode(numericValue);
+      if (product) {
+        // 找到产品后，自动填充产品信息
+        form.setValue(`items.${index}.productId`, product.id.toString());
+        
+        // 获取数量
+        const quantity = parseInt(form.getValues(`items.${index}.quantity`) || "1");
+        
+        // 计算件数 - 根据产品的bulkQuantity属性计算
+        // bulkQuantity是每件包装内可以容纳的产品数量
+        const bulkQuantity = product.bulkQuantity || 1; // 默认为1
+        const packageCount = Math.ceil(quantity / bulkQuantity);
+        
+        // 更新件数
+        form.setValue(`items.${index}.packageCount`, packageCount.toString());
+        
+        // 计算总重量 = 件数 * 每件重量
+        const weightPerPackage = product.bulkWeightKg || 0;
+        const totalWeight = packageCount * weightPerPackage;
+        
+        // 计算总体积 = 件数 * 每件体积
+        const volumePerPackage = product.bulkVolumeM3 || 0;
+        const totalVolume = packageCount * volumePerPackage;
+        
+        // 更新重量和体积，保留3位小数
+        form.setValue(`items.${index}.weight`, totalWeight.toFixed(3));
+        form.setValue(`items.${index}.volume`, totalVolume.toFixed(3));
+        
+        toast({
+          title: t("product_found"),
+          description: `${t("product_found_by_code")}: ${product.name}`,
+        });
+        
+        // 触发表单更新，确保UI反映当前状态
+        form.trigger(`items.${index}.productId`);
+        form.trigger(`items.${index}.quantity`);
+        form.trigger(`items.${index}.packageCount`);
+        form.trigger(`items.${index}.weight`);
+        form.trigger(`items.${index}.volume`);
+      } else if (numericValue.length === 5) {
+        // 只有当输入完整的5位唯一码且找不到产品时才提示
+        toast({
+          title: t("product_not_found"),
+          description: t("no_product_with_unique_code", { code: numericValue }),
+          variant: "destructive",
+        });
+        
+        // 清空相关产品信息
+        form.setValue(`items.${index}.productId`, "");
+        form.trigger(`items.${index}.productId`);
+      }
+    } else if (value && !/^\d+$/.test(value)) {
+      // 如果输入了非数字字符，给出提示（但我们已经在上面过滤掉非数字，这里只是确保用户知道）
+      toast({
+        title: t("input_corrected"),
+        description: t("unique_code_must_be_numeric"),
+        variant: "warning",
+      });
+    }
+  };
+  
+  // 生成随机订单号
+  const generateOrderNumber = () => {
+    const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const randomPart = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+    return `INB-${datePart}-${randomPart}`;
+  };
+  
+  // 入库单表单
+  const form = useForm<InboundOrderFormValues>({
+    resolver: zodResolver(inboundOrderSchema),
     defaultValues: {
-      orderNumber: `IN-${new Date().getTime().toString().slice(-6)}`,
-      warehouseId: 0,
+      warehouseId: "",
+      orderNumber: generateOrderNumber(),
       status: "pending",
-      orderType: "purchase",
-      totalWeight: "0",
-      totalVolume: "0",
-      items: [],
-    },
+      notes: "",
+      documentImage: undefined, // 底单文件上传
+      photoData: "", // 底单拍照数据
+      items: [
+        {
+          productId: "",
+          quantity: "1",
+          packageCount: "1",
+          weight: "0",
+          volume: "0",
+          uniqueCode: "", // 初始化唯一码字段为空
+          remark: ""
+        }
+      ],
+    }
   });
-
-  // 表单中的商品项
-  const { fields, append, remove, update } = useFieldArray({
+  
+  // 使用 useFieldArray 管理多个入库商品
+  const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "items",
   });
-
-  // 创建入库单请求
-  const createOrderMutation = useMutation({
-    mutationFn: (data: FormValues) => 
-      apiRequest("/api/inbound-orders/with-items", {
-        method: "POST",
-        body: JSON.stringify(data),
-      }),
-    onSuccess: () => {
-      toast({
-        title: t("success"),
-        description: t("inbound_order_created"),
-      });
-      queryClient.invalidateQueries({queryKey: ["/api/inbound-orders"]});
-      navigate("/inbound-orders");
-    },
-    onError: (error) => {
-      toast({
-        title: t("error"),
-        description: t("create_inbound_order_failed"),
-        variant: "destructive",
-      });
-      console.error(error);
-    },
-  });
-
-  // 表单提交处理
-  const onSubmit = (data: FormValues) => {
-    createOrderMutation.mutate(data);
-  };
-
-  // 搜索商品
-  useEffect(() => {
-    if (searchTerm.length > 0) {
-      setIsSearching(true);
-      const results = products.filter(
-        (product) =>
-          product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          product.barcode.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setSearchResults(results);
-      setIsSearching(false);
-    } else {
-      setSearchResults([]);
-    }
-  }, [searchTerm, products]);
-
-  // 添加商品项
-  const handleAddItem = () => {
-    if (selectedProduct) {
-      // 计算重量和体积
-      const weight = (selectedProduct.singleWeightKg).toString();
-      const volume = (selectedProduct.singleVolumeM3).toString();
-      
-      append({
-        id: uuidv4(),
-        productId: selectedProduct.id,
-        productName: selectedProduct.name,
-        barcode: selectedProduct.barcode,
-        uniqueCode: null,
-        externalOrderNumber: null,
-        quantity: 1,
-        packageCount: 1,
-        weight,
-        volume,
-        remark: null,
-      });
-      
-      setSelectedProduct(null);
-      setSearchTerm("");
-      setProductDialogOpen(false);
-    }
-  };
-
-  // 编辑商品项
-  const handleEditItem = () => {
-    if (selectedProduct && currentItemIndex !== null) {
-      const currentItem = fields[currentItemIndex];
-      const currentQuantity = form.getValues(`items.${currentItemIndex}.quantity`);
-      const currentPackageCount = form.getValues(`items.${currentItemIndex}.packageCount`);
-      const externalOrderNumber = form.getValues(`items.${currentItemIndex}.externalOrderNumber`);
-      const uniqueCode = form.getValues(`items.${currentItemIndex}.uniqueCode`);
-      const remark = form.getValues(`items.${currentItemIndex}.remark`);
-      
-      // 计算重量和体积
-      const weight = (selectedProduct.singleWeightKg * currentQuantity).toString();
-      const volume = (selectedProduct.singleVolumeM3 * currentQuantity).toString();
-      
-      update(currentItemIndex, {
-        id: currentItem.id,
-        productId: selectedProduct.id,
-        productName: selectedProduct.name,
-        barcode: selectedProduct.barcode,
-        uniqueCode,
-        externalOrderNumber,
-        quantity: currentQuantity,
-        packageCount: currentPackageCount,
-        weight,
-        volume,
-        remark,
-      });
-      
-      setSelectedProduct(null);
-      setSearchTerm("");
-      setCurrentItemIndex(null);
-      setProductDialogOpen(false);
-    }
-  };
-
-  // 选择商品
-  const handleSelectProduct = (product: Product) => {
-    setSelectedProduct(product);
-  };
-
-  // 计算总重量和总体积
+  
+  // 计算汇总数据
   const calculateTotals = () => {
     const items = form.getValues("items");
+    let quantity = 0;
+    let packages = 0;
+    let weight = 0;
+    let volume = 0;
     
-    const totalWeight = items.reduce(
-      (sum, item) => sum + parseFloat(item.weight || "0"),
-      0
-    );
+    // 计算所有行的总和
+    items.forEach(item => {
+      // 确保值为数字
+      const itemQuantity = parseInt(item.quantity?.toString() || "0");
+      const itemPackages = parseInt(item.packageCount?.toString() || "0");
+      const itemWeight = parseFloat(item.weight?.toString() || "0");
+      const itemVolume = parseFloat(item.volume?.toString() || "0");
+      
+      // 累加
+      quantity += itemQuantity;
+      packages += itemPackages;
+      weight += itemWeight;
+      volume += itemVolume;
+    });
     
-    const totalVolume = items.reduce(
-      (sum, item) => sum + parseFloat(item.volume || "0"),
-      0
-    );
-    
-    form.setValue("totalWeight", totalWeight.toString());
-    form.setValue("totalVolume", totalVolume.toString());
+    // 更新状态
+    setTotalQuantity(quantity);
+    setTotalPackages(packages);
+    setTotalWeight(weight);
+    setTotalVolume(volume);
   };
-
-  // 更新单项重量和体积
-  const updateItemWeightAndVolume = (index: number) => {
-    const items = form.getValues("items");
-    const item = items[index];
+  
+  // 创建入库单
+  const createInboundOrderMutation = useMutation({
+    mutationFn: async (data: InboundOrderFormValues) => {
+      // 创建FormData对象用于文件上传
+      const formData = new FormData();
+      
+      // 添加基本信息到FormData
+      formData.append('warehouseId', data.warehouseId);
+      formData.append('orderNumber', data.orderNumber);
+      formData.append('status', data.status);
+      if (data.notes) formData.append('notes', data.notes);
+      
+      // 添加商品信息到FormData (需要以JSON字符串形式添加)
+      const itemsArray = data.items.map(item => ({
+        productId: item.productId,
+        quantity: item.quantity.toString(), // 确保是字符串
+        packageCount: item.packageCount.toString(), // 确保是字符串
+        weight: item.weight.toString(),
+        volume: item.volume.toString(),
+        uniqueCode: item.uniqueCode || "", // 添加唯一码数据，如果为空则传空字符串
+        remark: item.remark || "" // 添加备注数据，如果为空则传空字符串
+      }));
+      
+      // 添加商品数据
+      formData.append('items', JSON.stringify(itemsArray));
+      
+      // 如果有上传的底单文件，添加到FormData
+      if (data.documentImage && data.documentImage.length > 0) {
+        formData.append('document', data.documentImage[0]);
+      }
+      // 如果有拍照底单数据，转换为文件并添加
+      else if (data.photoData) {
+        // 将base64图像数据转换为文件
+        const blob = dataURItoBlob(data.photoData);
+        const file = new File([blob], 'photo.jpg', { type: 'image/jpeg' });
+        formData.append('document', file);
+      }
+      
+      // 使用FormData发送到服务器
+      return apiRequest("/api/inbound-orders/multi", {
+        method: "POST",
+        body: formData, // 直接发送FormData对象，不需要JSON.stringify
+      });
+    },
+    onSuccess: (response) => {
+      // 显示入库单创建成功以及入库单号
+      toast({
+        title: t("inboundOrder.order_created"),
+        description: response.orderNumber 
+          ? t("inboundOrder.order_created_with_number", { number: response.orderNumber })
+          : t("inboundOrder.order_created_description"),
+      });
+      setLocation("/inbound-orders");
+    },
+    onError: (error) => {
+      console.error("创建入库单失败:", error);
+      toast({
+        title: t("inboundOrder.order_create_failed"),
+        description: t("inboundOrder.order_create_failed_description"),
+        variant: "destructive",
+      });
+      setIsSubmitting(false);
+    }
+  });
+  
+  // 提交表单
+  const onSubmit = (data: InboundOrderFormValues) => {
+    setIsSubmitting(true);
+    createInboundOrderMutation.mutate(data);
+  };
+  
+  // 添加商品行
+  const handleAddItem = () => {
+    append({
+      productId: "",
+      quantity: "1",
+      packageCount: "1",
+      weight: "0",
+      volume: "0",
+      uniqueCode: "", // 添加唯一码字段，初始为空
+      remark: ""
+    });
     
-    if (item && selectedProduct) {
-      const quantity = item.quantity || 0;
-      const weight = (selectedProduct.singleWeightKg * quantity).toString();
-      const volume = (selectedProduct.singleVolumeM3 * quantity).toString();
+    // 添加商品后重新计算汇总数据 - 使用requestAnimationFrame确保在DOM更新后执行
+    requestAnimationFrame(() => {
+      calculateTotals();
+      console.log("添加项目后汇总数据已更新");
+    });
+  };
+  
+  // 打开条码扫描器对话框
+  const openBarcodeScanner = (index: number) => {
+    setCurrentScanningIndex(index);
+    setIsBarcodeScannerOpen(true);
+  };
+  
+  // 处理唯一码扫描结果
+  const handleUniqueCodeScanned = (code: string) => {
+    if (currentScanningIndex !== null) {
+      // 确保扫描结果是有效的唯一码（1-5位数字）
+      const numericCode = code.replace(/\D/g, '').substring(0, 5);
       
-      form.setValue(`items.${index}.weight`, weight);
-      form.setValue(`items.${index}.volume`, volume);
+      // 将扫描结果更新到对应的表单字段
+      form.setValue(`items.${currentScanningIndex}.uniqueCode`, numericCode);
       
+      // 只有当唯一码有效(1-5位数字)时才进行产品查找
+      if (numericCode && /^\d{1,5}$/.test(numericCode)) {
+        // 查找对应的产品
+        const product = findProductByUniqueCode(numericCode);
+        if (product) {
+          // 检查是否已有产品被选择
+          const existingProductId = form.getValues(`items.${currentScanningIndex}.productId`);
+          if (existingProductId && parseInt(existingProductId) !== product.id) {
+            // 如果已选择了不同的产品，提示用户产品已被更新
+            toast({
+              title: t("product_updated"),
+              description: t("product_updated_by_unique_code", { oldProduct: products.find(p => p.id === parseInt(existingProductId))?.name || "Unknown", newProduct: product.name }),
+              variant: "warning",
+            });
+          }
+          
+          // 自动填充产品信息
+          form.setValue(`items.${currentScanningIndex}.productId`, product.id.toString());
+          
+          // 获取数量，如果未设置则默认为1
+          const quantity = parseInt(form.getValues(`items.${currentScanningIndex}.quantity`) || "1");
+          
+          // 计算件数 - 根据产品的bulkQuantity属性计算
+          // bulkQuantity是每件包装内可以容纳的产品数量
+          const bulkQuantity = product.bulkQuantity || 1; // 默认为1
+          const packageCount = Math.ceil(quantity / bulkQuantity);
+          
+          // 更新件数
+          form.setValue(`items.${currentScanningIndex}.packageCount`, packageCount.toString());
+          
+          // 计算总重量 = 件数 * 每件重量
+          const weightPerPackage = product.bulkWeightKg || 0;
+          const totalWeight = packageCount * weightPerPackage;
+          
+          // 计算总体积 = 件数 * 每件体积
+          const volumePerPackage = product.bulkVolumeM3 || 0;
+          const totalVolume = packageCount * volumePerPackage;
+          
+          // 更新重量和体积，保留3位小数
+          form.setValue(`items.${currentScanningIndex}.weight`, totalWeight.toFixed(3));
+          form.setValue(`items.${currentScanningIndex}.volume`, totalVolume.toFixed(3));
+          
+          toast({
+            title: t("product_found"),
+            description: `${t("product_found_by_code")}: ${product.name}`,
+          });
+          
+          // 触发表单验证，确保UI更新
+          form.trigger(`items.${currentScanningIndex}.productId`);
+          form.trigger(`items.${currentScanningIndex}.quantity`);
+          form.trigger(`items.${currentScanningIndex}.packageCount`);
+          form.trigger(`items.${currentScanningIndex}.weight`);
+          form.trigger(`items.${currentScanningIndex}.volume`);
+        } else {
+          // 没有找到匹配的产品
+          if (numericCode.length === 5) {
+            // 完整的5位唯一码但未找到产品
+            toast({
+              title: t("product_not_found"),
+              description: t("no_product_with_unique_code", { code: numericCode }),
+              variant: "destructive",
+            });
+          } else {
+            // 不完整的唯一码
+            toast({
+              title: t("incomplete_unique_code"),
+              description: t("continue_scanning_or_select_product"),
+              variant: "warning",
+            });
+          }
+        }
+      } else if (code && !/^\d+$/.test(code)) {
+        // 扫描结果包含非数字字符
+        toast({
+          title: t("invalid_barcode"),
+          description: t("barcode_must_be_numeric"),
+          variant: "destructive",
+        });
+      } else if (!code) {
+        // 扫描结果为空
+        toast({
+          title: t("scan_failed"),
+          description: t("please_try_again"),
+          variant: "destructive",
+        });
+      }
+      
+      // 关闭扫描对话框
+      setIsBarcodeScannerOpen(false);
+      
+      // 更新总计数据
       calculateTotals();
     }
   };
-
-  // 当商品数量变化时更新重量和体积
-  useEffect(() => {
+  
+  // 移除商品行
+  const handleRemoveItem = (index: number) => {
+    if (fields.length > 1) {
+      remove(index);
+      
+      // 移除商品后重新计算汇总数据 - 使用requestAnimationFrame确保在DOM更新后执行
+      requestAnimationFrame(() => {
+        calculateTotals();
+        console.log("删除项目后汇总数据已更新");
+      });
+    } else {
+      toast({
+        title: t("validation_error"),
+        description: t("min_one_item_required"),
+        variant: "destructive",
+      });
+    }
+  };
+  
+  // 商品选择时自动计算件数、重量和体积，并填充唯一码
+  const handleProductChange = (value: string, index: number) => {
+    // 设置产品ID
+    form.setValue(`items.${index}.productId`, value);
+    
+    // 查找选择的产品信息
+    const selectedProduct = products.find(p => p.id === parseInt(value));
+    if (selectedProduct) {
+      // 获取当前数量，如果未设置则默认为1
+      const quantity = parseInt(form.getValues(`items.${index}.quantity`) || "1");
+      
+      // 计算件数 - 根据产品的bulkQuantity属性计算
+      // bulkQuantity是每件包装内可以容纳的产品数量
+      const bulkQuantity = selectedProduct.bulkQuantity || 1; // 默认为1
+      const packageCount = Math.ceil(quantity / bulkQuantity);
+      
+      // 更新件数
+      form.setValue(`items.${index}.packageCount`, packageCount.toString());
+      
+      // 计算总重量 = 件数 * 每件重量
+      const totalWeight = packageCount * selectedProduct.bulkWeightKg;
+      
+      // 计算总体积 = 件数 * 每件体积
+      const totalVolume = packageCount * selectedProduct.bulkVolumeM3;
+      
+      // 更新重量和体积，保留3位小数
+      form.setValue(`items.${index}.weight`, totalWeight.toFixed(3));
+      form.setValue(`items.${index}.volume`, totalVolume.toFixed(3));
+      
+      // 检查是否已存在唯一码
+      const currentUniqueCode = form.getValues(`items.${index}.uniqueCode`);
+      
+      // 自动填充唯一码（如果商品有唯一码且当前没有设置）
+      if (selectedProduct.uniqueCode && !currentUniqueCode) {
+        form.setValue(`items.${index}.uniqueCode`, selectedProduct.uniqueCode);
+      }
+      
+      // 触发表单验证，确保UI更新
+      form.trigger(`items.${index}.packageCount`);
+      form.trigger(`items.${index}.weight`);
+      form.trigger(`items.${index}.volume`);
+      
+      // 更新总计
+      calculateTotals();
+    }
+  };
+  
+  // 数量变更时，重新计算件数、重量和体积
+  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+    // 获取输入值，确保为数字
+    const inputValue = e.target.value;
+    const quantity = parseInt(inputValue) || 0;
+    
+    // 更新数量字段
+    form.setValue(`items.${index}.quantity`, inputValue);
+    
+    // 获取当前选择的产品
+    const productId = form.getValues(`items.${index}.productId`);
+    if (productId) {
+      const selectedProduct = products.find(p => p.id === parseInt(productId));
+      if (selectedProduct) {
+        // 计算件数 - 根据产品的bulkQuantity属性计算
+        const bulkQuantity = selectedProduct.bulkQuantity || 1; // 默认为1
+        const packageCount = Math.ceil(quantity / bulkQuantity);
+        
+        // 更新件数
+        form.setValue(`items.${index}.packageCount`, packageCount.toString());
+        
+        // 计算总重量 = 件数 * 每件重量
+        const totalWeight = packageCount * selectedProduct.bulkWeightKg;
+        
+        // 计算总体积 = 件数 * 每件体积
+        const totalVolume = packageCount * selectedProduct.bulkVolumeM3;
+        
+        // 更新重量和体积，保留3位小数
+        form.setValue(`items.${index}.weight`, totalWeight.toFixed(3));
+        form.setValue(`items.${index}.volume`, totalVolume.toFixed(3));
+        
+        // 触发表单验证，确保UI更新
+        form.trigger(`items.${index}.packageCount`);
+        form.trigger(`items.${index}.weight`);
+        form.trigger(`items.${index}.volume`);
+        
+        // 更新总计
+        calculateTotals();
+      }
+    }
+  };
+  
+  // 件数变更时，重新计算重量和体积
+  const handlePackageCountChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+    // 获取输入值，确保为数字
+    const inputValue = e.target.value;
+    const packageCount = parseInt(inputValue) || 0;
+    
+    // 更新件数字段
+    form.setValue(`items.${index}.packageCount`, inputValue);
+    
+    // 获取当前选择的产品
+    const productId = form.getValues(`items.${index}.productId`);
+    if (productId) {
+      const selectedProduct = products.find(p => p.id === parseInt(productId));
+      if (selectedProduct) {
+        // 计算总重量 = 件数 * 每件重量
+        const totalWeight = packageCount * selectedProduct.bulkWeightKg;
+        
+        // 计算总体积 = 件数 * 每件体积
+        const totalVolume = packageCount * selectedProduct.bulkVolumeM3;
+        
+        // 更新重量和体积，保留3位小数
+        form.setValue(`items.${index}.weight`, totalWeight.toFixed(3));
+        form.setValue(`items.${index}.volume`, totalVolume.toFixed(3));
+        
+        // 触发表单验证，确保UI更新
+        form.trigger(`items.${index}.weight`);
+        form.trigger(`items.${index}.volume`);
+        
+        // 更新总计
+        calculateTotals();
+      }
+    }
+  };
+  
+  // 将base64数据URI转换为Blob对象
+  const dataURItoBlob = (dataURI: string): Blob => {
+    const byteString = atob(dataURI.split(',')[1]);
+    const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    
+    for (let i = 0; i < byteString.length; i++) {
+      ia[i] = byteString.charCodeAt(i);
+    }
+    
+    return new Blob([ab], { type: mimeString });
+  };
+  
+  // 进入页面时初始化计算总计
+  React.useEffect(() => {
     calculateTotals();
-  }, [fields]);
-
-  // 选择商品对话框
-  const ProductSelectionDialog = () => (
-    <Dialog open={productDialogOpen} onOpenChange={setProductDialogOpen}>
-      <DialogContent className="max-w-3xl">
-        <DialogHeader>
-          <DialogTitle>{t("select_product")}</DialogTitle>
-          <DialogDescription>
-            {t("search_and_select_product")}
-          </DialogDescription>
-        </DialogHeader>
+  }, []);
+  
+  // 监听表单数据变化，更新汇总数据
+  React.useEffect(() => {
+    const subscription = form.watch(() => {
+      calculateTotals();
+    });
+    
+    return () => subscription.unsubscribe();
+  }, [form.watch]);
+  
+  // 文件选择变更处理
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      // 同时清除photoData，因为选择了文件上传
+      form.setValue("photoData", "");
+    }
+  };
+  
+  // 拍照数据变更处理
+  const handlePhotoDataChange = (dataUrl: string) => {
+    if (dataUrl) {
+      form.setValue("photoData", dataUrl);
+      // 同时清除文件上传，因为使用了拍照
+      form.setValue("documentImage", undefined);
+    }
+  };
+  
+  // 拍照底单对话框状态
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  
+  // 打开相机
+  const openCamera = async () => {
+    try {
+      if (videoRef.current && navigator.mediaDevices?.getUserMedia) {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: 'environment' } 
+        });
+        videoRef.current.srcObject = stream;
+        videoRef.current.play();
+        setIsCameraOpen(true);
+      }
+    } catch (error) {
+      console.error("Error accessing camera:", error);
+      toast({
+        title: t("camera_error"),
+        description: t("camera_access_denied"),
+        variant: "destructive",
+      });
+    }
+  };
+  
+  // 拍照
+  const capturePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+      
+      if (ctx) {
+        // 设置canvas尺寸与视频匹配
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
         
-        <div className="flex items-center space-x-2 mb-4">
-          <Input
-            placeholder={t("search_by_name_or_barcode")}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <Button variant="outline" size="icon">
-            <Search className="h-4 w-4" />
-          </Button>
-        </div>
+        // 绘制视频帧到canvas
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         
-        <div className="max-h-[400px] overflow-y-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t("name")}</TableHead>
-                <TableHead>{t("barcode")}</TableHead>
-                <TableHead>{t("category")}</TableHead>
-                <TableHead className="text-right">{t("stock")}</TableHead>
-                <TableHead className="text-right">{t("weight")}</TableHead>
-                <TableHead className="text-right">{t("volume")}</TableHead>
-                <TableHead></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isSearching ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center">
-                    {t("searching")}...
-                  </TableCell>
-                </TableRow>
-              ) : searchResults.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center">
-                    {searchTerm ? t("no_products_found") : t("search_to_find_products")}
-                  </TableCell>
-                </TableRow>
-              ) : (
-                searchResults.map((product) => (
-                  <TableRow 
-                    key={product.id}
-                    className={`cursor-pointer ${selectedProduct?.id === product.id ? 'bg-muted' : ''}`}
-                    onClick={() => handleSelectProduct(product)}
-                  >
-                    <TableCell className="font-medium">{product.name}</TableCell>
-                    <TableCell>{product.barcode}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{product.category}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right">{product.stock}</TableCell>
-                    <TableCell className="text-right">{product.singleWeightKg} kg</TableCell>
-                    <TableCell className="text-right">{product.singleVolumeM3} m³</TableCell>
-                    <TableCell>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => handleSelectProduct(product)}
-                      >
-                        <PlusCircle className="h-4 w-4 mr-1" />
-                        {t("select")}
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
+        // 获取图像数据
+        const dataUrl = canvas.toDataURL('image/jpeg');
+        handlePhotoDataChange(dataUrl);
         
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => {
-              setSelectedProduct(null);
-              setProductDialogOpen(false);
-            }}
-          >
-            {t("cancel")}
-          </Button>
-          <Button
-            disabled={!selectedProduct}
-            onClick={() => currentItemIndex !== null ? handleEditItem() : handleAddItem()}
-          >
-            {currentItemIndex !== null ? t("update_product") : t("add_product")}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
+        // 关闭相机流
+        if (video.srcObject) {
+          const stream = video.srcObject as MediaStream;
+          stream.getTracks().forEach(track => track.stop());
+          video.srcObject = null;
+        }
+        
+        setIsCameraOpen(false);
+        
+        toast({
+          title: t("photo_captured"),
+          description: t("photo_captured_description"),
+        });
+      }
+    }
+  };
+  
+  // 关闭相机
+  const closeCamera = () => {
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach(track => track.stop());
+      videoRef.current.srcObject = null;
+    }
+    setIsCameraOpen(false);
+  };
 
   return (
-    <div className="container mx-auto py-6">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center">
+    <div className="max-w-6xl mx-auto py-6 space-y-8">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
           <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate("/inbound-orders")}
-            className="mr-4"
+            variant="outline"
+            size="icon"
+            onClick={() => setLocation("/inbound-orders")}
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            {t("back")}
+            <ArrowLeftIcon className="h-4 w-4" />
           </Button>
-          <div>
-            <h1 className="text-2xl font-bold">{t("new_inbound_order_with_items")}</h1>
-            <p className="text-muted-foreground">
-              {t("create_new_inbound_order_with_items_description")}
-            </p>
-          </div>
+          <h1 className="text-2xl font-bold">{t("inboundOrder.create_new_inbound_order")}</h1>
         </div>
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* 入库单基本信息 */}
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("basic_information")}</CardTitle>
-                <CardDescription>
-                  {t("inbound_order_basic_information_description")}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("inboundOrder.basic_information")}</CardTitle>
+              <CardDescription>
+                {t("inboundOrder.enter_basic_order_information")}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* 订单号 */}
                 <FormField
                   control={form.control}
                   name="orderNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("order_number")}</FormLabel>
+                      <FormLabel>{t("inboundOrder.order_number")}</FormLabel>
                       <FormControl>
                         <Input {...field} />
                       </FormControl>
+                      <FormDescription>
+                        {t("inboundOrder.order_number_description")}
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-
+                
+                {/* 仓库选择 */}
                 <FormField
                   control={form.control}
                   name="warehouseId"
@@ -476,8 +761,9 @@ export default function NewInboundOrderWithItems() {
                     <FormItem>
                       <FormLabel>{t("warehouse")}</FormLabel>
                       <Select
-                        onValueChange={(value) => field.onChange(parseInt(value))}
-                        defaultValue={field.value?.toString()}
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        value={field.value}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -486,487 +772,403 @@ export default function NewInboundOrderWithItems() {
                         </FormControl>
                         <SelectContent>
                           {warehouses.map((warehouse) => (
-                            <SelectItem
-                              key={warehouse.id}
-                              value={warehouse.id.toString()}
-                            >
-                              {warehouse.name} ({warehouse.location})
+                            <SelectItem key={warehouse.id} value={warehouse.id.toString()}>
+                              {warehouse.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
+                      <FormDescription>
+                        {t("inboundOrder.warehouse_description")}
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-
-                <FormField
-                  control={form.control}
-                  name="orderType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("order_type")}</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value || "purchase"}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder={t("select_order_type")} />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="purchase">{t("purchase_order")}</SelectItem>
-                          <SelectItem value="return">{t("return_order")}</SelectItem>
-                          <SelectItem value="transfer">{t("transfer_order")}</SelectItem>
-                          <SelectItem value="production">{t("production_order")}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("status")}</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder={t("select_status")} />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="pending">{t("pending")}</SelectItem>
-                          <SelectItem value="processing">{t("processing")}</SelectItem>
-                          <SelectItem value="completed">{t("completed")}</SelectItem>
-                          <SelectItem value="cancelled">{t("cancelled")}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="notes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("notes")}</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder={t("enter_notes")}
-                          {...field}
-                          value={field.value || ""}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </Card>
-
-            {/* 入库单汇总信息 */}
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("summary")}</CardTitle>
-                <CardDescription>
-                  {t("inbound_order_summary_description")}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                
+                {/* 备注 */}
+                <div className="md:col-span-2">
                   <FormField
                     control={form.control}
-                    name="totalWeight"
+                    name="notes"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t("total_weight")} (kg)</FormLabel>
+                        <FormLabel>{t("notes")}</FormLabel>
                         <FormControl>
-                          <Input {...field} readOnly />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="totalVolume"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("total_volume")} (m³)</FormLabel>
-                        <FormControl>
-                          <Input {...field} readOnly />
+                          <Textarea
+                            placeholder={t("inboundOrder.notes_placeholder")}
+                            className="resize-none"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
-
-                <div className="pt-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-medium">{t("items_count")}</h3>
-                    <Badge variant="outline">{fields.length}</Badge>
-                  </div>
-                  <Separator className="my-4" />
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t("unique_products")}</span>
-                      <span>{new Set(fields.map(item => item.productId)).size}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t("total_items")}</span>
-                      <span>{fields.reduce((sum, item) => sum + (item.quantity || 0), 0)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t("total_packages")}</span>
-                      <span>{fields.reduce((sum, item) => sum + (item.packageCount || 0), 0)}</span>
-                    </div>
-                  </div>
+                
+                {/* 底单文件上传 */}
+                <div className="md:col-span-2">
+                  <FormField
+                    control={form.control}
+                    name="documentImage"
+                    render={({ field: { value, onChange, ...field } }) => (
+                      <FormItem>
+                        <FormLabel>{t("inboundOrder.document_image")}</FormLabel>
+                        <FormControl>
+                          <div className="flex flex-col space-y-2">
+                            <Input
+                              id="documentImage"
+                              type="file"
+                              accept="image/*,.pdf"
+                              onChange={(e) => {
+                                handleFileChange(e);
+                                onChange(e.target.files);
+                              }}
+                              {...field}
+                            />
+                            <div className="flex items-center space-x-2">
+                              <div className="text-sm text-muted-foreground">
+                                {t("inboundOrder.or_take_photo")}
+                              </div>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={openCamera}
+                              >
+                                <Camera className="mr-2 h-4 w-4" />
+                                {t("take_photo")}
+                              </Button>
+                            </div>
+                            {form.getValues("photoData") && (
+                              <div className="mt-2">
+                                <p className="text-sm text-muted-foreground mb-2">
+                                  {t("inboundOrder.preview")}:
+                                </p>
+                                <img
+                                  src={form.getValues("photoData")}
+                                  alt="Document preview"
+                                  className="max-w-full h-auto max-h-40 rounded-md border"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </FormControl>
+                        <FormDescription>
+                          {t("inboundOrder.document_image_description")}
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
-              </CardContent>
-              <CardFooter>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  type="button"
-                  onClick={calculateTotals}
-                >
-                  <Calculator className="h-4 w-4 mr-2" />
-                  {t("recalculate_totals")}
-                </Button>
-              </CardFooter>
-            </Card>
+              </div>
+            </CardContent>
+          </Card>
 
-            {/* 操作按钮 */}
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("actions")}</CardTitle>
-                <CardDescription>
-                  {t("inbound_order_actions_description")}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={createOrderMutation.isPending}
-                >
-                  {createOrderMutation.isPending ? (
-                    <RotateCw className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Save className="h-4 w-4 mr-2" />
-                  )}
-                  {t("create_inbound_order")}
-                </Button>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => navigate("/inbound-orders")}
-                >
-                  <X className="h-4 w-4 mr-2" />
-                  {t("cancel")}
-                </Button>
-
-                <Separator className="my-4" />
-
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className="w-full"
-                  onClick={() => {
-                    setCurrentItemIndex(null);
-                    setProductDialogOpen(true);
-                  }}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  {t("add_item")}
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* 商品列表 */}
+          {/* 商品信息表格 */}
           <Card>
             <CardHeader>
-              <CardTitle>{t("items")}</CardTitle>
+              <CardTitle>{t("inboundOrder.items_information")}</CardTitle>
               <CardDescription>
-                {t("inbound_order_items_description")}
+                {t("inboundOrder.add_items_to_inbound_order")}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {fields.length === 0 ? (
-                <div className="text-center py-8 border rounded-md">
-                  <Package className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                  <p className="text-muted-foreground mb-4">{t("no_items_added")}</p>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setCurrentItemIndex(null);
-                      setProductDialogOpen(true);
-                    }}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    {t("add_item")}
-                  </Button>
-                </div>
-              ) : (
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[80px]">{t("no")}</TableHead>
-                        <TableHead>{t("product_name")}</TableHead>
-                        <TableHead>{t("barcode")}</TableHead>
-                        <TableHead>{t("unique_code")}</TableHead>
-                        <TableHead>{t("external_order_number")}</TableHead>
-                        <TableHead className="text-right">{t("quantity")}</TableHead>
-                        <TableHead className="text-right">{t("package_count")}</TableHead>
-                        <TableHead className="text-right">{t("weight")} (kg)</TableHead>
-                        <TableHead className="text-right">{t("volume")} (m³)</TableHead>
-                        <TableHead className="w-[100px]"></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {fields.map((item, index) => (
-                        <TableRow key={item.id}>
-                          <TableCell>{index + 1}</TableCell>
-                          <TableCell className="font-medium">
-                            {item.productName}
-                          </TableCell>
-                          <TableCell>{item.barcode}</TableCell>
-                          <TableCell>
-                            <FormField
-                              control={form.control}
-                              name={`items.${index}.uniqueCode`}
-                              render={({ field }) => (
-                                <FormItem className="m-0">
-                                  <FormControl>
-                                    <div className="flex items-center space-x-1">
-                                      <Input
-                                        {...field}
-                                        value={field.value || ""}
-                                        placeholder={t("unique_code")}
-                                        className="h-8"
-                                      />
-                                      <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8"
-                                        onClick={() => {
-                                          // 打开条码扫描对话框
-                                          setOpenBarcodeScanner(true);
-                                          setCurrentScanningField({type: 'uniqueCode', index});
-                                        }}
-                                      >
-                                        <ScanLine className="h-4 w-4" />
-                                      </Button>
-                                    </div>
-                                  </FormControl>
-                                  <FormMessage className="text-xs" />
-                                </FormItem>
-                              )}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <FormField
-                              control={form.control}
-                              name={`items.${index}.externalOrderNumber`}
-                              render={({ field }) => (
-                                <FormItem className="m-0">
-                                  <FormControl>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[50px]">No.</TableHead>
+                      <TableHead className="w-[100px]">{t("unique_code")}</TableHead>
+                      <TableHead>{t("product")}</TableHead>
+                      <TableHead className="w-[80px] text-center">{t("quantity")}</TableHead>
+                      <TableHead className="w-[80px] text-center">{t("package_count")}</TableHead>
+                      <TableHead className="w-[80px] text-center">{t("weight")}</TableHead>
+                      <TableHead className="w-[80px] text-center">{t("volume")}</TableHead>
+                      <TableHead className="w-[150px]">{t("remark")}</TableHead>
+                      <TableHead className="w-[50px]"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {fields.map((field, index) => (
+                      <TableRow key={field.id}>
+                        <TableCell className="align-top py-4 text-center">
+                          {index + 1}
+                        </TableCell>
+                        <TableCell className="align-top py-4">
+                          <FormField
+                            control={form.control}
+                            name={`items.${index}.uniqueCode`}
+                            render={({ field }) => (
+                              <FormItem className="space-y-0">
+                                <FormControl>
+                                  <div className="flex items-center space-x-1">
                                     <Input
                                       {...field}
                                       value={field.value || ""}
-                                      placeholder={t("external_order_number")}
+                                      placeholder={t("unique_code")}
                                       className="h-8"
-                                    />
-                                  </FormControl>
-                                  <FormMessage className="text-xs" />
-                                </FormItem>
-                              )}
-                            />
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <FormField
-                              control={form.control}
-                              name={`items.${index}.quantity`}
-                              render={({ field }) => (
-                                <FormItem className="m-0">
-                                  <FormControl>
-                                    <Input
-                                      {...field}
-                                      type="number"
-                                      min="1"
-                                      className="h-8 w-20 text-right ml-auto"
                                       onChange={(e) => {
-                                        field.onChange(parseInt(e.target.value) || 0);
-                                        setTimeout(() => {
-                                          updateItemWeightAndVolume(index);
-                                        }, 0);
+                                        field.onChange(e);
+                                        handleUniqueCodeChange(e.target.value, index);
                                       }}
                                     />
-                                  </FormControl>
-                                  <FormMessage className="text-xs" />
-                                </FormItem>
-                              )}
-                            />
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <FormField
-                              control={form.control}
-                              name={`items.${index}.packageCount`}
-                              render={({ field }) => (
-                                <FormItem className="m-0">
-                                  <FormControl>
-                                    <Input
-                                      {...field}
-                                      type="number"
-                                      min="1"
-                                      className="h-8 w-20 text-right ml-auto"
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => openBarcodeScanner(index)}
+                                    >
+                                      <QrCode className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </TableCell>
+                        <TableCell className="align-top py-4">
+                          <FormField
+                            control={form.control}
+                            name={`items.${index}.productId`}
+                            render={({ field }) => (
+                              <FormItem className="space-y-0">
+                                <FormControl>
+                                  {isLoadingProducts ? (
+                                    <div className="h-8 w-full bg-muted animate-pulse rounded"></div>
+                                  ) : (
+                                    <Combobox
+                                      options={products.map(product => ({
+                                        label: `${product.name} (${product.barcode})`,
+                                        value: product.id.toString()
+                                      }))}
+                                      value={field.value}
+                                      onValueChange={(value: string) => handleProductChange(value, index)}
+                                      placeholder={t("select_product")}
+                                      emptyText={t("no_product_found")}
+                                      className="h-8"
                                     />
-                                  </FormControl>
-                                  <FormMessage className="text-xs" />
-                                </FormItem>
-                              )}
-                            />
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <FormField
-                              control={form.control}
-                              name={`items.${index}.weight`}
-                              render={({ field }) => (
-                                <FormItem className="m-0">
-                                  <FormControl>
-                                    <Input
-                                      {...field}
-                                      readOnly
-                                      className="h-8 w-20 text-right ml-auto"
-                                    />
-                                  </FormControl>
-                                  <FormMessage className="text-xs" />
-                                </FormItem>
-                              )}
-                            />
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <FormField
-                              control={form.control}
-                              name={`items.${index}.volume`}
-                              render={({ field }) => (
-                                <FormItem className="m-0">
-                                  <FormControl>
-                                    <Input
-                                      {...field}
-                                      readOnly
-                                      className="h-8 w-20 text-right ml-auto"
-                                    />
-                                  </FormControl>
-                                  <FormMessage className="text-xs" />
-                                </FormItem>
-                              )}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center justify-end space-x-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => {
-                                  const product = products.find(
-                                    (p) => p.id === item.productId
-                                  );
-                                  if (product) {
-                                    setSelectedProduct(product);
-                                    setCurrentItemIndex(index);
-                                    setProductDialogOpen(true);
-                                  }
-                                }}
-                              >
-                                <PlusCircle className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => remove(index)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                                  )}
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </TableCell>
+                        <TableCell className="align-top py-4">
+                          <FormField
+                            control={form.control}
+                            name={`items.${index}.quantity`}
+                            render={({ field }) => (
+                              <FormItem className="space-y-0">
+                                <FormControl>
+                                  <Input
+                                    {...field}
+                                    type="number"
+                                    min="1"
+                                    className="h-8 text-center"
+                                    onChange={(e) => handleQuantityChange(e, index)}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </TableCell>
+                        <TableCell className="align-top py-4">
+                          <FormField
+                            control={form.control}
+                            name={`items.${index}.packageCount`}
+                            render={({ field }) => (
+                              <FormItem className="space-y-0">
+                                <FormControl>
+                                  <Input
+                                    {...field}
+                                    type="number"
+                                    min="1"
+                                    className="h-8 text-center"
+                                    onChange={(e) => handlePackageCountChange(e, index)}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </TableCell>
+                        <TableCell className="align-top py-4">
+                          <FormField
+                            control={form.control}
+                            name={`items.${index}.weight`}
+                            render={({ field }) => (
+                              <FormItem className="space-y-0">
+                                <FormControl>
+                                  <Input
+                                    {...field}
+                                    readOnly
+                                    className="h-8 text-center bg-muted"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </TableCell>
+                        <TableCell className="align-top py-4">
+                          <FormField
+                            control={form.control}
+                            name={`items.${index}.volume`}
+                            render={({ field }) => (
+                              <FormItem className="space-y-0">
+                                <FormControl>
+                                  <Input
+                                    {...field}
+                                    readOnly
+                                    className="h-8 text-center bg-muted"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </TableCell>
+                        <TableCell className="align-top py-4">
+                          <FormField
+                            control={form.control}
+                            name={`items.${index}.remark`}
+                            render={({ field }) => (
+                              <FormItem className="space-y-0">
+                                <FormControl>
+                                  <Input
+                                    {...field}
+                                    value={field.value || ""}
+                                    placeholder={t("remark")}
+                                    className="h-8"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </TableCell>
+                        <TableCell className="align-top py-4">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handleRemoveItem(index)}
+                            disabled={fields.length <= 1}
+                          >
+                            <MinusIcon className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              
+              {/* 添加商品按钮 */}
+              <div className="mt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleAddItem}
+                  className="w-full"
+                >
+                  <PlusIcon className="mr-2 h-4 w-4" />
+                  {t("add_item")}
+                </Button>
+              </div>
+              
+              {/* 汇总信息 */}
+              <div className="mt-6 p-4 bg-muted/50 rounded-lg">
+                <h3 className="text-lg font-medium mb-4">{t("order_summary")}</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">{t("total_quantity")}</p>
+                    <p className="text-lg font-semibold">{totalQuantity}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">{t("total_packages")}</p>
+                    <p className="text-lg font-semibold">{totalPackages}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">{t("total_weight")}</p>
+                    <p className="text-lg font-semibold">{`${totalWeight.toFixed(2)} kg`}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">{t("total_volume")}</p>
+                    <p className="text-lg font-semibold">{`${totalVolume.toFixed(2)} m³`}</p>
+                  </div>
                 </div>
-              )}
+              </div>
             </CardContent>
             <CardFooter className="flex justify-between">
-              <p className="text-sm text-muted-foreground">
-                {t("items_count")}: {fields.length}
-              </p>
               <Button
                 type="button"
                 variant="outline"
-                size="sm"
-                onClick={() => {
-                  setCurrentItemIndex(null);
-                  setProductDialogOpen(true);
-                }}
+                onClick={() => setLocation("/inbound-orders")}
               >
-                <Plus className="h-4 w-4 mr-2" />
-                {t("add_item")}
+                {t("cancel")}
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? t('creating') : t('inboundOrder.create_inbound_order')}
               </Button>
             </CardFooter>
           </Card>
         </form>
       </Form>
-
-      {ProductSelectionDialog()}
       
       {/* 条码扫描对话框 */}
-      <Dialog open={openBarcodeScanner} onOpenChange={setOpenBarcodeScanner}>
-        <DialogContent className="max-w-sm">
+      <Dialog open={isBarcodeScannerOpen} onOpenChange={setIsBarcodeScannerOpen}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{t("barcode_scanner")}</DialogTitle>
+            <DialogTitle>{t("inboundOrder.scan_unique_code")}</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center py-4">
+            <BarcodeScanner 
+              onCodeDetected={handleUniqueCodeScanned}
+              label={t("inboundOrder.scan_or_enter_code")}
+              placeholder={t("inboundOrder.unique_code_placeholder")}
+              uniqueCodeMode={true}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* 拍照对话框 */}
+      <Dialog open={isCameraOpen} onOpenChange={setIsCameraOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("take_photo_of_document")}</DialogTitle>
             <DialogDescription>
-              {t("scan_barcode_description")}
+              {t("position_document_in_frame")}
             </DialogDescription>
           </DialogHeader>
-          
-          <BarcodeScanner
-            onCodeDetected={(code) => {
-              if (currentScanningField) {
-                if (currentScanningField.type === 'uniqueCode' && currentScanningField.index !== undefined) {
-                  // 更新唯一码字段
-                  form.setValue(`items.${currentScanningField.index}.uniqueCode`, code);
-                }
-                setOpenBarcodeScanner(false);
-                setCurrentScanningField(null);
-              }
-            }}
-            label={t("barcode")}
-            placeholder={t("scan_or_enter_barcode")}
-          />
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenBarcodeScanner(false)}>
+          <div className="relative">
+            <video 
+              ref={videoRef} 
+              className="w-full h-64 bg-black object-cover rounded-md"
+              playsInline
+            />
+            <canvas ref={canvasRef} className="hidden" />
+          </div>
+          <div className="flex justify-between">
+            <Button variant="outline" onClick={closeCamera}>
               {t("cancel")}
             </Button>
-          </DialogFooter>
+            <Button onClick={capturePhoto}>
+              {t("capture")}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
