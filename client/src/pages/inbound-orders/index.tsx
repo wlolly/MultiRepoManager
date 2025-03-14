@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
 import axios from "axios";
@@ -62,7 +62,8 @@ interface InboundStats {
 
 export default function InboundOrders() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const [_, navigate] = useLocation(); // 使用wouter的useLocation代替useNavigate
+  const { toast } = useToast(); // 使用shadcn的toast
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [typeFilter, setTypeFilter] = useState<string>("");
@@ -210,7 +211,6 @@ export default function InboundOrders() {
   // 导出单个入库单
   const exportSingleOrder = (id: number) => {
     window.open(`/api/inbound-orders/${id}/export`, '_blank');
-  }
   };
   
   // 处理创建新入库单
