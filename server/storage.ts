@@ -63,6 +63,13 @@ export interface IStorage {
   createProduct(product: InsertProduct): Promise<Product>;
   updateProduct(id: number, product: Partial<Product>): Promise<Product | undefined>;
   getProducts(filter?: { warehouseId?: number, category?: string }): Promise<Product[]>;
+  getProductsStats(): Promise<{
+    totalProducts: number;
+    totalCategories: number;
+    lowStockProducts: number;
+    totalValue: number;
+    avgPrice: number;
+  }>;
   
   // 仓库相关方法
   getWarehouse(id: number): Promise<Warehouse | undefined>;
@@ -855,6 +862,45 @@ export class MemStorage implements IStorage {
     }
     
     return products;
+  }
+  
+  async getProductsStats(): Promise<{
+    totalProducts: number;
+    totalCategories: number;
+    lowStockProducts: number;
+    totalValue: number;
+    avgPrice: number;
+  }> {
+    const products = Array.from(this.productsMap.values());
+    
+    // 获取所有唯一分类
+    const categories = new Set<string>();
+    for (const product of products) {
+      if (product.category) {
+        categories.add(product.category);
+      }
+    }
+    
+    // 计算库存低的产品数量 (库存少于10的产品)
+    const lowStockProducts = products.filter(product => product.stock < 10).length;
+    
+    // 计算总价值 (库存 * 价格)
+    const totalValue = products.reduce((sum, product) => {
+      return sum + (product.stock * product.price);
+    }, 0);
+    
+    // 计算平均价格
+    const avgPrice = products.length > 0 
+      ? products.reduce((sum, product) => sum + product.price, 0) / products.length
+      : 0;
+    
+    return {
+      totalProducts: products.length,
+      totalCategories: categories.size,
+      lowStockProducts,
+      totalValue,
+      avgPrice
+    };
   }
   
   // 仓库相关方法
