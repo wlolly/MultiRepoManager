@@ -50,12 +50,9 @@ app.use((req, res, next) => {
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
-  // 除非明确指定NODE_ENV=production，否则使用开发模式
-  if (process.env.NODE_ENV !== "production") {
-    console.log("启动开发模式...");
+  if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
-    console.log("启动生产模式...");
     serveStatic(app);
   }
 
