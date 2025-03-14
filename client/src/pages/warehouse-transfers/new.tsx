@@ -85,6 +85,47 @@ export default function NewWarehouseTransfer() {
     return products.find(p => p.uniqueCode === uniqueCode);
   };
   
+  // 唯一码输入变更处理
+  const handleUniqueCodeChange = (value: string, index: number) => {
+    // 设置唯一码值，确保只有数字
+    const numericValue = value.replace(/\D/g, '');
+    form.setValue(`items.${index}.uniqueCode`, numericValue);
+    
+    // 如果唯一码是5位数字，则查找对应产品
+    if (numericValue && /^\d{5}$/.test(numericValue)) {
+      // 查找对应的产品
+      const product = findProductByUniqueCode(numericValue);
+      if (product) {
+        // 找到产品后，自动填充产品信息
+        form.setValue(`items.${index}.productId`, product.id.toString());
+        
+        // 获取数量并计算重量和体积
+        const quantity = parseInt(form.getValues(`items.${index}.quantity`) || "1");
+        
+        // 设置默认件数为1
+        form.setValue(`items.${index}.packageCount`, "1");
+        
+        // 计算总重量和体积 - 使用单件数据计算总值
+        const weight = product.singleWeightKg * quantity;
+        const volume = product.singleVolumeM3 * quantity;
+        
+        form.setValue(`items.${index}.weight`, weight.toFixed(3));
+        form.setValue(`items.${index}.volume`, volume.toFixed(3));
+        
+        toast({
+          title: t("product_found"),
+          description: `${t("product_found_description")}: ${product.name}`,
+        });
+      } else {
+        toast({
+          title: t("product_not_found"),
+          description: t("no_product_with_unique_code", { code: numericValue }),
+          variant: "destructive",
+        });
+      }
+    }
+  };
+  
   // 调拨单表单
   const form = useForm<TransferFormValues>({
     resolver: zodResolver(transferSchema),
@@ -457,6 +498,10 @@ export default function NewWarehouseTransfer() {
                                     {...field} 
                                     className="w-full"
                                     maxLength={5}
+                                    onChange={(e) => {
+                                      field.onChange(e);
+                                      handleUniqueCodeChange(e.target.value, index);
+                                    }}
                                   />
                                   <Button 
                                     type="button"

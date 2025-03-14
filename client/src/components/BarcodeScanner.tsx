@@ -48,13 +48,25 @@ export function BarcodeScanner({
       keypressTimesRef.current.shift();
     }
     
+    // 如果是唯一码模式，且输入了非数字字符，则不接受
+    if (uniqueCodeMode && e.key !== 'Enter' && e.key !== 'Backspace' && e.key !== 'Tab' && 
+        e.key !== 'ArrowLeft' && e.key !== 'ArrowRight' && (e.key < '0' || e.key > '9')) {
+      e.preventDefault();
+      return;
+    }
+    
     // 如果按下回车键，并且输入速度快，可能是扫描枪
     if (e.key === 'Enter') {
       e.preventDefault();
       
       if (isScanning && inputRef.current?.value) {
         const isScanner = isLikelyScanner();
-        const value = inputRef.current.value.trim();
+        let value = inputRef.current.value.trim();
+        
+        // 如果是唯一码模式，确保只有数字
+        if (uniqueCodeMode) {
+          value = value.replace(/\D/g, '');
+        }
         
         // 确保不是空值
         if (value) {
@@ -91,7 +103,18 @@ export function BarcodeScanner({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!isScanning) {
-      setInputValue(e.target.value);
+      // 如果是唯一码模式，只允许输入数字
+      if (uniqueCodeMode) {
+        // 使用正则表达式匹配非数字字符，并替换为空字符串
+        const numericValue = e.target.value.replace(/\D/g, '');
+        setInputValue(numericValue);
+        // 如果有非数字字符被替换，更新输入框的值
+        if (numericValue !== e.target.value) {
+          e.target.value = numericValue;
+        }
+      } else {
+        setInputValue(e.target.value);
+      }
     }
   };
 
@@ -150,6 +173,7 @@ export function BarcodeScanner({
             onKeyDown={handleKeyDown}
             className="pr-10"
             readOnly={!isEditing && !isScanning}
+            maxLength={uniqueCodeMode ? 5 : undefined}
           />
           {isScanning && (
             <div className="absolute inset-0 pointer-events-none">
