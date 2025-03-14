@@ -596,12 +596,14 @@ export class MemStorage implements IStorage {
         bulkWidth: 25, // cm
         bulkHeight: 15, // cm
         bulkWeight: 3.5, // kg (包含包装)
-        price: 299.99
+        price: 299.99,
+        uniqueCode: "12345" // 添加5位唯一码
       },
       {
         name: "医用口罩",
         barcode: "6902345678901",
         category: "医疗用品",
+        uniqueCode: "10086", // 添加5位唯一码
         description: "一次性医用防护口罩，三层过滤",
         unitWeight: 0.005, // kg
         length: 17, // cm
@@ -628,7 +630,8 @@ export class MemStorage implements IStorage {
         bulkWidth: 40, // cm
         bulkHeight: 30, // cm
         bulkWeight: 11, // kg (包含包装)
-        price: 6999.99
+        price: 6999.99,
+        uniqueCode: "11111" // 添加5位唯一码
       },
       {
         name: "专业摄影三脚架",
@@ -644,7 +647,8 @@ export class MemStorage implements IStorage {
         bulkWidth: 40, // cm
         bulkHeight: 40, // cm
         bulkWeight: 12, // kg (包含包装)
-        price: 899.99
+        price: 899.99,
+        uniqueCode: "22222" // 添加5位唯一码
       },
       {
         name: "智能手表",
@@ -660,7 +664,8 @@ export class MemStorage implements IStorage {
         bulkWidth: 25, // cm
         bulkHeight: 15, // cm
         bulkWeight: 3.2, // kg (包含包装)
-        price: 1299.99
+        price: 1299.99,
+        uniqueCode: "33333" // 添加5位唯一码
       }
     ];
     
