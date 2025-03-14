@@ -68,29 +68,60 @@ export default function NewOutboundOrder() {
     setIsSubmitting(true);
     
     try {
-      // 提交数据到API
-      console.log("Submitting to API:", {
+      // 添加totalWeight和totalVolume，它们在API中是必需的
+      const apiPayload = {
         orderNumber: data.orderNumber,
         warehouseId: parseInt(data.warehouseId),
         status: data.status,
         orderType: data.orderType,
         destinationType: data.destinationType,
-        notes: data.notes || ""
-      });
+        notes: data.notes || "",
+        totalWeight: "0", // 这些字段在没有明细项时是必需的
+        totalVolume: "0", // 这些字段在没有明细项时是必需的
+        items: [] // 空数组，因为这是简单创建
+      };
       
-      const response = await apiRequest<any>("/api/outbound-orders", {
+      // 调试日志，检查发送的数据
+      console.log("正在提交到API:", apiPayload);
+      
+      // 直接使用fetch而不是apiRequest，以便更好地调试
+      const rawResponse = await fetch("/api/outbound-orders", {
         method: "POST",
-        body: JSON.stringify({
-          orderNumber: data.orderNumber,
-          warehouseId: parseInt(data.warehouseId),
-          status: data.status,
-          orderType: data.orderType,
-          destinationType: data.destinationType,
-          notes: data.notes || ""
-        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(apiPayload),
+        credentials: "include"
       });
       
-      console.log("API response:", response);
+      console.log("原始API响应状态:", rawResponse.status);
+      
+      // 尝试解析响应
+      let responseText: string;
+      let response: any;
+      
+      try {
+        responseText = await rawResponse.text();
+        console.log("原始响应文本:", responseText);
+        
+        if (responseText) {
+          response = JSON.parse(responseText);
+        } else {
+          console.warn("API返回了空响应");
+          response = {};
+        }
+      } catch (parseError) {
+        console.error("解析API响应失败:", parseError);
+        console.log("无法解析的响应文本:", responseText!);
+        throw new Error("无法解析API响应");
+      }
+      
+      if (!rawResponse.ok) {
+        console.error("API请求失败:", response);
+        throw new Error(response.error || "创建出库单失败");
+      }
+      
+      console.log("API响应:", response);
       
       toast({
         title: t("outbound_order_created"),
@@ -98,13 +129,19 @@ export default function NewOutboundOrder() {
       });
       
       // 创建成功后跳转到订单详情页
-      navigate(`/outbound-order/${response.id}`);
-    } catch (error) {
-      console.error("Error creating outbound order:", error);
+      if (response && response.id) {
+        navigate(`/outbound-order/${response.id}`);
+      } else {
+        // 如果没有ID，返回列表页
+        navigate("/outbound-orders");
+      }
+    } catch (error: any) {
+      console.error("创建出库单时出错:", error);
+      
       toast({
-        title: t("outbound_order_creation_failed"),
-        description: t("outbound_order_creation_failed_description"),
         variant: "destructive",
+        title: t("error"),
+        description: error.message || t("outbound_order_create_error"),
       });
     } finally {
       setIsSubmitting(false);
@@ -143,13 +180,10 @@ export default function NewOutboundOrder() {
         <CardContent>
           <Form {...form}>
             <form 
-              onSubmit={(e) => {
-                console.log("Form submit event triggered");
-                form.handleSubmit((data) => {
-                  console.log("Form data is valid, calling onSubmit", data);
-                  onSubmit(data);
-                })(e);
-              }} 
+              onSubmit={form.handleSubmit((data) => {
+                console.log("Form data validated, submitting:", data);
+                onSubmit(data);
+              })}
               className="space-y-6"
             >
               <div className="flex items-end gap-4">
@@ -340,18 +374,8 @@ export default function NewOutboundOrder() {
                   {t("cancel")}
                 </Button>
                 <Button 
-                  type="button" 
+                  type="submit" 
                   disabled={isSubmitting}
-                  onClick={() => {
-                    console.log("Create button clicked directly");
-                    console.log("Form state:", form.getValues());
-                    console.log("Form errors:", form.formState.errors);
-                    // 手动触发表单提交
-                    form.handleSubmit((data) => {
-                      console.log("Form data validated via direct button click:", data);
-                      onSubmit(data);
-                    })();
-                  }}
                 >
                   {isSubmitting ? t("creating") : t("create")}
                 </Button>
