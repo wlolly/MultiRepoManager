@@ -205,7 +205,7 @@ async function main() {
     }
     
     // 生成测试调拨单 1 - 已完成状态
-    const transfer1Id = await db.insert(warehouseTransfers).values({
+    await db.insert(warehouseTransfers).values({
       referenceNumber: 'TRF-SH-20250310-0001',
       sourceWarehouseId: 1, // 上海主仓库
       targetWarehouseId: 2, // 北京仓库
@@ -221,12 +221,17 @@ async function main() {
       notes: '第一个测试调拨单，已完成状态',
       documentUrl: null,
       documentUploadedAt: null
-    }).returning({ id: warehouseTransfers.id });
+    });
+    
+    // 获取刚插入的调拨单ID
+    const [transfer1] = await db.select({ id: warehouseTransfers.id })
+      .from(warehouseTransfers)
+      .where(eq(warehouseTransfers.referenceNumber, 'TRF-SH-20250310-0001'));
     
     // 为调拨单1添加明细项
     await db.insert(warehouseTransferItems).values([
       {
-        transferId: transfer1Id[0].id,
+        transferId: transfer1.id,
         productId: 1,
         quantity: 5,
         packageCount: 5,
@@ -236,7 +241,7 @@ async function main() {
         remark: '普通测试产品'
       },
       {
-        transferId: transfer1Id[0].id,
+        transferId: transfer1.id,
         productId: 2,
         quantity: 2,
         packageCount: 2,
@@ -246,7 +251,7 @@ async function main() {
         remark: '带唯一码的测试产品'
       },
       {
-        transferId: transfer1Id[0].id,
+        transferId: transfer1.id,
         productId: 3,
         quantity: 3,
         packageCount: 3,
@@ -258,7 +263,7 @@ async function main() {
     ]);
     
     // 生成测试调拨单 2 - 处理中状态
-    const transfer2Id = await db.insert(warehouseTransfers).values({
+    await db.insert(warehouseTransfers).values({
       referenceNumber: 'TRF-BJ-20250312-0001',
       sourceWarehouseId: 2, // 北京仓库
       targetWarehouseId: 3, // 广州仓库
@@ -274,12 +279,17 @@ async function main() {
       notes: '从北京到广州的调拨单，处理中状态',
       documentUrl: null,
       documentUploadedAt: null
-    }).returning({ id: warehouseTransfers.id });
+    });
+    
+    // 获取刚插入的调拨单ID
+    const [transfer2] = await db.select({ id: warehouseTransfers.id })
+      .from(warehouseTransfers)
+      .where(eq(warehouseTransfers.referenceNumber, 'TRF-BJ-20250312-0001'));
     
     // 为调拨单2添加明细项
     await db.insert(warehouseTransferItems).values([
       {
-        transferId: transfer2Id[0].id,
+        transferId: transfer2.id,
         productId: 1,
         quantity: 3,
         packageCount: 3,
@@ -289,7 +299,7 @@ async function main() {
         remark: '部分调拨到广州'
       },
       {
-        transferId: transfer2Id[0].id,
+        transferId: transfer2.id,
         productId: 4,
         quantity: 5,
         packageCount: 5,
@@ -301,7 +311,7 @@ async function main() {
     ]);
     
     // 生成测试调拨单 3 - 待处理状态
-    const transfer3Id = await db.insert(warehouseTransfers).values({
+    await db.insert(warehouseTransfers).values({
       referenceNumber: 'TRF-GZ-20250314-0001',
       sourceWarehouseId: 3, // 广州仓库
       targetWarehouseId: 1, // 上海主仓库
@@ -317,12 +327,17 @@ async function main() {
       notes: '退回上海主仓库，待处理状态',
       documentUrl: null,
       documentUploadedAt: null
-    }).returning({ id: warehouseTransfers.id });
+    });
+    
+    // 获取刚插入的调拨单ID
+    const [transfer3] = await db.select({ id: warehouseTransfers.id })
+      .from(warehouseTransfers)
+      .where(warehouseTransfers.referenceNumber.equals('TRF-GZ-20250314-0001'));
     
     // 为调拨单3添加明细项
     await db.insert(warehouseTransferItems).values([
       {
-        transferId: transfer3Id[0].id,
+        transferId: transfer3.id,
         productId: 5,
         quantity: 3,
         packageCount: 3,
