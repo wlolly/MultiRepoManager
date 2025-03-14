@@ -1158,13 +1158,13 @@ export class MemStorage implements IStorage {
   
   async getEcommerceProductByPlatformId(platformId: string): Promise<EcommerceProduct | undefined> {
     return Array.from(this.ecommerceProductsMap.values()).find(
-      (product) => product.platformProductId === platformId
+      (product) => product.platformId === platformId
     );
   }
   
   async getEcommerceProductByPlatformCode(platformCode: string): Promise<EcommerceProduct | undefined> {
     return Array.from(this.ecommerceProductsMap.values()).find(
-      (product) => product.platformProductCode === platformCode
+      (product) => product.platformCode === platformCode
     );
   }
   
