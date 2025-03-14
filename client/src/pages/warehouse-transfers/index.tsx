@@ -401,7 +401,7 @@ export default function WarehouseTransfers() {
         <div className="flex items-center space-x-2">
           <Select value={warehouseFilter} onValueChange={setWarehouseFilter}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder={t("all_warehouses")} />
+              <SelectValue placeholder={t("warehouseTransfer.all_warehouses")} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">{t("all_warehouses")}</SelectItem>
@@ -639,14 +639,14 @@ export default function WarehouseTransfers() {
                 variant="outline" 
                 onClick={() => setImportDialogOpen(false)}
               >
-                {t("cancel")}
+                {t("warehouseTransfer.cancel")}
               </Button>
               <Button 
                 type="submit" 
                 disabled={!importFile || importPreview.length === 0 || importPreview.filter(item => item.matched).length === 0}
                 onClick={handleImportExcel}
               >
-                {t("import")}
+                {t("warehouseTransfer.import")}
               </Button>
             </div>
           </DialogFooter>
