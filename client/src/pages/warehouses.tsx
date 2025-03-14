@@ -122,10 +122,7 @@ function CreateWarehouseDialog({ open, onOpenChange }: { open: boolean; onOpenCh
     },
     onSuccess: () => {
       // Show success toast
-      toast({
-        title: t("warehouse_created"),
-        description: t("warehouse_created_description"),
-      });
+      toast.success(t("warehouse_created_description"));
       
       // Reset form and close dialog
       form.reset();
@@ -136,11 +133,7 @@ function CreateWarehouseDialog({ open, onOpenChange }: { open: boolean; onOpenCh
     },
     onError: (error) => {
       console.error("Error creating warehouse:", error);
-      toast({
-        title: t("warehouse_creation_failed"),
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(error.message || t("warehouse_creation_failed"));
     },
   });
   
@@ -459,20 +452,13 @@ export default function Warehouses() {
     // Execute import
     createWarehouses()
       .then((results) => {
-        toast({
-          title: "Excel Import Successful",
-          description: `Imported ${results.length} warehouses.`,
-        });
+        toast.success(`Imported ${results.length} warehouses.`);
         
         // Refresh warehouses list
         queryClient.invalidateQueries({ queryKey: ["/api/warehouses"] });
       })
       .catch((error) => {
-        toast({
-          title: "Excel Import Failed",
-          description: error.message,
-          variant: "destructive",
-        });
+        toast.error(error.message || "Excel Import Failed");
       });
   };
   
