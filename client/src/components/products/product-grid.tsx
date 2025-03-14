@@ -1,4 +1,5 @@
 import React from "react";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -45,9 +46,17 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const { t } = useTranslation();
+  const [_, navigate] = useLocation();
+  
+  const handleViewDetails = () => {
+    navigate(`/products/${product.id}`);
+  };
   
   return (
-    <Card className="relative overflow-hidden">
+    <Card 
+      className="relative overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+      onClick={handleViewDetails}
+    >
       <CardContent className="pt-6">
         <div className="absolute top-3 right-3">
           <Badge variant="outline" className={cn(
@@ -61,7 +70,7 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
         
         <div className="flex flex-col space-y-1.5">
-          <h3 className="font-semibold text-lg text-gray-900 group-hover:text-blue-600">
+          <h3 className="font-semibold text-lg text-gray-900 hover:text-blue-600 transition-colors">
             {product.name}
           </h3>
           <p className="text-sm text-gray-500 line-clamp-2">{product.description}</p>

@@ -29,6 +29,7 @@ import WarehouseTransfers from './pages/warehouse-transfers';
 import NewWarehouseTransfer from './pages/warehouse-transfers/new';
 import WarehouseTransferImport from './pages/warehouse-transfers/import';
 import DebugOutboundOrder from './pages/outbound-orders/debug';
+import ProductDetail from './pages/products/product-detail';
 import { useEffect } from "react";
 import "./i18n";
 import { ToastProvider } from "./components/ui/toast-provider";
@@ -81,6 +82,9 @@ export default function App() {
               </Route>
               <Route path="/products">
                 {() => <ProductsPage />}
+              </Route>
+              <Route path="/products/:id">
+                {(params) => <ProductDetail />}
               </Route>
               <Route path="/inbound-orders">
                 {() => <InboundOrders />}
