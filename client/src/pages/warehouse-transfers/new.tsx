@@ -51,7 +51,7 @@ interface Product {
   bulkLengthCm?: number;
   bulkWidthCm?: number;
   bulkHeightCm?: number;
-  bulkCapacity?: number; // 每件包装内的产品数量
+  bulkQuantity?: number; // 每件包装内的产品数量，默认为1
 }
 
 // 调拨单表单Schema
@@ -116,10 +116,10 @@ export default function NewWarehouseTransfer() {
         // 获取数量
         const quantity = parseInt(form.getValues(`items.${index}.quantity`) || "1");
         
-        // 计算件数 - 根据产品的bulkCapacity属性计算
-        // bulkCapacity是每件包装内可以容纳的产品数量
-        const bulkCapacity = product.bulkCapacity || 1; // 默认为1
-        const packageCount = Math.ceil(quantity / bulkCapacity);
+        // 计算件数 - 根据产品的bulkQuantity属性计算
+        // bulkQuantity是每件包装内可以容纳的产品数量
+        const bulkQuantity = product.bulkQuantity || 1; // 默认为1
+        const packageCount = Math.ceil(quantity / bulkQuantity);
         
         // 更新件数
         form.setValue(`items.${index}.packageCount`, packageCount.toString());
@@ -304,10 +304,10 @@ export default function NewWarehouseTransfer() {
           // 获取数量，如果未设置则默认为1
           const quantity = parseInt(form.getValues(`items.${currentScanningIndex}.quantity`) || "1");
           
-          // 计算件数 - 根据产品的bulkCapacity属性计算
-          // bulkCapacity是每件包装内可以容纳的产品数量
-          const bulkCapacity = product.bulkCapacity || 1; // 默认为1
-          const packageCount = Math.ceil(quantity / bulkCapacity);
+          // 计算件数 - 根据产品的bulkQuantity属性计算
+          // bulkQuantity是每件包装内可以容纳的产品数量
+          const bulkQuantity = product.bulkQuantity || 1; // 默认为1
+          const packageCount = Math.ceil(quantity / bulkQuantity);
           
           // 更新件数
           form.setValue(`items.${currentScanningIndex}.packageCount`, packageCount.toString());
@@ -407,10 +407,10 @@ export default function NewWarehouseTransfer() {
       // 获取当前数量，如果未设置则默认为1
       const quantity = parseInt(form.getValues(`items.${index}.quantity`) || "1");
       
-      // 计算件数 - 根据产品的bulkCapacity属性计算
-      // bulkCapacity是每件包装内可以容纳的产品数量
-      const bulkCapacity = selectedProduct.bulkCapacity || 1; // 默认为1
-      const packageCount = Math.ceil(quantity / bulkCapacity);
+      // 计算件数 - 根据产品的bulkQuantity属性计算
+      // bulkQuantity是每件包装内可以容纳的产品数量
+      const bulkQuantity = selectedProduct.bulkQuantity || 1; // 默认为1
+      const packageCount = Math.ceil(quantity / bulkQuantity);
       
       // 更新件数
       form.setValue(`items.${index}.packageCount`, packageCount.toString());
@@ -484,10 +484,10 @@ export default function NewWarehouseTransfer() {
         if (selectedProduct) {
           const quantity = parseInt(numericValue || "1");
           
-          // 计算件数 - 根据产品的bulkCapacity属性计算
-          // bulkCapacity是每件包装内可以容纳的产品数量
-          const bulkCapacity = selectedProduct.bulkCapacity || 1; // 默认为1
-          const packageCount = Math.ceil(quantity / bulkCapacity);
+          // 计算件数 - 根据产品的bulkQuantity属性计算
+          // bulkQuantity是每件包装内可以容纳的产品数量
+          const bulkQuantity = selectedProduct.bulkQuantity || 1; // 默认为1
+          const packageCount = Math.ceil(quantity / bulkQuantity);
           
           // 更新件数
           form.setValue(`items.${index}.packageCount`, packageCount.toString());
