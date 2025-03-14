@@ -4,7 +4,8 @@ import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
 import axios from "axios";
-import { useToast } from "@/hooks/use-toast";
+// 使用全局toast工具替代hooks
+import toast from "../../lib/toast";
 import { 
   Plus, Download, Filter, ArrowUpDown, Search, FileUp, 
   FileDown, FileText, FileSpreadsheet, Eye, Truck, 
@@ -63,7 +64,7 @@ interface InboundStats {
 export default function InboundOrders() {
   const { t } = useTranslation();
   const [_, navigate] = useLocation(); // 使用wouter的useLocation代替useNavigate
-  const { toast } = useToast(); // 使用shadcn的toast
+  // 全局toast已通过顶部导入
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [typeFilter, setTypeFilter] = useState<string>("");
@@ -167,17 +168,10 @@ export default function InboundOrders() {
       // 释放URL对象
       window.URL.revokeObjectURL(url);
       
-      toast({
-        title: t("template_downloaded"),
-        description: t("template_download_success"),
-      });
+      toast.success(t("template_download_success"));
     } catch (error) {
       console.error('Template download error:', error);
-      toast({
-        title: t("template_download_error"),
-        description: t("template_download_failed"),
-        variant: "destructive",
-      });
+      toast.error(t("template_download_failed"));
     }
   };
   
