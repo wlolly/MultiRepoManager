@@ -37,8 +37,21 @@ interface Product {
   uniqueCode?: string;
   category: string;
   stock: number;
+  
+  // 单件信息
   singleWeightKg: number;
   singleVolumeM3: number;
+  singleLengthCm?: number;
+  singleWidthCm?: number;
+  singleHeightCm?: number;
+  
+  // 整件包装信息
+  bulkWeightKg: number;
+  bulkVolumeM3: number;
+  bulkLengthCm?: number;
+  bulkWidthCm?: number;
+  bulkHeightCm?: number;
+  bulkCapacity?: number; // 每件包装内的产品数量
 }
 
 // 调拨单表单Schema
@@ -425,7 +438,7 @@ export default function NewWarehouseTransfer() {
   // 数量变更防抖计时器引用
   const quantityDebounceTimerRef = useRef<number | null>(null);
   
-  // 数量变更时更新重量和体积（添加防抖机制）
+  // 数量变更时更新件数、重量和体积（添加防抖机制）
   const handleQuantityChange = (value: string, index: number) => {
     // 确保数值有效
     const numericValue = value.replace(/[^\d]/g, '');
@@ -446,17 +459,25 @@ export default function NewWarehouseTransfer() {
         if (selectedProduct) {
           const quantity = parseInt(numericValue || "1");
           
-          // 设置默认件数为1
-          if (!form.getValues(`items.${index}.packageCount`)) {
-            form.setValue(`items.${index}.packageCount`, "1");
-          }
+          // 计算件数 - 根据产品的bulkCapacity属性计算
+          // bulkCapacity是每件包装内可以容纳的产品数量
+          const bulkCapacity = selectedProduct.bulkCapacity || 1; // 默认为1
+          const packageCount = Math.ceil(quantity / bulkCapacity);
           
-          // 计算总重量和体积
-          const weight = selectedProduct.singleWeightKg * quantity;
-          const volume = selectedProduct.singleVolumeM3 * quantity;
+          // 更新件数
+          form.setValue(`items.${index}.packageCount`, packageCount.toString());
           
-          form.setValue(`items.${index}.weight`, weight.toFixed(3));
-          form.setValue(`items.${index}.volume`, volume.toFixed(3));
+          // 计算总重量 = 件数 * 每件重量
+          const weightPerPackage = selectedProduct.bulkWeightKg || 0;
+          const totalWeight = packageCount * weightPerPackage;
+          
+          // 计算总体积 = 件数 * 每件体积
+          const volumePerPackage = selectedProduct.bulkVolumeM3 || 0;
+          const totalVolume = packageCount * volumePerPackage;
+          
+          // 更新重量和体积，保留3位小数
+          form.setValue(`items.${index}.weight`, totalWeight.toFixed(3));
+          form.setValue(`items.${index}.volume`, totalVolume.toFixed(3));
           
           // 自动更新表单验证状态
           form.trigger(`items.${index}.quantity`);
