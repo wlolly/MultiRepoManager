@@ -1359,9 +1359,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { sourceWarehouseId, targetWarehouseId, notes, items } = req.body;
       
-      if (sourceWarehouseId === targetWarehouseId) {
+      // 验证仓库ID
+      const parsedSourceWarehouseId = parseInt(sourceWarehouseId);
+      const parsedTargetWarehouseId = parseInt(targetWarehouseId);
+      
+      if (isNaN(parsedSourceWarehouseId) || isNaN(parsedTargetWarehouseId)) {
+        return res.status(400).json({ error: "无效的仓库ID" });
+      }
+      
+      if (parsedSourceWarehouseId === parsedTargetWarehouseId) {
         return res.status(400).json({ error: "源仓库和目标仓库不能相同" });
       }
+      
+      // 验证商品列表
+      if (!items || !Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ error: "调拨单必须包含至少一个商品" });
+      }
+      
+      // 验证并处理商品列表
+      const processedItems = items.map(item => {
+        // 安全地转换数字字段
+        const weight = (typeof item.weight === 'number') ? item.weight.toString() : (item.weight || "0");
+        const volume = (typeof item.volume === 'number') ? item.volume.toString() : (item.volume || "0");
+        const quantity = item.quantity ? parseInt(item.quantity) : 0;
+        const packageCount = item.packageCount ? parseInt(item.packageCount) : quantity;
+        
+        return {
+          ...item,
+          weight,
+          volume,
+          quantity,
+          packageCount
+        };
+      });
       
       // 1. 创建出库单
       const outboundOrderNumber = `OUT-TRANSFER-${Date.now()}`;
@@ -1373,16 +1403,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validDestinationTypes = ["customer", "retail", "wholesale", "transfer", "supplier"];
       const validatedDestinationType = validDestinationTypes.includes("transfer") ? "transfer" : "transfer";
       
+      // 计算总重量和体积
+      const totalWeight = processedItems
+        .reduce((sum, item) => sum + parseFloat(item.weight), 0)
+        .toString();
+        
+      const totalVolume = processedItems
+        .reduce((sum, item) => sum + parseFloat(item.volume), 0)
+        .toString();
+      
       const outboundOrderData = {
         orderNumber: outboundOrderNumber,
-        warehouseId: sourceWarehouseId,
-        totalWeight: items.reduce((sum: number, item: any) => sum + parseFloat(item.weight), 0).toString(),
-        totalVolume: items.reduce((sum: number, item: any) => sum + parseFloat(item.volume), 0).toString(),
+        warehouseId: parsedSourceWarehouseId,
+        totalWeight,
+        totalVolume,
         createdBy: 1, // 假设用户ID为1
         status: "pending",
-        orderType: validatedOutboundOrderType,
+        orderType: validatedOutboundOrderType as any, // 类型强制转换以解决TypeScript错误
         notes: notes || "仓库调拨出库单",
-        destinationType: validatedDestinationType
+        destinationType: validatedDestinationType as any // 类型强制转换以解决TypeScript错误
       };
       
       const outboundOrder = await storage.createOutboundOrder(outboundOrderData);
@@ -1396,12 +1435,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const inboundOrderData = {
         orderNumber: inboundOrderNumber,
-        warehouseId: targetWarehouseId,
-        totalWeight: items.reduce((sum: number, item: any) => sum + parseFloat(item.weight), 0).toString(),
-        totalVolume: items.reduce((sum: number, item: any) => sum + parseFloat(item.volume), 0).toString(),
+        warehouseId: parsedTargetWarehouseId,
+        totalWeight,
+        totalVolume,
         createdBy: 1, // 假设用户ID为1
         status: "pending",
-        orderType: validatedInboundOrderType,
+        orderType: validatedInboundOrderType as any, // 类型强制转换以解决TypeScript错误
         notes: notes || "仓库调拨入库单"
       };
       
@@ -1410,52 +1449,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 3. 为出库单和入库单添加明细项
       const outboundItems = [];
       const inboundItems = [];
+      const errorMessages = [];
       
-      for (const item of items) {
-        // 获取产品信息以填充必要字段
-        const product = await storage.getProduct(parseInt(item.productId));
-        if (!product) {
-          console.warn(`Invalid product ID: ${item.productId}, skipping`);
-          continue;
+      for (const item of processedItems) {
+        try {
+          // 解析产品ID
+          const productId = parseInt(item.productId);
+          if (isNaN(productId)) {
+            errorMessages.push(`产品ID "${item.productId}" 无效，已跳过`);
+            continue;
+          }
+          
+          // 获取产品信息以填充必要字段
+          const product = await storage.getProduct(productId);
+          if (!product) {
+            errorMessages.push(`未找到ID为 ${productId} 的产品，已跳过`);
+            continue;
+          }
+  
+          // 添加出库单明细
+          const outboundItem = await storage.createOutboundOrderItem({
+            outboundOrderId: outboundOrder.id,
+            productId,
+            productName: product.name,
+            barcode: product.barcode,
+            quantity: item.quantity,
+            packageCount: item.packageCount,
+            externalOrderNumber: `TRANSFER-${Date.now()}`,
+            weight: item.weight,
+            volume: item.volume,
+            remark: "调拨出库"
+          });
+          outboundItems.push(outboundItem);
+          
+          // 添加入库单明细
+          const inboundItem = await storage.createInboundOrderItem({
+            inboundOrderId: inboundOrder.id,
+            productId,
+            productName: product.name,
+            barcode: product.barcode,
+            quantity: item.quantity,
+            packageCount: item.packageCount,
+            externalOrderNumber: `TRANSFER-${Date.now()}`,
+            weight: item.weight,
+            volume: item.volume,
+            remark: "调拨入库"
+          });
+          inboundItems.push(inboundItem);
+        } catch (itemError) {
+          console.error("处理调拨商品失败:", itemError);
+          errorMessages.push(`处理商品失败: ${(itemError as Error).message}`);
         }
-
-        // 添加出库单明细
-        const outboundItem = await storage.createOutboundOrderItem({
-          outboundOrderId: outboundOrder.id,
-          productId: parseInt(item.productId),
-          productName: product.name,
-          barcode: product.barcode,
-          quantity: parseInt(item.quantity),
-          packageCount: parseInt(item.packageCount || item.quantity),
-          externalOrderNumber: `TRANSFER-${Date.now()}`,
-          weight: item.weight.toString(),
-          volume: item.volume.toString(),
-          remark: "调拨出库"
-        });
-        outboundItems.push(outboundItem);
-        
-        // 添加入库单明细
-        const inboundItem = await storage.createInboundOrderItem({
-          inboundOrderId: inboundOrder.id,
-          productId: parseInt(item.productId),
-          productName: product.name,
-          barcode: product.barcode,
-          quantity: parseInt(item.quantity),
-          packageCount: parseInt(item.packageCount || item.quantity),
-          externalOrderNumber: `TRANSFER-${Date.now()}`,
-          weight: item.weight.toString(),
-          volume: item.volume.toString(),
-          remark: "调拨入库"
-        });
-        inboundItems.push(inboundItem);
       }
       
       // 4. 返回创建的数据
       res.status(201).json({
-        message: "仓库调拨创建成功",
+        message: "仓库调拨创建成功" + (errorMessages.length > 0 ? "，但有部分商品处理失败" : ""),
         referenceNumber: `TRANSFER-${Date.now()}`,
-        sourceWarehouseId,
-        targetWarehouseId,
+        sourceWarehouseId: parsedSourceWarehouseId,
+        targetWarehouseId: parsedTargetWarehouseId,
+        errors: errorMessages.length > 0 ? errorMessages : undefined,
         outboundOrder,
         inboundOrder,
         outboundItems,
@@ -1570,6 +1623,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
         destinationTypeDistribution
       });
     } catch (err) {
+      handleZodError(err, res);
+    }
+  });
+
+  // 仓库名称映射相关API
+  apiRouter.get("/warehouse-mappings", async (req, res) => {
+    try {
+      const warehouseMatcher = await import('./utils/warehouse-matcher');
+      const mappings = warehouseMatcher.getAllWarehouseMappings();
+      res.json(mappings);
+    } catch (err) {
+      console.error("获取仓库映射失败:", err);
+      handleZodError(err, res);
+    }
+  });
+  
+  apiRouter.post("/warehouse-mappings", async (req, res) => {
+    try {
+      const { externalName, internalId } = req.body;
+      
+      if (!externalName || !internalId) {
+        return res.status(400).json({ error: "外部仓库名称和内部仓库ID都是必填项" });
+      }
+      
+      const warehouseMatcher = await import('./utils/warehouse-matcher');
+      warehouseMatcher.addWarehouseMapping(externalName, parseInt(internalId));
+      
+      res.status(201).json({ 
+        message: "仓库映射添加成功",
+        externalName,
+        internalId
+      });
+    } catch (err) {
+      console.error("添加仓库映射失败:", err);
+      handleZodError(err, res);
+    }
+  });
+  
+  apiRouter.delete("/warehouse-mappings/:externalName", async (req, res) => {
+    try {
+      const { externalName } = req.params;
+      
+      const warehouseMatcher = await import('./utils/warehouse-matcher');
+      warehouseMatcher.removeWarehouseMapping(externalName);
+      
+      res.status(204).end();
+    } catch (err) {
+      console.error("删除仓库映射失败:", err);
+      handleZodError(err, res);
+    }
+  });
+  
+  apiRouter.post("/warehouse-mappings/suggestion", async (req, res) => {
+    try {
+      const { externalName } = req.body;
+      
+      if (!externalName) {
+        return res.status(400).json({ error: "外部仓库名称是必填项" });
+      }
+      
+      // 获取所有仓库
+      const warehouses = await storage.getWarehouses();
+      
+      const warehouseMatcher = await import('./utils/warehouse-matcher');
+      const suggestion = warehouseMatcher.findMostSimilarWarehouse(
+        externalName,
+        warehouses.map(w => ({ id: w.id, name: w.name }))
+      );
+      
+      res.json({
+        externalName,
+        suggestion
+      });
+    } catch (err) {
+      console.error("获取仓库匹配建议失败:", err);
       handleZodError(err, res);
     }
   });

@@ -11,30 +11,36 @@
  * @returns 处理后可用于匹配的编码
  */
 export function processProductCode(platformCode: string): string {
+  // 如果编码为空，返回空字符串
   if (!platformCode) return '';
   
-  // 如果编码长度少于6个字符，直接返回
+  // 如果编码包含下划线，尝试提取下划线后的数字部分
+  if (platformCode.includes('_')) {
+    const parts = platformCode.split('_');
+    // 如果下划线后面有内容，返回最后一部分
+    if (parts.length > 1) {
+      const lastPart = parts[parts.length - 1];
+      // 如果最后一部分是数字或数字开头，则返回它
+      if (/^\d/.test(lastPart)) {
+        return lastPart;
+      }
+    }
+  }
+  
+  // 尝试提取纯数字部分
+  const numbers = platformCode.match(/\d+/g);
+  if (numbers && numbers.length > 0) {
+    // 返回最长的数字序列
+    return numbers.reduce((a, b) => a.length > b.length ? a : b);
+  }
+  
+  // 如果编码少于6个字符，直接返回
   if (platformCode.length < 6) {
     return platformCode;
   }
   
-  // 尝试查找'_'字符
-  const underscoreIndex = platformCode.lastIndexOf('_');
-  if (underscoreIndex === -1) {
-    // 如果没有'_'字符，返回原编码
-    return platformCode;
-  }
-  
-  // 获取'_'后面的部分
-  const codeAfterUnderscore = platformCode.substring(underscoreIndex + 1);
-  
-  // 检查'_'后面是否是数字
-  if (/^\d+$/.test(codeAfterUnderscore)) {
-    return codeAfterUnderscore;
-  }
-  
-  // 如果'_'后面不是纯数字，则返回原编码
-  return platformCode;
+  // 默认返回修剪后的原始编码（去掉特殊字符和空格）
+  return platformCode.replace(/[^a-zA-Z0-9]/g, '');
 }
 
 /**
@@ -46,11 +52,32 @@ export function processProductCode(platformCode: string): string {
 export function isProductCodeMatch(systemCode: string, processedPlatformCode: string): boolean {
   if (!systemCode || !processedPlatformCode) return false;
   
-  // 处理系统内编码，去除可能的前缀
-  const processedSystemCode = processProductCode(systemCode);
+  // 处理系统内编码，去除特殊字符
+  const normalizedSystemCode = systemCode.replace(/[^a-zA-Z0-9]/g, '');
   
-  // 比较处理后的编码
-  return processedSystemCode === processedPlatformCode;
+  // 完全匹配
+  if (normalizedSystemCode === processedPlatformCode) {
+    return true;
+  }
+  
+  // 检查系统编码是否包含平台编码
+  if (normalizedSystemCode.includes(processedPlatformCode)) {
+    return true;
+  }
+  
+  // 检查平台编码是否包含系统编码
+  if (processedPlatformCode.includes(normalizedSystemCode)) {
+    return true;
+  }
+  
+  // 提取系统编码中的数字部分
+  const systemNumbers = normalizedSystemCode.match(/\d+/g);
+  if (systemNumbers && systemNumbers.length > 0) {
+    // 检查系统编码中的任何数字序列是否匹配平台编码
+    return systemNumbers.some(num => num === processedPlatformCode);
+  }
+  
+  return false;
 }
 
 /**
@@ -64,21 +91,44 @@ export function extractProductCodeFromApiItem(item: any, platform: string): stri
   if (!item) return '';
   
   switch (platform.toLowerCase()) {
+    case 'shopify':
+      return item.sku || item.variant_id?.toString() || '';
+      
+    case 'woocommerce':
+      return item.sku || item.id?.toString() || '';
+      
+    case 'magento':
+      return item.sku || '';
+      
+    case 'aliexpress':
+      return item.product_id?.toString() || item.sku || '';
+      
     case 'taobao':
     case 'tmall':
-      return item.item_id || item.num_iid || '';
+      return item.num_iid?.toString() || item.outer_id || '';
+      
+    case 'amazon':
+      return item.seller_sku || item.asin || '';
+      
+    case 'ebay':
+      return item.sku || item.item_id?.toString() || '';
+      
     case 'jd':
-      return item.sku || item.sku_id || '';
-    case 'pdd':
-      return item.goods_id || item.sku_id || '';
-    case '1688':
-      return item.offer_id || '';
-    case 'kaspi':
-      return item.masterProductId || item.productId || item.code || '';
-    case 'uzum':
-      return item.product_id || item.sku_id || item.external_id || item.id || '';
+      return item.sku?.toString() || item.product_id?.toString() || '';
+      
+    case 'pinduoduo':
+      return item.goods_id?.toString() || item.sku_id?.toString() || '';
+      
     default:
-      // 尝试几个常见的字段名
-      return item.product_id || item.sku || item.code || item.id || '';
+      // 尝试常见的编码字段名称
+      return item.sku || 
+             item.product_code || 
+             item.productCode || 
+             item.item_code || 
+             item.itemCode || 
+             item.product_id?.toString() || 
+             item.productId?.toString() || 
+             item.id?.toString() || 
+             '';
   }
 }
