@@ -225,17 +225,10 @@ export default function WarehouseTransfers() {
       link.remove();
       window.URL.revokeObjectURL(url);
       
-      toast({
-        title: t("warehouseTransfer.export_successful"),
-        description: t("warehouseTransfer.transfer_export_success"),
-      });
+      toast.success(t("warehouseTransfer.transfer_export_success"));
     } catch (error) {
       console.error('Export error:', error);
-      toast({
-        title: t("warehouseTransfer.export_failed"),
-        description: t("warehouseTransfer.transfer_export_error"),
-        variant: "destructive",
-      });
+      toast.error(t("warehouseTransfer.transfer_export_error"));
     }
   };
   
@@ -246,17 +239,10 @@ export default function WarehouseTransfers() {
       
       refetchTransfers();
       
-      toast({
-        title: t(`warehouseTransfer.${status}_successful`),
-        description: t(`warehouseTransfer.transfer_${status}_success`),
-      });
+      toast.success(t(`warehouseTransfer.transfer_${status}_success`));
     } catch (error) {
       console.error(`Status update error:`, error);
-      toast({
-        title: t(`warehouseTransfer.${status}_failed`),
-        description: t(`warehouseTransfer.transfer_${status}_error`),
-        variant: "destructive",
-      });
+      toast.error(t(`warehouseTransfer.transfer_${status}_error`));
     }
   };
   
@@ -295,39 +281,23 @@ export default function WarehouseTransfers() {
   // 处理Excel导入
   const handleImportExcel = async () => {
     if (!importFile) {
-      toast({
-        title: t("warehouseTransfer.import_error"),
-        description: t("warehouseTransfer.no_file_selected"),
-        variant: "destructive",
-      });
+      toast.error(t("warehouseTransfer.no_file_selected"));
       return;
     }
     
     if (!sourceWarehouseId) {
-      toast({
-        title: t("warehouseTransfer.import_error"),
-        description: t("warehouseTransfer.no_source_warehouse"),
-        variant: "destructive",
-      });
+      toast.error(t("warehouseTransfer.no_source_warehouse"));
       return;
     }
     
     if (!targetWarehouseId) {
-      toast({
-        title: t("warehouseTransfer.import_error"),
-        description: t("warehouseTransfer.no_target_warehouse"),
-        variant: "destructive",
-      });
+      toast.error(t("warehouseTransfer.no_target_warehouse"));
       return;
     }
     
     // 如果源仓库和目标仓库相同，显示错误
     if (sourceWarehouseId === targetWarehouseId) {
-      toast({
-        title: t("warehouseTransfer.import_error"),
-        description: t("warehouseTransfer.same_warehouse_error"),
-        variant: "destructive",
-      });
+      toast.error(t("warehouseTransfer.same_warehouse_error"));
       return;
     }
     
