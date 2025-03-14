@@ -3,9 +3,13 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
-import { Plus, Download, Filter, ArrowUpDown, Search, FileUp, FileDown, FileText, AlertCircle, X, FileSpreadsheet } from "lucide-react";
+import { 
+  Plus, Download, Filter, ArrowUpDown, Search, FileUp, 
+  FileDown, FileText, FileSpreadsheet, Eye, Truck, 
+  RefreshCw, Check, X, Calendar, FileIcon, AlertCircle
+} from "lucide-react";
+import { Label } from "@/components/ui/label";
 import axios from "axios";
-import * as XLSX from "xlsx";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,8 +19,7 @@ import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, Tabl
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/utils";
@@ -50,11 +53,11 @@ interface WarehouseTransfer {
     username: string;
     fullName?: string;
   };
-  outboundOrder: {
+  outboundOrder?: {
     id: number;
     orderNumber: string;
   };
-  inboundOrder: {
+  inboundOrder?: {
     id: number;
     orderNumber: string;
   };
@@ -79,9 +82,12 @@ export default function WarehouseTransfers() {
   const [dateFilter, setDateFilter] = useState<string>("");
   const [warehouseFilter, setWarehouseFilter] = useState<string>("");
   const [view, setView] = useState<"all" | "recent">("all");
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [selectedTransferId, setSelectedTransferId] = useState<number | null>(null);
+  const [actionType, setActionType] = useState<"export" | "view" | "cancel" | "complete">("view");
   
   // 获取调拨单列表
-  const { data: transfers = [], isLoading: isLoadingTransfers } = useQuery<WarehouseTransfer[]>({
+  const { data: transfers = [], isLoading: isLoadingTransfers, refetch: refetchTransfers } = useQuery<WarehouseTransfer[]>({
     queryKey: ["/api/warehouse-transfers", { status: statusFilter, date: dateFilter, warehouse: warehouseFilter }],
   });
   
@@ -97,6 +103,40 @@ export default function WarehouseTransfers() {
   
   // 过滤调拨单
   const filteredTransfers = transfers.filter((transfer) => {
+    // 状态过滤
+    if (statusFilter && transfer.status !== statusFilter) {
+      return false;
+    }
+    
+    // 仓库过滤
+    if (warehouseFilter) {
+      const warehouseId = parseInt(warehouseFilter);
+      if (transfer.sourceWarehouseId !== warehouseId && transfer.targetWarehouseId !== warehouseId) {
+        return false;
+      }
+    }
+    
+    // 日期过滤
+    if (dateFilter) {
+      const transferDate = new Date(transfer.createdAt).toLocaleDateString();
+      const today = new Date().toLocaleDateString();
+      const yesterday = new Date(Date.now() - 86400000).toLocaleDateString();
+      const thisWeekStart = new Date(Date.now() - (new Date().getDay() * 86400000)).toLocaleDateString();
+      
+      if (dateFilter === 'today' && transferDate !== today) {
+        return false;
+      } else if (dateFilter === 'yesterday' && transferDate !== yesterday) {
+        return false;
+      } else if (dateFilter === 'this-week') {
+        const transferDateTime = new Date(transfer.createdAt).getTime();
+        const thisWeekStartTime = new Date(thisWeekStart).getTime();
+        if (transferDateTime < thisWeekStartTime) {
+          return false;
+        }
+      }
+    }
+    
+    // 搜索查询
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       return (
@@ -106,6 +146,7 @@ export default function WarehouseTransfers() {
         transfer.notes?.toLowerCase().includes(query)
       );
     }
+    
     return true;
   });
   
@@ -115,8 +156,8 @@ export default function WarehouseTransfers() {
     : filteredTransfers;
   
   // 计算总重量和体积
-  const totalWeight = filteredTransfers.reduce((sum, transfer) => sum + transfer.totalWeight, 0);
-  const totalVolume = filteredTransfers.reduce((sum, transfer) => sum + transfer.totalVolume, 0);
+  const totalWeight = filteredTransfers.reduce((sum, transfer) => sum + Number(transfer.totalWeight), 0);
+  const totalVolume = filteredTransfers.reduce((sum, transfer) => sum + Number(transfer.totalVolume), 0);
   
   // 获取状态标签样式
   const getStatusBadgeVariant = (status: string) => {
@@ -205,11 +246,26 @@ export default function WarehouseTransfers() {
     }
   };
   
-  // 显示导入对话框
-  const [importDialogOpen, setImportDialogOpen] = useState(false);
-  const [importErrors, setImportErrors] = useState<string[]>([]);
-  const [importPreview, setImportPreview] = useState<any[]>([]);
-  const [importFile, setImportFile] = useState<File | null>(null);
+  // 更新调拨单状态
+  const updateTransferStatus = async (transferId: number, status: string) => {
+    try {
+      await axios.patch(`/api/warehouse-transfers/${transferId}`, { status });
+      
+      refetchTransfers();
+      
+      toast({
+        title: t(`warehouseTransfer.${status}_successful`),
+        description: t(`warehouseTransfer.transfer_${status}_success`),
+      });
+    } catch (error) {
+      console.error(`Status update error:`, error);
+      toast({
+        title: t(`warehouseTransfer.${status}_failed`),
+        description: t(`warehouseTransfer.transfer_${status}_error`),
+        variant: "destructive",
+      });
+    }
+  };
   
   // 处理文件选择变更
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -217,57 +273,71 @@ export default function WarehouseTransfers() {
       setImportFile(e.target.files[0]);
       setImportErrors([]);
       setImportPreview([]);
+      
+      // 上传文件并获取预览数据
+      const formData = new FormData();
+      formData.append('file', e.target.files[0]);
+      
+      axios.post('/api/warehouse-transfers/preview', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      })
+      .then(response => {
+        if (response.data.items) {
+          setImportPreview(response.data.items);
+        }
+      })
+      .catch(error => {
+        console.error('Preview error:', error);
+        if (error.response && error.response.data && error.response.data.errors) {
+          setImportErrors(error.response.data.errors);
+        } else {
+          setImportErrors([t("warehouseTransfer.file_processing_error")]);
+        }
+      });
     }
   };
   
-  // 处理Excel文件上传
+  // 处理Excel导入
   const handleImportExcel = async () => {
-    if (!importFile) {
-      toast({
-        title: t("warehouseTransfer.no_file_selected"),
-        description: t("warehouseTransfer.please_select_file"),
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    const formData = new FormData();
-    formData.append('file', importFile);
+    if (!importFile) return;
     
     try {
+      const formData = new FormData();
+      formData.append('file', importFile);
+      formData.append('sourceWarehouseId', '1'); // 默认源仓库ID，实际应从选择中获取
+      formData.append('targetWarehouseId', '2'); // 默认目标仓库ID，实际应从选择中获取
+      formData.append('notes', '通过Excel导入创建的调拨单');
+      
       const response = await axios.post('/api/warehouse-transfers/import', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
       
-      if (response.data.errors && response.data.errors.length > 0) {
-        setImportErrors(response.data.errors);
-        if (response.data.items && response.data.items.length > 0) {
-          setImportPreview(response.data.items);
-        }
-        return;
-      }
-      
-      // 如果没有错误，设置预览
-      if (response.data.items && response.data.items.length > 0) {
-        setImportPreview(response.data.items);
+      if (response.data.id) {
         toast({
           title: t("warehouseTransfer.import_successful"),
-          description: t("warehouseTransfer.data_preview_ready"),
+          description: t("warehouseTransfer.transfer_created", { ref: response.data.referenceNumber }),
         });
-      } else {
-        toast({
-          title: t("warehouseTransfer.import_successful"),
-          description: t("warehouseTransfer.no_items_found"),
-          variant: "destructive",
-        });
+        
+        // 关闭对话框并刷新列表
+        setImportDialogOpen(false);
+        refetchTransfers();
       }
     } catch (error) {
       console.error('Import error:', error);
+      let errorMsg = t("warehouseTransfer.import_failed");
+      
+      if (error.response && error.response.data && error.response.data.errors) {
+        setImportErrors(error.response.data.errors);
+        errorMsg = error.response.data.errors[0] || errorMsg;
+      }
+      
       toast({
-        title: t("warehouseTransfer.import_failed"),
-        description: t("warehouseTransfer.import_error"),
+        title: t("warehouseTransfer.import_error"),
+        description: errorMsg,
         variant: "destructive",
       });
     }
@@ -282,6 +352,42 @@ export default function WarehouseTransfers() {
   const handleViewTransfer = (id: number) => {
     navigate(`/warehouse-transfers/${id}`);
   };
+  
+  // 打开确认对话框
+  const openConfirmDialog = (id: number, action: "export" | "view" | "cancel" | "complete") => {
+    setSelectedTransferId(id);
+    setActionType(action);
+    setConfirmDialogOpen(true);
+  };
+  
+  // 确认操作
+  const confirmAction = () => {
+    if (!selectedTransferId) return;
+    
+    switch (actionType) {
+      case "export":
+        exportTransferToExcel(selectedTransferId);
+        break;
+      case "view":
+        handleViewTransfer(selectedTransferId);
+        break;
+      case "cancel":
+        updateTransferStatus(selectedTransferId, "cancelled");
+        break;
+      case "complete":
+        updateTransferStatus(selectedTransferId, "completed");
+        break;
+    }
+    
+    setConfirmDialogOpen(false);
+    setSelectedTransferId(null);
+  };
+  
+  // 显示导入对话框
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importErrors, setImportErrors] = useState<string[]>([]);
+  const [importPreview, setImportPreview] = useState<any[]>([]);
+  const [importFile, setImportFile] = useState<File | null>(null);
   
   return (
     <div className="container mx-auto py-6">
@@ -473,11 +579,11 @@ export default function WarehouseTransfers() {
             <DropdownMenuContent>
               <DropdownMenuLabel>{t("warehouseTransfer.excel_operations")}</DropdownMenuLabel>
               <DropdownMenuItem onClick={handleDownloadTemplate}>
-                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                <Download className="mr-2 h-4 w-4" />
                 {t("warehouseTransfer.download_template")}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setImportDialogOpen(true)}>
-                <FileSpreadsheet className="mr-2 h-4 w-4" />
+              <DropdownMenuItem onClick={() => navigate('/warehouse-transfers/import')}>
+                <FileUp className="mr-2 h-4 w-4" />
                 {t("warehouseTransfer.import_from_excel")}
               </DropdownMenuItem>
               {displayedTransfers.length > 0 && (
