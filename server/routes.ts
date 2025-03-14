@@ -492,12 +492,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // 修改入库单数据，处理用户ID问题
       const inboundOrderData = {
         orderNumber,
         warehouseId,
         totalWeight: totalWeight.toString(),
         totalVolume: totalVolume.toString(),
-        createdBy: 1, // 假设用户ID为1
+        createdBy: 1, // 假定用户ID，未来应该从请求或会话中获取
         status: status || "pending",
         notes,
         orderType: validatedOrderType
