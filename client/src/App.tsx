@@ -6,6 +6,7 @@ import "./i18n";
 import { ToastProvider } from "./components/ui/toast-provider";
 import { Toaster } from "./components/ui/toaster";
 import { ToastExample } from "./components/ToastFix";
+import toast from "./lib/toast";
 
 // 创建一个简单的应用组件来测试基本渲染
 function SimpleApp() {
@@ -20,6 +21,20 @@ function SimpleApp() {
     return () => clearInterval(timer);
   }, []);
   
+  // 测试全局toast方法
+  const testGlobalToast = () => {
+    toast.success("这是一个全局Toast成功消息！");
+    setTimeout(() => {
+      toast.error("这是一个全局Toast错误消息！");
+    }, 1500);
+    setTimeout(() => {
+      toast.warning("这是一个全局Toast警告消息！");
+    }, 3000);
+    setTimeout(() => {
+      toast.info("这是一个全局Toast提示消息！");
+    }, 4500);
+  };
+  
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="p-4 border-b">
@@ -30,10 +45,19 @@ function SimpleApp() {
           <h2 className="text-xl font-semibold mb-4">系统已成功加载</h2>
           <p>如果您能看到这个页面，说明前端React应用已经成功加载。</p>
           <p className="mt-2 text-gray-600">当前时间: {currentTime}</p>
+          
+          {/* 测试全局Toast */}
+          <button 
+            onClick={testGlobalToast}
+            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            测试全局Toast
+          </button>
         </div>
         
         {/* 测试Toast组件 */}
         <div className="p-6 bg-white rounded-lg shadow-sm">
+          <h2 className="text-lg font-semibold mb-2">使用Toast组件测试</h2>
           <ToastExample />
         </div>
       </main>
