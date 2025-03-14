@@ -87,7 +87,7 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
           <div className="flex items-center text-xs">
             <i className="ri-store-2-line mr-1 text-gray-500"></i>
-            <span className="text-gray-600">{product.warehouse.name}</span>
+            <span className="text-gray-600">{product.warehouse?.name || '未分配仓库'}</span>
           </div>
         </div>
       </CardContent>
