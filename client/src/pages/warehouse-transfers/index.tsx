@@ -318,7 +318,7 @@ export default function WarehouseTransfers() {
             <CardContent>
               <div className="text-2xl font-bold">{stats.pendingTransfers}</div>
               <p className="text-xs text-muted-foreground">
-                {((stats.pendingTransfers / stats.totalTransfers) * 100 || 0).toFixed(1)}% {t("of_total")}
+                {((stats.pendingTransfers / stats.totalTransfers) * 100 || 0).toFixed(1)}% {t("warehouseTransfer.of_total")}
               </p>
             </CardContent>
           </Card>
