@@ -17,6 +17,76 @@ import { and, desc, eq } from 'drizzle-orm';
 
 export class WarehouseTransferService {
   constructor(private storage: IStorage) {}
+  
+  /**
+   * 生成调拨单编号
+   * 格式：TRF(调拨单代码)-仓库代码(2位)-日期-4位序列号
+   * 例如：TRF-SH-20250314-0001
+   * @param sourceWarehouseId 源仓库ID
+   */
+  private async generateReferenceNumber(sourceWarehouseId: number): Promise<string> {
+    const TRANSFER_PREFIX = 'TRF'; // 调拨单代码前缀
+    
+    // 获取源仓库信息，提取代码
+    const sourceWarehouse = await this.storage.getWarehouse(sourceWarehouseId);
+    let warehouseCode = 'WH'; // 默认仓库代码
+    
+    if (sourceWarehouse) {
+      // 从仓库名称提取首字母或特定代码
+      if (sourceWarehouse.name.includes('Shanghai')) {
+        warehouseCode = 'SH';
+      } else if (sourceWarehouse.name.includes('Beijing')) {
+        warehouseCode = 'BJ';
+      } else if (sourceWarehouse.name.includes('Guangzhou')) {
+        warehouseCode = 'GZ';
+      } else if (sourceWarehouse.name.includes('Shenzhen')) {
+        warehouseCode = 'SZ';
+      } else {
+        // 从仓库名称提取前两个字符作为代码
+        warehouseCode = sourceWarehouse.name.substring(0, 2).toUpperCase();
+      }
+    }
+    
+    // 获取当前日期，格式为YYYYMMDD
+    const now = new Date();
+    const dateStr = now.getFullYear() +
+                    String(now.getMonth() + 1).padStart(2, '0') +
+                    String(now.getDate()).padStart(2, '0');
+    
+    // 查询当天的最后一个调拨单，以便生成序列号
+    const lastTransfers = await db.select()
+      .from(warehouseTransfers)
+      .where(eq(warehouseTransfers.sourceWarehouseId, sourceWarehouseId))
+      .orderBy(desc(warehouseTransfers.id))
+      .limit(10);
+    
+    // 序列号计数，从0001开始
+    let sequenceNumber = 1;
+    
+    // 如果有现有的调拨单，尝试从最近的调拨单号中提取序列号
+    for (const transfer of lastTransfers) {
+      if (transfer.referenceNumber) {
+        const parts = transfer.referenceNumber.split('-');
+        if (parts.length === 4 && parts[2] === dateStr) {
+          // 找到同一天的调拨单，提取序列号
+          try {
+            const lastSeq = parseInt(parts[3]);
+            if (!isNaN(lastSeq) && lastSeq >= sequenceNumber) {
+              sequenceNumber = lastSeq + 1;
+            }
+          } catch (e) {
+            // 忽略解析错误
+          }
+        }
+      }
+    }
+    
+    // 格式化序列号为4位数字
+    const sequenceStr = String(sequenceNumber).padStart(4, '0');
+    
+    // 拼接调拨单号
+    return `${TRANSFER_PREFIX}-${warehouseCode}-${dateStr}-${sequenceStr}`;
+  }
 
   // 仓库调拨单相关方法
   async getWarehouseTransfer(id: number): Promise<WarehouseTransfer | undefined> {
@@ -125,6 +195,11 @@ export class WarehouseTransferService {
     }
     if (!insertTransfer.totalVolume) {
       insertTransfer.totalVolume = String(totalVolume);
+    }
+    
+    // 生成调拨单号（如果未提供）
+    if (!insertTransfer.referenceNumber && insertTransfer.sourceWarehouseId) {
+      insertTransfer.referenceNumber = await this.generateReferenceNumber(insertTransfer.sourceWarehouseId);
     }
 
     // 创建调拨单记录
