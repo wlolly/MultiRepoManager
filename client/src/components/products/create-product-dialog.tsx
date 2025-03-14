@@ -12,6 +12,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
+import { BarcodeScanner } from "@/components/BarcodeScanner";
 
 // 创建商品的验证模式
 const createProductSchema = z.object({
