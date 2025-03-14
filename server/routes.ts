@@ -427,13 +427,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 获取所有产品
       const products = await storage.getProducts();
       
+      // 解决中文编码问题 - 使用原始查询而不是进行编码转换
+      const searchQuery = decodeURIComponent(query).toLowerCase();
+      console.log(`搜索产品 (解码后): "${searchQuery}"`);
+      
       // 在内存中过滤符合搜索条件的产品
-      const searchQuery = query.toLowerCase();
       const matchedProducts = products.filter(product => {
         // 模糊匹配产品名称
         const nameMatch = product.name.toLowerCase().includes(searchQuery);
         
-        // 模糊匹配唯一码
+        // 模糊匹配唯一码 
         const uniqueCodeMatch = product.uniqueCode && 
           product.uniqueCode.toLowerCase().includes(searchQuery);
         
@@ -443,7 +446,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return nameMatch || uniqueCodeMatch || barcodeMatch;
       });
       
-      console.log(`搜索产品: "${query}", 找到 ${matchedProducts.length} 个匹配项`);
+      console.log(`搜索产品: "${searchQuery}", 找到 ${matchedProducts.length} 个匹配项`);
       
       res.json(matchedProducts);
     } catch (err) {
