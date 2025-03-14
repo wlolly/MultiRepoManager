@@ -97,7 +97,7 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="w-64 bg-gray-900 text-white inset-y-0 left-0 fixed min-h-screen h-full overflow-y-auto z-10 shadow-lg">
+    <div className="w-64 bg-gray-900 text-white h-full overflow-y-auto">
       <div className="p-4 flex items-center border-b border-gray-800">
         <i className="ri-archive-drawer-line text-2xl mr-2 text-blue-500"></i>
         <h1 className="text-xl font-semibold">{t('app_name')}</h1>
@@ -145,6 +145,6 @@ export function Sidebar() {
       <div className="mt-auto p-4 border-t border-gray-800 text-xs text-gray-500">
         <p>{t('app_version')}</p>
       </div>
-    </aside>
+    </div>
   );
 }
