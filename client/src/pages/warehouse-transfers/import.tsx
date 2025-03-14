@@ -68,11 +68,7 @@ export default function WarehouseTransferImport() {
 
   const handleUpload = async () => {
     if (!file) {
-      toast({
-        title: t("common.error"),
-        description: t("warehouseTransfer.file_required"),
-        variant: "destructive",
-      });
+      toast.error(t("warehouseTransfer.file_required"));
       return;
     }
 
@@ -153,12 +149,9 @@ export default function WarehouseTransferImport() {
       setProgress(100);
       setUploadStatus("complete");
       queryClient.invalidateQueries({queryKey: ['/api/warehouse-transfers']});
-      toast({
-        title: t("warehouseTransfer.import_success"),
-        description: t("warehouseTransfer.import_success_details", {
-          ref: data?.referenceNumber,
-        }),
-      });
+      toast.success(t("warehouseTransfer.import_success_details", {
+        ref: data?.referenceNumber,
+      }));
       setTimeout(() => {
         setLocation(`/warehouse-transfers`);
       }, 1500);
@@ -166,39 +159,23 @@ export default function WarehouseTransferImport() {
     onError: (error: any) => {
       setUploadStatus("idle");
       setProgress(0);
-      toast({
-        title: t("common.error"),
-        description: error.message || t("warehouseTransfer.import_error"),
-        variant: "destructive",
-      });
+      toast.error(error.message || t("warehouseTransfer.import_error"));
     },
   });
 
   const handleImport = () => {
     if (importErrors.length > 0) {
-      toast({
-        title: t("common.error"),
-        description: t("warehouseTransfer.fix_errors_first"),
-        variant: "destructive",
-      });
+      toast.error(t("warehouseTransfer.fix_errors_first"));
       return;
     }
 
     if (importPreview.length === 0) {
-      toast({
-        title: t("common.error"),
-        description: t("warehouseTransfer.no_preview_data"),
-        variant: "destructive",
-      });
+      toast.error(t("warehouseTransfer.no_preview_data"));
       return;
     }
 
     if (!sourceWarehouseId || !targetWarehouseId) {
-      toast({
-        title: t("common.error"),
-        description: t("warehouseTransfer.select_warehouses"),
-        variant: "destructive",
-      });
+      toast.error(t("warehouseTransfer.select_warehouses"));
       return;
     }
     
