@@ -187,28 +187,30 @@ export default function InboundOrders() {
   };
   
   // 导出为Excel
-  const exportToExcel = (id?: number) => {
-    if (id) {
-      // 导出单个入库单
-      window.open(`/api/inbound-orders/${id}/export`, '_blank');
-    } else {
-      // 导出所有入库单
-      let url = `/api/inbound-orders/export`;
-      
-      // 添加过滤参数
-      const params = new URLSearchParams();
-      if (statusFilter) params.append('status', statusFilter);
-      if (typeFilter) params.append('type', typeFilter);
-      if (warehouseFilter) params.append('warehouse', warehouseFilter);
-      if (dateFilter) params.append('date', dateFilter);
-      if (searchQuery) params.append('search', searchQuery);
-      
-      if (params.toString()) {
-        url += `?${params.toString()}`;
-      }
-      
-      window.open(url, '_blank');
+  // 导出所有入库单
+  const exportToExcel = () => {
+    // 导出所有入库单
+    let url = `/api/inbound-orders/export`;
+    
+    // 添加过滤参数
+    const params = new URLSearchParams();
+    if (statusFilter) params.append('status', statusFilter);
+    if (typeFilter) params.append('type', typeFilter);
+    if (warehouseFilter) params.append('warehouse', warehouseFilter);
+    if (dateFilter) params.append('date', dateFilter);
+    if (searchQuery) params.append('search', searchQuery);
+    
+    if (params.toString()) {
+      url += `?${params.toString()}`;
     }
+    
+    window.open(url, '_blank');
+  };
+  
+  // 导出单个入库单
+  const exportSingleOrder = (id: number) => {
+    window.open(`/api/inbound-orders/${id}/export`, '_blank');
+  }
   };
   
   // 处理创建新入库单
@@ -412,6 +414,39 @@ export default function InboundOrders() {
         </div>
         
         <div className="flex items-center space-x-2">
+          {/* Excel功能按钮 - 使用共通组件 */}
+          <div className="bg-accent/10 p-2 rounded-md flex items-center space-x-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleDownloadTemplate}
+              title={t("download_template_tooltip")}
+            >
+              <FileSpreadsheet className="mr-2 h-4 w-4" />
+              {t("download_template")}
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleOpenImport}
+              title={t("import_from_excel_tooltip")}
+            >
+              <FileUp className="mr-2 h-4 w-4" />
+              {t("import_from_excel")}
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => exportToExcel()}
+              title={t("export_to_excel_tooltip")}
+            >
+              <FileDown className="mr-2 h-4 w-4" />
+              {t("export_to_excel")}
+            </Button>
+          </div>
+          
           <Select value={warehouseFilter} onValueChange={setWarehouseFilter}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder={t("all_warehouses")} />
@@ -438,11 +473,6 @@ export default function InboundOrders() {
               <SelectItem value="year">{t("this_year")}</SelectItem>
             </SelectContent>
           </Select>
-          
-          <Button variant="outline" size="sm" onClick={exportToExcel}>
-            <Download className="mr-2 h-4 w-4" />
-            {t("export")}
-          </Button>
         </div>
       </div>
       
