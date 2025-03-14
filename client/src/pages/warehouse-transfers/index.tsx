@@ -294,7 +294,7 @@ export default function WarehouseTransfers() {
             <FileDown className="mr-2 h-4 w-4" />
             {t("warehouseTransfer.download_template")}
           </Button>
-          <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
+          <Button variant="outline" onClick={() => navigate('/warehouse-transfers/import')}>
             <FileUp className="mr-2 h-4 w-4" />
             {t("warehouseTransfer.import_from_excel")}
           </Button>
