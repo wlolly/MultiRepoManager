@@ -240,10 +240,10 @@ export default function NewInboundOrder() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="purchase">{t("purchase_inbound")}</SelectItem>
-                        <SelectItem value="return">{t("return_inbound")}</SelectItem>
-                        <SelectItem value="transfer">{t("transfer_inbound")}</SelectItem>
-                        <SelectItem value="production">{t("production_inbound")}</SelectItem>
+                        <SelectItem value="purchase">{t("inbound_purchase")}</SelectItem>
+                        <SelectItem value="return">{t("inbound_return")}</SelectItem>
+                        <SelectItem value="transfer">{t("inbound_transfer")}</SelectItem>
+                        <SelectItem value="production">{t("inbound_production")}</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormDescription>

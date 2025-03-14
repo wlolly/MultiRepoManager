@@ -209,6 +209,34 @@
     "kk": "Қойма аударымдары",
     "uz": "Ombor transferlari"
   },
+  "new_warehouse_transfer": {
+    "zh": "新建仓库调拨",
+    "en": "New Warehouse Transfer",
+    "ru": "Новое перемещение",
+    "kk": "Жаңа қойма аударымы",
+    "uz": "Yangi ombor transferi"
+  },
+  "source_warehouse": {
+    "zh": "源仓库",
+    "en": "Source Warehouse",
+    "ru": "Исходный склад",
+    "kk": "Бастапқы қойма",
+    "uz": "Boshlang'ich ombor"
+  },
+  "target_warehouse": {
+    "zh": "目标仓库",
+    "en": "Target Warehouse",
+    "ru": "Целевой склад",
+    "kk": "Мақсатты қойма",
+    "uz": "Maqsad ombor"
+  },
+  "transfer_items": {
+    "zh": "调拨商品",
+    "en": "Transfer Items",
+    "ru": "Перемещаемые товары",
+    "kk": "Аударылатын тауарлар",
+    "uz": "Transfer mahsulotlari"
+  },
   "new_inbound_order": {
     "zh": "创建入库单",
     "en": "Create Inbound Order",
@@ -1916,5 +1944,96 @@
     "ru": "Ручной ввод",
     "kk": "Қолмен енгізу",
     "uz": "Qo'lda kiritish"
+  },
+  "inbound_purchase": {
+    "zh": "采购入库",
+    "en": "Purchase",
+    "ru": "Закупка",
+    "kk": "Сатып алу",
+    "uz": "Xarid"
+  },
+  "inbound_return": {
+    "zh": "退货入库",
+    "en": "Return",
+    "ru": "Возврат",
+    "kk": "Қайтару",
+    "uz": "Qaytarish"
+  },
+  "inbound_transfer": {
+    "zh": "调拨入库",
+    "en": "Transfer In",
+    "ru": "Перемещение (вход)",
+    "kk": "Аударым (кіру)",
+    "uz": "Transfer (kirish)"
+  },
+  "inbound_production": {
+    "zh": "生产入库",
+    "en": "Production",
+    "ru": "Производство",
+    "kk": "Өндіріс",
+    "uz": "Ishlab chiqarish"
+  },
+  "outbound_sales": {
+    "zh": "销售出库",
+    "en": "Sales",
+    "ru": "Продажи",
+    "kk": "Сату",
+    "uz": "Sotuv"
+  },
+  "outbound_return": {
+    "zh": "退货出库",
+    "en": "Return",
+    "ru": "Возврат",
+    "kk": "Қайтару",
+    "uz": "Qaytarish"
+  },
+  "outbound_transfer": {
+    "zh": "调拨出库",
+    "en": "Transfer Out",
+    "ru": "Перемещение (выход)",
+    "kk": "Аударым (шығу)",
+    "uz": "Transfer (chiqish)"
+  },
+  "outbound_scrap": {
+    "zh": "报废出库",
+    "en": "Scrap",
+    "ru": "Списание",
+    "kk": "Есептен шығару",
+    "uz": "Hisobdan chiqarish"
+  },
+  "destination_customer": {
+    "zh": "客户",
+    "en": "Customer",
+    "ru": "Клиент",
+    "kk": "Клиент",
+    "uz": "Mijoz"
+  },
+  "destination_retail": {
+    "zh": "零售",
+    "en": "Retail",
+    "ru": "Розница",
+    "kk": "Бөлшек сауда",
+    "uz": "Chakana savdo"
+  },
+  "destination_wholesale": {
+    "zh": "批发",
+    "en": "Wholesale",
+    "ru": "Оптовая торговля",
+    "kk": "Көтерме сауда",
+    "uz": "Ulgurji savdo"
+  },
+  "destination_transfer": {
+    "zh": "调拨",
+    "en": "Transfer",
+    "ru": "Перемещение",
+    "kk": "Аударым",
+    "uz": "Transfer"
+  },
+  "destination_supplier": {
+    "zh": "供应商",
+    "en": "Supplier",
+    "ru": "Поставщик",
+    "kk": "Жеткізуші",
+    "uz": "Ta'minotchi"
   }
 }
