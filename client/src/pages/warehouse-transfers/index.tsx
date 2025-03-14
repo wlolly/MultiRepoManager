@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import axios from "axios";
+import * as XLSX from "xlsx";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,8 +24,8 @@ import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMe
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import toast from "../../lib/toast";
-import { formatDate } from "@/lib/utils";
 import { ExcelButtons } from "@/components/ExcelButtons";
+import { formatDate } from "@/lib/utils";
 
 // 调拨单接口定义
 interface WarehouseTransfer {
@@ -233,6 +234,46 @@ export default function WarehouseTransfers() {
     }
   };
   
+  // 导出所有筛选后的调拨单到Excel
+  const exportAllTransfersToExcel = () => {
+    if (filteredTransfers.length === 0) {
+      toast.error(t("warehouseTransfer.no_data_to_export"));
+      return;
+    }
+    
+    try {
+      // 准备要导出的数据
+      const exportData = filteredTransfers.map(transfer => ({
+        [t("warehouseTransfer.reference_number")]: transfer.referenceNumber,
+        [t("warehouseTransfer.source_warehouse")]: transfer.sourceWarehouse.name,
+        [t("warehouseTransfer.target_warehouse")]: transfer.targetWarehouse.name,
+        [t("warehouseTransfer.status")]: t(`warehouseTransfer.status.${transfer.status}`),
+        [t("warehouseTransfer.items")]: transfer.totalItems,
+        [t("warehouseTransfer.weight")]: transfer.totalWeight.toFixed(2) + " kg",
+        [t("warehouseTransfer.volume")]: transfer.totalVolume.toFixed(3) + " m³",
+        [t("warehouseTransfer.created_at")]: formatDate(transfer.createdAt),
+        [t("warehouseTransfer.creator")]: transfer.creator?.fullName || transfer.creator?.username,
+        [t("warehouseTransfer.notes")]: transfer.notes || '',
+      }));
+      
+      // 创建工作簿和工作表
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      
+      // 添加工作表到工作簿
+      XLSX.utils.book_append_sheet(wb, ws, t("warehouseTransfer.transfers_list"));
+      
+      // 导出Excel文件
+      const dateStr = new Date().toISOString().split('T')[0];
+      XLSX.writeFile(wb, `${t("warehouseTransfer.transfers_export")}_${dateStr}.xlsx`);
+      
+      toast.success(t("warehouseTransfer.export_all_success"));
+    } catch (error) {
+      console.error('Bulk export error:', error);
+      toast.error(t("warehouseTransfer.export_all_error"));
+    }
+  };
+  
   // 更新调拨单状态
   const updateTransferStatus = async (transferId: number, status: string) => {
     try {
@@ -409,14 +450,25 @@ export default function WarehouseTransfers() {
           <p className="text-muted-foreground">{t("warehouseTransfer.subtitle")}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
-            <FileDown className="mr-2 h-4 w-4" />
-            {t("warehouseTransfer.import")}
-          </Button>
-          <Button variant="outline" onClick={handleDownloadTemplate}>
-            <FileSpreadsheet className="mr-2 h-4 w-4" />
-            {t("warehouseTransfer.download_template")}
-          </Button>
+          {/* Excel操作按钮组 */}
+          <ExcelButtons 
+            onDownloadTemplate={handleDownloadTemplate}
+            onImport={() => setImportDialogOpen(true)}
+            onExport={() => {
+              if (filteredTransfers.length > 0) {
+                exportAllTransfersToExcel();
+              } else {
+                toast.error(t("warehouseTransfer.no_data_to_export"));
+              }
+            }}
+            size="sm"
+            tooltips={{
+              template: t("warehouseTransfer.download_template_tooltip"),
+              import: t("warehouseTransfer.import_tooltip"),
+              export: t("warehouseTransfer.export_tooltip")
+            }}
+          />
+          {/* 创建调拨单按钮 */}
           <Button onClick={handleCreateTransfer}>
             <Plus className="mr-2 h-4 w-4" />
             {t("warehouseTransfer.new_warehouse_transfer")}
