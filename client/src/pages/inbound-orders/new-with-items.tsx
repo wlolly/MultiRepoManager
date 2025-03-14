@@ -8,7 +8,8 @@ import { z } from "zod";
 import { v4 as uuidv4 } from 'uuid';
 import { 
   Plus, Trash2, Save, ArrowLeft, Package, Search, 
-  PlusCircle, Calculator, RotateCw, ListFilter, X
+  PlusCircle, Calculator, RotateCw, ListFilter, X,
+  ScanLine
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -132,6 +133,8 @@ export default function NewInboundOrderWithItems() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [currentItemIndex, setCurrentItemIndex] = useState<number | null>(null);
   const [productDialogOpen, setProductDialogOpen] = useState(false);
+  const [openBarcodeScanner, setOpenBarcodeScanner] = useState(false);
+  const [currentScanningField, setCurrentScanningField] = useState<{type: string, index?: number} | null>(null);
   
   // 获取仓库列表
   const { data: warehouses = [] } = useQuery<Warehouse[]>({
@@ -746,6 +749,40 @@ export default function NewInboundOrderWithItems() {
                           <TableCell>
                             <FormField
                               control={form.control}
+                              name={`items.${index}.uniqueCode`}
+                              render={({ field }) => (
+                                <FormItem className="m-0">
+                                  <FormControl>
+                                    <div className="flex items-center space-x-1">
+                                      <Input
+                                        {...field}
+                                        value={field.value || ""}
+                                        placeholder={t("unique_code")}
+                                        className="h-8"
+                                      />
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8"
+                                        onClick={() => {
+                                          // 打开条码扫描对话框
+                                          setOpenBarcodeScanner(true);
+                                          setCurrentScanningField({type: 'uniqueCode', index});
+                                        }}
+                                      >
+                                        <ScanLine className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  </FormControl>
+                                  <FormMessage className="text-xs" />
+                                </FormItem>
+                              )}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <FormField
+                              control={form.control}
                               name={`items.${index}.externalOrderNumber`}
                               render={({ field }) => (
                                 <FormItem className="m-0">
@@ -898,6 +935,39 @@ export default function NewInboundOrderWithItems() {
       </Form>
 
       {ProductSelectionDialog()}
+      
+      {/* 条码扫描对话框 */}
+      <Dialog open={openBarcodeScanner} onOpenChange={setOpenBarcodeScanner}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t("barcode_scanner")}</DialogTitle>
+            <DialogDescription>
+              {t("scan_barcode_description")}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <BarcodeScanner
+            onCodeDetected={(code) => {
+              if (currentScanningField) {
+                if (currentScanningField.type === 'uniqueCode' && currentScanningField.index !== undefined) {
+                  // 更新唯一码字段
+                  form.setValue(`items.${currentScanningField.index}.uniqueCode`, code);
+                }
+                setOpenBarcodeScanner(false);
+                setCurrentScanningField(null);
+              }
+            }}
+            label={t("barcode")}
+            placeholder={t("scan_or_enter_barcode")}
+          />
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpenBarcodeScanner(false)}>
+              {t("cancel")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
