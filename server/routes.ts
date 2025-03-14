@@ -32,7 +32,7 @@ import {
   createProductImportTemplate,
   parseProductImportFile,
   exportProductsToExcel
-} from "./utils/product-excel-handler";
+} from "./utils/excel-products";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const apiRouter = express.Router();
