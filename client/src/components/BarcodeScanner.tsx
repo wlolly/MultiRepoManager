@@ -40,128 +40,177 @@ export function BarcodeScanner({
 
   // 判断是否是扫描枪输入
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    const now = Date.now();
-    keypressTimesRef.current.push(now);
-    
-    // 只保留最近的10次按键时间
-    if (keypressTimesRef.current.length > 10) {
-      keypressTimesRef.current.shift();
-    }
-    
-    // 如果是唯一码模式，且输入了非数字字符，则不接受
-    if (uniqueCodeMode && e.key !== 'Enter' && e.key !== 'Backspace' && e.key !== 'Tab' && 
-        e.key !== 'ArrowLeft' && e.key !== 'ArrowRight' && (e.key < '0' || e.key > '9')) {
-      e.preventDefault();
-      return;
-    }
-    
-    // 如果是唯一码模式，限制最大长度为5位数字
-    if (uniqueCodeMode && /^\d$/.test(e.key) && inputRef.current && inputRef.current.value.length >= 5) {
-      e.preventDefault();
-      return;
-    }
-    
-    // 如果按下回车键，并且输入速度快，可能是扫描枪
-    if (e.key === 'Enter') {
-      e.preventDefault();
+    try {
+      const now = Date.now();
+      // 安全地处理按键时间数组
+      if (!Array.isArray(keypressTimesRef.current)) {
+        keypressTimesRef.current = [];
+      }
       
-      if (isScanning && inputRef.current?.value) {
-        const isScanner = isLikelyScanner();
-        let value = inputRef.current.value.trim();
+      keypressTimesRef.current.push(now);
+      
+      // 只保留最近的10次按键时间
+      if (keypressTimesRef.current.length > 10) {
+        keypressTimesRef.current.shift();
+      }
+      
+      // 如果是唯一码模式，且输入了非数字字符，则不接受
+      if (uniqueCodeMode && e.key !== 'Enter' && e.key !== 'Backspace' && e.key !== 'Tab' && 
+          e.key !== 'ArrowLeft' && e.key !== 'ArrowRight' && (e.key < '0' || e.key > '9')) {
+        e.preventDefault();
+        return;
+      }
+      
+      // 如果是唯一码模式，限制最大长度为5位数字
+      if (uniqueCodeMode && /^\d$/.test(e.key) && inputRef.current && inputRef.current.value.length >= 5) {
+        e.preventDefault();
+        return;
+      }
+      
+      // 如果按下回车键，并且输入速度快，可能是扫描枪
+      if (e.key === 'Enter') {
+        e.preventDefault();
         
-        // 如果是唯一码模式，确保只有数字
-        if (uniqueCodeMode) {
-          value = value.replace(/\D/g, '');
-        }
-        
-        // 确保不是空值
-        if (value) {
-          onCodeDetected(value);
-          toast({
-            title: uniqueCodeMode ? "唯一码已扫描" : "条码已扫描",
-            description: value,
-          });
-          setInputValue(value);
-          // 扫描成功后，清空输入框准备下一次扫描
-          if (isScanner) {
-            inputRef.current.value = '';
+        if (isScanning && inputRef.current && typeof inputRef.current.value === 'string') {
+          const isScanner = isLikelyScanner();
+          let value = inputRef.current.value.trim();
+          
+          // 如果是唯一码模式，确保只有数字
+          if (uniqueCodeMode) {
+            value = value.replace(/\D/g, '');
+          }
+          
+          // 确保不是空值
+          if (value) {
+            onCodeDetected(value);
+            toast({
+              title: uniqueCodeMode ? "唯一码已扫描" : "条码已扫描",
+              description: value,
+            });
+            setInputValue(value);
+            // 扫描成功后，清空输入框准备下一次扫描
+            if (isScanner && inputRef.current) {
+              inputRef.current.value = '';
+            }
           }
         }
       }
+    } catch (error) {
+      console.error("处理键盘输入时发生错误:", error);
     }
   };
 
   // 通过检查按键时间间隔判断是否是扫描枪输入
   const isLikelyScanner = (): boolean => {
-    const times = keypressTimesRef.current;
-    if (times.length < 3) return false;
-    
-    // 计算平均按键间隔
-    let totalInterval = 0;
-    for (let i = 1; i < times.length; i++) {
-      totalInterval += times[i] - times[i-1];
+    try {
+      // 确保times是有效的数组
+      const times = Array.isArray(keypressTimesRef.current) ? keypressTimesRef.current : [];
+      
+      // 至少需要3个按键时间来判断
+      if (times.length < 3) return false;
+      
+      // 计算平均按键间隔
+      let totalInterval = 0;
+      for (let i = 1; i < times.length; i++) {
+        const prev = times[i-1];
+        const current = times[i];
+        
+        // 确保都是数字类型
+        if (typeof prev === 'number' && typeof current === 'number') {
+          totalInterval += current - prev;
+        }
+      }
+      
+      const avgInterval = totalInterval / (times.length - 1);
+      
+      // 扫描枪通常每次按键间隔在10-30ms之间
+      return avgInterval < 50;
+    } catch (error) {
+      console.error("判断扫描枪输入时发生错误:", error);
+      return false;
     }
-    const avgInterval = totalInterval / (times.length - 1);
-    
-    // 扫描枪通常每次按键间隔在10-30ms之间
-    return avgInterval < 50;
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!isScanning) {
-      // 如果是唯一码模式，只允许输入数字，并限制长度为1-5位
-      if (uniqueCodeMode) {
-        // 使用正则表达式匹配非数字字符，并替换为空字符串
-        const numericValue = e.target.value.replace(/\D/g, '');
-        // 确保唯一码不超过5位数字
-        const validValue = numericValue.slice(0, 5);
-        setInputValue(validValue);
-        // 如果有非数字字符被替换或者超长被截断，更新输入框的值
-        if (validValue !== e.target.value) {
-          e.target.value = validValue;
+    try {
+      if (!isScanning) {
+        // 如果是唯一码模式，只允许输入数字，并限制长度为1-5位
+        if (uniqueCodeMode) {
+          // 使用正则表达式匹配非数字字符，并替换为空字符串
+          const numericValue = e.target.value.replace(/\D/g, '');
+          // 确保唯一码不超过5位数字
+          const validValue = numericValue.slice(0, 5);
+          setInputValue(validValue);
+          // 如果有非数字字符被替换或者超长被截断，更新输入框的值
+          if (validValue !== e.target.value) {
+            e.target.value = validValue;
+          }
+        } else {
+          setInputValue(e.target.value);
         }
-      } else {
-        setInputValue(e.target.value);
       }
+    } catch (error) {
+      console.error("处理输入框变化时发生错误:", error);
     }
   };
 
   const handleSubmit = () => {
-    if (inputValue.trim()) {
-      onCodeDetected(inputValue.trim());
-      toast({
-        title: uniqueCodeMode ? "唯一码已提交" : "条码已提交",
-        description: inputValue,
-      });
-      if (isEditing) {
-        setIsEditing(false);
+    try {
+      if (inputValue.trim()) {
+        onCodeDetected(inputValue.trim());
+        toast({
+          title: uniqueCodeMode ? "唯一码已提交" : "条码已提交",
+          description: inputValue,
+        });
+        if (isEditing) {
+          setIsEditing(false);
+        }
       }
+    } catch (error) {
+      console.error("提交表单时发生错误:", error);
     }
   };
 
   const startScanning = () => {
-    setIsScanning(true);
-    keypressTimesRef.current = [];
-    if (inputRef.current) {
-      inputRef.current.value = '';
-      inputRef.current.focus();
+    try {
+      setIsScanning(true);
+      // 确保初始化为空数组
+      keypressTimesRef.current = [];
+      if (inputRef.current) {
+        inputRef.current.value = '';
+        inputRef.current.focus();
+      }
+      toast({
+        title: uniqueCodeMode ? "开始扫描唯一码" : "开始扫描条码",
+        description: "请使用扫描枪扫描条码",
+      });
+    } catch (error) {
+      console.error("开始扫描时发生错误:", error);
+      setIsScanning(false);
     }
-    toast({
-      title: uniqueCodeMode ? "开始扫描唯一码" : "开始扫描条码",
-      description: "请使用扫描枪扫描条码",
-    });
   };
 
   const stopScanning = () => {
-    setIsScanning(false);
+    try {
+      setIsScanning(false);
+    } catch (error) {
+      console.error("停止扫描时发生错误:", error);
+    }
   };
 
   const startEditing = () => {
-    setIsEditing(true);
-    setIsScanning(false);
-    setTimeout(() => {
-      inputRef.current?.focus();
-    }, 0);
+    try {
+      setIsEditing(true);
+      setIsScanning(false);
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+        }
+      }, 0);
+    } catch (error) {
+      console.error("开始编辑时发生错误:", error);
+      setIsEditing(false);
+    }
   };
 
   return (
