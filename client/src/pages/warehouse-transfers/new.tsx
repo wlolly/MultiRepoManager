@@ -416,11 +416,11 @@ export default function NewWarehouseTransfer() {
       form.setValue(`items.${index}.packageCount`, packageCount.toString());
       
       // 计算总重量 = 件数 * 每件重量
-      const weightPerPackage = selectedProduct.bulkWeightKg || 0;
+      const weightPerPackage = selectedProduct.bulkWeight || selectedProduct.bulkWeightKg || 0;
       const totalWeight = packageCount * weightPerPackage;
       
       // 计算总体积 = 件数 * 每件体积
-      const volumePerPackage = selectedProduct.bulkVolumeM3 || 0;
+      const volumePerPackage = selectedProduct.bulkVolume || selectedProduct.bulkVolumeM3 || 0;
       const totalVolume = packageCount * volumePerPackage;
       
       // 更新重量和体积，保留3位小数
@@ -493,11 +493,11 @@ export default function NewWarehouseTransfer() {
           form.setValue(`items.${index}.packageCount`, packageCount.toString());
           
           // 计算总重量 = 件数 * 每件重量
-          const weightPerPackage = selectedProduct.bulkWeightKg || 0;
+          const weightPerPackage = selectedProduct.bulkWeight || selectedProduct.bulkWeightKg || 0;
           const totalWeight = packageCount * weightPerPackage;
           
           // 计算总体积 = 件数 * 每件体积
-          const volumePerPackage = selectedProduct.bulkVolumeM3 || 0;
+          const volumePerPackage = selectedProduct.bulkVolume || selectedProduct.bulkVolumeM3 || 0;
           const totalVolume = packageCount * volumePerPackage;
           
           // 更新重量和体积，保留3位小数
