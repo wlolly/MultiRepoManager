@@ -247,7 +247,7 @@ export default function NewWarehouseTransfer() {
   // 处理唯一码扫描结果
   const handleUniqueCodeScanned = (code: string) => {
     if (currentScanningIndex !== null) {
-      // 确保唯一码是数字，并且只保留1-5位数字
+      // 确保扫描结果是有效的唯一码（1-5位数字）
       const numericCode = code.replace(/\D/g, '').substring(0, 5);
       
       // 将扫描结果更新到对应的表单字段
@@ -258,14 +258,27 @@ export default function NewWarehouseTransfer() {
         // 查找对应的产品
         const product = findProductByUniqueCode(numericCode);
         if (product) {
+          // 检查是否已有产品被选择
+          const existingProductId = form.getValues(`items.${currentScanningIndex}.productId`);
+          if (existingProductId && parseInt(existingProductId) !== product.id) {
+            // 如果已选择了不同的产品，提示用户产品已被更新
+            toast({
+              title: t("product_updated"),
+              description: t("product_updated_by_unique_code", { oldProduct: products.find(p => p.id === parseInt(existingProductId))?.name || "Unknown", newProduct: product.name }),
+              variant: "warning",
+            });
+          }
+          
           // 自动填充产品信息
           form.setValue(`items.${currentScanningIndex}.productId`, product.id.toString());
           
-          // 获取数量并计算重量和体积
+          // 获取数量，如果未设置则默认为1
           const quantity = parseInt(form.getValues(`items.${currentScanningIndex}.quantity`) || "1");
           
-          // 设置默认件数为1
-          form.setValue(`items.${currentScanningIndex}.packageCount`, "1");
+          // 设置默认件数为1，如果未设置
+          if (!form.getValues(`items.${currentScanningIndex}.packageCount`)) {
+            form.setValue(`items.${currentScanningIndex}.packageCount`, "1");
+          }
           
           // 计算总重量和体积
           const weight = product.singleWeightKg * quantity;
@@ -281,24 +294,49 @@ export default function NewWarehouseTransfer() {
           
           // 触发表单验证，确保UI更新
           form.trigger(`items.${currentScanningIndex}.productId`);
+          form.trigger(`items.${currentScanningIndex}.quantity`);
+          form.trigger(`items.${currentScanningIndex}.packageCount`);
+          form.trigger(`items.${currentScanningIndex}.weight`);
+          form.trigger(`items.${currentScanningIndex}.volume`);
         } else {
-          toast({
-            title: t("product_not_found"),
-            description: t("no_product_with_unique_code", { code: numericCode }),
-            variant: "destructive",
-          });
+          // 没有找到匹配的产品
+          if (numericCode.length === 5) {
+            // 完整的5位唯一码但未找到产品
+            toast({
+              title: t("product_not_found"),
+              description: t("no_product_with_unique_code", { code: numericCode }),
+              variant: "destructive",
+            });
+          } else {
+            // 不完整的唯一码
+            toast({
+              title: t("incomplete_unique_code"),
+              description: t("continue_scanning_or_select_product"),
+              variant: "warning",
+            });
+          }
         }
-      } else if (numericCode) {
-        // 输入了数字但格式不正确
+      } else if (code && !/^\d+$/.test(code)) {
+        // 扫描结果包含非数字字符
         toast({
-          title: t("invalid_unique_code"),
-          description: t("unique_code_format_error"),
+          title: t("invalid_barcode"),
+          description: t("barcode_must_be_numeric"),
+          variant: "destructive",
+        });
+      } else if (!code) {
+        // 扫描结果为空
+        toast({
+          title: t("scan_failed"),
+          description: t("please_try_again"),
           variant: "destructive",
         });
       }
       
       // 关闭扫描对话框
       setIsBarcodeScannerOpen(false);
+      
+      // 更新总计数据
+      calculateTotals();
     }
   };
   
@@ -317,34 +355,58 @@ export default function NewWarehouseTransfer() {
   
   // 商品选择时自动计算重量和体积，并填充唯一码
   const handleProductChange = (value: string, index: number) => {
+    // 设置产品ID
     form.setValue(`items.${index}.productId`, value);
+    
+    // 查找选择的产品信息
     const selectedProduct = products.find(p => p.id === parseInt(value));
     if (selectedProduct) {
+      // 获取当前数量，如果未设置则默认为1
       const quantity = parseInt(form.getValues(`items.${index}.quantity`) || "1");
+      
       // 计算总重量和体积
       const weight = selectedProduct.singleWeightKg * quantity;
       const volume = selectedProduct.singleVolumeM3 * quantity;
       
+      // 更新重量和体积
       form.setValue(`items.${index}.weight`, weight.toFixed(3));
       form.setValue(`items.${index}.volume`, volume.toFixed(3));
       
       // 设置默认件数为1
-      form.setValue(`items.${index}.packageCount`, "1");
+      if (!form.getValues(`items.${index}.packageCount`)) {
+        form.setValue(`items.${index}.packageCount`, "1");
+      }
+      
+      // 检查是否已存在唯一码
+      const currentUniqueCode = form.getValues(`items.${index}.uniqueCode`);
       
       // 自动填充唯一码
-      if (selectedProduct.uniqueCode) {
+      if (selectedProduct.uniqueCode && !currentUniqueCode) {
+        // 仅当未手动输入唯一码时填充
         form.setValue(`items.${index}.uniqueCode`, selectedProduct.uniqueCode);
         toast({
           title: t("unique_code_auto_filled"),
           description: `${t("product")} ${selectedProduct.name} ${t("unique_code")}: ${selectedProduct.uniqueCode}`,
         });
-      } else {
-        // 如果产品没有唯一码，则清空唯一码字段
+      } else if (!selectedProduct.uniqueCode && currentUniqueCode) {
+        // 如果已输入唯一码但选择的产品没有唯一码，询问是否保留
+        toast({
+          title: t("unique_code_conflict"),
+          description: t("existing_unique_code_kept"),
+          variant: "warning",
+        });
+      } else if (!selectedProduct.uniqueCode && !currentUniqueCode) {
+        // 如果产品没有唯一码且没有输入，则清空唯一码字段
         form.setValue(`items.${index}.uniqueCode`, "");
       }
       
-      // 触发表单验证
+      // 触发表单验证，确保UI更新
       form.trigger(`items.${index}.productId`);
+      form.trigger(`items.${index}.quantity`);
+      form.trigger(`items.${index}.packageCount`);
+      form.trigger(`items.${index}.weight`);
+      form.trigger(`items.${index}.volume`);
+      form.trigger(`items.${index}.uniqueCode`);
     }
   };
   
