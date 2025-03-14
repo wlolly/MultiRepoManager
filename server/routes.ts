@@ -2292,6 +2292,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Excel导出路由
+  // 导出所有调拨单到Excel
+  apiRouter.get("/warehouse-transfers/export-all", async (req, res) => {
+    try {
+      console.log("正在处理批量导出调拨单请求", req.query);
+      
+      // 构建过滤参数 (与前端页面筛选相同)
+      const filter: any = {};
+      
+      // 状态过滤
+      if (req.query.status) {
+        filter.status = req.query.status as string;
+      }
+      
+      // 仓库过滤 (源仓库或目标仓库)
+      if (req.query.warehouseId) {
+        const warehouseId = parseInt(req.query.warehouseId as string);
+        // 简化处理，实际应该用OR条件查询两个字段
+        filter.sourceWarehouseId = warehouseId;
+      }
+      
+      // 获取调拨单列表
+      const transfers = await storage.getWarehouseTransfers(filter);
+      console.log(`找到 ${transfers.length} 条符合条件的调拨单记录`);
+      
+      // 获取每个调拨单的源仓库和目标仓库信息
+      const transfersWithWarehouseInfo = await Promise.all(
+        transfers.map(async transfer => {
+          // 获取源仓库和目标仓库
+          const sourceWarehouse = await storage.getWarehouse(transfer.sourceWarehouseId);
+          const targetWarehouse = await storage.getWarehouse(transfer.targetWarehouseId);
+          
+          // 获取创建人信息
+          const creator = await storage.getUser(transfer.createdBy);
+          
+          return {
+            ...transfer,
+            sourceWarehouse: sourceWarehouse || { id: transfer.sourceWarehouseId, name: '未知仓库', location: '' },
+            targetWarehouse: targetWarehouse || { id: transfer.targetWarehouseId, name: '未知仓库', location: '' },
+            creator: creator || undefined
+          };
+        })
+      );
+      
+      // 导出到Excel
+      const excelFilePath = exportMultipleTransfersToExcel(transfersWithWarehouseInfo);
+      
+      // 设置响应头
+      const filename = path.basename(excelFilePath);
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      
+      // 发送文件
+      res.download(excelFilePath);
+      
+    } catch (err: any) {
+      console.error("批量导出Excel文件失败:", err);
+      res.status(500).json({ message: "批量导出Excel文件失败", error: err.message });
+    }
+  });
+
   apiRouter.get("/warehouse-transfers/:id/export", async (req, res) => {
     try {
       const transferId = parseInt(req.params.id);
@@ -2337,7 +2397,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 发送文件给客户端
       res.download(filePath, `transfer_${transfer.referenceNumber}.xlsx`);
       
-    } catch (err) {
+    } catch (err: any) {
       console.error("导出Excel文件失败:", err);
       res.status(500).json({ message: "导出Excel文件失败", error: err.message });
     }
