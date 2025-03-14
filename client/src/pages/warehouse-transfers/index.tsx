@@ -404,7 +404,7 @@ export default function WarehouseTransfers() {
               <SelectValue placeholder={t("warehouseTransfer.all_warehouses")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">{t("all_warehouses")}</SelectItem>
+              <SelectItem value="">{t("warehouseTransfer.all_warehouses")}</SelectItem>
               {warehouses.map((warehouse) => (
                 <SelectItem key={warehouse.id} value={warehouse.id.toString()}>
                   {warehouse.name}
@@ -415,14 +415,14 @@ export default function WarehouseTransfers() {
           
           <Select value={dateFilter} onValueChange={setDateFilter}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder={t("date_range")} />
+              <SelectValue placeholder={t("warehouseTransfer.date_range")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">{t("all_time")}</SelectItem>
-              <SelectItem value="today">{t("today")}</SelectItem>
-              <SelectItem value="week">{t("this_week")}</SelectItem>
-              <SelectItem value="month">{t("this_month")}</SelectItem>
-              <SelectItem value="year">{t("this_year")}</SelectItem>
+              <SelectItem value="">{t("warehouseTransfer.all_time")}</SelectItem>
+              <SelectItem value="today">{t("warehouseTransfer.today")}</SelectItem>
+              <SelectItem value="week">{t("warehouseTransfer.this_week")}</SelectItem>
+              <SelectItem value="month">{t("warehouseTransfer.this_month")}</SelectItem>
+              <SelectItem value="year">{t("warehouseTransfer.this_year")}</SelectItem>
             </SelectContent>
           </Select>
           
@@ -430,18 +430,18 @@ export default function WarehouseTransfers() {
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
                 <FileDown className="mr-2 h-4 w-4" />
-                {t("excel_options")}
+                {t("warehouseTransfer.excel_options")}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              <DropdownMenuLabel>{t("excel_operations")}</DropdownMenuLabel>
+              <DropdownMenuLabel>{t("warehouseTransfer.excel_operations")}</DropdownMenuLabel>
               <DropdownMenuItem onClick={handleDownloadTemplate}>
                 <FileText className="mr-2 h-4 w-4" />
-                {t("download_template")}
+                {t("warehouseTransfer.download_template")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setImportDialogOpen(true)}>
                 <FileUp className="mr-2 h-4 w-4" />
-                {t("import_from_excel")}
+                {t("warehouseTransfer.import_from_excel")}
               </DropdownMenuItem>
               {displayedTransfers.length > 0 && (
                 <DropdownMenuSeparator />
@@ -452,12 +452,12 @@ export default function WarehouseTransfers() {
                   onClick={() => exportTransferToExcel(transfer.id)}
                 >
                   <Download className="mr-2 h-4 w-4" />
-                  {t("export_transfer", { ref: transfer.referenceNumber })}
+                  {t("warehouseTransfer.export_transfer", { ref: transfer.referenceNumber })}
                 </DropdownMenuItem>
               )).slice(0, 5)}
               {displayedTransfers.length > 5 && (
                 <DropdownMenuItem disabled>
-                  {t("more_items_available")}
+                  {t("warehouseTransfer.more_items_available")}
                 </DropdownMenuItem>
               )}
             </DropdownMenuContent>
@@ -468,8 +468,8 @@ export default function WarehouseTransfers() {
       {/* 数据视图选择 */}
       <Tabs defaultValue="all" value={view} onValueChange={(value) => setView(value as "all" | "recent")} className="mb-6">
         <TabsList>
-          <TabsTrigger value="all">{t("all_transfers")}</TabsTrigger>
-          <TabsTrigger value="recent">{t("recent_transfers")}</TabsTrigger>
+          <TabsTrigger value="all">{t("warehouseTransfer.all_transfers")}</TabsTrigger>
+          <TabsTrigger value="recent">{t("warehouseTransfer.recent_transfers")}</TabsTrigger>
         </TabsList>
       </Tabs>
       
@@ -499,14 +499,14 @@ export default function WarehouseTransfers() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>{t("reference_number")}</TableHead>
-                    <TableHead>{t("source_warehouse")}</TableHead>
-                    <TableHead>{t("target_warehouse")}</TableHead>
-                    <TableHead>{t("status")}</TableHead>
-                    <TableHead className="text-right">{t("items")}</TableHead>
-                    <TableHead className="text-right">{t("weight")}</TableHead>
-                    <TableHead className="text-right">{t("volume")}</TableHead>
-                    <TableHead>{t("created_at")}</TableHead>
+                    <TableHead>{t("warehouseTransfer.reference_number")}</TableHead>
+                    <TableHead>{t("warehouseTransfer.source_warehouse")}</TableHead>
+                    <TableHead>{t("warehouseTransfer.target_warehouse")}</TableHead>
+                    <TableHead>{t("warehouseTransfer.status")}</TableHead>
+                    <TableHead className="text-right">{t("warehouseTransfer.items")}</TableHead>
+                    <TableHead className="text-right">{t("warehouseTransfer.weight")}</TableHead>
+                    <TableHead className="text-right">{t("warehouseTransfer.volume")}</TableHead>
+                    <TableHead>{t("warehouseTransfer.created_at")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -521,7 +521,7 @@ export default function WarehouseTransfers() {
                       <TableCell>{transfer.targetWarehouse.name}</TableCell>
                       <TableCell>
                         <Badge variant={getStatusBadgeVariant(transfer.status)}>
-                          {t(transfer.status)}
+                          {t(`warehouseTransfer.status.${transfer.status}`)}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">{transfer.totalItems}</TableCell>
