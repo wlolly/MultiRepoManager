@@ -102,13 +102,16 @@ export default function App() {
                 {() => <OutboundOrders />}
               </Route>
               <Route path="/outbound-orders/new">
-                {() => <NewOutboundOrder />}
+                {() => <AdvancedOutboundOrder />}
               </Route>
               <Route path="/outbound-orders/new-with-items">
                 {() => <NewOutboundOrderWithItems />}
               </Route>
               <Route path="/outbound-orders/advanced">
                 {() => <AdvancedOutboundOrder />}
+              </Route>
+              <Route path="/outbound-orders/simple">
+                {() => <NewOutboundOrder />}
               </Route>
               <Route path="/outbound-order/:id">
                 {(params) => <OutboundOrderDetail id={params.id} />}
