@@ -228,7 +228,7 @@ async function main() {
       .from(warehouseTransfers)
       .where(eq(warehouseTransfers.referenceNumber, 'TRF-SH-20250310-0001'));
     
-    // 为调拨单1添加明细项
+    // 为调拨单1添加明细项 (数据库中不存在status字段，所以不再添加)
     await db.insert(warehouseTransferItems).values([
       {
         transferId: transfer1.id,
@@ -286,7 +286,7 @@ async function main() {
       .from(warehouseTransfers)
       .where(eq(warehouseTransfers.referenceNumber, 'TRF-BJ-20250312-0001'));
     
-    // 为调拨单2添加明细项
+    // 为调拨单2添加明细项 (数据库中不存在status字段，所以不再添加)
     await db.insert(warehouseTransferItems).values([
       {
         transferId: transfer2.id,
@@ -334,7 +334,7 @@ async function main() {
       .from(warehouseTransfers)
       .where(eq(warehouseTransfers.referenceNumber, 'TRF-GZ-20250314-0001'));
     
-    // 为调拨单3添加明细项
+    // 为调拨单3添加明细项 (数据库中不存在status字段，所以不再添加)
     await db.insert(warehouseTransferItems).values([
       {
         transferId: transfer3.id,
