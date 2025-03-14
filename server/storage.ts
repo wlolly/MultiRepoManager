@@ -126,6 +126,27 @@ export interface IStorage {
     unmatched: number,
     total: number
   }>; // 执行匹配操作并返回结果统计
+  
+  // 仓库调拨单相关方法
+  getWarehouseTransfer(id: number): Promise<WarehouseTransfer | undefined>;
+  getWarehouseTransferByReference(referenceNumber: string): Promise<WarehouseTransfer | undefined>;
+  createWarehouseTransfer(transfer: InsertWarehouseTransfer): Promise<WarehouseTransfer>;
+  updateWarehouseTransfer(id: number, transfer: Partial<WarehouseTransfer>): Promise<WarehouseTransfer | undefined>;
+  getWarehouseTransfers(filter?: { sourceWarehouseId?: number, targetWarehouseId?: number, status?: string }): Promise<WarehouseTransfer[]>;
+  getWarehouseTransferStats(): Promise<{
+    totalTransfers: number;
+    pendingTransfers: number;
+    completedTransfers: number;
+    totalWeight: number;
+    totalVolume: number;
+    recentTransfers: number;
+  }>;
+  
+  // 仓库调拨单明细相关方法
+  getWarehouseTransferItems(transferId: number): Promise<WarehouseTransferItem[]>;
+  createWarehouseTransferItem(item: InsertWarehouseTransferItem): Promise<WarehouseTransferItem>;
+  updateWarehouseTransferItem(id: number, item: Partial<WarehouseTransferItem>): Promise<WarehouseTransferItem | undefined>;
+  deleteWarehouseTransferItem(id: number): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -147,6 +168,10 @@ export class MemStorage implements IStorage {
   // 电商平台相关存储
   private apiConfigurationsMap: Map<number, ApiConfiguration>;
   private ecommerceProductsMap: Map<number, EcommerceProduct>;
+  
+  // 仓库调拨相关存储
+  private warehouseTransfersMap: Map<number, WarehouseTransfer>;
+  private warehouseTransferItemsMap: Map<number, WarehouseTransferItem>;
 
   private userIdCounter: number;
   private repositoryIdCounter: number;
@@ -166,6 +191,10 @@ export class MemStorage implements IStorage {
   // 电商平台相关计数器
   private apiConfigurationIdCounter: number;
   private ecommerceProductIdCounter: number;
+  
+  // 仓库调拨相关计数器
+  private warehouseTransferIdCounter: number;
+  private warehouseTransferItemIdCounter: number;
   
   // 计算体积的辅助函数 (长x宽x高，单位：cm，结果为立方米)
   private calculateVolume(length: number, width: number, height: number): number {
@@ -192,6 +221,10 @@ export class MemStorage implements IStorage {
     // 初始化电商平台相关存储
     this.apiConfigurationsMap = new Map();
     this.ecommerceProductsMap = new Map();
+    
+    // 初始化仓库调拨相关存储
+    this.warehouseTransfersMap = new Map();
+    this.warehouseTransferItemsMap = new Map();
 
     // 初始化ID计数器
     this.userIdCounter = 1;
@@ -212,6 +245,10 @@ export class MemStorage implements IStorage {
     // 初始化电商平台相关ID计数器
     this.apiConfigurationIdCounter = 1;
     this.ecommerceProductIdCounter = 1;
+    
+    // 初始化仓库调拨相关ID计数器
+    this.warehouseTransferIdCounter = 1;
+    this.warehouseTransferItemIdCounter = 1;
 
     // 初始化演示数据
     this.initializeDemoData();
