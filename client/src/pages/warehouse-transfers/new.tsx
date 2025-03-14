@@ -113,13 +113,14 @@ export default function NewWarehouseTransfer() {
         form.setValue(`items.${index}.volume`, volume.toFixed(3));
         
         toast({
-          title: t("product_found"),
-          description: `${t("product_found_description")}: ${product.name}`,
+          title: "找到产品",
+          description: `根据唯一码找到产品: ${product.name}`,
         });
-      } else {
+      } else if (numericValue.length === 5) {
+        // 只有当输入完整的5位唯一码且找不到产品时才提示
         toast({
-          title: t("product_not_found"),
-          description: t("no_product_with_unique_code", { code: numericValue }),
+          title: "未找到产品",
+          description: `未找到匹配唯一码 ${numericValue} 的产品`,
           variant: "destructive",
         });
       }
@@ -292,7 +293,7 @@ export default function NewWarehouseTransfer() {
     }
   };
   
-  // 商品选择时自动计算重量和体积
+  // 商品选择时自动计算重量和体积，并填充唯一码
   const handleProductChange = (value: string, index: number) => {
     form.setValue(`items.${index}.productId`, value);
     const selectedProduct = products.find(p => p.id === parseInt(value));
@@ -304,6 +305,15 @@ export default function NewWarehouseTransfer() {
       
       form.setValue(`items.${index}.weight`, weight.toFixed(3));
       form.setValue(`items.${index}.volume`, volume.toFixed(3));
+      
+      // 自动填充唯一码
+      if (selectedProduct.uniqueCode) {
+        form.setValue(`items.${index}.uniqueCode`, selectedProduct.uniqueCode);
+        toast({
+          title: "已自动填充唯一码",
+          description: `产品 ${selectedProduct.name} 的唯一码: ${selectedProduct.uniqueCode}`,
+        });
+      }
     }
   };
   
