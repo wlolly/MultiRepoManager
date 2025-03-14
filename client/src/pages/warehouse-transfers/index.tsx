@@ -752,22 +752,22 @@ export default function WarehouseTransfers() {
           <div className="space-y-4">
             {/* 导入步骤指南 */}
             <div className="bg-muted p-4 rounded-lg mb-4">
-              <h3 className="font-medium mb-2">导入操作步骤：</h3>
+              <h3 className="font-medium mb-2">{t("warehouseTransfer.import_steps")}：</h3>
               <ol className="list-decimal pl-5 space-y-1 text-sm">
-                <li>先下载<Button 
+                <li>{t("warehouseTransfer.download_first")}<Button 
                   variant="link" 
                   className="h-auto p-0 text-sm font-medium underline" 
                   onClick={(e) => {
                     e.preventDefault();
                     handleDownloadTemplate();
                   }}
-                >导入模板</Button>并按格式填写</li>
-                <li>上传填写好的Excel文件</li>
-                <li>系统将验证数据并显示预览</li>
-                <li>确认无误后点击"导入"完成操作</li>
+                >{t("warehouseTransfer.template")}</Button>{t("warehouseTransfer.fill_template")}</li>
+                <li>{t("warehouseTransfer.upload_filled_file")}</li>
+                <li>{t("warehouseTransfer.system_will_verify")}</li>
+                <li>{t("warehouseTransfer.confirm_and_import")}</li>
               </ol>
               <div className="mt-2 text-xs text-muted-foreground">
-                <strong>注意：</strong> 导入的数据需要符合1C财务系统的格式要求，请确保数据准确性
+                <strong>{t("common.note")}：</strong> {t("warehouseTransfer.format_requirement")}
               </div>
             </div>
             
@@ -912,7 +912,7 @@ export default function WarehouseTransfers() {
                   {importPreview.filter(item => !item.matched).length > 0 && (
                     <p className="text-xs text-muted-foreground">
                       <AlertCircle className="h-3 w-3 inline mr-1" />
-                      存在未匹配的商品，请确认条形码是否正确或在系统中添加相应商品
+                      {t("warehouseTransfer.unmatched_products_notice")}
                     </p>
                   )}
                 </div>
@@ -921,13 +921,13 @@ export default function WarehouseTransfers() {
               {/* 操作步骤引导 */}
               {importFile && importPreview.length > 0 && (
                 <div className="mt-4 bg-muted rounded-md p-3 text-xs">
-                  <h4 className="font-medium mb-1">导入后将执行以下操作：</h4>
+                  <h4 className="font-medium mb-1">{t("warehouseTransfer.actions_after_import")}：</h4>
                   <ol className="list-decimal list-inside space-y-1">
-                    <li>创建仓库调拨单记录</li>
-                    <li>自动生成调拨单编号</li>
-                    <li>创建源仓库的出库单</li>
-                    <li>创建目标仓库的入库单</li>
-                    <li>记录调拨商品明细</li>
+                    <li>{t("warehouseTransfer.create_transfer_record")}</li>
+                    <li>{t("warehouseTransfer.generate_reference_number")}</li>
+                    <li>{t("warehouseTransfer.create_outbound_order")}</li>
+                    <li>{t("warehouseTransfer.create_inbound_order")}</li>
+                    <li>{t("warehouseTransfer.record_transfer_details")}</li>
                   </ol>
                 </div>
               )}
