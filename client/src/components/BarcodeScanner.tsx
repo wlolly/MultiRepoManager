@@ -6,11 +6,23 @@ import { Scan } from "lucide-react";
 
 export interface BarcodeScannerProps {
   onBarcodeScanned?: (barcode: string) => void;
+  onCodeDetected?: (barcode: string) => void;
+  label?: string;
+  placeholder?: string;
+  initialValue?: string;
+  uniqueCodeMode?: boolean;
 }
 
-export function BarcodeScanner({ onBarcodeScanned }: BarcodeScannerProps) {
+export function BarcodeScanner({ 
+  onBarcodeScanned, 
+  onCodeDetected,
+  label,
+  placeholder,
+  initialValue,
+  uniqueCodeMode
+}: BarcodeScannerProps) {
   const { t } = useTranslation();
-  const [barcode, setBarcode] = useState<string>("");
+  const [barcode, setBarcode] = useState<string>(initialValue || "");
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [scanning, setScanning] = useState<boolean>(false);
@@ -49,8 +61,13 @@ export function BarcodeScanner({ onBarcodeScanned }: BarcodeScannerProps) {
   // 手动处理表单输入
   const handleManualInput = (e: React.FormEvent) => {
     e.preventDefault();
-    if (barcode && onBarcodeScanned) {
-      onBarcodeScanned(barcode);
+    if (barcode) {
+      if (onBarcodeScanned) {
+        onBarcodeScanned(barcode);
+      }
+      if (onCodeDetected) {
+        onCodeDetected(barcode);
+      }
       setBarcode("");
     }
   };
@@ -64,6 +81,7 @@ export function BarcodeScanner({ onBarcodeScanned }: BarcodeScannerProps) {
   
   return (
     <div className="space-y-4">
+      {label && <div className="mb-2 font-medium">{label}</div>}
       {scanning ? (
         <>
           <div className="relative">
@@ -86,7 +104,7 @@ export function BarcodeScanner({ onBarcodeScanned }: BarcodeScannerProps) {
               type="text"
               value={barcode}
               onChange={(e) => setBarcode(e.target.value)}
-              placeholder={t('enter_barcode')}
+              placeholder={placeholder || t('enter_barcode')}
               className="flex-1"
             />
             <Button type="submit">{t('submit')}</Button>
