@@ -1328,10 +1328,22 @@ export class MemStorage implements IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  // 引入仓库调拨单服务
+  private warehouseTransferService: any;
+  
+  constructor() {
+    // 初始化调拨单服务，传入this使其能够访问存储方法
+    const WarehouseTransferService = require('./services/warehouse-transfer.service').WarehouseTransferService;
+    this.warehouseTransferService = new WarehouseTransferService(this);
+  }
+  
   // 辅助函数：计算体积
   private calculateVolume(length: number, width: number, height: number): number {
     return (length * width * height) / 1000000; // 将立方厘米转换为立方米
   }
+  
+  // 从warehouse-transfer-db.ts导入仓库调拨单相关功能
+  private warehouseTransferDB = require('./warehouse-transfer-db');
 
   // User methods
   async getUser(id: number): Promise<User | undefined> {
