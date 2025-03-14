@@ -283,36 +283,73 @@ export default function NewOutboundOrderWithItems() {
 
   // 计算总重量和总体积
   const calculateTotals = () => {
-    const items = form.getValues("items");
-    
-    const totalWeight = items.reduce(
-      (sum, item) => sum + parseFloat(item.weight || "0"),
-      0
-    );
-    
-    const totalVolume = items.reduce(
-      (sum, item) => sum + parseFloat(item.volume || "0"),
-      0
-    );
-    
-    form.setValue("totalWeight", totalWeight.toString());
-    form.setValue("totalVolume", totalVolume.toString());
+    try {
+      const items = form.getValues("items");
+      
+      // 确保items是有效的数组
+      if (!items || !Array.isArray(items) || items.length === 0) {
+        form.setValue("totalWeight", "0");
+        form.setValue("totalVolume", "0");
+        return;
+      }
+      
+      const totalWeight = items.reduce(
+        (sum, item) => {
+          if (!item || typeof item.weight === 'undefined') return sum;
+          return sum + parseFloat(item.weight || "0");
+        },
+        0
+      );
+      
+      const totalVolume = items.reduce(
+        (sum, item) => {
+          if (!item || typeof item.volume === 'undefined') return sum;
+          return sum + parseFloat(item.volume || "0");
+        },
+        0
+      );
+      
+      form.setValue("totalWeight", totalWeight.toString());
+      form.setValue("totalVolume", totalVolume.toString());
+    } catch (error) {
+      console.error("计算总重量和总体积时发生错误:", error);
+      // 出错时设置默认值
+      form.setValue("totalWeight", "0");
+      form.setValue("totalVolume", "0");
+    }
   };
 
   // 更新单项重量和体积
   const updateItemWeightAndVolume = (index: number) => {
-    const items = form.getValues("items");
-    const item = items[index];
-    
-    if (item && selectedProduct) {
-      const quantity = item.quantity || 0;
-      const weight = (selectedProduct.singleWeightKg * quantity).toString();
-      const volume = (selectedProduct.singleVolumeM3 * quantity).toString();
+    try {
+      const items = form.getValues("items");
       
-      form.setValue(`items.${index}.weight`, weight);
-      form.setValue(`items.${index}.volume`, volume);
+      // 确保items是有效的数组且索引有效
+      if (!items || !Array.isArray(items) || index < 0 || index >= items.length) {
+        console.error("无效的items数组或索引", items, index);
+        return;
+      }
       
-      calculateTotals();
+      const item = items[index];
+      
+      if (item && selectedProduct) {
+        // 确保quantity是有效数字
+        const quantity = typeof item.quantity === 'number' ? item.quantity : 0;
+        
+        // 处理计算逻辑，防止NaN
+        const singleWeightKg = typeof selectedProduct.singleWeightKg === 'number' ? selectedProduct.singleWeightKg : 0;
+        const singleVolumeM3 = typeof selectedProduct.singleVolumeM3 === 'number' ? selectedProduct.singleVolumeM3 : 0;
+        
+        const weight = (singleWeightKg * quantity).toString();
+        const volume = (singleVolumeM3 * quantity).toString();
+        
+        form.setValue(`items.${index}.weight`, weight);
+        form.setValue(`items.${index}.volume`, volume);
+        
+        calculateTotals();
+      }
+    } catch (error) {
+      console.error("更新单项重量和体积时发生错误:", error);
     }
   };
 
@@ -323,25 +360,47 @@ export default function NewOutboundOrderWithItems() {
 
   // 库存校验
   const checkStock = () => {
-    const items = form.getValues("items");
-    
-    for (const item of items) {
-      const product = products.find(p => p.id === item.productId);
-      if (product && item.quantity > product.stock) {
+    try {
+      const items = form.getValues("items");
+      
+      // 确保items是有效的数组
+      if (!items || !Array.isArray(items) || items.length === 0) {
         toast({
-          title: t("stock_error"),
-          description: t("insufficient_stock_for_product", { 
-            product: product.name, 
-            available: product.stock, 
-            required: item.quantity 
-          }),
+          title: t("validation_error"),
+          description: t("please_add_at_least_one_item"),
           variant: "destructive",
         });
         return false;
       }
+      
+      for (const item of items) {
+        if (!item || !item.productId) continue;
+        
+        const product = products.find(p => p.id === item.productId);
+        if (product && item.quantity > product.stock) {
+          toast({
+            title: t("stock_error"),
+            description: t("insufficient_stock_for_product", { 
+              product: product.name, 
+              available: product.stock, 
+              required: item.quantity 
+            }),
+            variant: "destructive",
+          });
+          return false;
+        }
+      }
+      
+      return true;
+    } catch (error) {
+      console.error("库存校验时发生错误:", error);
+      toast({
+        title: t("error"),
+        description: t("stock_check_error"),
+        variant: "destructive",
+      });
+      return false;
     }
-    
-    return true;
   };
 
   // 表单提交前的库存校验
