@@ -55,6 +55,12 @@ export function BarcodeScanner({
       return;
     }
     
+    // 如果是唯一码模式，限制最大长度为5位数字
+    if (uniqueCodeMode && /^\d$/.test(e.key) && inputRef.current && inputRef.current.value.length >= 5) {
+      e.preventDefault();
+      return;
+    }
+    
     // 如果按下回车键，并且输入速度快，可能是扫描枪
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -103,14 +109,16 @@ export function BarcodeScanner({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!isScanning) {
-      // 如果是唯一码模式，只允许输入数字
+      // 如果是唯一码模式，只允许输入数字，并限制长度为1-5位
       if (uniqueCodeMode) {
         // 使用正则表达式匹配非数字字符，并替换为空字符串
         const numericValue = e.target.value.replace(/\D/g, '');
-        setInputValue(numericValue);
-        // 如果有非数字字符被替换，更新输入框的值
-        if (numericValue !== e.target.value) {
-          e.target.value = numericValue;
+        // 确保唯一码不超过5位数字
+        const validValue = numericValue.slice(0, 5);
+        setInputValue(validValue);
+        // 如果有非数字字符被替换或者超长被截断，更新输入框的值
+        if (validValue !== e.target.value) {
+          e.target.value = validValue;
         }
       } else {
         setInputValue(e.target.value);
@@ -174,6 +182,7 @@ export function BarcodeScanner({
             className="pr-10"
             readOnly={!isEditing && !isScanning}
             maxLength={uniqueCodeMode ? 5 : undefined}
+            inputMode={uniqueCodeMode ? "numeric" : "text"}
           />
           {isScanning && (
             <div className="absolute inset-0 pointer-events-none">
