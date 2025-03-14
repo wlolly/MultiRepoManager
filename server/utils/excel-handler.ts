@@ -180,8 +180,13 @@ export function parseTransferImportFile(filePath: string): {
       }
       
       // 唯一码验证 (如果提供)
-      if (uniqueCode && !/^\d{1,5}$/.test(String(uniqueCode))) {
-        errors.push(`第${rowIndex}行: 唯一码必须为1-5位数字`);
+      if (uniqueCode) {
+        if (!/^\d{1,5}$/.test(String(uniqueCode))) {
+          errors.push(`第${rowIndex}行: 唯一码必须为1-5位数字`);
+        }
+      } else {
+        // 当没有提供唯一码时添加警告
+        errors.push(`第${rowIndex}行: 未提供唯一码，无法自动匹配产品`);
       }
       
       // 添加到待处理项

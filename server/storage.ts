@@ -63,6 +63,7 @@ export interface IStorage {
   // 商品相关方法
   getProduct(id: number): Promise<Product | undefined>;
   getProductByBarcode(barcode: string): Promise<Product | undefined>;
+  getProductByUniqueCode(uniqueCode: string): Promise<Product | undefined>;
   createProduct(product: InsertProduct): Promise<Product>;
   updateProduct(id: number, product: Partial<Product>): Promise<Product | undefined>;
   getProducts(filter?: { warehouseId?: number, category?: string }): Promise<Product[]>;
@@ -865,6 +866,12 @@ export class MemStorage implements IStorage {
   async getProductByBarcode(barcode: string): Promise<Product | undefined> {
     return Array.from(this.productsMap.values()).find(
       (product) => product.barcode === barcode,
+    );
+  }
+  
+  async getProductByUniqueCode(uniqueCode: string): Promise<Product | undefined> {
+    return Array.from(this.productsMap.values()).find(
+      (product) => product.uniqueCode === uniqueCode,
     );
   }
   
@@ -1673,6 +1680,11 @@ export class DatabaseStorage implements IStorage {
 
   async getProductByBarcode(barcode: string): Promise<Product | undefined> {
     const [product] = await db.select().from(products).where(eq(products.barcode, barcode));
+    return product || undefined;
+  }
+  
+  async getProductByUniqueCode(uniqueCode: string): Promise<Product | undefined> {
+    const [product] = await db.select().from(products).where(eq(products.uniqueCode, uniqueCode));
     return product || undefined;
   }
 
