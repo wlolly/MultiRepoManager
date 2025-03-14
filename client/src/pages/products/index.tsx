@@ -141,6 +141,38 @@ export default function ProductsPage() {
           <p className="mt-1 text-gray-500 text-sm">{t('products_page_description')}</p>
         </div>
         <div className="flex items-center space-x-3">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="flex items-center">
+                <FileTypeIcon className="mr-2 h-4 w-4" />
+                {t('excel_operations')}
+                <ChevronDownIcon className="ml-2 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => window.location.href = "/api/products/excel/template"}>
+                <DownloadIcon className="mr-2 h-4 w-4" />
+                {t('download_template')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => window.location.href = "/api/products/excel/export"}>
+                <DatabaseIcon className="mr-2 h-4 w-4" />
+                {t('export_products')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => document.getElementById('excel-upload')?.click()}>
+                <UploadIcon className="mr-2 h-4 w-4" />
+                {t('import_products')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          <input
+            type="file"
+            id="excel-upload"
+            className="hidden"
+            accept=".xlsx"
+            onChange={handleExcelImport}
+          />
+          
           <Button
             onClick={() => setCreateDialogOpen(true)}
             className="flex items-center"
