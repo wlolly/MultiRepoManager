@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "../../hooks/use-toast";
+import toast from "../../lib/toast";
 import { ArrowLeft, Edit, Trash, BarChart, PackageOpen, Box, Truck, Clipboard } from "lucide-react";
 
 export default function ProductDetail() {
@@ -18,7 +18,6 @@ export default function ProductDetail() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   // 获取产品数据
   const { data: product, isLoading, error } = useQuery({
@@ -55,11 +54,7 @@ export default function ProductDetail() {
       queryClient.invalidateQueries({ queryKey: [`/api/products/${id}`] });
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       setIsEditDialogOpen(false);
-      toast({
-        title: "产品已更新",
-        description: "产品信息已成功更新",
-        type: "success",
-      });
+      toast.success("产品信息已成功更新");
     },
   });
 
@@ -71,11 +66,7 @@ export default function ProductDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       navigate("/products");
-      toast({
-        title: "产品已删除",
-        description: "产品已成功删除",
-        type: "success",
-      });
+      toast.success("产品已成功删除");
     },
   });
 
