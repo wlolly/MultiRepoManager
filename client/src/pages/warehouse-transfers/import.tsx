@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { FileSpreadsheet, FileDown, FileUp, AlertCircle, ArrowLeft, ArrowRight, Check, MinusIcon, Upload } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/lib/toast";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
@@ -40,7 +40,6 @@ interface Warehouse {
 export default function WarehouseTransferImport() {
   const { t } = useTranslation();
   const [, setLocation] = useLocation();
-  const { toast } = useToast();
   const [file, setFile] = useState<File | null>(null);
   const [importPreview, setImportPreview] = useState<ImportPreviewItem[]>([]);
   const [importErrors, setImportErrors] = useState<string[]>([]);
@@ -53,7 +52,7 @@ export default function WarehouseTransferImport() {
   const [uploadStatus, setUploadStatus] = useState<"idle" | "preview" | "importing" | "complete">("idle");
   
   // 加载仓库数据
-  const { data: warehouses = [], isLoading: isLoadingWarehouses } = useQuery({
+  const { data: warehouses = [], isLoading: isLoadingWarehouses } = useQuery<Warehouse[]>({
     queryKey: ['/api/warehouses'],
     enabled: true,
   });

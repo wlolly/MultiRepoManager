@@ -330,7 +330,19 @@ export default function WarehouseTransfers() {
       console.error('Import error:', error);
       let errorMsg = t("warehouseTransfer.import_failed");
       
-      if (error.response && error.response.data && error.response.data.errors) {
+      // 添加类型检查和类型断言
+      if (
+        error && 
+        typeof error === 'object' && 
+        'response' in error && 
+        error.response && 
+        typeof error.response === 'object' && 
+        'data' in error.response && 
+        error.response.data && 
+        typeof error.response.data === 'object' && 
+        'errors' in error.response.data && 
+        Array.isArray(error.response.data.errors)
+      ) {
         setImportErrors(error.response.data.errors);
         errorMsg = error.response.data.errors[0] || errorMsg;
       }
