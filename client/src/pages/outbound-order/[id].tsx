@@ -110,7 +110,7 @@ export default function OutboundOrderDetail() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [location, navigate] = useLocation();
+  const [location, setLocation] = useLocation();
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [isUpdatingOrder, setIsUpdatingOrder] = useState(false);
   
@@ -433,7 +433,7 @@ export default function OutboundOrderDetail() {
         <div className="flex flex-col items-center justify-center h-[50vh]">
           <h2 className="text-xl font-bold text-red-500 mb-4">{t("order_load_error")}</h2>
           <p className="text-gray-600 mb-4">{JSON.stringify(orderError)}</p>
-          <Button onClick={() => navigate("/outbound-orders")}>{t("back_to_outbound_orders")}</Button>
+          <Button onClick={() => setLocation("/outbound-orders")}>{t("back_to_outbound_orders")}</Button>
         </div>
       </div>
     );
@@ -445,7 +445,7 @@ export default function OutboundOrderDetail() {
       <div className="container mx-auto py-6">
         <div className="flex flex-col items-center justify-center h-[50vh]">
           <h2 className="text-xl font-bold mb-4">{t("order_not_found")}</h2>
-          <Button onClick={() => navigate("/outbound-orders")}>{t("back_to_outbound_orders")}</Button>
+          <Button onClick={() => setLocation("/outbound-orders")}>{t("back_to_outbound_orders")}</Button>
         </div>
       </div>
     );
@@ -457,7 +457,7 @@ export default function OutboundOrderDetail() {
   return (
     <div className="container mx-auto py-6">
       <div className="flex justify-between items-center mb-6">
-        <Button variant="outline" size="sm" onClick={() => navigate("/outbound-orders")}>
+        <Button variant="outline" size="sm" onClick={() => setLocation("/outbound-orders")}>
           <ArrowLeftIcon className="mr-2 h-4 w-4" />
           {t("back_to_outbound_orders")}
         </Button>
