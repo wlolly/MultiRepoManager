@@ -263,6 +263,7 @@ export const inboundOrderItems = mysqlTable("inbound_order_items", {
   productId: int("product_id").notNull().references(() => products.id), // 商品ID
   productName: varchar("product_name", { length: 255 }).notNull(), // 商品名称
   barcode: varchar("barcode", { length: 255 }).notNull(), // 条形码
+  externalOrderNumber: varchar("external_order_number", { length: 255 }), // 外部订单号
   quantity: int("quantity").notNull(), // 数量
   packageCount: int("package_count").notNull(), // 件数
   weight: decimal("weight", { precision: 10, scale: 3 }).notNull(), // 重量
@@ -322,6 +323,7 @@ export const outboundOrderItems = mysqlTable("outbound_order_items", {
   productId: int("product_id").notNull().references(() => products.id), // 商品ID
   productName: varchar("product_name", { length: 255 }).notNull(), // 商品名称
   barcode: varchar("barcode", { length: 255 }).notNull(), // 条形码
+  externalOrderNumber: varchar("external_order_number", { length: 255 }), // 外部订单号
   quantity: int("quantity").notNull(), // 数量
   packageCount: int("package_count").notNull(), // 件数
   weight: decimal("weight", { precision: 10, scale: 3 }).notNull(), // 重量
