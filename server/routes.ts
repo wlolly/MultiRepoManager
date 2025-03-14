@@ -638,7 +638,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           if (existingProduct) {
             // 更新现有产品
-            const updated = await storage.updateProduct(existingProduct.id, productData);
+            // 处理数字和字符串字段转换
+            const updateData = {
+              ...productData,
+              price: String(productData.price),
+              cost: String(productData.cost),
+              singleLengthCm: String(productData.singleLengthCm),
+              singleWidthCm: String(productData.singleWidthCm),
+              singleHeightCm: String(productData.singleHeightCm),
+              singleWeightKg: String(productData.singleWeightKg),
+              bulkLengthCm: productData.bulkLengthCm ? String(productData.bulkLengthCm) : undefined,
+              bulkWidthCm: productData.bulkWidthCm ? String(productData.bulkWidthCm) : undefined,
+              bulkHeightCm: productData.bulkHeightCm ? String(productData.bulkHeightCm) : undefined,
+              bulkWeightKg: productData.bulkWeightKg ? String(productData.bulkWeightKg) : undefined
+            };
+            
+            const updated = await storage.updateProduct(existingProduct.id, updateData);
             if (updated) {
               importResults.updated++;
               importResults.products.push(updated);
@@ -647,7 +662,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           } else {
             // 创建新产品
-            const created = await storage.createProduct(productData);
+            // 处理数字和字符串字段转换
+            const createData = {
+              ...productData,
+              price: String(productData.price),
+              cost: String(productData.cost),
+              singleLengthCm: String(productData.singleLengthCm),
+              singleWidthCm: String(productData.singleWidthCm),
+              singleHeightCm: String(productData.singleHeightCm),
+              singleWeightKg: String(productData.singleWeightKg),
+              bulkLengthCm: productData.bulkLengthCm ? String(productData.bulkLengthCm) : undefined,
+              bulkWidthCm: productData.bulkWidthCm ? String(productData.bulkWidthCm) : undefined,
+              bulkHeightCm: productData.bulkHeightCm ? String(productData.bulkHeightCm) : undefined,
+              bulkWeightKg: productData.bulkWeightKg ? String(productData.bulkWeightKg) : undefined
+            };
+            
+            const created = await storage.createProduct(createData);
             importResults.created++;
             importResults.products.push(created);
           }

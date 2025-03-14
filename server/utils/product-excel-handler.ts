@@ -323,13 +323,13 @@ export function parseProductImportFile(filePath: string): {
         singleWidthCm: parsedSingleWidthCm,
         singleHeightCm: parsedSingleHeightCm,
         singleWeightKg: parsedSingleWeightKg,
-        singleVolumeM3,
+        singleVolumeM3: String(singleVolumeM3),
         bulkQuantity: parsedBulkQuantity,
         bulkLengthCm: parsedBulkLengthCm,
         bulkWidthCm: parsedBulkWidthCm,
         bulkHeightCm: parsedBulkHeightCm,
         bulkWeightKg: parsedBulkWeightKg,
-        bulkVolumeM3,
+        bulkVolumeM3: bulkVolumeM3 ? String(bulkVolumeM3) : undefined,
         warehouseId: parsedWarehouseId
       });
     }
@@ -350,7 +350,7 @@ export function parseProductImportFile(filePath: string): {
  * @returns 导出文件路径
  */
 export function exportProductsToExcel(
-  products: Product[],
+  products: any[],
   warehouses: Record<number, string>
 ): string {
   // 创建工作簿
@@ -476,7 +476,7 @@ export function exportProductsToExcel(
  * @param products 产品列表
  * @returns 分类统计数据
  */
-function getCategoryStatistics(products: Product[]): any[][] {
+function getCategoryStatistics(products: any[]): any[][] {
   const categoryMap: Record<string, {
     count: number;
     stock: number;
