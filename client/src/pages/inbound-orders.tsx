@@ -184,11 +184,7 @@ export default function InboundOrders() {
           toast.error(t('import_failed') + ": " + (error.message || t('import_failed_description')));
         }
       } catch (error) {
-        toast({
-          title: t('import_failed'),
-          description: (error as Error).message || t('import_failed_description'),
-          variant: "destructive",
-        });
+        toast.error(t('import_failed') + ": " + ((error as Error).message || t('import_failed_description')));
       }
       
       // 清除选择的文件
