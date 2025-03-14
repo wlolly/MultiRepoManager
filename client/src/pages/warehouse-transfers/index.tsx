@@ -525,7 +525,7 @@ export default function WarehouseTransfers() {
           </Button>
           <Button
             variant="default"
-            onClick={() => navigate('/warehouse-transfers/import')}
+            onClick={() => setImportDialogOpen(true)}
             className="flex items-center"
           >
             <FileSpreadsheet className="mr-2 h-4 w-4" />
@@ -626,7 +626,7 @@ export default function WarehouseTransfers() {
                 <Download className="mr-2 h-4 w-4" />
                 {t("warehouseTransfer.download_template")}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate('/warehouse-transfers/import')}>
+              <DropdownMenuItem onClick={() => setImportDialogOpen(true)}>
                 <FileUp className="mr-2 h-4 w-4" />
                 {t("warehouseTransfer.import_from_excel")}
               </DropdownMenuItem>
@@ -790,7 +790,7 @@ export default function WarehouseTransfers() {
                   className="h-8 text-xs ml-2"
                 >
                   <FileSpreadsheet className="mr-2 h-3 w-3" />
-                  下载导入模板
+                  {t("warehouseTransfer.download_template")}
                 </Button>
               </div>
             </div>
