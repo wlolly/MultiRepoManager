@@ -1454,7 +1454,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 处理调拨单文件上传
   apiRouter.post("/warehouse-transfers", upload.single('document'), async (req, res) => {
     try {
-      const { sourceWarehouseId, targetWarehouseId, notes, items } = req.body;
+      // 解析请求体（注意：由于使用multer，对于multipart/form-data请求，
+      // JSON数据需要作为字符串传入，因此需要解析items字段）
+      const { sourceWarehouseId, targetWarehouseId, notes } = req.body;
+      let items = req.body.items;
+      
+      // 如果items是字符串，则解析为JSON对象
+      if (typeof items === 'string') {
+        try {
+          items = JSON.parse(items);
+        } catch (parseError) {
+          return res.status(400).json({ error: "无效的商品列表格式" });
+        }
+      }
       
       // 验证仓库ID
       const parsedSourceWarehouseId = parseInt(sourceWarehouseId);
@@ -1490,8 +1502,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       });
       
+      // 生成调拨单号
+      const referenceNumber = `TRANSFER-${Date.now()}`;
+      
       // 1. 创建出库单
-      const outboundOrderNumber = `OUT-TRANSFER-${Date.now()}`;
+      const outboundOrderNumber = `OUT-${referenceNumber}`;
       
       // 验证orderType和destinationType是否为有效的枚举值
       const validOutboundOrderTypes = ["sale", "return", "transfer", "scrap"];
@@ -1524,7 +1539,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const outboundOrder = await storage.createOutboundOrder(outboundOrderData);
       
       // 2. 创建入库单
-      const inboundOrderNumber = `IN-TRANSFER-${Date.now()}`;
+      const inboundOrderNumber = `IN-${referenceNumber}`;
       
       // 验证orderType是否为有效的枚举值
       const validInboundOrderTypes = ["purchase", "return", "transfer", "production"];
@@ -1572,7 +1587,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             barcode: product.barcode,
             quantity: item.quantity,
             packageCount: item.packageCount,
-            externalOrderNumber: `TRANSFER-${Date.now()}`,
+            externalOrderNumber: referenceNumber,
             weight: item.weight,
             volume: item.volume,
             remark: "调拨出库"
@@ -1587,7 +1602,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             barcode: product.barcode,
             quantity: item.quantity,
             packageCount: item.packageCount,
-            externalOrderNumber: `TRANSFER-${Date.now()}`,
+            externalOrderNumber: referenceNumber,
             weight: item.weight,
             volume: item.volume,
             remark: "调拨入库"
@@ -1599,18 +1614,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // 4. 返回创建的数据
-      res.status(201).json({
-        message: "仓库调拨创建成功" + (errorMessages.length > 0 ? "，但有部分商品处理失败" : ""),
-        referenceNumber: `TRANSFER-${Date.now()}`,
-        sourceWarehouseId: parsedSourceWarehouseId,
-        targetWarehouseId: parsedTargetWarehouseId,
-        errors: errorMessages.length > 0 ? errorMessages : undefined,
-        outboundOrder,
-        inboundOrder,
-        outboundItems,
-        inboundItems
-      });
+      // 4. 处理上传的文件信息
+      let documentFilePath = null;
+      let documentFileName = null;
+      let documentFileType = null;
+      let documentUploadedAt = null;
+      
+      if (req.file) {
+        documentFilePath = req.file.path;
+        documentFileName = req.file.originalname;
+        documentFileType = req.file.mimetype;
+        documentUploadedAt = new Date();
+        
+        console.log("文件上传成功:", {
+          path: documentFilePath,
+          name: documentFileName,
+          type: documentFileType
+        });
+      }
+      
+      // 5. 创建调拨单记录
+      try {
+        const warehouseTransferData = {
+          referenceNumber,
+          sourceWarehouseId: parsedSourceWarehouseId,
+          targetWarehouseId: parsedTargetWarehouseId,
+          totalItems: processedItems.reduce((sum, item) => sum + item.quantity, 0),
+          totalPackages: processedItems.reduce((sum, item) => sum + item.packageCount, 0),
+          totalWeight,
+          totalVolume,
+          status: "pending",
+          notes: notes || "",
+          outboundOrderId: outboundOrder.id,
+          inboundOrderId: inboundOrder.id,
+          documentFilePath,
+          documentFileName,
+          documentFileType,
+          documentUploadedAt
+        };
+        
+        const warehouseTransfer = await storage.createWarehouseTransfer(warehouseTransferData);
+        
+        // 6. 返回创建的数据
+        res.status(201).json({
+          message: "仓库调拨创建成功" + (errorMessages.length > 0 ? "，但有部分商品处理失败" : ""),
+          referenceNumber,
+          warehouseTransfer,
+          sourceWarehouseId: parsedSourceWarehouseId,
+          targetWarehouseId: parsedTargetWarehouseId,
+          errors: errorMessages.length > 0 ? errorMessages : undefined,
+          outboundOrder,
+          inboundOrder,
+          outboundItems,
+          inboundItems,
+          documentUploaded: !!req.file
+        });
+      } catch (transferError) {
+        console.error("创建调拨单记录失败:", transferError);
+        
+        // 即使调拨单创建失败，仍然返回出入库单信息，便于前端处理
+        res.status(201).json({
+          message: "仓库调拨部分完成，出入库单已创建，但调拨单记录创建失败",
+          referenceNumber,
+          sourceWarehouseId: parsedSourceWarehouseId,
+          targetWarehouseId: parsedTargetWarehouseId,
+          error: (transferError as Error).message,
+          errors: errorMessages.length > 0 ? errorMessages : undefined,
+          outboundOrder,
+          inboundOrder,
+          outboundItems,
+          inboundItems,
+          documentUploaded: !!req.file
+        });
+      }
     } catch (err) {
       console.error("创建仓库调拨失败:", err);
       handleZodError(err, res);

@@ -209,41 +209,40 @@ export default function NewWarehouseTransfer() {
       // 创建FormData对象用于文件上传
       const formData = new FormData();
       
-      // 添加基本的调拨单数据
-      const transferData = {
-        sourceWarehouseId: parseInt(data.sourceWarehouseId),
-        targetWarehouseId: parseInt(data.targetWarehouseId),
-        notes: data.notes,
-        items: data.items.map(item => ({
-          productId: parseInt(item.productId),
-          quantity: item.quantity,
-          packageCount: item.packageCount,
-          weight: item.weight,
-          volume: item.volume,
-          uniqueCode: item.uniqueCode || null // 添加唯一码数据，如果为空则传null
-        }))
-      };
+      // 添加基本信息到FormData
+      formData.append('sourceWarehouseId', data.sourceWarehouseId);
+      formData.append('targetWarehouseId', data.targetWarehouseId);
+      if (data.notes) formData.append('notes', data.notes);
       
-      // 添加主要数据到FormData
-      formData.append('transferData', JSON.stringify(transferData));
+      // 添加商品信息到FormData (需要以JSON字符串形式添加)
+      const itemsArray = data.items.map(item => ({
+        productId: item.productId,
+        quantity: item.quantity.toString(), // 确保是字符串
+        packageCount: item.packageCount.toString(), // 确保是字符串
+        weight: item.weight.toString(),
+        volume: item.volume.toString(),
+        uniqueCode: item.uniqueCode || "" // 添加唯一码数据，如果为空则传空字符串
+      }));
       
-      // 如果有底单文件，添加到FormData
+      // 添加商品数据
+      formData.append('items', JSON.stringify(itemsArray));
+      
+      // 如果有上传的底单文件，添加到FormData
       if (data.documentImage && data.documentImage.length > 0) {
-        formData.append('documentImage', data.documentImage[0]);
+        formData.append('document', data.documentImage[0]);
       }
-      
-      // 如果有拍照底单数据，添加到FormData
-      if (data.photoData) {
-        formData.append('photoData', data.photoData);
+      // 如果有拍照底单数据，转换为文件并添加
+      else if (data.photoData) {
+        // 将base64图像数据转换为文件
+        const blob = dataURItoBlob(data.photoData);
+        const file = new File([blob], 'photo.jpg', { type: 'image/jpeg' });
+        formData.append('document', file);
       }
       
       // 使用FormData发送到服务器
       return apiRequest("/api/warehouse-transfers", {
         method: "POST",
         body: formData, // 直接发送FormData对象，不需要JSON.stringify
-        headers: {
-          // 不需要设置Content-Type，浏览器会自动设置为multipart/form-data
-        },
       });
     },
     onSuccess: (response) => {
@@ -678,6 +677,26 @@ export default function NewWarehouseTransfer() {
     }, { totalQuantity: 0, totalPackages: 0, totalWeight: 0, totalVolume: 0 });
   };
   
+  // base64图像数据转换为Blob
+  const dataURItoBlob = (dataURI: string): Blob => {
+    // 将base64字符串转换为二进制数据
+    const byteString = atob(dataURI.split(',')[1]);
+    
+    // 提取MIME类型
+    const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+    
+    // 将二进制字符串转换为ArrayBuffer
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    
+    for (let i = 0; i < byteString.length; i++) {
+      ia[i] = byteString.charCodeAt(i);
+    }
+    
+    // 创建Blob对象
+    return new Blob([ab], { type: mimeString });
+  };
+
   // 计算汇总
   const { totalQuantity, totalPackages, totalWeight, totalVolume } = calculateTotals();
   
