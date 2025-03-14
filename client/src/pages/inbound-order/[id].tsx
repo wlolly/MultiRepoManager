@@ -148,6 +148,7 @@ export default function InboundOrderDetail() {
     resolver: zodResolver(itemSchema),
     defaultValues: {
       productId: "",
+      externalOrderNumber: "",
       quantity: "1",
       packageCount: "1",
       weight: "0",
@@ -188,6 +189,7 @@ export default function InboundOrderDetail() {
           productId: parseInt(data.productId),
           productName: selectedProduct?.name || "",
           barcode: selectedProduct?.barcode || "",
+          externalOrderNumber: data.externalOrderNumber,
           quantity: data.quantity,
           packageCount: data.packageCount,
           weight: data.weight,
@@ -204,6 +206,7 @@ export default function InboundOrderDetail() {
       });
       itemForm.reset({
         productId: "",
+        externalOrderNumber: "",
         quantity: "1",
         packageCount: "1",
         weight: "0",
@@ -703,6 +706,26 @@ export default function InboundOrderDetail() {
                       
                       <FormField
                         control={itemForm.control}
+                        name="externalOrderNumber"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{t("external_order_number")}</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder={t("external_order_number_placeholder")} 
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              {t("external_order_number_description")}
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={itemForm.control}
                         name="quantity"
                         render={({ field }) => (
                           <FormItem>
@@ -838,6 +861,7 @@ export default function InboundOrderDetail() {
                   <TableRow>
                     <TableHead className="w-[80px]">{t("id")}</TableHead>
                     <TableHead className="min-w-[150px]">{t("product")}</TableHead>
+                    <TableHead>{t("external_order_number")}</TableHead>
                     <TableHead className="text-right">{t("quantity")}</TableHead>
                     <TableHead className="text-right">{t("package_count")}</TableHead>
                     <TableHead className="text-right">{t("weight")} (kg)</TableHead>
@@ -861,6 +885,7 @@ export default function InboundOrderDetail() {
                             `ID: ${item.productId}`
                           )}
                         </TableCell>
+                        <TableCell>{item.externalOrderNumber || '-'}</TableCell>
                         <TableCell className="text-right">{item.quantity}</TableCell>
                         <TableCell className="text-right">{item.packageCount}</TableCell>
                         <TableCell className="text-right">{item.weight.toFixed(3)}</TableCell>
