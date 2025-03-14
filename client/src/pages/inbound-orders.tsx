@@ -41,6 +41,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
 import { toast } from "@/lib/toast";
 import * as XLSX from 'xlsx';
+import { ExcelButtons } from "@/components/ExcelButtons";
 
 // 入库单接口定义
 interface InboundOrder {
@@ -96,6 +97,7 @@ export default function InboundOrders() {
   const [warehouseFilter, setWarehouseFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   
   // 获取入库单数据
   const { data: inboundOrders = [], isLoading: isLoadingOrders } = useQuery<InboundOrder[]>({
@@ -106,6 +108,64 @@ export default function InboundOrders() {
   const { data: warehouses = [], isLoading: isLoadingWarehouses } = useQuery<Warehouse[]>({
     queryKey: ["/api/warehouses"],
   });
+  
+  // 下载模板功能
+  const downloadTemplate = () => {
+    // 表头定义 (中英文对照，方便用户理解)
+    const headers = [
+      '订单编号(Order Number)',
+      '仓库ID(Warehouse ID)',
+      '状态(Status)',
+      '备注(Notes)',
+      '产品ID(Product ID)',
+      '产品名称(Product Name)',
+      '数量(Quantity)',
+      '重量kg(Weight)',
+      '体积m³(Volume)'
+    ];
+    
+    // 示例数据
+    const exampleData = [
+      ['INB-20250314-0001', '1', 'pending', '示例数据，导入时请删除', '1', '高精度工业传感器', '10', '5.5', '0.03'],
+      ['INB-20250314-0002', '2', 'pending', '示例数据，导入时请删除', '2', '工业电机', '5', '15.0', '0.12'],
+      ['', '', '', '请在此处填写您的数据...', '', '', '', '', '']
+    ];
+    
+    // 创建工作簿和工作表
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet([headers].concat(exampleData));
+    
+    // 设置列宽
+    const colWidths = [18, 10, 12, 30, 10, 30, 10, 10, 10];
+    ws['!cols'] = colWidths.map(width => ({ width }));
+    
+    // 添加工作表到工作簿
+    XLSX.utils.book_append_sheet(wb, ws, t('inbound_orders_template'));
+    
+    // 添加说明工作表
+    const instructionsData = [
+      [t('inbound_orders_template_instructions')],
+      [''],
+      ['1. ' + t('template_instruction_1')],
+      ['2. ' + t('template_instruction_2')],
+      ['3. ' + t('template_instruction_3')],
+      ['4. ' + t('template_instruction_4')],
+      [''],
+      [t('statuses') + ':'],
+      ['- pending: ' + t('pending')],
+      ['- processing: ' + t('processing')],
+      ['- completed: ' + t('completed')],
+      ['- cancelled: ' + t('cancelled')],
+    ];
+    
+    const wsInstructions = XLSX.utils.aoa_to_sheet(instructionsData);
+    XLSX.utils.book_append_sheet(wb, wsInstructions, t('instructions'));
+    
+    // 导出Excel文件
+    XLSX.writeFile(wb, `${t('inbound_orders_template')}.xlsx`);
+    
+    toast.success(t('template_downloaded') + ": " + t('template_downloaded_description'));
+  };
   
   // 导出Excel功能
   const exportToExcel = () => {
@@ -139,6 +199,11 @@ export default function InboundOrders() {
     XLSX.writeFile(wb, `${t('inbound_orders')}_${new Date().toISOString().split('T')[0]}.xlsx`);
     
     toast.success(t('export_success') + ": " + t('file_saved_description'));
+  };
+  
+  // 打开导入对话框
+  const openImportDialog = () => {
+    setImportDialogOpen(true);
   };
   
   // 导入Excel功能
@@ -227,51 +292,13 @@ export default function InboundOrders() {
           <p className="text-muted-foreground">{t('manage_inbound_orders')}</p>
         </div>
         <div className="flex items-center gap-4">
-          {/* 导入Excel按钮 */}
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm">
-                <UploadIcon className="mr-2 h-4 w-4" />
-                {t('import')}
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>{t('import_inbound_orders')}</DialogTitle>
-                <DialogDescription>
-                  {t('import_excel_description')}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div>
-                  <Label htmlFor="excel-file">{t('select_file')}</Label>
-                  <Input 
-                    id="excel-file" 
-                    type="file" 
-                    accept=".xlsx, .xls" 
-                    onChange={importFromExcel} 
-                    className="mt-2"
-                  />
-                </div>
-                {selectedFile && (
-                  <div className="text-sm">
-                    {t('selected_file')}: {selectedFile.name}
-                  </div>
-                )}
-              </div>
-              <div className="flex justify-end">
-                <Button onClick={processExcelImport} disabled={!selectedFile}>
-                  {t('process_import')}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-          
-          {/* 导出Excel按钮 */}
-          <Button variant="outline" size="sm" onClick={exportToExcel}>
-            <DownloadIcon className="mr-2 h-4 w-4" />
-            {t('export')}
-          </Button>
+          {/* Excel操作按钮组 */}
+          <ExcelButtons 
+            onDownloadTemplate={downloadTemplate}
+            onImport={openImportDialog}
+            onExport={exportToExcel}
+            size="sm"
+          />
           
           {/* 创建入库单按钮 */}
           <Button asChild>
@@ -282,6 +309,40 @@ export default function InboundOrders() {
           </Button>
         </div>
       </div>
+      
+      {/* 导入对话框 */}
+      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('import_inbound_orders')}</DialogTitle>
+            <DialogDescription>
+              {t('import_excel_description')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div>
+              <Label htmlFor="excel-file">{t('select_file')}</Label>
+              <Input 
+                id="excel-file" 
+                type="file" 
+                accept=".xlsx, .xls" 
+                onChange={importFromExcel} 
+                className="mt-2"
+              />
+            </div>
+            {selectedFile && (
+              <div className="text-sm">
+                {t('selected_file')}: {selectedFile.name}
+              </div>
+            )}
+          </div>
+          <div className="flex justify-end">
+            <Button onClick={processExcelImport} disabled={!selectedFile}>
+              {t('process_import')}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       
       {/* 筛选器和搜索 */}
       <Card className="mb-6">
