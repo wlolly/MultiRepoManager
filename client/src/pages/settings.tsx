@@ -9,6 +9,19 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle, Database, RefreshCw } from "lucide-react";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function Settings() {
   const { toast } = useToast();
@@ -28,6 +41,10 @@ export default function Settings() {
   
   // Theme setting
   const [darkMode, setDarkMode] = useState(false);
+  
+  // Admin settings
+  const [isAdmin, setIsAdmin] = useState(true); // 开发阶段默认为管理员
+  const [isInitializing, setIsInitializing] = useState(false);
   
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,6 +74,39 @@ export default function Settings() {
       title: "Appearance settings saved",
       description: "Your appearance preferences have been updated.",
     });
+  };
+  
+  // 初始化测试数据
+  const handleInitializeData = async () => {
+    try {
+      setIsInitializing(true);
+      
+      const response = await fetch('/api/admin/initialize-test-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('初始化数据失败');
+      }
+      
+      const data = await response.json();
+      
+      toast({
+        title: "数据初始化成功",
+        description: `已成功创建 ${data.warehouses || 0} 个仓库, ${data.products || 0} 个产品, ${data.inboundOrders || 0} 个入库单和 ${data.outboundOrders || 0} 个出库单`,
+      });
+    } catch (error) {
+      toast({
+        title: "初始化失败",
+        description: error instanceof Error ? error.message : "未知错误",
+        variant: "destructive"
+      });
+    } finally {
+      setIsInitializing(false);
+    }
   };
 
   const { t } = useTranslation();
@@ -106,6 +156,15 @@ export default function Settings() {
                 <i className="ri-palette-line mr-2"></i>
                 {t('settings.tabs.appearance', '外观设置')}
               </TabsTrigger>
+              {isAdmin && (
+                <TabsTrigger 
+                  value="admin" 
+                  className="w-full justify-start px-3 py-2 data-[state=active]:bg-gray-100 data-[state=active]:shadow-none"
+                >
+                  <Database className="h-4 w-4 mr-2" />
+                  {t('settings.tabs.admin', '管理员设置')}
+                </TabsTrigger>
+              )}
             </TabsList>
           </Tabs>
         </div>
@@ -331,6 +390,71 @@ export default function Settings() {
                 
                 <div className="mt-6">
                   <Button onClick={handleSaveAppearance}>{t('settings.appearance.saveButton', '保存偏好')}</Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          
+          {activeTab === "admin" && isAdmin && (
+            <Card>
+              <CardHeader>
+                <CardTitle>{t('settings.admin.title', '管理员设置')}</CardTitle>
+                <CardDescription>
+                  {t('settings.admin.description', '系统管理员专用功能')}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  <Alert className="mb-6">
+                    <AlertCircle className="h-4 w-4 mr-2" />
+                    <AlertTitle>{t('settings.admin.dataManagement', '数据管理')}</AlertTitle>
+                    <AlertDescription>
+                      {t('settings.admin.dataManagementDescription', '以下操作会修改系统数据，请谨慎操作')}
+                    </AlertDescription>
+                  </Alert>
+                  
+                  <div className="pt-4">
+                    <h4 className="font-medium mb-2">{t('settings.admin.testData', '测试数据')}</h4>
+                    <p className="text-gray-500 mb-4 text-sm">
+                      {t('settings.admin.testDataDescription', '生成测试数据用于演示和测试。包括仓库、产品、入库单和出库单等')}
+                    </p>
+                    
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button 
+                          variant="default"
+                          className="mr-2"
+                          disabled={isInitializing}
+                        >
+                          {isInitializing ? (
+                            <>
+                              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                              {t('settings.admin.initializing', '初始化中...')}
+                            </>
+                          ) : (
+                            <>
+                              <Database className="mr-2 h-4 w-4" />
+                              {t('settings.admin.initializeData', '初始化测试数据')}
+                            </>
+                          )}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>{t('settings.admin.confirmInitialize', '确认初始化测试数据')}</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            {t('settings.admin.confirmInitializeDescription', '此操作将会生成测试数据，包括仓库、产品、入库单和出库单。用于系统的演示和测试。')}
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>{t('common.cancel', '取消')}</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleInitializeData}>
+                            {t('settings.admin.confirmButton', '确认初始化')}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </div>
               </CardContent>
             </Card>
