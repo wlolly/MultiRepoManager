@@ -1,77 +1,42 @@
 import React from 'react';
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Route, Switch } from "wouter";
 import "./i18n";
 import { ToastProvider } from "./components/ui/toast-provider";
 import { Toaster } from "./components/ui/toaster";
-import { ToastExample } from "./components/ToastFix";
-import ToastUsageExample from "./components/ToastUsageExample";
 import TestToast from "./pages/test-toast";
-import toast from "./lib/toast";
 
-// 创建一个简单的应用组件来测试基本渲染
-function SimpleApp() {
-  const [currentTime, setCurrentTime] = useState(new Date().toLocaleString());
-  
-  // 每秒更新时间以验证组件是否正常渲染
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date().toLocaleString());
-    }, 1000);
-    
-    return () => clearInterval(timer);
-  }, []);
-  
-  // 测试全局toast方法
-  const testGlobalToast = () => {
-    toast.success("这是一个全局Toast成功消息！");
-    setTimeout(() => {
-      toast.error("这是一个全局Toast错误消息！");
-    }, 1500);
-    setTimeout(() => {
-      toast.warning("这是一个全局Toast警告消息！");
-    }, 3000);
-    setTimeout(() => {
-      toast.info("这是一个全局Toast提示消息！");
-    }, 4500);
-  };
-  
-  return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="p-4 border-b">
-        <h1 className="text-2xl font-bold">仓库管理系统</h1>
-      </header>
-      <main className="container mx-auto p-4">
-        <div className="p-6 bg-white rounded-lg shadow-sm mb-4">
-          <h2 className="text-xl font-semibold mb-4">系统已成功加载</h2>
-          <p>如果您能看到这个页面，说明前端React应用已经成功加载。</p>
-          <p className="mt-2 text-gray-600">当前时间: {currentTime}</p>
-          
-          {/* 测试全局Toast */}
-          <button 
-            onClick={testGlobalToast}
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            测试全局Toast
-          </button>
-        </div>
-        
-        {/* 测试Toast组件调用方式 */}
-        <div className="p-6 bg-white rounded-lg shadow-sm mb-4">
-          <h2 className="text-lg font-semibold mb-2">使用Hook方式的Toast组件</h2>
-          <ToastExample />
-        </div>
-        
-        {/* 展示推荐的全局Toast使用方式 */}
-        <div className="p-6 bg-white rounded-lg shadow-sm">
-          <ToastUsageExample />
-        </div>
-      </main>
-    </div>
-  );
-}
+// 页面导入
+import Dashboard from "./pages/dashboard";
+import MyRepositories from "./pages/my-repositories";
+import TeamRepositories from "./pages/team-repositories";
+import NewRepository from "./pages/new-repository";
+import RepositoryView from "./pages/repository-view";
+import Repository from "./pages/repository/[id]";
+import NotFound from "./pages/not-found";
+import Search from "./pages/search";
+import Settings from "./pages/settings";
+import Users from "./pages/users";
+import ApiConfigurations from "./pages/api-configurations";
+
+// 仓库系统页面
+import WarehouseProducts from "./pages/warehouse-products";
+import Warehouses from "./pages/warehouses";
+import InboundOrders from "./pages/inbound-orders";
+import OutboundOrders from "./pages/outbound-orders";
+import WarehouseTransfers from "./pages/warehouse-transfers";
+import NewWarehouseTransfer from "./pages/warehouse-transfers/new";
+import WarehouseTransferImport from "./pages/warehouse-transfers/import";
+import OutboundOrder from "./pages/outbound-order/[id]";
+import InboundOrder from "./pages/inbound-order/[id]";
+import NewOutboundOrder from "./pages/outbound-orders/new";
+import NewOutboundOrderWithItems from "./pages/outbound-orders/new-with-items";
+import AdvancedOutboundOrder from "./pages/outbound-orders/advanced";
+import NewInboundOrder from "./pages/inbound-orders/new";
+import NewInboundOrderWithItems from "./pages/inbound-orders/new-with-items";
+import ProductDetail from "./pages/products/product-detail";
 
 export default function App() {
   // 从本地存储加载用户首选语言
@@ -97,8 +62,50 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
         <Switch>
+          {/* 测试页面 */}
           <Route path="/test-toast" component={TestToast} />
-          <Route path="/" component={SimpleApp} />
+          
+          {/* 主页与通用页面 */}
+          <Route path="/" component={Dashboard} />
+          <Route path="/search" component={Search} />
+          <Route path="/settings" component={Settings} />
+          <Route path="/users" component={Users} />
+          
+          {/* 代码仓库相关页面 */}
+          <Route path="/my-repositories" component={MyRepositories} />
+          <Route path="/team-repositories" component={TeamRepositories} />
+          <Route path="/new-repository" component={NewRepository} />
+          <Route path="/repository-view/:id" component={RepositoryView} />
+          <Route path="/repository/:id" component={Repository} />
+          
+          {/* 仓库管理系统页面 */}
+          <Route path="/warehouses" component={Warehouses} />
+          <Route path="/warehouse-products" component={WarehouseProducts} />
+          <Route path="/products/product-detail/:id" component={ProductDetail} />
+          
+          {/* 入库单页面 */}
+          <Route path="/inbound-orders" component={InboundOrders} />
+          <Route path="/inbound-order/:id" component={InboundOrder} />
+          <Route path="/inbound-orders/new" component={NewInboundOrder} />
+          <Route path="/inbound-orders/new-with-items" component={NewInboundOrderWithItems} />
+          
+          {/* 出库单页面 */}
+          <Route path="/outbound-orders" component={OutboundOrders} />
+          <Route path="/outbound-order/:id" component={OutboundOrder} />
+          <Route path="/outbound-orders/new" component={NewOutboundOrder} />
+          <Route path="/outbound-orders/new-with-items" component={NewOutboundOrderWithItems} />
+          <Route path="/outbound-orders/advanced" component={AdvancedOutboundOrder} />
+          
+          {/* 仓库调拨单页面 */}
+          <Route path="/warehouse-transfers" component={WarehouseTransfers} />
+          <Route path="/warehouse-transfers/new" component={NewWarehouseTransfer} />
+          <Route path="/warehouse-transfers/import" component={WarehouseTransferImport} />
+          
+          {/* API配置页面 */}
+          <Route path="/api-configurations" component={ApiConfigurations} />
+          
+          {/* 404页面必须放在最后 */}
+          <Route component={NotFound} />
         </Switch>
         <Toaster />
       </ToastProvider>
