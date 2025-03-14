@@ -168,10 +168,7 @@ export default function AdvancedOutboundOrder() {
         form.setValue(`items.${index}.weight`, totalWeight.toFixed(3));
         form.setValue(`items.${index}.volume`, totalVolume.toFixed(3));
         
-        toast({
-          title: t("product_found"),
-          description: `${t("product_found_by_code")}: ${product.name}`,
-        });
+        toast.success(`${t("product_found_by_code")}: ${product.name}`);
         
         // 触发表单更新，确保UI反映当前状态
         form.trigger(`items.${index}.productId`);
@@ -181,11 +178,7 @@ export default function AdvancedOutboundOrder() {
         form.trigger(`items.${index}.volume`);
       } else if (numericValue.length === 5) {
         // 只有当输入完整的5位唯一码且找不到产品时才提示
-        toast({
-          title: t("product_not_found"),
-          description: t("no_product_with_unique_code", { code: numericValue }),
-          variant: "destructive",
-        });
+        toast.error(t("no_product_with_unique_code", { code: numericValue }));
         
         // 清空相关产品信息
         form.setValue(`items.${index}.productId`, "");
@@ -193,10 +186,7 @@ export default function AdvancedOutboundOrder() {
       }
     } else if (value && !/^\d+$/.test(value)) {
       // 如果输入了非数字字符，给出提示（但我们已经在上面过滤掉非数字，这里只是确保用户知道）
-      toast({
-        title: t("input_corrected"),
-        description: t("unique_code_must_be_numeric"),
-      });
+      toast.info(t("unique_code_must_be_numeric"));
     }
   };
   
@@ -302,12 +292,9 @@ export default function AdvancedOutboundOrder() {
     },
     onSuccess: (response) => {
       // 显示出库单创建成功以及出库单号
-      toast({
-        title: t("outbound_order_created"),
-        description: response.orderNumber 
-          ? t("outbound_order_created_with_number", { number: response.orderNumber })
-          : t("outbound_order_created_description"),
-      });
+      toast.success(response.orderNumber 
+        ? t("outbound_order_created_with_number", { number: response.orderNumber })
+        : t("outbound_order_created_description"));
       
       // 刷新出库单列表
       queryClient.invalidateQueries({queryKey: ["/api/outbound-orders"]});
@@ -317,11 +304,7 @@ export default function AdvancedOutboundOrder() {
     },
     onError: (error) => {
       console.error("创建出库单失败:", error);
-      toast({
-        title: t("outbound_order_create_failed"),
-        description: t("outbound_order_create_failed_description"),
-        variant: "destructive",
-      });
+      toast.error(t("outbound_order_create_failed_description"));
       setIsSubmitting(false);
     }
   });
@@ -337,11 +320,7 @@ export default function AdvancedOutboundOrder() {
     });
     
     if (hasStockIssue) {
-      toast({
-        title: t("stock_error"),
-        description: t("insufficient_stock_error"),
-        variant: "destructive",
-      });
+      toast.error(t("insufficient_stock_error"));
       setIsSubmitting(false);
       return;
     }
@@ -393,10 +372,10 @@ export default function AdvancedOutboundOrder() {
           const existingProductId = form.getValues(`items.${currentScanningIndex}.productId`);
           if (existingProductId && parseInt(existingProductId) !== product.id) {
             // 如果已选择了不同的产品，提示用户产品已被更新
-            toast({
-              title: t("product_updated"),
-              description: t("product_updated_by_unique_code", { oldProduct: products.find(p => p.id === parseInt(existingProductId))?.name || "Unknown", newProduct: product.name }),
-            });
+            toast.info(t("product_updated_by_unique_code", { 
+              oldProduct: products.find(p => p.id === parseInt(existingProductId))?.name || "Unknown", 
+              newProduct: product.name 
+            }));
           }
           
           // 自动填充产品信息
@@ -425,10 +404,7 @@ export default function AdvancedOutboundOrder() {
           form.setValue(`items.${currentScanningIndex}.weight`, totalWeight.toFixed(3));
           form.setValue(`items.${currentScanningIndex}.volume`, totalVolume.toFixed(3));
           
-          toast({
-            title: t("product_found"),
-            description: `${t("product_found_by_code")}: ${product.name}`,
-          });
+          toast.success(`${t("product_found_by_code")}: ${product.name}`);
           
           // 触发表单验证，确保UI更新
           form.trigger(`items.${currentScanningIndex}.productId`);
@@ -440,11 +416,7 @@ export default function AdvancedOutboundOrder() {
           // 没有找到匹配的产品
           if (numericCode.length === 5) {
             // 完整的5位唯一码但未找到产品
-            toast({
-              title: t("product_not_found"),
-              description: t("no_product_with_unique_code", { code: numericCode }),
-              variant: "destructive",
-            });
+            toast.error(t("no_product_with_unique_code", { code: numericCode }));
           } else {
             // 不完整的唯一码
             toast({
