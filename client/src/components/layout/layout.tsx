@@ -5,7 +5,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 interface LayoutProps {
   children: React.ReactNode;
-  hideSidebar?: boolean; // 添加一个属性来控制是否显示侧边栏
+  hideSidebar?: boolean;
 }
 
 export function Layout({ children, hideSidebar = false }: LayoutProps) {
@@ -16,27 +16,26 @@ export function Layout({ children, hideSidebar = false }: LayoutProps) {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      {/* 桌面侧边栏 */}
-      <div className="hidden md:block">
-        <Sidebar />
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* 在大屏幕上，Sidebar组件已经固定定位了 */}
+      {/* 所以这里只需要为移动端添加抽屉式侧边栏 */}
+      <div className="md:pl-64">
       
-      {/* Mobile Sidebar */}
-      <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
-        <SheetContent side="left" className="p-0 w-64">
-          <Sidebar />
-        </SheetContent>
-      </Sheet>
-      
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header onMenuClick={toggleMobileSidebar} />
+        {/* 移动侧边栏 - 点击菜单按钮时显示 */}
+        <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
+          <SheetContent side="left" className="p-0 w-64 md:hidden">
+            <Sidebar />
+          </SheetContent>
+        </Sheet>
         
-        {/* Page Content */}
-        <main className="flex-1 overflow-y-auto bg-gray-100 p-4 sm:p-6 lg:p-8">
-          {children}
-        </main>
+        {/* 主内容区域 */}
+        <div className="flex flex-col min-h-screen">
+          <Header onMenuClick={toggleMobileSidebar} />
+          
+          <main className="flex-1 overflow-y-auto bg-gray-100 p-4 sm:p-6 lg:p-8">
+            {children}
+          </main>
+        </div>
       </div>
     </div>
   );
