@@ -993,7 +993,13 @@ export default function AdvancedOutboundOrder() {
                             render={({ field }) => (
                               <FormItem>
                                 <FormControl>
-                                  <Input {...field} />
+                                  <Input 
+                                    type="text" 
+                                    inputMode="decimal" 
+                                    placeholder="0.000" 
+                                    {...field} 
+                                    className="w-full"
+                                  />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
@@ -1007,7 +1013,13 @@ export default function AdvancedOutboundOrder() {
                             render={({ field }) => (
                               <FormItem>
                                 <FormControl>
-                                  <Input {...field} />
+                                  <Input 
+                                    type="text" 
+                                    inputMode="decimal" 
+                                    placeholder="0.000" 
+                                    {...field} 
+                                    className="w-full"
+                                  />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
