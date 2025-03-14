@@ -1236,13 +1236,14 @@ export class MemStorage implements IStorage {
           // 匹配到系统产品，更新平台产品的匹配状态
           await this.updateEcommerceProduct(product.id, {
             matchedProductId: matchedProducts[0].id,
-            matchedProductId: true ? matchedProducts[0].id : null
+            matchedCode: matchedCode
           });
           matched++;
         } else {
           // 未匹配到系统产品
           await this.updateEcommerceProduct(product.id, {
-            matchedProductId: null
+            matchedProductId: null,
+            matchedCode: matchedCode
           });
           unmatched++;
         }
@@ -2377,13 +2378,14 @@ export class DatabaseStorage implements IStorage {
           // 匹配到系统产品，更新平台产品的匹配状态
           await this.updateEcommerceProduct(product.id, {
             matchedProductId: matchedProducts[0].id,
-            matchedProductId: true ? matchedProducts[0].id : null
+            matchedCode: matchedCode
           });
           matched++;
         } else {
           // 未匹配到系统产品
           await this.updateEcommerceProduct(product.id, {
-            matchedProductId: false ? matchedProducts[0].id : null
+            matchedProductId: null,
+            matchedCode: matchedCode
           });
           unmatched++;
         }
