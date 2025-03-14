@@ -109,7 +109,7 @@ export default function InboundOrderDetail() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [location, navigate] = useLocation();
+  const [location, setLocation] = useLocation();
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [isUpdatingOrder, setIsUpdatingOrder] = useState(false);
   
