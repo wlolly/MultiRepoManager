@@ -12,10 +12,26 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Grid, List } from "lucide-react";
+import { 
+  Plus, 
+  Grid, 
+  List, 
+  Download as DownloadIcon, 
+  Upload as UploadIcon, 
+  FileType as FileTypeIcon, 
+  Database as DatabaseIcon,
+  ChevronDown as ChevronDownIcon
+} from "lucide-react";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "wouter";
+import { queryClient } from "@/lib/queryClient";
 
 export default function WarehouseProducts() {
   const { t } = useTranslation();
@@ -100,7 +116,50 @@ export default function WarehouseProducts() {
   // Handle creating a new product
   const handleCreateProduct = () => {
     // 导航到创建新产品页面
-    navigate("/products/new");
+    navigate("/warehouse-products/new");
+  };
+
+  // 处理Excel文件导入
+  const handleExcelImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    // 创建FormData对象
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+      const response = await fetch('/api/products/excel/import?type=warehouse', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '导入失败');
+      }
+      
+      const result = await response.json();
+      
+      // 显示导入结果
+      if (result.errors && result.errors.length > 0) {
+        alert(`导入完成，但有${result.errors.length}个错误:\n${result.errors.join('\n')}`);
+      } else {
+        alert(`成功导入${result.products?.length || 0}个仓库商品`);
+      }
+      
+      // 重置文件输入
+      event.target.value = '';
+      
+      // 刷新产品数据
+      queryClient.invalidateQueries({ queryKey: ['/api/products'] });
+      
+    } catch (error) {
+      console.error('Excel导入错误:', error);
+      alert(`导入失败: ${error instanceof Error ? error.message : '未知错误'}`);
+      // 重置文件输入
+      event.target.value = '';
+    }
   };
 
   return (
@@ -110,10 +169,58 @@ export default function WarehouseProducts() {
           <h1 className="text-2xl font-bold">{t('warehouse_products')}</h1>
           <p className="text-muted-foreground">{t('warehouse_products_description')}</p>
         </div>
-        <Button onClick={handleCreateProduct}>
-          <Plus className="mr-2 h-4 w-4" />
-          {t('new_product')}
-        </Button>
+        <div className="flex items-center space-x-3">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="flex items-center">
+                <FileTypeIcon className="mr-2 h-4 w-4" />
+                {t('excel_operations')}
+                <ChevronDownIcon className="ml-2 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => {
+                const link = document.createElement('a');
+                link.href = "/api/products/excel/template?type=warehouse";
+                link.download = "warehouse_product_import_template.xlsx";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }}>
+                <DownloadIcon className="mr-2 h-4 w-4" />
+                {t('download_template')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
+                const link = document.createElement('a');
+                link.href = "/api/products/excel/export?type=warehouse";
+                link.download = "warehouse_products_export.xlsx";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }}>
+                <DatabaseIcon className="mr-2 h-4 w-4" />
+                {t('export_products')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => document.getElementById('excel-upload')?.click()}>
+                <UploadIcon className="mr-2 h-4 w-4" />
+                {t('import_products')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          <input
+            type="file"
+            id="excel-upload"
+            className="hidden"
+            accept=".xlsx"
+            onChange={handleExcelImport}
+          />
+          
+          <Button onClick={handleCreateProduct}>
+            <Plus className="mr-2 h-4 w-4" />
+            {t('new_product')}
+          </Button>
+        </div>
       </div>
 
       {/* 仓库商品 */}
