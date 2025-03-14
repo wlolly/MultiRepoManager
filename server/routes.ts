@@ -1783,17 +1783,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const capacities = ['5000', '8000', '6000', '4000'];
       
       // 创建仓库
-      const warehousePromises = [];
+      const warehouses = [];
       for (let i = 0; i < warehouseNames.length; i++) {
-        warehousePromises.push(
-          storage.createWarehouse({
+        try {
+          const warehouse = await storage.createWarehouse({
             name: warehouseNames[i],
             location: warehouseLocations[i],
             capacity: capacities[i]
-          })
-        );
+          });
+          warehouses.push(warehouse);
+        } catch (error) {
+          console.error(`创建仓库 ${warehouseNames[i]} 失败:`, error);
+        }
       }
-      const warehouses = await Promise.all(warehousePromises);
       
       // 创建产品
       const productData = [
@@ -1851,26 +1853,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const products = await Promise.all(productPromises);
       
       // 创建入库单
-      const inboundOrderPromises = [];
+      const inboundOrders = [];
       for (let i = 0; i < 5; i++) {
-        const warehouseId = warehouses[Math.floor(Math.random() * warehouses.length)].id;
-        const orderNumber = `IN${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
-        
-        inboundOrderPromises.push(
-          storage.createInboundOrder({
+        try {
+          if (warehouses.length === 0) {
+            console.log('没有可用的仓库，无法创建入库单');
+            continue;
+          }
+          
+          const warehouseId = warehouses[Math.floor(Math.random() * warehouses.length)].id;
+          const orderNumber = `IN${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
+          
+          const orderType = "purchase"; // 使用明确的字符串字面量
+          
+          const inboundOrder = await storage.createInboundOrder({
             warehouseId,
             orderNumber,
             totalWeight: '0',
             totalVolume: '0',
             status: 'pending',
             createdBy: 1,
-            orderType: 'purchase',
+            orderType,
             notes: `测试入库单 #${i+1}`
-          })
-        );
+          });
+          
+          inboundOrders.push(inboundOrder);
+        } catch (error) {
+          console.error(`创建入库单失败:`, error);
+        }
       }
-      
-      const inboundOrders = await Promise.all(inboundOrderPromises);
       
       // 为每个入库单添加明细
       const inboundItemPromises = [];
@@ -1917,18 +1928,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await Promise.all(inboundItemPromises);
       
       // 创建出库单
-      const outboundOrderPromises = [];
-      const orderTypes = ['sale', 'return', 'transfer', 'scrap'];
-      const destinationTypes = ['customer', 'retail', 'wholesale', 'transfer', 'supplier', 'destruction'];
+      const outboundOrders = [];
+      const validOrderTypes = ["sale", "return", "transfer", "scrap"] as const;
+      const validDestinationTypes = ["customer", "retail", "wholesale", "transfer", "supplier"] as const;
       
       for (let i = 0; i < 5; i++) {
-        const warehouseId = warehouses[Math.floor(Math.random() * warehouses.length)].id;
-        const orderNumber = `OUT${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
-        const orderType = orderTypes[Math.floor(Math.random() * orderTypes.length)];
-        const destinationType = destinationTypes[Math.floor(Math.random() * destinationTypes.length)];
-        
-        outboundOrderPromises.push(
-          storage.createOutboundOrder({
+        try {
+          if (warehouses.length === 0) {
+            console.log('没有可用的仓库，无法创建出库单');
+            continue;
+          }
+          
+          const warehouseId = warehouses[Math.floor(Math.random() * warehouses.length)].id;
+          const orderNumber = `OUT${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
+          
+          // 使用类型安全的字面量类型
+          const orderTypeIndex = Math.floor(Math.random() * validOrderTypes.length);
+          const destinationTypeIndex = Math.floor(Math.random() * validDestinationTypes.length);
+          
+          const orderType = validOrderTypes[orderTypeIndex];
+          const destinationType = validDestinationTypes[destinationTypeIndex];
+          
+          const outboundOrder = await storage.createOutboundOrder({
             warehouseId,
             orderNumber,
             totalWeight: '0',
@@ -1938,11 +1959,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             orderType,
             destinationType,
             notes: `测试出库单 #${i+1}`
-          })
-        );
+          });
+          
+          outboundOrders.push(outboundOrder);
+        } catch (error) {
+          console.error(`创建出库单失败:`, error);
+        }
       }
-      
-      const outboundOrders = await Promise.all(outboundOrderPromises);
       
       // 为每个出库单添加明细
       const outboundItemPromises = [];
