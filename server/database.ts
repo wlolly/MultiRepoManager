@@ -2,18 +2,23 @@ import { drizzle } from 'drizzle-orm/mysql2';
 import mysql from 'mysql2/promise';
 import * as schema from '@shared/schema';
 import { log } from './vite';
+import dotenv from 'dotenv';
+
+// 加载环境变量
+dotenv.config();
 
 // 创建MySQL连接池
 export async function createConnection() {
   try {
-    // 使用您提供的MySQL连接配置
-    const connection = await mysql.createConnection({
-      host: '77.243.80.129',
-      port: 3307,
-      user: 'root',
-      password: '@Hzca1575@',
-      database: 'wlolly',
-    });
+    // 获取环境变量中的数据库连接字符串
+    const dbUrl = process.env.DATABASE_URL;
+    
+    if (!dbUrl) {
+      throw new Error('DATABASE_URL environment variable is not set');
+    }
+    
+    // 使用环境变量中的数据库连接字符串
+    const connection = await mysql.createConnection(dbUrl);
 
     log('MySQL database connection established', 'mysql');
     
