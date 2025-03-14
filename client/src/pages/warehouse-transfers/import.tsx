@@ -181,11 +181,7 @@ export default function WarehouseTransferImport() {
     
     // 检查源仓库和目标仓库是否相同
     if (sourceWarehouseId === targetWarehouseId) {
-      toast({
-        title: t("common.error"),
-        description: t("warehouseTransfer.same_warehouse_error"),
-        variant: "destructive",
-      });
+      toast.error(t("warehouseTransfer.same_warehouse_error"));
       return;
     }
 
@@ -205,11 +201,7 @@ export default function WarehouseTransferImport() {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (error) {
-      toast({
-        title: t("common.error"),
-        description: t("warehouseTransfer.template_download_error"),
-        variant: "destructive",
-      });
+      toast.error(t("warehouseTransfer.template_download_error"));
     }
   };
 
