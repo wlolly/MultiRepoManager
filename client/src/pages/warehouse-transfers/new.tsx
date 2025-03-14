@@ -431,19 +431,52 @@ export default function NewWarehouseTransfer() {
                 
                 <div className="space-y-4">
                   <div className="grid grid-cols-12 gap-2 px-2 py-1 bg-muted font-medium text-sm">
-                    <div className="col-span-2">{t("product")}</div>
+                    <div className="col-span-2">{t("unique_code")}</div>
+                    <div className="col-span-3">{t("product")}</div>
                     <div>{t("quantity")}</div>
                     <div>{t("package_count")}</div>
                     <div>{t("weight")} (kg)</div>
                     <div>{t("volume")} (m³)</div>
-                    <div className="col-span-4">{t("unique_code")}</div>
                     <div></div>
                   </div>
                   
                   {fields.map((field, index) => (
                     <div key={field.id} className="grid grid-cols-12 gap-2 items-center p-2 border rounded-md">
-                      {/* 商品 */}
+                      {/* 唯一码输入 */}
                       <div className="col-span-2">
+                        <FormField
+                          control={form.control}
+                          name={`items.${index}.uniqueCode`}
+                          render={({ field }) => (
+                            <FormItem className="space-y-0">
+                              <FormControl>
+                                <div className="flex">
+                                  <Input 
+                                    type="text" 
+                                    placeholder={t("unique_code")} 
+                                    {...field} 
+                                    className="w-full"
+                                    maxLength={5}
+                                  />
+                                  <Button 
+                                    type="button"
+                                    variant="outline"
+                                    size="icon"
+                                    className="ml-1"
+                                    onClick={() => openBarcodeScanner(index)}
+                                  >
+                                    <QrCode className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      {/* 商品 */}
+                      <div className="col-span-3">
                         <FormField
                           control={form.control}
                           name={`items.${index}.productId`}
@@ -569,38 +602,6 @@ export default function NewWarehouseTransfer() {
                                   {...field} 
                                   className="w-full"
                                 />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      
-                      {/* 唯一码输入 */}
-                      <div className="col-span-4">
-                        <FormField
-                          control={form.control}
-                          name={`items.${index}.uniqueCode`}
-                          render={({ field }) => (
-                            <FormItem className="space-y-0">
-                              <FormControl>
-                                <div className="flex">
-                                  <Input 
-                                    type="text" 
-                                    placeholder={t("enter_or_scan_unique_code")} 
-                                    {...field} 
-                                    className="w-full"
-                                  />
-                                  <Button 
-                                    type="button"
-                                    variant="outline"
-                                    size="icon"
-                                    className="ml-2"
-                                    onClick={() => openBarcodeScanner(index)}
-                                  >
-                                    <QrCode className="h-4 w-4" />
-                                  </Button>
-                                </div>
                               </FormControl>
                               <FormMessage />
                             </FormItem>
