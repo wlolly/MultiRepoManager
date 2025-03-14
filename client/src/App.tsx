@@ -241,6 +241,10 @@ function AppLayout({ children }: { children: React.ReactNode }) {
                 className="block w-full rounded-md pl-10 py-2 border-gray-300 
                            focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 placeholder={t('search')}
+                onClick={() => { 
+                  const [_, setLocation] = useLocation();
+                  setLocation('/product-search');
+                }}
               />
             </div>
           </div>
@@ -318,6 +322,7 @@ export default function App() {
             <Route path="/warehouse-products" component={WarehouseProducts} />
             <Route path="/products" component={ProductsPage} />
             <Route path="/products/product-detail/:id" component={ProductDetail} />
+            <Route path="/product-search" component={ProductSearch} />
             
             {/* 入库单页面 */}
             <Route path="/inbound-orders" component={InboundOrders} />
