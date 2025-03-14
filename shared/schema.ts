@@ -443,6 +443,10 @@ export const warehouseTransfers = mysqlTable("warehouse_transfers", {
   outboundOrderId: int("outbound_order_id").references(() => outboundOrders.id), // 出库单ID
   inboundOrderId: int("inbound_order_id").references(() => inboundOrders.id), // 入库单ID
   notes: text("notes"), // 备注
+  documentFilePath: varchar("document_file_path", { length: 255 }), // 底单文件路径
+  documentFileName: varchar("document_file_name", { length: 255 }), // 底单文件名称
+  documentFileType: varchar("document_file_type", { length: 50 }), // 底单文件类型
+  documentUploadedAt: timestamp("document_uploaded_at"), // 底单上传时间
 });
 
 export const insertWarehouseTransferSchema = createInsertSchema(warehouseTransfers).pick({
@@ -456,8 +460,13 @@ export const insertWarehouseTransferSchema = createInsertSchema(warehouseTransfe
   status: true,
   createdBy: true,
   notes: true,
+  documentFilePath: true,
+  documentFileName: true,
+  documentFileType: true,
+  documentUploadedAt: true,
 }).omit({ createdBy: true }).extend({ 
   createdBy: z.number().optional(),
+  documentFile: z.instanceof(File).optional(), // 客户端文件对象
   items: z.array(z.object({
     productId: z.string(),
     uniqueCode: z.string().optional(),
