@@ -795,6 +795,60 @@ export default function WarehouseTransfers() {
               </div>
             </div>
             
+            {/* 源仓库和目标仓库选择 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div className="space-y-2">
+                <Label htmlFor="source-warehouse">{t("warehouseTransfer.source_warehouse")}</Label>
+                <Select value={sourceWarehouseId} onValueChange={setSourceWarehouseId}>
+                  <SelectTrigger id="source-warehouse">
+                    <SelectValue placeholder={t("warehouseTransfer.select_source_warehouse")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {warehouses.map((warehouse) => (
+                      <SelectItem 
+                        key={`source-${warehouse.id}`} 
+                        value={warehouse.id.toString()}
+                        disabled={warehouse.id.toString() === targetWarehouseId}
+                      >
+                        {warehouse.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="target-warehouse">{t("warehouseTransfer.target_warehouse")}</Label>
+                <Select value={targetWarehouseId} onValueChange={setTargetWarehouseId}>
+                  <SelectTrigger id="target-warehouse">
+                    <SelectValue placeholder={t("warehouseTransfer.select_target_warehouse")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {warehouses.map((warehouse) => (
+                      <SelectItem 
+                        key={`target-${warehouse.id}`} 
+                        value={warehouse.id.toString()}
+                        disabled={warehouse.id.toString() === sourceWarehouseId}
+                      >
+                        {warehouse.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            {/* 备注输入框 */}
+            <div className="space-y-2 mt-4">
+              <Label htmlFor="import-notes">{t("warehouseTransfer.notes")}</Label>
+              <Input
+                id="import-notes"
+                value={importNotes}
+                onChange={(e) => setImportNotes(e.target.value)}
+                placeholder={t("warehouseTransfer.enter_notes")}
+              />
+            </div>
+            
             {importErrors.length > 0 && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
