@@ -8,7 +8,8 @@ import { z } from "zod";
 import { v4 as uuidv4 } from 'uuid';
 import { 
   Plus, Trash2, Save, ArrowLeft, Package, Search, 
-  PlusCircle, Calculator, RotateCw, ListFilter, X
+  PlusCircle, Calculator, RotateCw, ListFilter, X,
+  ScanLine
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -61,6 +62,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { BarcodeScanner } from "@/components/BarcodeScanner";
 
 // 仓库接口
 interface Warehouse {
