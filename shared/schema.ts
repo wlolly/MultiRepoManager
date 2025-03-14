@@ -187,6 +187,7 @@ export const products = mysqlTable("products", {
   singleHeightCm: decimal("single_height_cm", { precision: 10, scale: 2 }).notNull(), // 单件尺寸（高CM）
   singleVolumeM3: decimal("single_volume_m3", { precision: 10, scale: 6 }).notNull(), // 单件立方（M3）
   singleWeightKg: decimal("single_weight_kg", { precision: 10, scale: 3 }).notNull(), // 单件重量（kg）
+  bulkQuantity: int("bulk_quantity").notNull().default(1), // 整件包装内产品数量
   bulkWidthCm: decimal("bulk_width_cm", { precision: 10, scale: 2 }).notNull(), // 整件尺寸（宽CM）
   bulkLengthCm: decimal("bulk_length_cm", { precision: 10, scale: 2 }).notNull(), // 整件尺寸（长CM）
   bulkHeightCm: decimal("bulk_height_cm", { precision: 10, scale: 2 }).notNull(), // 整件尺寸（高CM）
@@ -210,6 +211,7 @@ export const insertProductSchema = createInsertSchema(products).pick({
   singleHeightCm: true,
   singleVolumeM3: true,
   singleWeightKg: true,
+  bulkQuantity: true,
   bulkWidthCm: true,
   bulkLengthCm: true,
   bulkHeightCm: true,
