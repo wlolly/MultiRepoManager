@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
@@ -6,7 +6,8 @@ import { format } from "date-fns";
 import { 
   Plus, Download, Filter, ArrowUpDown, Search, FileUp, 
   FileDown, FileText, FileSpreadsheet, Eye, Truck, 
-  RefreshCw, Check, X, Calendar, FileIcon, AlertCircle
+  RefreshCw, Check, X, Calendar, FileIcon, AlertCircle,
+  Warehouse, TruckLoading
 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import axios from "axios";
@@ -301,14 +302,49 @@ export default function WarehouseTransfers() {
   
   // 处理Excel导入
   const handleImportExcel = async () => {
-    if (!importFile) return;
+    if (!importFile) {
+      toast({
+        title: t("warehouseTransfer.import_error"),
+        description: t("warehouseTransfer.no_file_selected"),
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!sourceWarehouseId) {
+      toast({
+        title: t("warehouseTransfer.import_error"),
+        description: t("warehouseTransfer.no_source_warehouse"),
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!targetWarehouseId) {
+      toast({
+        title: t("warehouseTransfer.import_error"),
+        description: t("warehouseTransfer.no_target_warehouse"),
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // 如果源仓库和目标仓库相同，显示错误
+    if (sourceWarehouseId === targetWarehouseId) {
+      toast({
+        title: t("warehouseTransfer.import_error"),
+        description: t("warehouseTransfer.same_warehouse_error"),
+        variant: "destructive",
+      });
+      return;
+    }
     
     try {
       const formData = new FormData();
       formData.append('file', importFile);
-      formData.append('sourceWarehouseId', '1'); // 默认源仓库ID，实际应从选择中获取
-      formData.append('targetWarehouseId', '2'); // 默认目标仓库ID，实际应从选择中获取
-      formData.append('notes', '通过Excel导入创建的调拨单');
+      formData.append('sourceWarehouseId', sourceWarehouseId);
+      formData.append('targetWarehouseId', targetWarehouseId);
+      formData.append('notes', importNotes);
       
       const response = await axios.post('/api/warehouse-transfers/import', formData, {
         headers: {
@@ -324,6 +360,11 @@ export default function WarehouseTransfers() {
         
         // 关闭对话框并刷新列表
         setImportDialogOpen(false);
+        setSourceWarehouseId("");
+        setTargetWarehouseId("");
+        setImportFile(null);
+        setImportErrors([]);
+        setImportPreview([]);
         refetchTransfers();
       }
     } catch (error) {
@@ -388,6 +429,9 @@ export default function WarehouseTransfers() {
   const [importErrors, setImportErrors] = useState<string[]>([]);
   const [importPreview, setImportPreview] = useState<any[]>([]);
   const [importFile, setImportFile] = useState<File | null>(null);
+  const [sourceWarehouseId, setSourceWarehouseId] = useState<string>("");
+  const [targetWarehouseId, setTargetWarehouseId] = useState<string>("");
+  const [importNotes, setImportNotes] = useState<string>("通过Excel导入创建的调拨单");
   
   return (
     <div className="container mx-auto py-6">
