@@ -237,8 +237,11 @@ export default function NewWarehouseTransfer() {
       uniqueCode: "" // 添加唯一码字段，初始为空
     });
     
-    // 添加商品后重新计算汇总数据
-    setTimeout(() => calculateTotals(), 0);
+    // 添加商品后重新计算汇总数据 - 使用requestAnimationFrame确保在DOM更新后执行
+    requestAnimationFrame(() => {
+      calculateTotals();
+      console.log("添加项目后汇总数据已更新");
+    });
   };
   
   // 打开条码扫描器对话框
@@ -348,8 +351,11 @@ export default function NewWarehouseTransfer() {
     if (fields.length > 1) {
       remove(index);
       
-      // 移除商品后重新计算汇总数据
-      setTimeout(() => calculateTotals(), 0);
+      // 移除商品后重新计算汇总数据 - 使用requestAnimationFrame确保在DOM更新后执行
+      requestAnimationFrame(() => {
+        calculateTotals();
+        console.log("删除项目后汇总数据已更新");
+      });
     } else {
       toast({
         title: t("validation_error"),
@@ -471,14 +477,18 @@ export default function NewWarehouseTransfer() {
     // 确保数值有效
     const numericValue = value.replace(/[^\d]/g, '');
     
-    // 设置经过验证的数值
-    form.setValue(`items.${index}.packageCount`, numericValue || "1");
+    // 设置经过验证的数值（不小于1）
+    const validValue = numericValue && parseInt(numericValue) > 0 ? numericValue : "1";
+    form.setValue(`items.${index}.packageCount`, validValue);
     
     // 手动更新件数不直接计算重量和体积，但需要更新汇总信息
     form.trigger(`items.${index}.packageCount`);
     
-    // 更新总计数据
-    calculateTotals();
+    // 更新总计数据，使用requestAnimationFrame确保在DOM更新后执行
+    requestAnimationFrame(() => {
+      calculateTotals();
+      console.log("件数汇总已重新计算", form.getValues());
+    });
   };
   
   // 计算总数量、件数、重量和体积
