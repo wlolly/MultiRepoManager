@@ -246,9 +246,12 @@ export default function NewWarehouseTransfer() {
       });
     },
     onSuccess: (response) => {
+      // 显示调拨单创建成功以及调拨单号
       toast({
         title: t("transfer_created"),
-        description: t("transfer_created_description"),
+        description: response.referenceNumber 
+          ? t("transfer_created_with_reference", { reference: response.referenceNumber })
+          : t("transfer_created_description"),
       });
       navigate("/warehouse-transfers");
     },
