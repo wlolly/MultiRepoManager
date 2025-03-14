@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { Layout } from "@/components/layout/layout";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -59,7 +58,7 @@ export default function Users() {
   });
 
   return (
-    <Layout>
+    <div className="container py-6">
       <div className="pb-5 border-b border-gray-200 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{t('users.title', 'Users & Teams')}</h1>
@@ -269,6 +268,6 @@ export default function Users() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Layout>
+    </div>
   );
 }
