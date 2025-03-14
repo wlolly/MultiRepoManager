@@ -16,7 +16,7 @@ import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, Tabl
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeftIcon, PlusIcon, MinusIcon, ArrowRightIcon, ScanLine } from "lucide-react";
+import { ArrowLeftIcon, PlusIcon, MinusIcon, ArrowRightIcon, ScanLine, QrCode } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
@@ -65,6 +65,10 @@ export default function NewWarehouseTransfer() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // 条码扫描对话框状态
+  const [isBarcodeScannerOpen, setIsBarcodeScannerOpen] = useState(false);
+  const [currentScanningIndex, setCurrentScanningIndex] = useState<number | null>(null);
   
   // 获取仓库列表
   const { data: warehouses = [], isLoading: isLoadingWarehouses } = useQuery<Warehouse[]>({
@@ -232,6 +236,24 @@ export default function NewWarehouseTransfer() {
     }, { totalQuantity: 0, totalPackages: 0, totalWeight: 0, totalVolume: 0 });
   };
   
+  // 打开条码扫描器对话框
+  const openBarcodeScanner = (index: number) => {
+    setCurrentScanningIndex(index);
+    setIsBarcodeScannerOpen(true);
+  };
+  
+  // 条码扫描处理
+  const handleUniqueCodeScanned = (code: string) => {
+    if (currentScanningIndex !== null) {
+      form.setValue(`items.${currentScanningIndex}.uniqueCode`, code);
+      setIsBarcodeScannerOpen(false);
+      toast({
+        title: t("unique_code_scanned"),
+        description: code,
+      });
+    }
+  };
+  
   // 计算汇总
   const { totalQuantity, totalPackages, totalWeight, totalVolume } = calculateTotals();
   
@@ -376,17 +398,18 @@ export default function NewWarehouseTransfer() {
                 </div>
                 
                 <div className="space-y-4">
-                  <div className="grid grid-cols-7 gap-2 px-2 py-1 bg-muted font-medium text-sm">
+                  <div className="grid grid-cols-12 gap-2 px-2 py-1 bg-muted font-medium text-sm">
                     <div className="col-span-2">{t("product")}</div>
                     <div>{t("quantity")}</div>
                     <div>{t("package_count")}</div>
                     <div>{t("weight")} (kg)</div>
                     <div>{t("volume")} (m³)</div>
+                    <div className="col-span-4">{t("unique_code")}</div>
                     <div></div>
                   </div>
                   
                   {fields.map((field, index) => (
-                    <div key={field.id} className="grid grid-cols-7 gap-2 items-center p-2 border rounded-md">
+                    <div key={field.id} className="grid grid-cols-12 gap-2 items-center p-2 border rounded-md">
                       {/* 商品 */}
                       <div className="col-span-2">
                         <FormField
@@ -514,6 +537,38 @@ export default function NewWarehouseTransfer() {
                                   {...field} 
                                   className="w-full"
                                 />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      
+                      {/* 唯一码输入 */}
+                      <div className="col-span-4">
+                        <FormField
+                          control={form.control}
+                          name={`items.${index}.uniqueCode`}
+                          render={({ field }) => (
+                            <FormItem className="space-y-0">
+                              <FormControl>
+                                <div className="flex">
+                                  <Input 
+                                    type="text" 
+                                    placeholder={t("enter_or_scan_unique_code")} 
+                                    {...field} 
+                                    className="w-full"
+                                  />
+                                  <Button 
+                                    type="button"
+                                    variant="outline"
+                                    size="icon"
+                                    className="ml-2"
+                                    onClick={() => openBarcodeScanner(index)}
+                                  >
+                                    <QrCode className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               </FormControl>
                               <FormMessage />
                             </FormItem>
