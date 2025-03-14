@@ -52,6 +52,7 @@ interface OutboundOrderItem {
   productId: number;
   productName: string; // 商品名称
   barcode: string; // 条形码
+  externalOrderNumber?: string | null; // 外部订单号
   quantity: number; // 数量
   packageCount: number; // 件数
   weight: number; // 重量
@@ -748,6 +749,26 @@ export default function OutboundOrderDetail() {
                       
                       <FormField
                         control={itemForm.control}
+                        name="externalOrderNumber"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{t("external_order_number")}</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder={t("external_order_number_placeholder")} 
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              {t("external_order_number_description")}
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={itemForm.control}
                         name="quantity"
                         render={({ field }) => (
                           <FormItem>
@@ -865,6 +886,7 @@ export default function OutboundOrderDetail() {
                   <TableRow>
                     <TableHead className="w-[80px]">{t("id")}</TableHead>
                     <TableHead className="min-w-[150px]">{t("product")}</TableHead>
+                    <TableHead>{t("external_order_number")}</TableHead>
                     <TableHead className="text-right">{t("quantity")}</TableHead>
                     <TableHead className="text-right">{t("package_count")}</TableHead>
                     <TableHead className="text-right">{t("weight")} (kg)</TableHead>
@@ -888,6 +910,7 @@ export default function OutboundOrderDetail() {
                             `ID: ${item.productId}`
                           )}
                         </TableCell>
+                        <TableCell>{item.externalOrderNumber || '-'}</TableCell>
                         <TableCell className="text-right">{item.quantity}</TableCell>
                         <TableCell className="text-right">{item.packageCount}</TableCell>
                         <TableCell className="text-right">{item.weight.toFixed(3)}</TableCell>
@@ -909,6 +932,7 @@ export default function OutboundOrderDetail() {
                   {/* 汇总行 */}
                   <TableRow className="font-semibold bg-muted/50">
                     <TableCell colSpan={2} className="text-right">{t("total")}</TableCell>
+                    <TableCell></TableCell>
                     <TableCell className="text-right">{totalQuantity}</TableCell>
                     <TableCell className="text-right">{totalPackages}</TableCell>
                     <TableCell className="text-right">{totalWeight.toFixed(3)}</TableCell>
