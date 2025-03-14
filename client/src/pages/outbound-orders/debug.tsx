@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function DebugOutboundOrder() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [orderNumber, setOrderNumber] = useState(`OUT-${Date.now()}`);
   const [warehouseId, setWarehouseId] = useState("1");
