@@ -45,6 +45,15 @@ mode = "sequential"
 task = "shell.exec"
 args = "npm run dev"
 
+[[workflows.workflow]]
+name = "Run Test Server"
+author = 40460150
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node test-server.js"
+
 [[ports]]
 localPort = 5000
 externalPort = 80
