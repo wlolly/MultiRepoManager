@@ -32,6 +32,7 @@ import WarehouseTransferImport from '@/pages/warehouse-transfers/import';
 import DebugOutboundOrder from '@/pages/outbound-orders/debug';
 import { useEffect } from "react";
 import "./i18n";
+import { ToastProvider } from "@/components/ui/toast-context";
 
 export default function App() {
   // 从本地存储加载用户首选语言
@@ -54,40 +55,42 @@ export default function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Router>
-        <Layout>
-          <Switch>
-            <Route path="/">{Dashboard}</Route>
-            <Route path="/my-repositories">{MyRepositories}</Route>
-            <Route path="/team-repositories">{TeamRepositories}</Route>
-            <Route path="/users">{Users}</Route>
-            <Route path="/settings">{Settings}</Route>
-            <Route path="/repository/:id">{Repository}</Route>
-            <Route path="/new-repository">{NewRepository}</Route>
-            <Route path="/search">{Search}</Route>
-            <Route path="/warehouses">{Warehouses}</Route>
-            <Route path="/api-configurations">{ApiConfigurations}</Route>
-            <Route path="/products">{ProductsPage}</Route>
-            <Route path="/inbound-orders">{InboundOrders}</Route>
-            <Route path="/inbound-orders/new">{NewInboundOrder}</Route>
-            <Route path="/inbound-orders/new-with-items">{NewInboundOrderWithItems}</Route>
-            <Route path="/inbound-order/:id">{InboundOrderDetail}</Route>
-            <Route path="/outbound-orders">{OutboundOrders}</Route>
-            <Route path="/outbound-orders/new">{NewOutboundOrder}</Route>
-            <Route path="/outbound-orders/new-with-items">{NewOutboundOrderWithItems}</Route>
-            <Route path="/outbound-orders/advanced">{AdvancedOutboundOrder}</Route>
-            <Route path="/outbound-order/:id">{OutboundOrderDetail}</Route>
-            <Route path="/warehouse-products">{WarehouseProducts}</Route>
-            <Route path="/warehouse-transfers">{WarehouseTransfers}</Route>
-            <Route path="/warehouse-transfers/new">{NewWarehouseTransfer}</Route>
-            <Route path="/warehouse-transfers/import">{WarehouseTransferImport}</Route>
-            <Route path="/outbound-orders/debug">{DebugOutboundOrder}</Route>
-            <Route>{NotFound}</Route>
-          </Switch>
-        </Layout>
-        <Agent />
-        <Toaster />
-      </Router>
+      <ToastProvider>
+        <Router>
+          <Layout>
+            <Switch>
+              <Route path="/">{Dashboard}</Route>
+              <Route path="/my-repositories">{MyRepositories}</Route>
+              <Route path="/team-repositories">{TeamRepositories}</Route>
+              <Route path="/users">{Users}</Route>
+              <Route path="/settings">{Settings}</Route>
+              <Route path="/repository/:id">{Repository}</Route>
+              <Route path="/new-repository">{NewRepository}</Route>
+              <Route path="/search">{Search}</Route>
+              <Route path="/warehouses">{Warehouses}</Route>
+              <Route path="/api-configurations">{ApiConfigurations}</Route>
+              <Route path="/products">{ProductsPage}</Route>
+              <Route path="/inbound-orders">{InboundOrders}</Route>
+              <Route path="/inbound-orders/new">{NewInboundOrder}</Route>
+              <Route path="/inbound-orders/new-with-items">{NewInboundOrderWithItems}</Route>
+              <Route path="/inbound-order/:id">{InboundOrderDetail}</Route>
+              <Route path="/outbound-orders">{OutboundOrders}</Route>
+              <Route path="/outbound-orders/new">{NewOutboundOrder}</Route>
+              <Route path="/outbound-orders/new-with-items">{NewOutboundOrderWithItems}</Route>
+              <Route path="/outbound-orders/advanced">{AdvancedOutboundOrder}</Route>
+              <Route path="/outbound-order/:id">{OutboundOrderDetail}</Route>
+              <Route path="/warehouse-products">{WarehouseProducts}</Route>
+              <Route path="/warehouse-transfers">{WarehouseTransfers}</Route>
+              <Route path="/warehouse-transfers/new">{NewWarehouseTransfer}</Route>
+              <Route path="/warehouse-transfers/import">{WarehouseTransferImport}</Route>
+              <Route path="/outbound-orders/debug">{DebugOutboundOrder}</Route>
+              <Route>{NotFound}</Route>
+            </Switch>
+          </Layout>
+          <Agent />
+          <Toaster />
+        </Router>
+      </ToastProvider>
     </QueryClientProvider>
   );
 }
