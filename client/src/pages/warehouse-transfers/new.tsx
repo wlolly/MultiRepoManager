@@ -466,6 +466,8 @@ export default function NewWarehouseTransfer() {
   
   // 件数变更时更新汇总数据
   const handlePackageCountChange = (value: string, index: number) => {
+    console.log("件数变更:", value, index); // 添加日志调试
+    
     // 确保数值有效
     const numericValue = value.replace(/[^\d]/g, '');
     
