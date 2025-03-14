@@ -38,6 +38,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     fs.mkdirSync('./public/uploads', { recursive: true });
   }
   
+  // 健康检查API端点
+  apiRouter.get("/health", (req, res) => {
+    res.json({
+      status: "ok",
+      serverTime: new Date().toISOString(),
+      version: "1.0.0"
+    });
+  });
+  
   // 配置存储
   const multerStorage = multer.diskStorage({
     destination: function (req, file, cb) {
