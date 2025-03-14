@@ -248,18 +248,18 @@ export default function NewWarehouseTransfer() {
     onSuccess: (response) => {
       // 显示调拨单创建成功以及调拨单号
       toast({
-        title: t("transfer_created"),
+        title: t("warehouseTransfer.transfer_created"),
         description: response.referenceNumber 
-          ? t("transfer_created_with_reference", { reference: response.referenceNumber })
-          : t("transfer_created_description"),
+          ? t("warehouseTransfer.transfer_created_with_reference", { reference: response.referenceNumber })
+          : t("warehouseTransfer.transfer_created_description"),
       });
       navigate("/warehouse-transfers");
     },
     onError: (error) => {
       console.error("创建调拨单失败:", error);
       toast({
-        title: t("transfer_create_failed"),
-        description: t("transfer_create_failed_description"),
+        title: t("warehouseTransfer.transfer_create_failed"),
+        description: t("warehouseTransfer.transfer_create_failed_description"),
         variant: "destructive",
       });
       setIsSubmitting(false);
