@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -124,7 +124,7 @@ type FormValues = z.infer<typeof createOutboundOrderSchema>;
 
 export default function NewOutboundOrderWithItems() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
