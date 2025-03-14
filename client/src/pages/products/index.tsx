@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { 
@@ -20,7 +21,16 @@ import {
 import { ProductGrid } from "@/components/products/product-grid";
 import { ProductList } from "@/components/products/product-list";
 import { CreateProductDialog } from "@/components/products/create-product-dialog";
-import { PlusIcon, SearchIcon, SlidersHorizontalIcon } from "lucide-react";
+import { 
+  PlusIcon, 
+  SearchIcon, 
+  SlidersHorizontalIcon,
+  FileIcon as FileTypeIcon,
+  DownloadIcon,
+  DatabaseIcon,
+  UploadIcon,
+  ChevronDownIcon
+} from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { Badge } from "@/components/ui/badge";
@@ -132,6 +142,50 @@ export default function ProductsPage() {
   
   // 获取当前用户ID（硬编码用于演示）
   const currentUserId = 1;
+  
+  // 处理Excel导入
+  const handleExcelImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    // 创建FormData对象
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+      const response = await fetch('/api/products/excel/import', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '导入失败');
+      }
+      
+      const result = await response.json();
+      
+      // 显示导入结果
+      if (result.errors && result.errors.length > 0) {
+        alert(`导入完成，但有${result.errors.length}个错误:\n${result.errors.join('\n')}`);
+      } else {
+        alert(`成功导入${result.products?.length || 0}个产品`);
+      }
+      
+      // 重置文件输入
+      event.target.value = '';
+      
+      // 刷新产品数据
+      // 这里使用React Query的invalidateQueries来使缓存失效，触发重新获取
+      queryClient.invalidateQueries({ queryKey: ['/api/products'] });
+      
+    } catch (error) {
+      console.error('Excel导入错误:', error);
+      alert(`导入失败: ${error instanceof Error ? error.message : '未知错误'}`);
+      // 重置文件输入
+      event.target.value = '';
+    }
+  };
   
   return (
     <div>
