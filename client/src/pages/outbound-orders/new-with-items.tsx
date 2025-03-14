@@ -212,11 +212,7 @@ export default function NewOutboundOrderWithItems() {
     try {
       if (!selectedProduct) {
         console.error("未选择产品");
-        toast({
-          title: t("error"),
-          description: t("no_product_selected"),
-          variant: "destructive",
-        });
+        toast.error(t("no_product_selected"));
         return;
       }
       
@@ -251,11 +247,7 @@ export default function NewOutboundOrderWithItems() {
       setProductDialogOpen(false);
     } catch (error) {
       console.error("添加商品项时发生错误:", error);
-      toast({
-        title: t("error"),
-        description: t("failed_to_add_product"),
-        variant: "destructive",
-      });
+      toast.error(t("failed_to_add_product"));
     }
   };
 
@@ -264,32 +256,20 @@ export default function NewOutboundOrderWithItems() {
     try {
       if (!selectedProduct) {
         console.error("未选择产品");
-        toast({
-          title: t("error"),
-          description: t("no_product_selected"),
-          variant: "destructive",
-        });
+        toast.error(t("no_product_selected"));
         return;
       }
       
       if (currentItemIndex === null || currentItemIndex < 0 || currentItemIndex >= fields.length) {
         console.error("无效的项目索引", currentItemIndex);
-        toast({
-          title: t("error"),
-          description: t("invalid_item_index"),
-          variant: "destructive",
-        });
+        toast.error(t("invalid_item_index"));
         return;
       }
       
       const currentItem = fields[currentItemIndex];
       if (!currentItem || !currentItem.id) {
         console.error("无效的项目数据", currentItem);
-        toast({
-          title: t("error"),
-          description: t("invalid_item_data"),
-          variant: "destructive",
-        });
+        toast.error(t("invalid_item_data"));
         return;
       }
       
@@ -333,11 +313,7 @@ export default function NewOutboundOrderWithItems() {
       setProductDialogOpen(false);
     } catch (error) {
       console.error("编辑商品项时发生错误:", error);
-      toast({
-        title: t("error"),
-        description: t("failed_to_update_product"),
-        variant: "destructive",
-      });
+      toast.error(t("failed_to_update_product"));
     }
   };
 
@@ -430,11 +406,7 @@ export default function NewOutboundOrderWithItems() {
       
       // 确保items是有效的数组
       if (!items || !Array.isArray(items) || items.length === 0) {
-        toast({
-          title: t("validation_error"),
-          description: t("please_add_at_least_one_item"),
-          variant: "destructive",
-        });
+        toast.error(t("please_add_at_least_one_item"));
         return false;
       }
       
@@ -443,15 +415,11 @@ export default function NewOutboundOrderWithItems() {
         
         const product = products.find(p => p.id === item.productId);
         if (product && item.quantity > product.stock) {
-          toast({
-            title: t("stock_error"),
-            description: t("insufficient_stock_for_product", { 
-              product: product.name, 
-              available: product.stock, 
-              required: item.quantity 
-            }),
-            variant: "destructive",
-          });
+          toast.error(t("insufficient_stock_for_product", { 
+            product: product.name, 
+            available: product.stock, 
+            required: item.quantity 
+          }));
           return false;
         }
       }
@@ -459,11 +427,7 @@ export default function NewOutboundOrderWithItems() {
       return true;
     } catch (error) {
       console.error("库存校验时发生错误:", error);
-      toast({
-        title: t("error"),
-        description: t("stock_check_error"),
-        variant: "destructive",
-      });
+      toast.error(t("stock_check_error"));
       return false;
     }
   };
@@ -480,11 +444,7 @@ export default function NewOutboundOrderWithItems() {
     try {
       if (currentScanItemIndex === null || currentScanItemIndex < 0 || currentScanItemIndex >= fields.length) {
         console.error("无效的扫码项目索引", currentScanItemIndex);
-        toast({
-          title: t("error"),
-          description: t("invalid_scan_item_index"),
-          variant: "destructive",
-        });
+        toast.error(t("invalid_scan_item_index"));
         setIsScanningBarcode(false);
         setCurrentScanItemIndex(null);
         return;
@@ -492,11 +452,7 @@ export default function NewOutboundOrderWithItems() {
       
       if (!code || typeof code !== 'string') {
         console.error("无效的条码值", code);
-        toast({
-          title: t("error"),
-          description: t("invalid_barcode_value"),
-          variant: "destructive",
-        });
+        toast.error(t("invalid_barcode_value"));
         return;
       }
       
@@ -511,11 +467,7 @@ export default function NewOutboundOrderWithItems() {
       toast.success(t("unique_code_scanned_successfully"));
     } catch (error) {
       console.error("处理扫码结果时发生错误:", error);
-      toast({
-        title: t("error"),
-        description: t("scan_processing_error"),
-        variant: "destructive",
-      });
+      toast.error(t("scan_processing_error"));
       
       // 出错时也关闭扫码对话框
       setIsScanningBarcode(false);
@@ -557,659 +509,500 @@ export default function NewOutboundOrderWithItems() {
       </DialogContent>
     </Dialog>
   );
-
-  // 选择商品对话框
-  const ProductSelectionDialog = () => (
-    <Dialog open={productDialogOpen} onOpenChange={setProductDialogOpen}>
-      <DialogContent className="max-w-3xl">
-        <DialogHeader>
-          <DialogTitle>{t("select_product")}</DialogTitle>
-          <DialogDescription>
-            {t("search_and_select_product")}
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="flex items-center space-x-2 mb-4">
-          <Input
-            placeholder={t("search_by_name_or_barcode")}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <Button variant="outline" size="icon">
-            <Search className="h-4 w-4" />
-          </Button>
-        </div>
-        
-        <div className="max-h-[400px] overflow-y-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t("name")}</TableHead>
-                <TableHead>{t("barcode")}</TableHead>
-                <TableHead>{t("category")}</TableHead>
-                <TableHead className="text-right">{t("stock")}</TableHead>
-                <TableHead className="text-right">{t("weight")}</TableHead>
-                <TableHead className="text-right">{t("volume")}</TableHead>
-                <TableHead></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isSearching ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center">
-                    {t("searching")}...
-                  </TableCell>
-                </TableRow>
-              ) : searchResults.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center">
-                    {searchTerm ? t("no_products_found") : t("search_to_find_products")}
-                  </TableCell>
-                </TableRow>
-              ) : (
-                searchResults.map((product) => (
-                  <TableRow 
-                    key={product.id}
-                    className={`cursor-pointer ${selectedProduct?.id === product.id ? 'bg-muted' : ''}`}
-                    onClick={() => handleSelectProduct(product)}
-                  >
-                    <TableCell className="font-medium">{product.name}</TableCell>
-                    <TableCell>{product.barcode}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{product.category}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {product.stock > 0 ? (
-                        product.stock
-                      ) : (
-                        <span className="text-destructive">{t("out_of_stock")}</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">{product.singleWeightKg} kg</TableCell>
-                    <TableCell className="text-right">{product.singleVolumeM3} m³</TableCell>
-                    <TableCell>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => handleSelectProduct(product)}
-                        disabled={product.stock <= 0}
-                      >
-                        <PlusCircle className="h-4 w-4 mr-1" />
-                        {t("select")}
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-        
-        <DialogFooter>
+  
+  return (
+    <div className="container mx-auto px-4 py-6">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-2">
           <Button
             variant="outline"
-            onClick={() => {
-              setSelectedProduct(null);
-              setProductDialogOpen(false);
-            }}
-          >
-            {t("cancel")}
-          </Button>
-          <Button
-            disabled={!selectedProduct || (selectedProduct.stock <= 0)}
-            onClick={() => currentItemIndex !== null ? handleEditItem() : handleAddItem()}
-          >
-            {currentItemIndex !== null ? t("update_product") : t("add_product")}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-
-  return (
-    <div className="container mx-auto py-6">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center">
-          <Button
-            variant="ghost"
             size="sm"
             onClick={() => setLocation("/outbound-orders")}
-            className="mr-4"
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
+            <ArrowLeft className="mr-2 h-4 w-4" />
             {t("back")}
           </Button>
-          <div>
-            <h1 className="text-2xl font-bold">{t("new_outbound_order_with_items")}</h1>
-            <p className="text-muted-foreground">
-              {t("create_new_outbound_order_with_items_description")}
-            </p>
-          </div>
+          <h1 className="text-2xl font-bold">{t("new_outbound_order")}</h1>
         </div>
       </div>
-
+      
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* 出库单基本信息 */}
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("basic_information")}</CardTitle>
-                <CardDescription>
-                  {t("outbound_order_basic_information_description")}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="orderNumber"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("order_number")}</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="warehouseId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("warehouse")}</FormLabel>
-                      <Select
-                        onValueChange={(value) => field.onChange(parseInt(value))}
-                        defaultValue={field.value?.toString()}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder={t("select_warehouse")} />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {warehouses.map((warehouse) => (
-                            <SelectItem
-                              key={warehouse.id}
-                              value={warehouse.id.toString()}
-                            >
-                              {warehouse.name} ({warehouse.location})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="orderType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("order_type")}</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value || "sale"}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder={t("select_order_type")} />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="sale">{t("sale_order")}</SelectItem>
-                          <SelectItem value="return">{t("return_order")}</SelectItem>
-                          <SelectItem value="transfer">{t("transfer_order")}</SelectItem>
-                          <SelectItem value="scrap">{t("scrap_order")}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="destinationType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("destination_type")}</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value || "customer"}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder={t("select_destination_type")} />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="customer">{t("customer")}</SelectItem>
-                          <SelectItem value="retail">{t("retail")}</SelectItem>
-                          <SelectItem value="wholesale">{t("wholesale")}</SelectItem>
-                          <SelectItem value="transfer">{t("transfer")}</SelectItem>
-                          <SelectItem value="other">{t("other")}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("status")}</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder={t("select_status")} />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="pending">{t("pending")}</SelectItem>
-                          <SelectItem value="processing">{t("processing")}</SelectItem>
-                          <SelectItem value="completed">{t("completed")}</SelectItem>
-                          <SelectItem value="cancelled">{t("cancelled")}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="notes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t("notes")}</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder={t("enter_notes")}
-                          {...field}
-                          value={field.value || ""}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </Card>
-
-            {/* 出库单汇总信息 */}
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("summary")}</CardTitle>
-                <CardDescription>
-                  {t("outbound_order_summary_description")}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="totalWeight"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("total_weight")} (kg)</FormLabel>
-                        <FormControl>
-                          <Input {...field} readOnly />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="totalVolume"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("total_volume")} (m³)</FormLabel>
-                        <FormControl>
-                          <Input {...field} readOnly />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="pt-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-medium">{t("items_count")}</h3>
-                    <Badge variant="outline">{fields.length}</Badge>
-                  </div>
-                  <Separator className="my-4" />
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t("unique_products")}</span>
-                      <span>{new Set(fields.map(item => item.productId)).size}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t("total_items")}</span>
-                      <span>{fields.reduce((sum, item) => sum + (item.quantity || 0), 0)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t("total_packages")}</span>
-                      <span>{fields.reduce((sum, item) => sum + (item.packageCount || 0), 0)}</span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  type="button"
-                  onClick={calculateTotals}
-                >
-                  <Calculator className="h-4 w-4 mr-2" />
-                  {t("recalculate_totals")}
-                </Button>
-              </CardFooter>
-            </Card>
-
-            {/* 操作按钮 */}
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("actions")}</CardTitle>
-                <CardDescription>
-                  {t("outbound_order_actions_description")}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={createOrderMutation.isPending}
-                >
-                  {createOrderMutation.isPending ? (
-                    <RotateCw className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Save className="h-4 w-4 mr-2" />
-                  )}
-                  {t("create_outbound_order")}
-                </Button>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => setLocation("/outbound-orders")}
-                >
-                  <X className="h-4 w-4 mr-2" />
-                  {t("cancel")}
-                </Button>
-
-                <Separator className="my-4" />
-
-                <Button
-                  type="button"
-                  variant="secondary"
-                  className="w-full"
-                  onClick={() => {
-                    setCurrentItemIndex(null);
-                    setProductDialogOpen(true);
-                  }}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  {t("add_item")}
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* 商品列表 */}
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("items")}</CardTitle>
-              <CardDescription>
-                {t("outbound_order_items_description")}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {fields.length === 0 ? (
-                <div className="text-center py-8 border rounded-md">
-                  <Package className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                  <p className="text-muted-foreground mb-4">{t("no_items_added")}</p>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setCurrentItemIndex(null);
-                      setProductDialogOpen(true);
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <FormField
+              control={form.control}
+              name="orderNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("order_number")}</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder={t("order_number_placeholder")} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="warehouseId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("warehouse")}</FormLabel>
+                  <Select
+                    value={field.value?.toString()}
+                    onValueChange={(value) => {
+                      field.onChange(parseInt(value));
                     }}
                   >
-                    <Plus className="h-4 w-4 mr-2" />
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t("select_warehouse")} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {warehouses.map((warehouse) => (
+                        <SelectItem key={warehouse.id} value={warehouse.id.toString()}>
+                          {warehouse.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="orderType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("order_type")}</FormLabel>
+                  <Select
+                    value={field.value?.toString()}
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                    }}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t("select_order_type")} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="sale">{t("order_type_sale")}</SelectItem>
+                      <SelectItem value="return">{t("order_type_return")}</SelectItem>
+                      <SelectItem value="transfer">{t("order_type_transfer")}</SelectItem>
+                      <SelectItem value="scrap">{t("order_type_scrap")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="destinationType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("destination_type")}</FormLabel>
+                  <Select
+                    value={field.value?.toString()}
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                    }}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t("select_destination_type")} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="customer">{t("destination_type_customer")}</SelectItem>
+                      <SelectItem value="retail">{t("destination_type_retail")}</SelectItem>
+                      <SelectItem value="wholesale">{t("destination_type_wholesale")}</SelectItem>
+                      <SelectItem value="transfer">{t("destination_type_transfer")}</SelectItem>
+                      <SelectItem value="other">{t("destination_type_other")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("status")}</FormLabel>
+                  <Select
+                    value={field.value}
+                    onValueChange={field.onChange}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t("select_status")} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="pending">{t("status_pending")}</SelectItem>
+                      <SelectItem value="processing">{t("status_processing")}</SelectItem>
+                      <SelectItem value="shipped">{t("status_shipped")}</SelectItem>
+                      <SelectItem value="completed">{t("status_completed")}</SelectItem>
+                      <SelectItem value="cancelled">{t("status_cancelled")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <div className="flex flex-col space-y-2">
+              <FormField
+                control={form.control}
+                name="totalWeight"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("total_weight")} (kg)</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="text" readOnly />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={calculateTotals}
+              >
+                <Calculator className="mr-2 h-4 w-4" />
+                {t("recalculate")}
+              </Button>
+            </div>
+            
+            <FormField
+              control={form.control}
+              name="totalVolume"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("total_volume")} (m³)</FormLabel>
+                  <FormControl>
+                    <Input {...field} type="text" readOnly />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          
+          <FormField
+            control={form.control}
+            name="notes"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t("notes")}</FormLabel>
+                <FormControl>
+                  <Textarea
+                    {...field}
+                    value={field.value || ""}
+                    placeholder={t("notes_placeholder")}
+                    className="min-h-[100px]"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold">{t("items")}</h2>
+              <Dialog open={productDialogOpen} onOpenChange={setProductDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button onClick={() => {
+                    setSelectedProduct(null);
+                    setCurrentItemIndex(null);
+                    setSearchTerm("");
+                  }}>
+                    <Plus className="mr-2 h-4 w-4" />
                     {t("add_item")}
                   </Button>
-                </div>
-              ) : (
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>{t("add_product_to_order")}</DialogTitle>
+                    <DialogDescription>
+                      {t("search_and_select_product")}
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-2">
+                      <Input
+                        placeholder={t("search_products")}
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="flex-1"
+                      />
+                      <Button variant="outline" size="icon">
+                        <Search className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    
+                    {isSearching ? (
+                      <div className="flex justify-center py-4">
+                        <span className="loading loading-spinner"></span>
+                      </div>
+                    ) : (
+                      <div className="max-h-[300px] overflow-y-auto border rounded-md">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>{t("name")}</TableHead>
+                              <TableHead>{t("barcode")}</TableHead>
+                              <TableHead>{t("category")}</TableHead>
+                              <TableHead>{t("stock")}</TableHead>
+                              <TableHead>{t("actions")}</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {searchResults.length === 0 ? (
+                              <TableRow>
+                                <TableCell colSpan={5} className="text-center">
+                                  {searchTerm.length > 0
+                                    ? t("no_products_found")
+                                    : t("search_to_find_products")}
+                                </TableCell>
+                              </TableRow>
+                            ) : (
+                              searchResults.map((product) => (
+                                <TableRow
+                                  key={product.id}
+                                  className={
+                                    selectedProduct?.id === product.id
+                                      ? "bg-muted"
+                                      : ""
+                                  }
+                                >
+                                  <TableCell>{product.name}</TableCell>
+                                  <TableCell>{product.barcode}</TableCell>
+                                  <TableCell>{product.category}</TableCell>
+                                  <TableCell>
+                                    <Badge variant={product.stock > 0 ? "outline" : "destructive"}>
+                                      {product.stock}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleSelectProduct(product)}
+                                    >
+                                      {t("select")}
+                                    </Button>
+                                  </TableCell>
+                                </TableRow>
+                              ))
+                            )}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                    
+                    <div className="flex justify-between">
+                      <div>
+                        {selectedProduct && (
+                          <div className="bg-muted p-2 rounded-md text-sm">
+                            <p>
+                              <strong>{t("selected")}:</strong> {selectedProduct.name}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                      <div className="space-x-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => setProductDialogOpen(false)}
+                        >
+                          {t("cancel")}
+                        </Button>
+                        {currentItemIndex !== null ? (
+                          <Button
+                            onClick={handleEditItem}
+                            disabled={!selectedProduct}
+                          >
+                            {t("update_item")}
+                          </Button>
+                        ) : (
+                          <Button
+                            onClick={handleAddItem}
+                            disabled={!selectedProduct}
+                          >
+                            {t("add_to_order")}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+            
+            <Card>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("name")}</TableHead>
+                      <TableHead>{t("barcode")}</TableHead>
+                      <TableHead>{t("quantity")}</TableHead>
+                      <TableHead>{t("package_count")}</TableHead>
+                      <TableHead>{t("weight")}</TableHead>
+                      <TableHead>{t("volume")}</TableHead>
+                      <TableHead>{t("unique_code")}</TableHead>
+                      <TableHead>{t("actions")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {fields.length === 0 ? (
                       <TableRow>
-                        <TableHead className="w-[80px]">{t("no")}</TableHead>
-                        <TableHead>{t("product_name")}</TableHead>
-                        <TableHead>{t("barcode")}</TableHead>
-                        <TableHead>{t("unique_code")}</TableHead>
-                        <TableHead>{t("external_order_number")}</TableHead>
-                        <TableHead className="text-right">{t("quantity")}</TableHead>
-                        <TableHead className="text-right">{t("package_count")}</TableHead>
-                        <TableHead className="text-right">{t("weight")} (kg)</TableHead>
-                        <TableHead className="text-right">{t("volume")} (m³)</TableHead>
-                        <TableHead className="w-[100px]"></TableHead>
+                        <TableCell colSpan={8} className="text-center py-4">
+                          {t("no_items_added")}
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {fields.map((item, index) => (
-                        <TableRow key={item.id}>
-                          <TableCell>{index + 1}</TableCell>
-                          <TableCell className="font-medium">
-                            {item.productName}
-                          </TableCell>
-                          <TableCell>{item.barcode}</TableCell>
+                    ) : (
+                      fields.map((field, index) => (
+                        <TableRow key={field.id}>
+                          <TableCell>{field.productName}</TableCell>
+                          <TableCell>{field.barcode}</TableCell>
                           <TableCell>
-                            <FormField
-                              control={form.control}
-                              name={`items.${index}.uniqueCode`}
-                              render={({ field }) => (
-                                <FormItem className="m-0">
-                                  <FormControl>
-                                    <div className="relative">
-                                      <Input
-                                        {...field}
-                                        value={field.value || ""}
-                                        placeholder={t("unique_code")}
-                                        className="h-8 pr-8"
-                                      />
-                                      <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon"
-                                        className="absolute right-0 top-0 h-8 w-8"
-                                        onClick={() => {
-                                          // 打开扫码对话框
-                                          setCurrentScanItemIndex(index);
-                                          setIsScanningBarcode(true);
-                                        }}
-                                      >
-                                        <ScanLine className="h-4 w-4" />
-                                      </Button>
-                                    </div>
-                                  </FormControl>
-                                  <FormMessage className="text-xs" />
-                                </FormItem>
-                              )}
+                            <Input
+                              type="number"
+                              min="1"
+                              {...form.register(`items.${index}.quantity`, {
+                                valueAsNumber: true,
+                                onChange: () => updateItemWeightAndVolume(index),
+                              })}
+                              className="w-16"
                             />
                           </TableCell>
                           <TableCell>
-                            <FormField
-                              control={form.control}
-                              name={`items.${index}.externalOrderNumber`}
-                              render={({ field }) => (
-                                <FormItem className="m-0">
-                                  <FormControl>
-                                    <Input
-                                      {...field}
-                                      value={field.value || ""}
-                                      placeholder={t("external_order_number")}
-                                      className="h-8"
-                                    />
-                                  </FormControl>
-                                  <FormMessage className="text-xs" />
-                                </FormItem>
-                              )}
-                            />
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <FormField
-                              control={form.control}
-                              name={`items.${index}.quantity`}
-                              render={({ field }) => (
-                                <FormItem className="m-0">
-                                  <FormControl>
-                                    <Input
-                                      {...field}
-                                      type="number"
-                                      min="1"
-                                      className="h-8 w-20 text-right ml-auto"
-                                      onChange={(e) => {
-                                        field.onChange(parseInt(e.target.value) || 0);
-                                        setTimeout(() => {
-                                          updateItemWeightAndVolume(index);
-                                        }, 0);
-                                      }}
-                                    />
-                                  </FormControl>
-                                  <FormMessage className="text-xs" />
-                                </FormItem>
-                              )}
-                            />
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <FormField
-                              control={form.control}
-                              name={`items.${index}.packageCount`}
-                              render={({ field }) => (
-                                <FormItem className="m-0">
-                                  <FormControl>
-                                    <Input
-                                      {...field}
-                                      type="number"
-                                      min="1"
-                                      className="h-8 w-20 text-right ml-auto"
-                                    />
-                                  </FormControl>
-                                  <FormMessage className="text-xs" />
-                                </FormItem>
-                              )}
-                            />
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <FormField
-                              control={form.control}
-                              name={`items.${index}.weight`}
-                              render={({ field }) => (
-                                <FormItem className="m-0">
-                                  <FormControl>
-                                    <Input
-                                      {...field}
-                                      readOnly
-                                      className="h-8 w-20 text-right ml-auto"
-                                    />
-                                  </FormControl>
-                                  <FormMessage className="text-xs" />
-                                </FormItem>
-                              )}
-                            />
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <FormField
-                              control={form.control}
-                              name={`items.${index}.volume`}
-                              render={({ field }) => (
-                                <FormItem className="m-0">
-                                  <FormControl>
-                                    <Input
-                                      {...field}
-                                      readOnly
-                                      className="h-8 w-20 text-right ml-auto"
-                                    />
-                                  </FormControl>
-                                  <FormMessage className="text-xs" />
-                                </FormItem>
-                              )}
+                            <Input
+                              type="number"
+                              min="1"
+                              {...form.register(`items.${index}.packageCount`, {
+                                valueAsNumber: true,
+                              })}
+                              className="w-16"
                             />
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center justify-end space-x-1">
+                            <Input
+                              {...form.register(`items.${index}.weight`)}
+                              className="w-20"
+                              readOnly
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              {...form.register(`items.${index}.volume`)}
+                              className="w-20"
+                              readOnly
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-1">
+                              <Input
+                                {...form.register(`items.${index}.uniqueCode`)}
+                                placeholder={t("unique_code")}
+                                className="w-24"
+                              />
                               <Button
+                                type="button"
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => {
-                                  const product = products.find(
-                                    (p) => p.id === item.productId
-                                  );
-                                  if (product) {
-                                    setSelectedProduct(product);
-                                    setCurrentItemIndex(index);
-                                    setProductDialogOpen(true);
+                                  setCurrentScanItemIndex(index);
+                                  setIsScanningBarcode(true);
+                                }}
+                              >
+                                <ScanLine className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-1">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  if (field && field.productId) {
+                                    const product = products.find(p => p.id === field.productId);
+                                    if (product) {
+                                      setSelectedProduct(product);
+                                      setCurrentItemIndex(index);
+                                      setProductDialogOpen(true);
+                                    } else {
+                                      toast.error(t("product_not_found"));
+                                    }
                                   }
                                 }}
                               >
                                 <PlusCircle className="h-4 w-4" />
                               </Button>
                               <Button
+                                type="button"
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => remove(index)}
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <Trash2 className="h-4 w-4 text-destructive" />
                               </Button>
                             </div>
                           </TableCell>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <p className="text-sm text-muted-foreground">
-                {t("items_count")}: {fields.length}
-              </p>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+            
+            <div className="flex justify-end space-x-2">
               <Button
                 type="button"
                 variant="outline"
-                size="sm"
-                onClick={() => {
-                  setCurrentItemIndex(null);
-                  setProductDialogOpen(true);
-                }}
+                onClick={() => setLocation("/outbound-orders")}
               >
-                <Plus className="h-4 w-4 mr-2" />
-                {t("add_item")}
+                {t("cancel")}
               </Button>
-            </CardFooter>
-          </Card>
+              <Button type="submit" disabled={createOrderMutation.isPending}>
+                {createOrderMutation.isPending ? (
+                  <>
+                    <RotateCw className="mr-2 h-4 w-4 animate-spin" />
+                    {t("saving")}...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    {t("save_order")}
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
         </form>
       </Form>
-
-      {ProductSelectionDialog()}
-      {BarcodeScannerDialog()}
+      
+      {/* 扫码对话框 */}
+      <BarcodeScannerDialog />
     </div>
   );
 }
