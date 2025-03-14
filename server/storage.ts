@@ -14,7 +14,10 @@ import {
   outboundOrderItems, type OutboundOrderItem, type InsertOutboundOrderItem,
   // 电商平台相关导入
   apiConfigurations, type ApiConfiguration, type InsertApiConfiguration,
-  ecommerceProducts, type EcommerceProduct, type InsertEcommerceProduct
+  ecommerceProducts, type EcommerceProduct, type InsertEcommerceProduct,
+  // 仓库调拨单相关导入
+  warehouseTransfers, type WarehouseTransfer, type InsertWarehouseTransfer,
+  warehouseTransferItems, type WarehouseTransferItem, type InsertWarehouseTransferItem
 } from "@shared/schema";
 import { processProductCode } from "./utils/product-code-matcher";
 import { db } from './db';
