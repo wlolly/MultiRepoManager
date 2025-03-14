@@ -1331,19 +1331,120 @@ export class DatabaseStorage implements IStorage {
   // 引入仓库调拨单服务
   private warehouseTransferService: any;
   
+  // 从warehouse-transfer-db.ts导入仓库调拨单相关功能
+  private warehouseTransferDB: any;
+  
   constructor() {
-    // 初始化调拨单服务，传入this使其能够访问存储方法
-    const WarehouseTransferService = require('./services/warehouse-transfer.service').WarehouseTransferService;
-    this.warehouseTransferService = new WarehouseTransferService(this);
+    // 使用动态导入初始化服务
+    Promise.all([
+      import('./services/warehouse-transfer.service'),
+      import('./warehouse-transfer-db')
+    ]).then(([transferServiceModule, transferDBModule]) => {
+      const WarehouseTransferService = transferServiceModule.WarehouseTransferService;
+      this.warehouseTransferService = new WarehouseTransferService(this);
+      this.warehouseTransferDB = transferDBModule;
+    });
+  }
+  
+  // 仓库调拨单相关接口方法，用于满足IStorage接口要求
+  async getWarehouseTransfer(id: number): Promise<WarehouseTransfer | undefined> {
+    // 使用异步导入的模块方法
+    if (!this.warehouseTransferDB) {
+      // 先初始化模块
+      const transferDBModule = await import('./warehouse-transfer-db');
+      this.warehouseTransferDB = transferDBModule;
+    }
+    return this.warehouseTransferDB.getWarehouseTransfer(id);
+  }
+  
+  async getWarehouseTransferByReference(referenceNumber: string): Promise<WarehouseTransfer | undefined> {
+    if (!this.warehouseTransferDB) {
+      const transferDBModule = await import('./warehouse-transfer-db');
+      this.warehouseTransferDB = transferDBModule;
+    }
+    return this.warehouseTransferDB.getWarehouseTransferByReference(referenceNumber);
+  }
+  
+  async createWarehouseTransfer(transfer: InsertWarehouseTransfer): Promise<WarehouseTransfer> {
+    if (!this.warehouseTransferService) {
+      const transferServiceModule = await import('./services/warehouse-transfer.service');
+      const WarehouseTransferService = transferServiceModule.WarehouseTransferService;
+      this.warehouseTransferService = new WarehouseTransferService(this);
+    }
+    return this.warehouseTransferService.createWarehouseTransfer(transfer);
+  }
+  
+  async updateWarehouseTransfer(id: number, transfer: Partial<WarehouseTransfer>): Promise<WarehouseTransfer | undefined> {
+    if (!this.warehouseTransferService) {
+      const transferServiceModule = await import('./services/warehouse-transfer.service');
+      const WarehouseTransferService = transferServiceModule.WarehouseTransferService;
+      this.warehouseTransferService = new WarehouseTransferService(this);
+    }
+    return this.warehouseTransferService.updateWarehouseTransfer(id, transfer);
+  }
+  
+  async getWarehouseTransfers(filter?: { sourceWarehouseId?: number, targetWarehouseId?: number, status?: string }): Promise<WarehouseTransfer[]> {
+    if (!this.warehouseTransferService) {
+      const transferServiceModule = await import('./services/warehouse-transfer.service');
+      const WarehouseTransferService = transferServiceModule.WarehouseTransferService;
+      this.warehouseTransferService = new WarehouseTransferService(this);
+    }
+    return this.warehouseTransferService.getWarehouseTransfers(filter);
+  }
+  
+  async getWarehouseTransferStats(): Promise<{
+    totalTransfers: number;
+    pendingTransfers: number;
+    completedTransfers: number;
+    totalWeight: number;
+    totalVolume: number;
+    recentTransfers: number;
+  }> {
+    if (!this.warehouseTransferDB) {
+      const transferDBModule = await import('./warehouse-transfer-db');
+      this.warehouseTransferDB = transferDBModule;
+    }
+    return this.warehouseTransferDB.getWarehouseTransferStats();
+  }
+  
+  async getWarehouseTransferItems(transferId: number): Promise<WarehouseTransferItem[]> {
+    if (!this.warehouseTransferDB) {
+      const transferDBModule = await import('./warehouse-transfer-db');
+      this.warehouseTransferDB = transferDBModule;
+    }
+    return this.warehouseTransferDB.getWarehouseTransferItems(transferId);
+  }
+  
+  async createWarehouseTransferItem(item: InsertWarehouseTransferItem): Promise<WarehouseTransferItem> {
+    if (!this.warehouseTransferService) {
+      const transferServiceModule = await import('./services/warehouse-transfer.service');
+      const WarehouseTransferService = transferServiceModule.WarehouseTransferService;
+      this.warehouseTransferService = new WarehouseTransferService(this);
+    }
+    return this.warehouseTransferService.createWarehouseTransferItem(item);
+  }
+  
+  async updateWarehouseTransferItem(id: number, item: Partial<WarehouseTransferItem>): Promise<WarehouseTransferItem | undefined> {
+    if (!this.warehouseTransferService) {
+      const transferServiceModule = await import('./services/warehouse-transfer.service');
+      const WarehouseTransferService = transferServiceModule.WarehouseTransferService;
+      this.warehouseTransferService = new WarehouseTransferService(this);
+    }
+    return this.warehouseTransferService.updateWarehouseTransferItem(id, item);
+  }
+  
+  async deleteWarehouseTransferItem(id: number): Promise<void> {
+    if (!this.warehouseTransferDB) {
+      const transferDBModule = await import('./warehouse-transfer-db');
+      this.warehouseTransferDB = transferDBModule;
+    }
+    return this.warehouseTransferDB.deleteWarehouseTransferItem(id);
   }
   
   // 辅助函数：计算体积
   private calculateVolume(length: number, width: number, height: number): number {
     return (length * width * height) / 1000000; // 将立方厘米转换为立方米
   }
-  
-  // 从warehouse-transfer-db.ts导入仓库调拨单相关功能
-  private warehouseTransferDB = require('./warehouse-transfer-db');
 
   // User methods
   async getUser(id: number): Promise<User | undefined> {
@@ -2510,7 +2611,56 @@ export class DatabaseStorage implements IStorage {
       total: platformProducts.length
     };
   }
+  
+  // 仓库调拨单相关方法
+  async getWarehouseTransfer(id: number): Promise<WarehouseTransfer | undefined> {
+    return this.warehouseTransferService.getWarehouseTransfer(id);
+  }
+  
+  async getWarehouseTransferByReference(referenceNumber: string): Promise<WarehouseTransfer | undefined> {
+    return this.warehouseTransferService.getWarehouseTransferByReference(referenceNumber);
+  }
+  
+  async createWarehouseTransfer(insertTransfer: InsertWarehouseTransfer): Promise<WarehouseTransfer> {
+    return this.warehouseTransferService.createWarehouseTransfer(insertTransfer);
+  }
+  
+  async updateWarehouseTransfer(id: number, transfer: Partial<WarehouseTransfer>): Promise<WarehouseTransfer | undefined> {
+    return this.warehouseTransferService.updateWarehouseTransfer(id, transfer);
+  }
+  
+  async getWarehouseTransfers(filter?: { sourceWarehouseId?: number, targetWarehouseId?: number, status?: string }): Promise<WarehouseTransfer[]> {
+    return this.warehouseTransferService.getWarehouseTransfers(filter);
+  }
+  
+  async getWarehouseTransferStats(): Promise<{
+    totalTransfers: number;
+    pendingTransfers: number;
+    completedTransfers: number;
+    totalWeight: number;
+    totalVolume: number;
+    recentTransfers: number;
+  }> {
+    return this.warehouseTransferService.getWarehouseTransferStats();
+  }
+  
+  // 仓库调拨单明细相关方法
+  async getWarehouseTransferItems(transferId: number): Promise<WarehouseTransferItem[]> {
+    return this.warehouseTransferService.getWarehouseTransferItems(transferId);
+  }
+  
+  async createWarehouseTransferItem(insertItem: InsertWarehouseTransferItem): Promise<WarehouseTransferItem> {
+    return this.warehouseTransferService.createWarehouseTransferItem(insertItem);
+  }
+  
+  async updateWarehouseTransferItem(id: number, item: Partial<WarehouseTransferItem>): Promise<WarehouseTransferItem | undefined> {
+    return this.warehouseTransferService.updateWarehouseTransferItem(id, item);
+  }
+  
+  async deleteWarehouseTransferItem(id: number): Promise<void> {
+    return this.warehouseTransferService.deleteWarehouseTransferItem(id);
+  }
 }
 
-// 切换到内存存储方式（由于外部数据库连接问题，暂时使用内存存储）
-export const storage = new MemStorage();
+// 切换到数据库存储方式
+export const storage = new DatabaseStorage();

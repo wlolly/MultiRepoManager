@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from 'drizzle-orm/mysql-core';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import { db } from './db';
 import {
   InsertWarehouseTransfer,
