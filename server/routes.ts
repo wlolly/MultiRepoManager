@@ -1768,9 +1768,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   apiRouter.get("/stats", async (req, res) => {
     try {
-      const stats = await storage.getRepositoryStats();
-      res.json(stats);
+      // 获取代码仓库统计信息
+      const repoStats = await storage.getRepositoryStats();
+      
+      // 获取产品统计信息
+      const productStats = await storage.getProductsStats();
+      
+      // 合并统计信息
+      const combinedStats = {
+        ...repoStats,
+        ...productStats,
+        // 增加仓库系统相关统计
+        totalWarehouses: (await storage.getWarehouses()).length
+      };
+      
+      res.json(combinedStats);
     } catch (err) {
+      console.error("Error getting combined stats:", err);
       handleZodError(err, res);
     }
   });
