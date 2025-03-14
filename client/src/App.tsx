@@ -41,6 +41,7 @@ import NewInboundOrder from "./pages/inbound-orders/new";
 import NewInboundOrderWithItems from "./pages/inbound-orders/new-with-items";
 import ProductDetail from "./pages/products/product-detail";
 import ProductsPage from "./pages/products/index";
+import ProductSearch from "./pages/product-search";
 
 // 导航项定义
 const navItems = [
