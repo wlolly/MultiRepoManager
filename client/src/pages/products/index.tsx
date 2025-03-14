@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Layout } from "@/components/layout/layout";
 import { Button } from "@/components/ui/button";
 import { 
   Select, 
@@ -134,7 +133,7 @@ export default function ProductsPage() {
   const currentUserId = 1;
   
   return (
-    <Layout>
+    <div>
       <div className="pb-5 border-b border-gray-200 mb-6 flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{t('products')}</h1>
@@ -169,7 +168,7 @@ export default function ProductsPage() {
           value={isLoadingStats ? "..." : stats?.lowStockProducts || 
             filteredProducts.filter(p => p.stock < 10).length} 
           icon="alert-triangle" 
-          color="amber" 
+          color="yellow" 
         />
         <StatsCard 
           title={t('stock_value')} 
@@ -304,6 +303,6 @@ export default function ProductsPage() {
         onOpenChange={setCreateDialogOpen}
         currentUserId={currentUserId}
       />
-    </Layout>
+    </div>
   );
 }

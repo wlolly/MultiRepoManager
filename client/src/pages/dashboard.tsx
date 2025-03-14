@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { Layout } from "@/components/layout/layout";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { LanguageDistribution } from "@/components/dashboard/language-distribution";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
@@ -86,119 +85,119 @@ export default function Dashboard() {
   const currentUserId = 1;
 
   return (
-    <Layout>
-      <div className="pb-5 border-b border-gray-200 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('dashboard_stats_title')}</h1>
-          <p className="mt-1 text-gray-500 text-sm">{t('dashboard_welcome')}</p>
-        </div>
-        <div className="mt-4 sm:mt-0 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder={t('category')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('all_categories')}</SelectItem>
-              <SelectItem value="electronics">电子产品</SelectItem>
-              <SelectItem value="clothing">服装</SelectItem>
-              <SelectItem value="food">食品</SelectItem>
-              <SelectItem value="home">家居</SelectItem>
-              <SelectItem value="other">其他</SelectItem>
-            </SelectContent>
-          </Select>
+      <div>
+        <div className="pb-5 border-b border-gray-200 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{t('dashboard_stats_title')}</h1>
+            <p className="mt-1 text-gray-500 text-sm">{t('dashboard_welcome')}</p>
+          </div>
+          <div className="mt-4 sm:mt-0 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder={t('category')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('all_categories')}</SelectItem>
+                <SelectItem value="electronics">电子产品</SelectItem>
+                <SelectItem value="clothing">服装</SelectItem>
+                <SelectItem value="food">食品</SelectItem>
+                <SelectItem value="home">家居</SelectItem>
+                <SelectItem value="other">其他</SelectItem>
+              </SelectContent>
+            </Select>
 
-          <Select value={warehouseFilter} onValueChange={setWarehouseFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder={t('warehouse')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('all_warehouses')}</SelectItem>
-              <SelectItem value="main">{t('my_products')}</SelectItem>
-              <SelectItem value="branch">{t('warehouse_products')}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatsCard 
-          title={t('products_count')} 
-          value={isLoadingStats ? "..." : stats?.totalProducts || 0} 
-          icon="ri-shopping-bag-line" 
-          color="blue" 
-        />
-        <StatsCard 
-          title={t('warehouse')} 
-          value={isLoadingStats ? "..." : stats?.totalWarehouses || 0} 
-          icon="ri-archive-line" 
-          color="green" 
-        />
-        <StatsCard 
-          title={t('category')} 
-          value={isLoadingStats ? "..." : stats?.categoriesCount || 0} 
-          icon="ri-price-tag-3-line" 
-          color="purple" 
-        />
-        <StatsCard 
-          title={t('operations')} 
-          value={isLoadingStats ? "..." : stats?.recentOperations || 0} 
-          icon="ri-file-list-3-line" 
-          color="yellow" 
-        />
-      </div>
-
-      <div className="mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg leading-6 font-medium text-gray-900">{t('products')}</h3>
-          <div className="flex space-x-3">
-            <Button
-              variant={viewMode === "list" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setViewMode("list")}
-              className="flex items-center"
-            >
-              <i className="ri-list-check-2 mr-1.5"></i> {t('list_view')}
-            </Button>
-            <Button
-              variant={viewMode === "grid" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setViewMode("grid")}
-              className="flex items-center"
-            >
-              <i className="ri-grid-line mr-1.5"></i> {t('grid_view')}
-            </Button>
-            <Button
-              onClick={() => setCreateDialogOpen(true)}
-              className="flex items-center"
-            >
-              <i className="ri-add-line mr-1.5"></i> {t('new_product')}
-            </Button>
+            <Select value={warehouseFilter} onValueChange={setWarehouseFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder={t('warehouse')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('all_warehouses')}</SelectItem>
+                <SelectItem value="main">{t('my_products')}</SelectItem>
+                <SelectItem value="branch">{t('warehouse_products')}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
-        
-        {viewMode === "list" ? (
-          <ProductList 
-            products={products || []} 
-            isLoading={isLoadingProducts} 
-          />
-        ) : (
-          <ProductGrid 
-            products={products || []} 
-            isLoading={isLoadingProducts} 
-          />
-        )}
-      </div>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <LanguageDistribution />
-        <RecentActivity />
-      </div>
 
-      <CreateProductDialog 
-        open={createDialogOpen}
-        onOpenChange={setCreateDialogOpen}
-        currentUserId={currentUserId}
-      />
-    </Layout>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <StatsCard 
+            title={t('products_count')} 
+            value={isLoadingStats ? "..." : stats?.totalProducts || 0} 
+            icon="ri-shopping-bag-line" 
+            color="blue" 
+          />
+          <StatsCard 
+            title={t('warehouse')} 
+            value={isLoadingStats ? "..." : stats?.totalWarehouses || 0} 
+            icon="ri-archive-line" 
+            color="green" 
+          />
+          <StatsCard 
+            title={t('category')} 
+            value={isLoadingStats ? "..." : stats?.categoriesCount || 0} 
+            icon="ri-price-tag-3-line" 
+            color="purple" 
+          />
+          <StatsCard 
+            title={t('operations')} 
+            value={isLoadingStats ? "..." : stats?.recentOperations || 0} 
+            icon="ri-file-list-3-line" 
+            color="yellow" 
+          />
+        </div>
+
+        <div className="mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg leading-6 font-medium text-gray-900">{t('products')}</h3>
+            <div className="flex space-x-3">
+              <Button
+                variant={viewMode === "list" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setViewMode("list")}
+                className="flex items-center"
+              >
+                <i className="ri-list-check-2 mr-1.5"></i> {t('list_view')}
+              </Button>
+              <Button
+                variant={viewMode === "grid" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setViewMode("grid")}
+                className="flex items-center"
+              >
+                <i className="ri-grid-line mr-1.5"></i> {t('grid_view')}
+              </Button>
+              <Button
+                onClick={() => setCreateDialogOpen(true)}
+                className="flex items-center"
+              >
+                <i className="ri-add-line mr-1.5"></i> {t('new_product')}
+              </Button>
+            </div>
+          </div>
+          
+          {viewMode === "list" ? (
+            <ProductList 
+              products={products || []} 
+              isLoading={isLoadingProducts} 
+            />
+          ) : (
+            <ProductGrid 
+              products={products || []} 
+              isLoading={isLoadingProducts} 
+            />
+          )}
+        </div>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <LanguageDistribution />
+          <RecentActivity />
+        </div>
+
+        <CreateProductDialog 
+          open={createDialogOpen}
+          onOpenChange={setCreateDialogOpen}
+          currentUserId={currentUserId}
+        />
+      </div>
   );
 }
