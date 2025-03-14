@@ -74,7 +74,7 @@ export default function Dashboard() {
 
   // Fetch products with filters
   const { data: products, isLoading: isLoadingProducts } = useQuery<Product[]>({
-    queryKey: ["/api/repositories", categoryFilter, warehouseFilter],
+    queryKey: ["/api/products", categoryFilter, warehouseFilter],
   });
 
   // Fetch warehouse stats
