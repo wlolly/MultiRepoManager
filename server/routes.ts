@@ -2460,8 +2460,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // 导出到Excel
         const excelFilePath = exportMultipleTransfersToExcel(transfersWithWarehouseInfo);
         
+        // 生成导出文件名
+        const dateStr = new Date().toISOString().split('T')[0];
+        const filename = `transfers_export_${dateStr}.xlsx`;
+        
         // 使用文件清理工具处理下载和清理
-        downloadWithCleanup(res, excelFilePath);
+        downloadWithCleanup(res, excelFilePath, filename);
       } catch (exportError) {
         console.error("导出Excel文件生成失败:", exportError);
         return res.status(500).json({ error: "导出Excel文件生成失败" });
@@ -2516,19 +2520,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         products
       );
       
-      // 发送文件给客户端并在完成后清理临时文件
-      res.download(filePath, `transfer_${transfer.referenceNumber}.xlsx`, (err) => {
-        if (err) {
-          console.error("Download error:", err);
-        }
-        
-        // 无论成功或失败，都尝试删除临时文件
-        try {
-          fs.unlinkSync(filePath);
-        } catch (e) {
-          console.error("Error deleting temporary file:", e);
-        }
-      });
+      // 生成文件名
+      const filename = `transfer_${transfer.referenceNumber}.xlsx`;
+      
+      // 使用文件清理工具处理下载和清理
+      downloadWithCleanup(res, filePath, filename);
       
     } catch (err) {
       console.error("导出Excel文件失败:", err);
