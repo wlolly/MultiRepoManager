@@ -17,6 +17,48 @@ const requestLocks: Record<string, boolean> = {};
 // 存储请求计数器，记录每个路径的请求频率
 const requestCounters: Record<string, { count: number, firstRequest: number }> = {};
 
+/**
+ * 设置cookie
+ * @param name cookie名称
+ * @param value cookie值
+ * @param options 选项：过期时间（天）、路径、安全性等
+ */
+export function setCookie(name: string, value: string, options: {
+  maxAgeDays?: number, 
+  path?: string,
+  sameSite?: 'Strict' | 'Lax' | 'None',
+  secure?: boolean
+} = {}) {
+  const {
+    maxAgeDays = 30,
+    path = '/',
+    sameSite = 'Lax',
+    secure = window.location.protocol === 'https:'
+  } = options;
+  
+  const maxAge = maxAgeDays * 24 * 60 * 60; // 转换为秒
+  document.cookie = `${name}=${encodeURIComponent(value)}; path=${path}; max-age=${maxAge}; SameSite=${sameSite}${secure ? '; secure' : ''}`;
+}
+
+/**
+ * 删除cookie
+ * @param name cookie名称
+ * @param path cookie路径
+ */
+export function deleteCookie(name: string, path: string = '/') {
+  document.cookie = `${name}=; path=${path}; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax`;
+}
+
+/**
+ * 获取cookie值
+ * @param name cookie名称
+ * @returns cookie值，未找到返回null
+ */
+export function getCookie(name: string): string | null {
+  const match = document.cookie.match(new RegExp(`(^| )${name}=([^;]+)`));
+  return match ? decodeURIComponent(match[2]) : null;
+}
+
 // 设置防抖动阈值
 const DEBOUNCE_THRESHOLD_MS = 300; // 300毫秒内的重复请求会被去抖
 const MAX_REQUESTS_PER_MINUTE = 5; // 每分钟最多允许的相同请求数
