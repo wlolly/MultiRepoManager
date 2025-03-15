@@ -13,18 +13,47 @@ app.use(express.urlencoded({ extended: false }));
 
 // 配置 express-session
 app.use(session({
-  secret: 'warehouse-management-secret',
-  resave: false,
-  saveUninitialized: false,
+  secret: process.env.SESSION_SECRET || 'warehouse-management-secret',
+  resave: true, // 确保会话在服务器端保存，解决会话丢失问题
+  saveUninitialized: false, // 不保存未初始化的会话，提高安全性
+  name: 'wlolly.sid', // 自定义会话ID cookie名称
+  genid: function(req) {
+    // 使用随机UUID作为会话ID，更兼容ESM模式
+    return crypto.randomUUID();
+  },
   cookie: { 
-    secure: process.env.NODE_ENV === 'production', 
-    maxAge: 24 * 60 * 60 * 1000 // 24小时
+    secure: process.env.NODE_ENV === 'production', // 生产环境使用secure
+    maxAge: 24 * 60 * 60 * 1000, // 24小时
+    httpOnly: true, // 阻止客户端JS访问cookie
+    path: '/',
+    sameSite: 'lax' // 防止CSRF攻击的同时允许从外部链接访问
   },
   store: new MemoryStore({
-    checkPeriod: 86400000 // 每24小时清理过期会话
+    checkPeriod: 86400000, // 每24小时清理过期会话
+    ttl: 86400000 // 一天(24小时)的会话生命周期
   })
 }));
 
+// 添加会话活动时间跟踪
+app.use((req, res, next) => {
+  if (req.session) {
+    req.session.lastActivity = Date.now();
+    
+    // 会话调试日志
+    if (process.env.DEBUG === 'session' || process.env.NODE_ENV !== 'production') {
+      const sessionInfo = {
+        id: req.sessionID,
+        userId: req.session.userId,
+        socialBound: req.session.socialBound,
+        isAuthenticated: !!req.session.userId
+      };
+      console.log(`[会话调试] 路径: ${req.path}, 会话信息:`, sessionInfo);
+    }
+  }
+  next();
+});
+
+// API响应捕获和日志记录中间件
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;

@@ -257,7 +257,10 @@ export function generateSessionId(): string {
 // 验证会话中间件
 export function verifySession(req: Request, res: Response, next: NextFunction) {
   // 检查是否有会话
+  console.log(`验证会话: 会话ID=${req.sessionID || '无'}, isAuthenticated=${req.isAuthenticated()}, 用户=${req.user ? (req.user as any).username : '无'}`);
+  
   if (!req.user) {
+    console.log('会话验证失败：未找到用户信息');
     return res.status(401).json({ message: '未登录' });
   }
   

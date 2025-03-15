@@ -128,6 +128,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   initializePassport();
   app.use(passport.initialize());
   app.use(passport.session());
+  
+  // 调试会话初始化
+  app.use((req, res, next) => {
+    // 会话调试记录
+    if (req.path.startsWith('/api/auth')) {
+      console.log(`请求路径: ${req.path}, 会话ID: ${req.sessionID || '无'}, 已认证: ${req.isAuthenticated ? req.isAuthenticated() : '未知'}`);
+    }
+    next();
+  });
 
   // 认证路由
   // 登录接口
