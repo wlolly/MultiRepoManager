@@ -40,6 +40,33 @@ app.use(session({
       console.log(`[调试] 请求路径: ${req.path}, 所有cookie:`, req.cookies ? JSON.stringify(req.cookies, null, 2) : 'undefined');
     }
     
+    // 函数：提取干净的会话ID
+    function extractCleanSessionId(value: string | string[] | undefined): string | null {
+      if (!value) return null;
+      
+      // 如果是数组，取第一个值
+      const rawId = Array.isArray(value) ? value[0] : value;
+      
+      // 去除空白字符
+      let cleanId = rawId.trim();
+      
+      // 如果包含逗号，取第一部分（防止多个ID合并在一起）
+      if (cleanId.includes(',')) {
+        cleanId = cleanId.split(',')[0].trim();
+      }
+      
+      // 如果值为none或空，返回null
+      if (cleanId === 'none' || cleanId === '') {
+        return null;
+      }
+      
+      // 验证会话ID格式 - 应该是有效的UUID或至少20个字符的字母数字字符串
+      const isValidId = /^[a-zA-Z0-9\-_]{20,}$/.test(cleanId) || 
+                        /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(cleanId);
+                        
+      return isValidId ? cleanId : null;
+    }
+    
     // 1. 从HTTP头检查会话ID (优先级最高)
     const headerVariations = [
       'x-session-id',
@@ -104,28 +131,7 @@ app.use(session({
       }
     }
     
-    // 辅助函数：提取和清理会话ID，确保格式正确
-    function extractCleanSessionId(value: string | string[] | undefined): string | null {
-      if (!value) return null;
-      
-      let id = value;
-      // 处理数组
-      if (Array.isArray(id)) {
-        id = id[0];
-      }
-      
-      // 处理逗号分隔 (可能存在多个ID情况)
-      if (typeof id === 'string' && id.includes(',')) {
-        id = id.split(',')[0].trim();
-      }
-      
-      // 验证格式 - 必须是16个以上的十六进制字符
-      if (typeof id === 'string' && id.length >= 16 && /^[a-f0-9]+$/i.test(id)) {
-        return id;
-      }
-      
-      return null;
-    }
+    // 使用上面已定义的extractCleanSessionId函数
     
     // 2. 如果头中没有找到，检查查询参数
     if (!clientSessionId) {
