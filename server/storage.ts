@@ -23,9 +23,8 @@ import {
   uniqueCodeHistory, type UniqueCodeHistory, type InsertUniqueCodeHistory
 } from "@shared/schema";
 import { processProductCode } from "./utils/product-code-matcher";
-import { db } from './db';
+// 去除直接导入db，改为在需要时动态获取
 import { eq, and, or, gte, lte, gt, lt, count, desc, SQL, is, asc } from 'drizzle-orm';
-import { MySqlRawQueryResult } from 'drizzle-orm/mysql-core';
 
 export interface IStorage {
   // User methods
@@ -3409,4 +3408,9 @@ export class DatabaseStorage implements IStorage {
 }
 
 // 切换到数据库存储方式
-export const storage = new DatabaseStorage();
+// 创建新的MemStorage实例供需要时使用
+export const memStorage = new MemStorage();
+// 创建数据库存储实例
+export const dbStorage = new DatabaseStorage();
+// 默认导出dbStorage，但允许导入方决定使用哪个存储
+export const storage = dbStorage;
