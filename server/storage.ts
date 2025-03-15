@@ -2059,22 +2059,31 @@ export class DatabaseStorage implements IStorage {
 
   // Stats methods
   async getLanguageDistribution(): Promise<{ language: string, count: number, percentage: number }[]> {
-    const repoCount = await this.db.select({ count: count() }).from(repositories);
-    const totalRepos = repoCount[0].count;
+    try {
+      const repoCount = await this.db.select({ count: count() }).from(repositories);
+      const totalRepos = repoCount && repoCount[0] ? repoCount[0].count : 0;
 
-    const result = await this.db
-      .select({
-        language: repositories.language,
-        count: count(),
-      })
-      .from(repositories)
-      .groupBy(repositories.language);
+      if (totalRepos === 0) {
+        return []; // 如果没有仓库，返回空数组
+      }
 
-    return result.map(item => ({
-      language: item.language || "other",
-      count: item.count,
-      percentage: (item.count / totalRepos) * 100
-    }));
+      const result = await this.db
+        .select({
+          language: repositories.language,
+          count: count(),
+        })
+        .from(repositories)
+        .groupBy(repositories.language);
+
+      return result.map(item => ({
+        language: item.language || "other",
+        count: item.count,
+        percentage: (item.count / totalRepos) * 100
+      }));
+    } catch (error) {
+      console.error('获取语言分布时出错:', error);
+      return []; // 出错时返回空数组
+    }
   }
 
   async getRepositoryStats(): Promise<{ totalRepositories: number, totalUsers: number, languagesCount: number, recentCommits: number }> {
