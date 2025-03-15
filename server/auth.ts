@@ -82,7 +82,11 @@ export function initializePassport() {
 
   // 检查用户是否已绑定社交账号
   function hasSocialAccountBound(user: any): boolean {
-    return user.socialId !== null && user.socialId !== undefined && user.socialId !== '';
+    // 确保参数存在且有效
+    if (!user) return false;
+    
+    // 检查社交账号ID是否已绑定 (非空字符串)
+    return typeof user.socialId === 'string' && user.socialId.trim() !== '';
   }
 
   // 本地策略 - 用户名密码登录
@@ -314,8 +318,14 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
     }
   }
   
-  console.log(`客户端提供了会话ID: ${clientSessionId || 'none'}, ${expressSid || 'none'}, 当前会话ID: ${req.sessionID}`);
-  console.log(`请求路径: ${req.path}, 会话ID: ${req.sessionID}, 客户端会话ID: ${clientSessionId || 'none'}, 已认证: ${!!req.session?.userId}`);
+  // 如果客户端提供了有效会话ID，强制使用它而不是生成新会话ID
+  if (clientSessionId && clientSessionId.length >= 16) {
+    console.log(`使用客户端提供的会话ID: ${clientSessionId}，覆盖当前会话ID: ${req.sessionID}`);
+    // 直接设置会话ID属性，避免重新生成
+    (req as any).sessionID = clientSessionId;
+  }
+  
+  console.log(`最终会话ID: ${req.sessionID}, 客户端会话ID: ${clientSessionId || 'none'}, Express会话ID: ${expressSid || 'none'}, 已认证: ${!!req.session?.userId}`);
   
   // 添加详细的会话调试信息
   console.log(`[会话调试] 路径: ${req.path}, 会话信息: ${JSON.stringify({
@@ -334,9 +344,11 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
     userRole: req.session?.userRole
   };
   
-  // 将原始会话ID和客户端会话ID添加到响应头中，供客户端获取
+  // 将会话信息添加到响应头，提供客户端充分的会话上下文
   res.setHeader('X-Original-Session-ID', req.sessionID || '');
-  res.setHeader('X-Client-Session-ID', clientSessionId || '');
+  res.setHeader('X-Session-Authenticated', req.session?.authenticated ? 'true' : 'false');
+  res.setHeader('X-Session-User-Id', req.session?.userId?.toString() || '');
+  res.setHeader('X-Session-Role', req.session?.userRole || '');
   
   // 如果已经是已认证会话，或者会话ID匹配，直接继续处理
   if (req.session?.userId || clientSessionId === req.sessionID) {
@@ -660,12 +672,18 @@ export async function getCurrentUser(req: Request, res: Response) {
       console.log(`getCurrentUser: 从会话中获取用户ID=${userId}`);
     }
     
-    // 如果没有用户ID，返回未认证
+    // 如果没有用户ID，返回未认证状态但保留会话上下文
     if (!userId) {
       console.log('getCurrentUser: 没有找到有效的用户ID，返回未认证状态');
+      // 设置认证相关响应头
+      res.setHeader('X-Session-Authenticated', 'false');
+      res.setHeader('X-Original-Session-ID', req.sessionID || '');
+      
       return res.status(401).json({ 
         message: '未认证',
-        sessionId: req.sessionID // 返回会话ID便于调试
+        sessionId: req.sessionID, // 返回会话ID便于客户端保存
+        authenticated: false,
+        requiresBinding: false
       });
     }
     
