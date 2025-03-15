@@ -536,13 +536,9 @@ export function attachSessionToRequest(url: string, headers: Record<string, stri
     
     // 添加到请求头 - 使用多种格式，提高与服务器匹配的成功率
     // ===== 重要：匹配服务器端genid函数中检查的所有可能标头名称 =====
-    headers['X-Session-ID'] = cleanSessionId;
-    headers['x-session-id'] = cleanSessionId;
-    headers['sessionid'] = cleanSessionId;
-    headers['SessionId'] = cleanSessionId; 
-    headers['session-id'] = cleanSessionId;
-    headers['client-session-id'] = cleanSessionId;
+    // 只使用最重要的一两个头，避免重复设置多个可能导致的混乱
     headers['X-Client-Session-ID'] = cleanSessionId;
+    headers['X-Session-ID'] = cleanSessionId;
     
     // 不仅设置会话ID头，也同时添加到查询参数中，提高传递成功率
     const urlObj = new URL(url, window.location.origin);
