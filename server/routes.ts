@@ -24,6 +24,18 @@ import { fromZodError } from "zod-validation-error";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import passport from "passport";
+import { 
+  initializePassport, 
+  verifySession, 
+  isAdmin,
+  registerUser,
+  handleSocialCallback,
+  getCurrentUser,
+  logout,
+  activateUser,
+  updateUserRole
+} from "./auth";
 import { 
   createTransferImportTemplate, 
   parseTransferImportFile, 
@@ -108,6 +120,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.error(err);
     return res.status(500).json({ message: "Internal server error" });
   };
+
+  // 初始化Passport认证
+  initializePassport();
+  app.use(passport.initialize());
+
+  // 认证路由
+  // 登录接口
+  apiRouter.post("/auth/login", (req, res, next) => {
+    passport.authenticate('local', (err, user, info) => {
+      if (err) {
+        return next(err);
+      }
+      
+      if (!user) {
+        return res.status(401).json({
+          message: info?.message || '认证失败',
+          success: false
+        });
+      }
+      
+      // 生成JWT令牌
+      // 使用会话方式，不再需要token
+      // const token = generateToken(user);
+      
+      // 返回成功响应
+      return res.json({
+        message: '登录成功',
+        success: true,
+        user: {
+          id: user.id,
+          username: user.username,
+          fullName: user.fullName,
+          role: user.role,
+          avatarUrl: user.avatarUrl
+        }
+      });
+    })(req, res, next);
+  });
+
+  // 注册接口
+  apiRouter.post("/auth/register", registerUser);
+  
+  // 获取当前用户信息
+  apiRouter.get("/auth/me", verifySession, getCurrentUser);
+  
+  // 登出接口
+  apiRouter.post("/auth/logout", verifySession, logout);
+  
+  // WeChat 登录
+  apiRouter.get('/auth/wechat', passport.authenticate('wechat'));
+  
+  // WeChat 回调
+  apiRouter.get('/auth/wechat/callback', 
+    passport.authenticate('wechat', { session: false, failureRedirect: '/login?error=wechat_login_failed' }),
+    (req, res) => handleSocialCallback('wechat', req, res)
+  );
+
+  // WhatsApp 登录
+  apiRouter.get('/auth/whatsapp', passport.authenticate('whatsapp'));
+  
+  // WhatsApp 回调
+  apiRouter.get('/auth/whatsapp/callback', 
+    passport.authenticate('whatsapp', { session: false, failureRedirect: '/login?error=whatsapp_login_failed' }),
+    (req, res) => handleSocialCallback('whatsapp', req, res)
+  );
+
+  // 管理员接口 - 激活用户
+  apiRouter.post('/auth/users/:id/activate', verifySession, isAdmin, activateUser);
+  
+  // 管理员接口 - 更改用户角色
+  apiRouter.post('/auth/users/:id/role', verifySession, isAdmin, updateUserRole);
+
+  // 权限管理接口 - 获取页面权限
+  apiRouter.get('/permissions/pages', verifySession, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const permissions = await getUserPagePermissions(userId);
+      res.json(permissions);
+    } catch (error) {
+      console.error('获取页面权限错误:', error);
+      res.status(500).json({ message: '获取权限失败' });
+    }
+  });
+
+  // 权限管理接口 - 获取仓库权限
+  apiRouter.get('/permissions/warehouses', verifySession, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const permissions = await getUserWarehousePermissions(userId);
+      res.json(permissions);
+    } catch (error) {
+      console.error('获取仓库权限错误:', error);
+      res.status(500).json({ message: '获取权限失败' });
+    }
+  });
 
   // User routes
   apiRouter.get("/users", async (req, res) => {
