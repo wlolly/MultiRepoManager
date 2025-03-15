@@ -541,7 +541,7 @@ export default function WarehouseTransfers() {
         </div>
         <div className="flex gap-2">
           {/* 使用ExcelButtons组件 */}
-          <ExcelButtons 
+          <ExcelButtons size="sm" 
             onDownloadTemplate={handleDownloadTemplate}
             onImport={() => setImportDialogOpen(true)}
             onExport={() => {
@@ -620,7 +620,7 @@ export default function WarehouseTransfers() {
         </div>
         <div className="flex gap-2">
           {/* 使用ExcelButtons组件 */}
-          <ExcelButtons 
+          <ExcelButtons size="sm" 
             onDownloadTemplate={handleDownloadTemplate}
             onImport={() => setImportDialogOpen(true)}
             onExport={() => {
