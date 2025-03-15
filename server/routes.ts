@@ -2372,31 +2372,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "No valid transfers found" });
       }
       
-      // 使用excel-handler导出多个调拨单
-      const filePath = exportMultipleTransfersToExcel(transfers);
-      
-      // 生成导出文件名
-      const dateStr = new Date().toISOString().split('T')[0];
-      const filename = `transfers_export_${dateStr}.xlsx`;
-      
-      res.download(filePath, filename, (err) => {
-        if (err) {
-          console.error("Download error:", err);
-          // 文件已发送或发生错误，删除临时文件
-          try {
-            fs.unlinkSync(filePath);
-          } catch (e) {
-            console.error("Error deleting temporary file:", e);
-          }
-        } else {
-          // 文件成功发送后，删除临时文件
-          try {
-            fs.unlinkSync(filePath);
-          } catch (e) {
-            console.error("Error deleting temporary file:", e);
-          }
-        }
-      });
+      try {
+        // 使用excel-handler导出多个调拨单
+        const filePath = exportMultipleTransfersToExcel(transfers);
+        
+        // 生成导出文件名
+        const dateStr = new Date().toISOString().split('T')[0];
+        const filename = `transfers_export_${dateStr}.xlsx`;
+        
+        // 使用文件清理工具处理下载和清理
+        downloadWithCleanup(res, filePath, filename);
+      } catch (exportError) {
+        console.error("Export error:", exportError);
+        return res.status(500).json({ error: "导出文件生成失败" });
+      }
     } catch (error) {
       console.error("Error exporting selected transfers:", error);
       res.status(500).json({ error: "Failed to export transfers" });
@@ -3260,8 +3249,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       
-      // 发送文件
-      res.download(filePath);
+      // 发送文件并在完成后清理临时文件
+      res.download(filePath, filename, (err) => {
+        if (err) {
+          console.error("Download error:", err);
+        }
+        
+        // 无论成功或失败，都尝试删除临时文件
+        try {
+          fs.unlinkSync(filePath);
+        } catch (e) {
+          console.error("Error deleting temporary file:", e);
+        }
+      });
       
     } catch (err) {
       console.error("批量导出Excel文件失败:", err);
