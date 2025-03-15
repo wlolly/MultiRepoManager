@@ -609,7 +609,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // 确保文件存在
       if (fs.existsSync(excelPath)) {
-        res.download(excelPath, filename);
+        downloadWithCleanup(res, excelPath, filename);
       } else {
         res.status(500).json({ error: "导出文件创建失败" });
       }
