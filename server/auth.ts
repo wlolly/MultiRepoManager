@@ -370,14 +370,43 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
   }
   
   // 3. 检查cookie中是否有会话ID (这是浏览器自动提供的备份方案)
+  // 首先检查已解析的cookies对象
   if (req.cookies && req.cookies.sessionId) {
     const cookieId = req.cookies.sessionId;
     if (cookieId && cookieId.length >= 16) {
       sessionSources.cookie = cookieId;
       if (!clientSessionId) {
         clientSessionId = cookieId;
-        console.log(`从cookie获取会话ID: ${clientSessionId}`);
+        console.log(`从已解析的cookie获取会话ID: ${clientSessionId}`);
       }
+    }
+  }
+  
+  // 如果没有找到会话ID，尝试从原始Cookie头中解析
+  if (!clientSessionId && req.headers.cookie) {
+    const cookieHeader = req.headers.cookie;
+    console.log(`[调试] 请求路径: ${req.path}, 原始cookie字符串: ${cookieHeader}`);
+    
+    // 解析cookie字符串
+    const cookies = cookieHeader.split(';').reduce((acc: {[key: string]: string}, current) => {
+      const [name, value] = current.trim().split('=');
+      if (name && value) {
+        const cleanName = name.trim();
+        const cleanValue = value.trim();
+        acc[cleanName] = cleanValue;
+        console.log(`[Cookie解析] 找到cookie: ${cleanName} = ${cleanValue}`);
+      }
+      return acc;
+    }, {});
+    
+    console.log(`[Cookie解析] 所有解析后的cookie:`, cookies);
+    
+    if (cookies.sessionId && cookies.sessionId.length >= 16) {
+      sessionSources.cookie = cookies.sessionId;
+      clientSessionId = cookies.sessionId;
+      console.log(`从原始cookie头解析得到会话ID: ${clientSessionId}`);
+    } else {
+      console.log(`[Cookie解析] 未找到有效的sessionId cookie`);
     }
   }
   
