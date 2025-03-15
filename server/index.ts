@@ -33,6 +33,13 @@ app.use(session({
   },
   genid: function(req) {
     // 从多个来源查找客户端会话ID - 扩展检查以提高兼容性
+    // 详细记录所有标头，帮助调试会话问题
+    if (req.path.includes('/api/auth/')) {
+      console.log(`[调试] 请求路径: ${req.path}, 所有标头:`, JSON.stringify(req.headers, null, 2));
+      console.log(`[调试] 请求路径: ${req.path}, 所有查询参数:`, JSON.stringify(req.query, null, 2));
+      console.log(`[调试] 请求路径: ${req.path}, 所有cookie:`, JSON.stringify(req.cookies, null, 2));
+    }
+    
     const headerSources = [
       req.headers['x-session-id'],
       req.headers['X-Session-ID'],
