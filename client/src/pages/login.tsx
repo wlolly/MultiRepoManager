@@ -74,7 +74,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       if (onLoginSuccess) {
         onLoginSuccess();
       } else {
-        navigate('/'); // 使用wouter的导航方法
+        // 使用window.location.href进行导航，这在当前项目环境下更可靠
+        window.location.href = '/';
       }
     })
     .catch(error => {
