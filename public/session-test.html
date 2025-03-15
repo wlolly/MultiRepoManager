@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>会话测试页面</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+      background-color: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    
+    .container {
+      background: white;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 800px;
+    }
+    
+    h1 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+    
+    .info-box {
+      background-color: #f8f9fa;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+    
+    .status {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    
+    .authenticated {
+      color: green;
+    }
+    
+    .not-authenticated {
+      color: red;
+    }
+    
+    pre {
+      background-color: #f1f1f1;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+    }
+    
+    button {
+      background-color: #0070f3;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    
+    button:hover {
+      background-color: #0060df;
+    }
+    
+    .actions {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>会话测试页面</h1>
+    
+    <div class="info-box">
+      <h2>当前认证状态</h2>
+      <div class="status" id="auth-status">检查中...</div>
+    </div>
+    
+    <div class="info-box">
+      <h2>用户信息</h2>
+      <pre id="user-info">加载中...</pre>
+    </div>
+    
+    <div class="actions">
+      <button onclick="checkAuth()">检查认证状态</button>
+      <button onclick="logoutUser()">登出</button>
+      <button onclick="location.href='/test-login.html'">返回登录测试</button>
+      <button onclick="location.href='/'">返回主页</button>
+    </div>
+    
+    <div class="info-box">
+      <h2>会话Cookie</h2>
+      <pre id="cookie-info">获取中...</pre>
+    </div>
+  </div>
+
+  <script>
+    // 初始化页面
+    document.addEventListener('DOMContentLoaded', function() {
+      checkAuth();
+      displayCookies();
+    });
+    
+    // 检查认证状态
+    function checkAuth() {
+      fetch('/api/auth/current-user')
+        .then(response => {
+          console.log('认证检查响应状态:', response.status, response.statusText);
+          if (response.ok) {
+            document.getElementById('auth-status').className = 'status authenticated';
+            document.getElementById('auth-status').textContent = '已认证 ✅';
+            return response.json();
+          } else {
+            document.getElementById('auth-status').className = 'status not-authenticated';
+            document.getElementById('auth-status').textContent = '未认证 ❌';
+            throw new Error('未认证');
+          }
+        })
+        .then(data => {
+          console.log('用户数据:', data);
+          document.getElementById('user-info').textContent = JSON.stringify(data, null, 2);
+        })
+        .catch(err => {
+          console.error('获取用户信息错误:', err);
+          document.getElementById('user-info').textContent = '未登录或会话已过期';
+        });
+    }
+    
+    // 登出用户
+    function logoutUser() {
+      fetch('/api/auth/logout', {
+        method: 'POST'
+      })
+        .then(response => response.json())
+        .then(data => {
+          console.log('登出响应:', data);
+          checkAuth();
+          displayCookies();
+          alert('已成功登出');
+        })
+        .catch(err => {
+          console.error('登出错误:', err);
+          alert('登出失败');
+        });
+    }
+    
+    // 显示所有Cookie
+    function displayCookies() {
+      const cookies = document.cookie.split(';').map(cookie => cookie.trim());
+      document.getElementById('cookie-info').textContent = cookies.join('\n');
+    }
+  </script>
+</body>
+</html>
