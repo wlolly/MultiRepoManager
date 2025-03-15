@@ -618,7 +618,7 @@ export default function WarehouseTransfers() {
         </div>
       )}
       
-      {/* 功能解释说明 */}
+      {/* 功能解释说明及Excel操作按钮 */}
       <div className="bg-accent/20 p-4 rounded-lg mb-6 flex flex-wrap gap-4 items-center">
         <div className="flex-1">
           <h3 className="text-lg font-medium mb-1">{t("warehouseTransfer.excel_operations")}</h3>
