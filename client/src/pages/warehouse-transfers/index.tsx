@@ -542,6 +542,7 @@ export default function WarehouseTransfers() {
         <div className="flex gap-2">
           {/* 使用SimpleExcelButtons组件代替单独的按钮 */}
           <SimpleExcelButtons
+            size="default"
             onDownloadTemplate={handleDownloadTemplate}
             onImport={() => setImportDialogOpen(true)}
             onExport={() => {
@@ -625,6 +626,7 @@ export default function WarehouseTransfers() {
         </div>
         <div className="flex gap-2">
           <SimpleExcelButtons
+            size="default"
             onDownloadTemplate={handleDownloadTemplate}
             onImport={() => setImportDialogOpen(true)}
             onExport={() => {
