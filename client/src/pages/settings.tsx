@@ -225,15 +225,12 @@ export default function Settings() {
       
       const data = await response.json();
       
-      toast({
-        title: "数据初始化成功",
-        description: `已成功创建 ${data.warehouses || 0} 个仓库, ${data.products || 0} 个产品, ${data.inboundOrders || 0} 个入库单和 ${data.outboundOrders || 0} 个出库单`,
+      toast.success(`已成功创建 ${data.warehouses || 0} 个仓库, ${data.products || 0} 个产品, ${data.inboundOrders || 0} 个入库单和 ${data.outboundOrders || 0} 个出库单`, {
+        title: "数据初始化成功"
       });
     } catch (error) {
-      toast({
-        title: "初始化失败",
-        description: error instanceof Error ? error.message : "未知错误",
-        variant: "destructive"
+      toast.error(error instanceof Error ? error.message : "未知错误", {
+        title: "初始化失败"
       });
     } finally {
       setIsInitializing(false);
