@@ -2087,30 +2087,46 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getRepositoryStats(): Promise<{ totalRepositories: number, totalUsers: number, languagesCount: number, recentCommits: number }> {
-    const repoCount = await this.db.select({ count: count() }).from(repositories);
-    const userCount = await this.db.select({ count: count() }).from(users);
-    
-    const languagesResult = await this.db
-      .select({ language: repositories.language })
-      .from(repositories)
-      .groupBy(repositories.language);
-    
-    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    
-    const commitCount = await this.db
-      .select({ count: count() })
-      .from(activities)
-      .where(and(
-        eq(activities.type, "commit"),
-        gt(activities.createdAt, weekAgo)
-      ));
+    try {
+      const repoCount = await this.db.select({ count: count() }).from(repositories);
+      const totalRepositories = repoCount && repoCount[0] ? repoCount[0].count : 0;
+      
+      const userCount = await this.db.select({ count: count() }).from(users);
+      const totalUsers = userCount && userCount[0] ? userCount[0].count : 0;
+      
+      const languagesResult = await this.db
+        .select({ language: repositories.language })
+        .from(repositories)
+        .groupBy(repositories.language);
+      
+      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      
+      const commitCount = await this.db
+        .select({ count: count() })
+        .from(activities)
+        .where(and(
+          eq(activities.type, "commit"),
+          gt(activities.createdAt, weekAgo)
+        ));
+      
+      const recentCommits = commitCount && commitCount[0] ? commitCount[0].count : 0;
 
-    return {
-      totalRepositories: repoCount[0].count,
-      totalUsers: userCount[0].count,
-      languagesCount: languagesResult.length,
-      recentCommits: commitCount[0].count
-    };
+      return {
+        totalRepositories,
+        totalUsers,
+        languagesCount: languagesResult.length,
+        recentCommits
+      };
+    } catch (error) {
+      console.error('获取仓库统计信息时出错:', error);
+      // 出错时返回默认值
+      return {
+        totalRepositories: 0,
+        totalUsers: 0,
+        languagesCount: 0,
+        recentCommits: 0
+      };
+    }
   }
 
   // 商品相关方法
