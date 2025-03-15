@@ -280,6 +280,7 @@ export const inboundOrderItems = mysqlTable("inbound_order_items", {
   productId: int("product_id").notNull().references(() => products.id), // 商品ID
   productName: varchar("product_name", { length: 255 }).notNull(), // 商品名称
   barcode: varchar("barcode", { length: 255 }).notNull(), // 条形码
+  uniqueCode: varchar("unique_code", { length: 50 }), // 唯一码
   externalOrderNumber: varchar("external_order_number", { length: 255 }), // 外部订单号
   quantity: int("quantity").notNull(), // 数量
   packageCount: int("package_count").notNull(), // 件数
@@ -293,6 +294,7 @@ export const insertInboundOrderItemSchema = createInsertSchema(inboundOrderItems
   productId: true,
   productName: true,
   barcode: true,
+  uniqueCode: true,
   externalOrderNumber: true,
   quantity: true,
   packageCount: true,
@@ -343,6 +345,7 @@ export const outboundOrderItems = mysqlTable("outbound_order_items", {
   productId: int("product_id").notNull().references(() => products.id), // 商品ID
   productName: varchar("product_name", { length: 255 }).notNull(), // 商品名称
   barcode: varchar("barcode", { length: 255 }).notNull(), // 条形码
+  uniqueCode: varchar("unique_code", { length: 50 }), // 唯一码
   externalOrderNumber: varchar("external_order_number", { length: 255 }), // 外部订单号
   quantity: int("quantity").notNull(), // 数量
   packageCount: int("package_count").notNull(), // 件数
@@ -356,6 +359,7 @@ export const insertOutboundOrderItemSchema = createInsertSchema(outboundOrderIte
   productId: true,
   productName: true,
   barcode: true,
+  uniqueCode: true,
   externalOrderNumber: true,
   quantity: true,
   packageCount: true,
