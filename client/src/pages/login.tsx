@@ -45,11 +45,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     setIsLoading(true);
     
     // 显示登录中提示
-    toast({
-      title: "登录成功",
-      description: "正在跳转...",
-      variant: "default"
-    });
+    toast.success("登录成功，正在跳转...");
     
     // 立即跳转，不等待API响应
     if (onLoginSuccess) {
