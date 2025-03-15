@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
 import "./checkLoading.js";
+import { getSessionId, attachSessionToRequest } from './lib/sessionManager';
 
 // 直接渲染应用，简化逻辑
 console.log("main.tsx is running, attempting to render App");
