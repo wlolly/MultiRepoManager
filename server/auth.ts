@@ -283,7 +283,15 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
     userAgent: req.headers['user-agent'] || 'unknown',
     time: new Date().toISOString()
   };
-  console.log(`收到请求: ${JSON.stringify(requestInfo)}`);
+  
+  // 设置响应头，以便客户端能够追踪会话请求来源
+  res.setHeader('X-Request-Path', req.path);
+  res.setHeader('X-Request-Method', req.method);
+  
+  // 记录请求信息，但简化输出避免日志过大
+  if (!req.path.includes('/api/auth/current-user')) {
+    console.log(`收到请求: ${JSON.stringify(requestInfo)}`);
+  }
   
   // 检查各种可能的地方获取客户端会话ID（增强会话持久性）
   let clientSessionId: string | undefined;
@@ -782,78 +790,90 @@ export async function handleSocialCallback(provider: 'wechat' | 'whatsapp', req:
 // 获取当前用户信息
 export async function getCurrentUser(req: Request, res: Response) {
   try {
-    // 尝试从req.user和req.session.userId获取用户ID
-    let userId: number | undefined;
-    
+    // 确保响应头包含原始会话ID，这对客户端很重要
+    res.setHeader('X-Original-Session-ID', req.sessionID || '');
+
+    // 首先检查是否已经存在req.user (通过Passport.js或会话恢复设置)
     if (req.user && (req.user as any).id) {
-      userId = (req.user as any).id;
-      console.log(`getCurrentUser: 从req.user获取用户ID=${userId}`);
-    } else if (req.session?.userId) {
-      userId = req.session.userId;
-      console.log(`getCurrentUser: 从会话中获取用户ID=${userId}`);
-    }
-    
-    // 如果没有用户ID，返回未认证状态但保留会话上下文
-    if (!userId) {
-      console.log('getCurrentUser: 没有找到有效的用户ID，返回未认证状态');
-      // 设置认证相关响应头
-      res.setHeader('X-Session-Authenticated', 'false');
-      res.setHeader('X-Original-Session-ID', req.sessionID || '');
+      const userId = (req.user as any).id;
+      console.log(`getCurrentUser: 已存在用户 ${(req.user as any).username} (ID=${userId})`);
       
-      return res.status(401).json({ 
-        message: '未认证',
-        sessionId: req.sessionID, // 返回会话ID便于客户端保存
-        authenticated: false,
-        requiresBinding: false
-      });
-    }
-    
-    // 使用用户ID获取最新的用户信息
-    try {
-      // 使用当前活动的存储
-      const currentStorage = useFallbackStorage ? memStorage : storage;
-      const updatedUser = await currentStorage.getUser(userId);
-      
-      // 如果找不到用户，可能是用户已被删除
-      if (!updatedUser) {
-        console.log(`getCurrentUser: 用户ID=${userId}不存在或已被删除`);
-        
-        // 清除无效的会话数据
-        if (req.session.userId === userId) {
-          delete req.session.userId;
-          delete req.session.authenticated;
-          req.session.save();
-        }
-        
-        return res.status(401).json({ 
-          message: '用户不存在，请重新登录', 
-          errorCode: 'USER_NOT_FOUND' 
+      // 确保会话与用户保持同步
+      if (req.session && (!req.session.userId || req.session.userId !== userId)) {
+        console.log(`getCurrentUser: 同步会话信息与已有用户`);
+        req.session.userId = userId;
+        req.session.authenticated = true;
+        req.session.userRole = (req.user as any).role;
+        req.session.socialBound = hasSocialAccountBound(req.user as any);
+        req.session.lastActivity = Date.now();
+        // 异步保存会话，不阻塞响应
+        req.session.save(err => {
+          if (err) console.error('同步会话保存出错:', err);
         });
       }
       
-      // 确保会话数据与用户数据同步
-      if (req.session && !req.session.userId) {
-        console.log(`getCurrentUser: 同步用户ID=${userId}到会话`);
-        req.session.userId = userId;
-        req.session.authenticated = true;
-        req.session.userRole = updatedUser.role;
-        req.session.socialBound = hasSocialAccountBound(updatedUser);
-        req.session.lastActivity = Date.now();
-        req.session.save();
-      }
-      
-      // 排除敏感信息
-      const { password, ...safeUser } = updatedUser;
-      console.log(`getCurrentUser: 成功获取用户 ${updatedUser.username} 的信息`);
+      // 返回已存在的用户信息（不需要再次查询数据库）
+      const { password, ...safeUser } = req.user as any;
       return res.json(safeUser);
-    } catch (err) {
-      console.error('获取最新用户信息失败，使用会话中用户信息:', err);
-      
-      // 如果无法获取更新的用户信息，则使用会话中的信息
-      const { password, ...safeUser } = user;
-      console.log(`getCurrentUser: 使用会话中的用户 ${user.username} 信息`);
-      res.json(safeUser);
     }
+    
+    // 如果没有req.user，检查会话中的用户ID
+    const sessionUserId = req.session?.userId;
+    if (sessionUserId) {
+      console.log(`getCurrentUser: 尝试从会话ID=${sessionUserId}中恢复用户`);
+      
+      try {
+        // 使用当前活动的存储
+        const currentStorage = useFallbackStorage ? memStorage : storage;
+        const sessionUser = await currentStorage.getUser(sessionUserId);
+        
+        // 如果找到了用户，返回用户信息
+        if (sessionUser) {
+          console.log(`getCurrentUser: 成功从会话恢复用户 ${sessionUser.username}`);
+          
+          // 手动设置req.user以避免未来重复查询
+          (req as any).user = sessionUser;
+          
+          // 确保会话数据是最新的
+          req.session.authenticated = true;
+          req.session.userRole = sessionUser.role;
+          req.session.socialBound = hasSocialAccountBound(sessionUser);
+          req.session.lastActivity = Date.now();
+          // 异步保存会话，不阻塞响应
+          req.session.save(err => {
+            if (err) console.error('更新会话出错:', err);
+          });
+          
+          // 返回用户信息（排除敏感字段）
+          const { password, ...safeUser } = sessionUser;
+          return res.json(safeUser);
+        } else {
+          // 用户不存在，清理无效会话
+          console.log(`getCurrentUser: 会话中的用户ID=${sessionUserId}不存在，清理会话`);
+          delete req.session.userId;
+          delete req.session.authenticated;
+          delete req.session.userRole;
+          // 异步保存会话，不阻塞响应
+          req.session.save(err => {
+            if (err) console.error('清理会话出错:', err);
+          });
+        }
+      } catch (err) {
+        console.error('从会话获取用户出错:', err);
+        // 继续处理，返回未认证状态
+      }
+    }
+    
+    // 如果没有找到有效的用户信息，返回未认证状态
+    console.log('getCurrentUser: 没有找到有效的用户信息，返回未认证状态');
+    res.setHeader('X-Session-Authenticated', 'false');
+    
+    return res.status(401).json({ 
+      message: '未认证',
+      sessionId: req.sessionID, // 返回会话ID便于客户端保存
+      authenticated: false,
+      requiresBinding: false
+    });
   } catch (error) {
     console.error('获取当前用户信息错误:', error);
     res.status(500).json({ message: '获取用户信息失败' });
