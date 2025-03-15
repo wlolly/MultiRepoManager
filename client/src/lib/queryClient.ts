@@ -21,11 +21,18 @@ export async function apiRequest<T = any>(
   
   // 添加会话ID到请求头中以提高会话持久性
   const headers: Record<string, string> = options?.body ? { "Content-Type": "application/json" } : {};
-  const sessionId = sessionStorage.getItem('sessionId');
+  // 尝试从多个地方获取会话ID，提高获取成功率
+  const sessionId = sessionStorage.getItem('sessionId') || localStorage.getItem('sessionId');
   
   if (sessionId) {
-    console.log(`使用会话ID: ${sessionId}`);
+    console.log(`API请求使用会话ID: ${sessionId}`);
     headers['X-Session-ID'] = sessionId;
+    // 同时通过查询参数传递，确保所有情况都能接收到会话ID
+    if (!url.includes('?')) {
+      url = `${url}?sessionId=${sessionId}`;
+    } else {
+      url = `${url}&sessionId=${sessionId}`;
+    }
   }
   
   try {
@@ -55,10 +62,11 @@ export async function apiRequest<T = any>(
     const data = await res.json();
     console.log("API Response data:", data);
     
-    // 如果响应中包含会话ID，保存到sessionStorage
+    // 如果响应中包含会话ID，保存到sessionStorage和localStorage
     if (data.sessionId) {
       console.log(`从API响应中保存会话ID: ${data.sessionId}`);
       sessionStorage.setItem('sessionId', data.sessionId);
+      localStorage.setItem('sessionId', data.sessionId);
     }
     
     return data;
@@ -74,17 +82,26 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    // 从sessionStorage获取会话ID
-    const sessionId = sessionStorage.getItem('sessionId');
+    // 尝试从多个地方获取会话ID，提高获取成功率
+    const sessionId = sessionStorage.getItem('sessionId') || localStorage.getItem('sessionId');
     
-    // 准备请求头，如果有会话ID则添加到请求头中
+    // 准备请求头和URL
     const headers: Record<string, string> = {};
+    let url = queryKey[0] as string;
+    
     if (sessionId) {
       console.log(`查询使用会话ID: ${sessionId}`);
       headers['X-Session-ID'] = sessionId;
+      
+      // 同时通过查询参数传递，确保所有情况都能接收到会话ID
+      if (!url.includes('?')) {
+        url = `${url}?sessionId=${sessionId}`;
+      } else {
+        url = `${url}&sessionId=${sessionId}`;
+      }
     }
     
-    const res = await fetch(queryKey[0] as string, {
+    const res = await fetch(url, {
       credentials: "include",
       headers: headers
     });
@@ -105,10 +122,11 @@ export const getQueryFn: <T>(options: {
     await throwIfResNotOk(res);
     const data = await res.json();
     
-    // 如果响应中包含会话ID，保存到sessionStorage
+    // 如果响应中包含会话ID，保存到sessionStorage和localStorage
     if (data && data.sessionId) {
       console.log(`从查询响应中保存会话ID: ${data.sessionId}`);
       sessionStorage.setItem('sessionId', data.sessionId);
+      localStorage.setItem('sessionId', data.sessionId);
     }
     
     return data;
