@@ -113,7 +113,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         return; // 防止多次导航
       }
       
-      // 使用window.location方式直接跳转到主页
+      // 使用navigate方式跳转，保留会话状态
       console.log('准备跳转到主页...');
       
       // 如果需要绑定社交账号，显示提示
@@ -126,13 +126,19 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         // 延迟1秒后跳转到设置页面进行社交账号绑定
         setTimeout(() => {
           console.log('正在跳转到设置页面进行社交账号绑定');
-          window.location.href = '/settings?needBind=true';
+          // 保存会话ID到sessionStorage以增强会话持久性
+          sessionStorage.setItem('sessionId', data.sessionId);
+          // 使用React Router导航代替直接修改location
+          navigate('/settings?needBind=true');
         }, 1000);
       } else {
         // 直接跳转到主页
         setTimeout(() => {
           console.log('正在跳转到主页');
-          window.location.href = '/';
+          // 保存会话ID到sessionStorage以增强会话持久性
+          sessionStorage.setItem('sessionId', data.sessionId);
+          // 使用React Router导航代替直接修改location
+          navigate('/');
         }, 100);
       }
       
@@ -154,7 +160,13 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   // 添加辅助跳转函数
   const handleTestNavigation = () => {
     console.log('手动测试跳转按钮点击');
-    window.location.href = '/';
+    // 保存最新会话ID（如果存在）到sessionStorage以增强会话持久性
+    const currentSessionId = sessionStorage.getItem('sessionId');
+    if (currentSessionId) {
+      console.log('保留现有会话ID:', currentSessionId);
+    }
+    // 使用React Router导航代替直接修改location
+    navigate('/');
   };
 
   return (
