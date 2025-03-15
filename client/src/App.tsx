@@ -345,8 +345,9 @@ export default function App() {
     .then(async response => {
       console.log("认证检查响应状态:", response.status, response.statusText);
       
+      let data;
       try {
-        const data = await response.json();
+        data = await response.json();
         console.log("认证检查响应数据:", data);
       } catch (e) {
         console.log("解析响应JSON出错:", e);
@@ -355,6 +356,14 @@ export default function App() {
       if (response.ok) {
         console.log("认证成功，用户已登录");
         setAuthenticated(true);
+        
+        // 检查用户是否需要绑定社交账号
+        if (data?.requiresBinding === true) {
+          console.log("用户需要绑定社交账号，跳转到设置页面");
+          setTimeout(() => {
+            window.location.href = '/settings?needBind=true';
+          }, 100);
+        }
       } else {
         console.log("认证已过期，请重新登录");
         setAuthenticated(false);

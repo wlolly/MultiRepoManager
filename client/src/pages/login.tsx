@@ -87,21 +87,14 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       // 会话已经在服务器端创建，无需在前端存储令牌
       
       // 设置身份验证状态
-      if (data.fallbackMode) {
-        toast.warning("警告: 系统运行在内存模式，数据在重启后将丢失", {
-          title: "登录成功(内存模式)",
-          duration: 6000,
-        });
-      } else {
-        toast.success("欢迎回来！", {
-          title: "登录成功",
-          duration: 3000,
-        });
-      }
-      
       // 将用户数据和会话ID存储在本地
       if (data.user) {
         try {
+          // 添加需要绑定社交账号的标志
+          if (data.needSocialBinding) {
+            data.user.needSocialBinding = true;
+          }
+          
           // 保存用户数据到会话存储和本地存储
           sessionStorage.setItem('currentUser', JSON.stringify(data.user));
           localStorage.setItem('currentUser', JSON.stringify(data.user));
@@ -118,35 +111,44 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         }
       }
       
+      // 根据登录模式显示不同的提示
+      if (data.fallbackMode) {
+        toastContext.addToast({
+          title: "登录成功(内存模式)",
+          description: "警告: 系统运行在内存模式，数据在重启后将丢失",
+          type: "warning"
+        });
+      } else {
+        toastContext.addToast({
+          title: "登录成功",
+          description: "欢迎回来！",
+          type: "success"
+        });
+      }
+      
       // 如果提供了登录成功回调，则调用
       if (onLoginSuccess) {
         onLoginSuccess();
         return; // 防止多次导航
       }
       
-      // 使用navigate方式跳转，保留会话状态
       console.log('准备跳转到主页...');
       
-      // 如果需要绑定社交账号，显示提示
+      // 如果需要绑定社交账号，显示提示并跳转到设置页面
       if (data.needSocialBinding) {
-        toast.warning("系统安全策略要求您必须绑定社交账号才能继续使用", {
+        toastContext.addToast({
           title: "需要绑定社交账号",
-          duration: 6000,
+          description: "系统安全策略要求您必须绑定社交账号才能继续使用",
+          type: "warning"
         });
         
-        // 延迟1秒后跳转到设置页面进行社交账号绑定
-        setTimeout(() => {
-          console.log('正在跳转到设置页面进行社交账号绑定');
-          // 使用React Router导航代替直接修改location
-          navigate('/settings?needBind=true');
-        }, 1000);
+        // 立即跳转到设置页面进行社交账号绑定
+        console.log('正在跳转到设置页面进行社交账号绑定');
+        navigate('/settings?needBind=true');
       } else {
         // 直接跳转到主页
-        setTimeout(() => {
-          console.log('正在跳转到主页');
-          // 使用React Router导航代替直接修改location
-          navigate('/');
-        }, 100);
+        console.log('正在跳转到主页');
+        navigate('/');
       }
       
     } catch (error: any) {
