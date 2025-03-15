@@ -561,7 +561,10 @@ export function attachSessionToRequest(url: string, headers: Record<string, stri
     url = `${url}${separator}sessionId=${newSessionId}`;
     
     // 也添加到cookie中
-    document.cookie = `sessionId=${newSessionId}; path=/; max-age=2592000; SameSite=Lax`;
+    const secure = window.location.protocol === 'https:';
+    const maxAge = 30 * 24 * 60 * 60; // 30天过期，单位：秒
+    document.cookie = `sessionId=${encodeURIComponent(newSessionId)}; path=/; max-age=${maxAge}; SameSite=Lax${secure ? '; secure' : ''}`;
+    document.cookie = `warehouse.sid=${encodeURIComponent(newSessionId)}; path=/; max-age=${maxAge}; SameSite=Lax${secure ? '; secure' : ''}`;
     
     // 如果是认证相关请求，特别记录
     if (path.includes('/api/auth/')) {
@@ -625,10 +628,10 @@ export function clearSession() {
   localStorage.removeItem('sessionId');
   
   // 清除多种可能的会话cookie
-  document.cookie = 'sessionId=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-  document.cookie = 'warehouse.sid=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-  document.cookie = 'connect.sid=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-  document.cookie = 'express.sid=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+  deleteCookie('sessionId');
+  deleteCookie('warehouse.sid');
+  deleteCookie('connect.sid');
+  deleteCookie('express.sid');
   
   // 保留会话历史，便于可能的调试
   const sessionHistory = JSON.parse(localStorage.getItem('sessionIdHistory') || '[]');
