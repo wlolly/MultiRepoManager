@@ -208,17 +208,10 @@ export default function TeamPermissions() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/teams/warehouse-permissions', selectedTeamId] });
-      toast({
-        title: '权限已更新',
-        description: '仓库权限设置已成功更新',
-      });
+      toast.success('仓库权限设置已成功更新');
     },
     onError: (error) => {
-      toast({
-        variant: "destructive",
-        title: '更新失败',
-        description: `无法更新仓库权限: ${error instanceof Error ? error.message : '未知错误'}`,
-      });
+      toast.error(`无法更新仓库权限: ${error instanceof Error ? error.message : '未知错误'}`);
     }
   });
 
@@ -232,17 +225,10 @@ export default function TeamPermissions() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/teams/members', selectedTeamId] });
-      toast({
-        title: '成员已添加',
-        description: '团队成员已成功添加',
-      });
+      toast.success('团队成员已成功添加');
     },
     onError: (error) => {
-      toast({
-        variant: "destructive",
-        title: '添加失败',
-        description: `无法添加团队成员: ${error instanceof Error ? error.message : '未知错误'}`,
-      });
+      toast.error(`无法添加团队成员: ${error instanceof Error ? error.message : '未知错误'}`);
     }
   });
 
@@ -255,17 +241,10 @@ export default function TeamPermissions() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/teams/members', selectedTeamId] });
-      toast({
-        title: '成员已移除',
-        description: '团队成员已成功移除',
-      });
+      toast.success('团队成员已成功移除');
     },
     onError: (error) => {
-      toast({
-        variant: "destructive",
-        title: '移除失败',
-        description: `无法移除团队成员: ${error instanceof Error ? error.message : '未知错误'}`,
-      });
+      toast.error(`无法移除团队成员: ${error instanceof Error ? error.message : '未知错误'}`);
     }
   });
 
@@ -280,17 +259,10 @@ export default function TeamPermissions() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/teams'] });
       setSelectedTeamId(data.id);
-      toast({
-        title: '团队已创建',
-        description: '新团队已成功创建',
-      });
+      toast.success('新团队已成功创建');
     },
     onError: (error) => {
-      toast({
-        variant: "destructive",
-        title: '创建失败',
-        description: `无法创建团队: ${error instanceof Error ? error.message : '未知错误'}`,
-      });
+      toast.error(`无法创建团队: ${error instanceof Error ? error.message : '未知错误'}`);
     }
   });
 
