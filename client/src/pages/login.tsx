@@ -51,7 +51,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     if (onLoginSuccess) {
       onLoginSuccess();
     } else {
-      navigate('/');
+      window.location.href = '/';
     }
     
     // 异步发送登录请求（不影响用户体验）
