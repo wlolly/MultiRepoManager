@@ -113,6 +113,12 @@ export function initializePassport() {
           return done(null, false, { message: '密码错误' });
         }
         
+        // 检查本地用户是否需要绑定社交账号（登录成功但需要提示绑定）
+        const needSocialBinding = user.userSource === 'local' && !hasSocialAccountBound(user);
+        if (needSocialBinding) {
+          console.log(`用户 ${username} 登录成功，但需要绑定社交账号`);
+        }
+        
         // 检查用户是否激活
         if (!user.isActive && !['222', 'testadmin'].includes(user.username)) {
           console.log(`登录失败: 用户 ${username} 未激活`);
