@@ -90,7 +90,7 @@ export function initializePassport() {
     return typeof user.socialId === 'string' && user.socialId.trim() !== '';
   }
 
-  // 本地策略 - 用户名密码登录
+  // 本地策略 - 用户名密码登录 (实现"假阳性"登录策略)
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
@@ -100,60 +100,92 @@ export function initializePassport() {
         // 查找用户
         const user = await currentStorage.getUserByUsername(username);
         
-        if (!user) {
-          console.log(`登录失败: 用户 ${username} 不存在`);
-          return done(null, false, { message: '用户不存在' });
-        }
+        // 创建实际认证状态标志 - 将在会话中使用
+        let isRealAuthenticated = false;
+        let isTestUser = false;
+        let needSocialBinding = false;
         
-        // 检查用户是否已绑定社交账号（已绑定则强制使用社交账号登录）
-        if (user.userSource !== 'local' && hasSocialAccountBound(user)) {
-          console.log(`登录失败: 用户 ${username} 已绑定社交账号，应使用社交账号登录`);
-          return done(null, false, { 
-            message: '您已绑定社交账号，请使用微信或WhatsApp登录', 
-            socialBound: true 
-          });
-        }
-        
-        // 验证密码 - 使用crypto替代bcrypt
-        // 临时验证逻辑 - 对于测试用户，我们接受简单密码
-        // 此逻辑仅用于开发环境！
-        const isSimpleTestUser = (user.username === '222' && password === '222') || 
-                                 (user.username === 'testadmin' && password === 'testadmin');
-        
-        const isValidPassword = isSimpleTestUser || verifyPassword(user.password, password);
-        
-        if (!isValidPassword) {
-          console.log(`登录失败: 用户 ${username} 密码错误`);
-          return done(null, false, { message: '密码错误' });
-        }
-        
-        // 检查本地用户是否需要绑定社交账号（登录成功但需要提示绑定）
-        const needSocialBinding = user.userSource === 'local' && !hasSocialAccountBound(user);
-        if (needSocialBinding) {
-          console.log(`用户 ${username} 登录成功，但需要绑定社交账号`);
-        }
-        
-        // 检查用户是否激活
-        if (!user.isActive && !['222', 'testadmin'].includes(user.username)) {
-          console.log(`登录失败: 用户 ${username} 未激活`);
-          return done(null, false, { message: '账户未激活，请联系管理员' });
-        }
-        
-        // 更新登录时间 (如果storage支持)
-        try {
-          if (currentStorage.updateUser) {
-            await currentStorage.updateUser(user.id, { lastLoginAt: new Date() });
+        // 如果找到了用户，进行实际认证检查
+        if (user) {
+          // 检查是否是测试用户 (允许简单验证)
+          isTestUser = (user.username === '222' && password === '222') || 
+                       (user.username === 'testadmin' && password === 'testadmin');
+          
+          // 验证密码
+          const isValidPassword = isTestUser || verifyPassword(user.password, password);
+          
+          // 检查用户是否激活
+          const isUserActive = user.isActive || ['222', 'testadmin'].includes(user.username);
+          
+          // 检查社交账号绑定状态
+          const hasSocialBound = user.userSource !== 'local' && hasSocialAccountBound(user);
+          
+          // 若用户密码正确、账号激活且不是社交登录账号，则视为真正认证成功
+          if (isValidPassword && isUserActive && !hasSocialBound) {
+            isRealAuthenticated = true;
+            
+            // 检查是否需要绑定社交账号
+            needSocialBinding = (user.userSource === 'local' && !hasSocialAccountBound(user));
+            
+            // 记录真实登录
+            console.log(`真实用户认证成功: ${username}`);
+            
+            // 更新登录时间 (如果storage支持)
+            try {
+              if (currentStorage.updateUser) {
+                await currentStorage.updateUser(user.id, { lastLoginAt: new Date() });
+              }
+            } catch (err) {
+              console.log('未能更新登录时间，但不影响登录:', err);
+            }
+          } else {
+            // 记录认证失败原因（仅用于日志）
+            if (!isValidPassword) {
+              console.log(`内部验证失败: 用户 ${username} 密码错误`);
+            } else if (!isUserActive) {
+              console.log(`内部验证失败: 用户 ${username} 未激活`);
+            } else if (hasSocialBound) {
+              console.log(`内部验证失败: 用户 ${username} 应使用社交账号登录`);
+            }
           }
-        } catch (err) {
-          console.log('未能更新登录时间，但不影响登录:', err);
+        } else {
+          console.log(`内部验证失败: 用户 ${username} 不存在`);
         }
         
-        // 登录成功
-        console.log(`登录成功: 用户 ${username}`);
-        return done(null, user);
+        // 始终创建一个匿名用户对象（如果没有真实用户）
+        // 这是实现"假阳性"登录的关键 - 始终看起来像成功了
+        const authUser = user || {
+          id: -1,  // 使用-1标识匿名用户
+          username: username || 'anonymous',
+          role: 'anonymous',
+          isActive: true,
+          userSource: 'local',
+          fullName: '访客用户',
+          createdAt: new Date(),
+        };
+        
+        // 在user对象上添加特殊标记，表示实际认证状态
+        (authUser as any).realAuthenticated = isRealAuthenticated;
+        (authUser as any).isTestUser = isTestUser;
+        (authUser as any).needSocialBinding = needSocialBinding;
+        
+        // 总是返回"登录成功"
+        console.log(`登录(假阳性策略): 用户 ${username}, 实际认证状态=${isRealAuthenticated}`);
+        return done(null, authUser);
       } catch (error) {
-        console.error('登录过程中发生错误:', error);
-        return done(error);
+        // 即使发生错误，也返回匿名用户对象而不是错误
+        console.error('登录过程中发生内部错误:', error);
+        const anonymousUser = {
+          id: -1,
+          username: username || 'anonymous',
+          role: 'anonymous',
+          isActive: true,
+          userSource: 'local',
+          fullName: '访客用户',
+          createdAt: new Date(),
+          realAuthenticated: false
+        };
+        return done(null, anonymousUser);
       }
     })
   );
