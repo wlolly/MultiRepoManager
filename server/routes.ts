@@ -2832,8 +2832,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       
-      // 发送文件
-      res.download(filePath);
+      // 发送文件并在完成后清理临时文件
+      res.download(filePath, filename, (err) => {
+        if (err) {
+          console.error("Download error:", err);
+        }
+        
+        // 无论成功或失败，都尝试删除临时文件
+        try {
+          fs.unlinkSync(filePath);
+        } catch (e) {
+          console.error("Error deleting temporary file:", e);
+        }
+      });
       
     } catch (err) {
       console.error("导出Excel文件失败:", err);
@@ -2984,8 +2995,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       
-      // 发送文件
-      res.download(filePath);
+      // 发送文件并在完成后清理临时文件
+      res.download(filePath, filename, (err) => {
+        if (err) {
+          console.error("Download error:", err);
+        }
+        
+        // 无论成功或失败，都尝试删除临时文件
+        try {
+          fs.unlinkSync(filePath);
+        } catch (e) {
+          console.error("Error deleting temporary file:", e);
+        }
+      });
       
     } catch (err) {
       console.error("批量导出Excel文件失败:", err);
@@ -3074,8 +3096,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       
-      // 发送文件
-      res.download(filePath);
+      // 发送文件并在完成后清理临时文件
+      res.download(filePath, filename, (err) => {
+        if (err) {
+          console.error("Download error:", err);
+        }
+        
+        // 无论成功或失败，都尝试删除临时文件
+        try {
+          fs.unlinkSync(filePath);
+        } catch (e) {
+          console.error("Error deleting temporary file:", e);
+        }
+      });
       
     } catch (err) {
       console.error("导出Excel文件失败:", err);
