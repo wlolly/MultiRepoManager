@@ -275,35 +275,70 @@ export function generateSessionId(): string {
 
 // 验证会话中间件
 export function verifySession(req: Request, res: Response, next: NextFunction) {
+  // 记录当前请求的基本信息，方便调试
+  const requestInfo = {
+    method: req.method,
+    path: req.path,
+    ip: req.ip,
+    userAgent: req.headers['user-agent'] || 'unknown',
+    time: new Date().toISOString()
+  };
+  console.log(`收到请求: ${JSON.stringify(requestInfo)}`);
+  
   // 检查各种可能的地方获取客户端会话ID（增强会话持久性）
+  let clientSessionId: string | undefined;
+  const sessionSources: Record<string, string | null> = {
+    header: null,
+    query: null,
+    cookie: null,
+    express: null
+  };
   
   // 1. 检查请求头中是否有客户端提供的会话ID（支持大小写不敏感）
-  let clientSessionId = req.headers['x-session-id'] as string || 
-                        req.headers['X-Session-ID'] as string;
+  const headerSessionId = req.headers['x-session-id'] as string || 
+                         req.headers['X-Session-ID'] as string;
   
   // 处理可能的数组或逗号分隔的情况
-  if (Array.isArray(clientSessionId)) {
-    clientSessionId = clientSessionId[0];
-  } else if (typeof clientSessionId === 'string' && clientSessionId.includes(',')) {
-    clientSessionId = clientSessionId.split(',')[0].trim();
+  if (Array.isArray(headerSessionId)) {
+    clientSessionId = headerSessionId[0];
+  } else if (typeof headerSessionId === 'string' && headerSessionId.includes(',')) {
+    clientSessionId = headerSessionId.split(',')[0].trim();
+  } else if (typeof headerSessionId === 'string') {
+    clientSessionId = headerSessionId;
+  }
+  
+  if (clientSessionId && clientSessionId.length >= 16) {
+    sessionSources.header = clientSessionId;
   }
                         
   // 2. 检查URL查询参数中是否有会话ID
   const querySessionId = (req.query.sessionId || req.query.sessionid) as string;
-  if (!clientSessionId && querySessionId) {
-    clientSessionId = querySessionId;
-    console.log(`从URL查询参数获取会话ID: ${clientSessionId}`);
-    
+  if (querySessionId) {
+    let cleanQueryId = querySessionId;
     // 处理URL参数中可能的数组或逗号分隔的情况
-    if (typeof clientSessionId === 'string' && clientSessionId.includes(',')) {
-      clientSessionId = clientSessionId.split(',')[0].trim();
+    if (typeof cleanQueryId === 'string' && cleanQueryId.includes(',')) {
+      cleanQueryId = cleanQueryId.split(',')[0].trim();
+    }
+    
+    if (cleanQueryId && cleanQueryId.length >= 16) {
+      sessionSources.query = cleanQueryId;
+      if (!clientSessionId) {
+        clientSessionId = cleanQueryId;
+        console.log(`从URL查询参数获取会话ID: ${clientSessionId}`);
+      }
     }
   }
   
   // 3. 检查cookie中是否有会话ID (这是浏览器自动提供的备份方案)
-  if (!clientSessionId && req.cookies && req.cookies.sessionId) {
-    clientSessionId = req.cookies.sessionId;
-    console.log(`从cookie获取会话ID: ${clientSessionId}`);
+  if (req.cookies && req.cookies.sessionId) {
+    const cookieId = req.cookies.sessionId;
+    if (cookieId && cookieId.length >= 16) {
+      sessionSources.cookie = cookieId;
+      if (!clientSessionId) {
+        clientSessionId = cookieId;
+        console.log(`从cookie获取会话ID: ${clientSessionId}`);
+      }
+    }
   }
   
   // 4. 检查express.sid会话cookie (内部使用的会话ID，可能与客户端会话ID不同)
@@ -314,28 +349,51 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
     const sidMatch = expressSid.match(/^s%3A([^.]+)\./);
     if (sidMatch) {
       expressSid = sidMatch[1];
+      sessionSources.express = expressSid;
       console.log(`从${cookieName}提取会话ID: ${expressSid}`);
     }
   }
   
-  // 如果客户端提供了有效会话ID，强制使用它而不是生成新会话ID
+  // 记录当前请求发现的所有会话源
+  console.log(`会话源信息: ${JSON.stringify(sessionSources)}`);
+  
+  // 当服务器生成新的会话ID时，应该优先使用客户端提供的会话ID
   if (clientSessionId && clientSessionId.length >= 16) {
-    console.log(`使用客户端提供的会话ID: ${clientSessionId}，覆盖当前会话ID: ${req.sessionID}`);
-    
-    // 1. 直接设置会话ID属性，避免重新生成
-    (req as any).sessionID = clientSessionId;
-    
-    // 2. 如果req.session已经存在，确保其id也更新为客户端提供的ID
-    if (req.session) {
-      (req.session as any).id = clientSessionId;
+    // 如果当前请求是使用已有会话ID，则优先使用客户端提供的会话ID
+    const originalSessionId = req.sessionID;
+    if (!originalSessionId || originalSessionId !== clientSessionId) {
+      console.log(`使用客户端提供的会话ID: ${clientSessionId}，覆盖当前会话ID: ${req.sessionID || '(无)'}`);
+      
+      // 在请求对象上设置会话ID，这将覆盖express-session生成的ID
+      (req as any).sessionID = clientSessionId;
+      
+      // 如果会话对象已经存在，更新它的ID
+      if (req.session) {
+        (req.session as any).id = clientSessionId;
+      }
+      
+      // 尝试在下次生成会话ID时使用当前会话ID
+      if (req.sessionOptions) {
+        const originalGenid = req.sessionOptions.genid;
+        req.sessionOptions.genid = function() {
+          console.log(`使用客户端会话ID ${clientSessionId} 代替生成新ID`);
+          return clientSessionId!;
+        };
+      }
+    } else {
+      console.log(`客户端会话ID ${clientSessionId} 与当前会话ID ${originalSessionId} 一致`);
     }
-    
-    // 3. 重置session，确保使用我们设定的会话ID
-    if (!req.session) {
-      console.log(`会话对象不存在，尝试通过clientSessionId: ${clientSessionId} 创建`);
-      // 使用客户端会话ID确保会话cookie中也使用相同ID
-      req.sessionOptions.genid = () => clientSessionId;
-    }
+  } else {
+    console.log(`没有发现有效的客户端会话ID，使用服务器生成的会话ID: ${req.sessionID || '(尚未生成)'}`);
+  }
+  
+  // 在响应中设置会话ID，让客户端知道应该使用哪个会话ID
+  // 这对于前端和API调试非常有用
+  if (req.sessionID) {
+    res.setHeader('X-Original-Session-ID', req.sessionID);
+  }
+  if (clientSessionId) {
+    res.setHeader('X-Client-Session-ID', clientSessionId);
   }
   
   console.log(`最终会话ID: ${req.sessionID}, 客户端会话ID: ${clientSessionId || 'none'}, Express会话ID: ${expressSid || 'none'}, 已认证: ${!!req.session?.userId}`);
@@ -372,118 +430,122 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
     matchingId: clientSessionId === req.sessionID ? 'true' : 'false'
   }));
   
-  // 如果已经是已认证会话，或者会话ID匹配，直接继续处理
-  if (req.session?.userId || clientSessionId === req.sessionID) {
-    console.log(`会话已认证或ID一致，直接使用: ${req.session?.userId ? '已认证' : 'ID一致'}`);
-    proceedWithCurrentSession();
+  // 如果会话已经包含用户ID，说明已经认证，可以直接继续
+  if (req.session?.userId) {
+    console.log(`会话已包含用户ID: ${req.session.userId}，直接使用这个会话`);
+    restoreUserFromSession();
     return;
   }
   
-  // 如果客户端提供了会话ID，并且与当前会话ID不同，尝试恢复客户端会话
-  if (clientSessionId && clientSessionId !== req.sessionID && req.sessionStore) {
-    console.log(`尝试恢复客户端会话ID: ${clientSessionId}`);
+  // 如果客户端提供了会话ID，并且与当前会话ID不同，尝试从会话存储中恢复
+  if (clientSessionId && req.sessionID !== clientSessionId && req.sessionStore) {
+    console.log(`尝试从会话存储中恢复客户端会话ID: ${clientSessionId}`);
     
-    // 使用客户端提供的会话ID查找会话
-    (req.sessionStore as any).get(clientSessionId, (err: Error, clientSession: any) => {
-      if (err) {
-        console.error(`通过客户端会话ID加载会话错误:`, err);
-        tryExpressSid();
-        return;
-      }
-      
-      if (clientSession && clientSession.userId) {
-        console.log(`找到有效的客户端会话: userId=${clientSession.userId}, authenticated=${clientSession.authenticated}`);
+    try {
+      // 使用客户端提供的会话ID查找会话数据
+      (req.sessionStore as any).get(clientSessionId, (err: Error, clientSession: any) => {
+        if (err) {
+          console.error(`从会话存储加载会话错误:`, err);
+          tryExpressSid();
+          return;
+        }
         
-        // 使用客户端会话的数据填充当前会话
-        req.session.userId = clientSession.userId;
-        req.session.authenticated = clientSession.authenticated || true; // 确保标记为已认证
-        req.session.userRole = clientSession.userRole;
-        req.session.socialBound = clientSession.socialBound;
-        req.session.lastActivity = Date.now();
-        
-        // 使用客户端会话ID作为新会话ID
-        (req as any).sessionID = clientSessionId;
-        (req.session as any).id = clientSessionId;
-        
-        // 保存当前会话并恢复用户对象
-        req.session.save((err) => {
-          if (err) console.error('保存会话出错:', err);
+        // 如果找到了有效的会话数据，并且包含用户ID
+        if (clientSession && clientSession.userId) {
+          console.log(`找到有效的客户端会话数据: userId=${clientSession.userId}, authenticated=${clientSession.authenticated}`);
           
-          // 设置响应头告诉客户端继续使用此会话ID
-          res.setHeader('X-Original-Session-ID', clientSessionId);
+          // 将找到的会话数据复制到当前会话中
+          Object.assign(req.session, {
+            userId: clientSession.userId,
+            authenticated: true,
+            userRole: clientSession.userRole,
+            socialBound: clientSession.socialBound,
+            lastActivity: Date.now()
+          });
           
-          // 尝试将会话保存到存储中，确保使用客户端会话ID
-          if (req.sessionStore) {
-            (req.sessionStore as any).set(clientSessionId, req.session, (err: Error) => {
-              if (err) {
-                console.error(`将会话保存到会话存储时出错:`, err);
-              } else {
-                console.log(`成功将会话保存到会话存储中，使用ID: ${clientSessionId}`);
-              }
-              restoreUserFromSession();
-            });
-          } else {
-            restoreUserFromSession();
+          // 设置当前会话ID为客户端会话ID，确保持续性
+          (req as any).sessionID = clientSessionId;
+          if (req.session) {
+            (req.session as any).id = clientSessionId;
           }
-        });
-      } else {
-        console.log(`客户端会话ID无效或不包含用户ID`);
-        tryExpressSid();
-      }
-    });
+          
+          // 保存当前会话
+          req.session.save((err) => {
+            if (err) {
+              console.error('保存恢复的会话出错:', err);
+            } else {
+              console.log(`成功保存恢复的会话数据`);
+            }
+            
+            // 从会话中的用户ID恢复完整的用户对象
+            restoreUserFromSession();
+          });
+        } else {
+          console.log(`客户端会话数据无效或不包含用户ID，尝试Express会话ID`);
+          tryExpressSid();
+        }
+      });
+    } catch (error) {
+      console.error('尝试恢复客户端会话时出错:', error);
+      tryExpressSid();
+    }
   } else {
     tryExpressSid();
   }
   
-  // 尝试使用express.sid会话cookie
+  // 尝试使用Express会话ID恢复会话
   function tryExpressSid() {
     if (expressSid && expressSid !== req.sessionID && req.sessionStore) {
       console.log(`尝试恢复Express会话ID: ${expressSid}`);
       
-      (req.sessionStore as any).get(expressSid, (err: Error, expressSession: any) => {
-        if (err || !expressSession || !expressSession.userId) {
-          console.log(`Express会话ID恢复失败或会话无效`);
-          proceedWithCurrentSession();
-          return;
-        }
-        
-        console.log(`找到有效的Express会话: userId=${expressSession.userId}`);
-        
-        // 使用Express会话的数据填充当前会话
-        req.session.userId = expressSession.userId;
-        req.session.authenticated = expressSession.authenticated || true;
-        req.session.userRole = expressSession.userRole;
-        req.session.socialBound = expressSession.socialBound;
-        req.session.lastActivity = Date.now();
-        
-        // 使用Express会话ID作为新会话ID，保持会话连续性
-        (req as any).sessionID = expressSid;
-        (req.session as any).id = expressSid;
-        
-        // 保存当前会话
-        req.session.save((err) => {
-          if (err) console.error('保存Express会话出错:', err);
+      try {
+        (req.sessionStore as any).get(expressSid, (err: Error, expressSession: any) => {
+          if (err) {
+            console.error(`从Express会话ID加载会话错误:`, err);
+            continueAuthCheck(); // 直接检查认证状态
+            return;
+          }
           
-          // 设置响应头告诉客户端继续使用此会话ID
-          res.setHeader('X-Original-Session-ID', expressSid);
-          
-          // 尝试将会话保存到存储中，确保使用Express会话ID
-          if (req.sessionStore) {
-            (req.sessionStore as any).set(expressSid, req.session, (err: Error) => {
+          if (expressSession && expressSession.userId) {
+            console.log(`找到有效的Express会话: userId=${expressSession.userId}`);
+            
+            // 复制Express会话数据到当前会话
+            Object.assign(req.session, {
+              userId: expressSession.userId,
+              authenticated: true,
+              userRole: expressSession.userRole,
+              socialBound: expressSession.socialBound,
+              lastActivity: Date.now()
+            });
+            
+            // 使用Express会话ID作为当前会话ID
+            (req as any).sessionID = expressSid;
+            if (req.session) {
+              (req.session as any).id = expressSid;
+            }
+            
+            // 保存当前会话
+            req.session.save((err) => {
               if (err) {
-                console.error(`将Express会话保存到会话存储时出错:`, err);
+                console.error('保存Express会话出错:', err);
               } else {
-                console.log(`成功将Express会话保存到会话存储中，使用ID: ${expressSid}`);
+                console.log(`成功保存从Express恢复的会话数据`);
               }
+              
+              // 恢复用户对象
               restoreUserFromSession();
             });
           } else {
-            restoreUserFromSession();
+            console.log(`Express会话无效或不包含用户ID`);
+            continueAuthCheck();
           }
         });
-      });
+      } catch (error) {
+        console.error('尝试恢复Express会话时出错:', error);
+        continueAuthCheck();
+      }
     } else {
-      proceedWithCurrentSession();
+      continueAuthCheck();
     }
   }
   
