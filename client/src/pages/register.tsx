@@ -16,7 +16,7 @@ import { Separator } from '@/components/ui/separator';
 const registerSchema = z.object({
   username: z.string().min(3, "用户名至少3个字符"),
   fullName: z.string().min(2, "姓名至少2个字符"), 
-  email: z.string().email("请输入有效的邮箱地址"),
+  email: z.string().optional(), // 允许任意文本，不再验证邮箱格式
   password: z.string().min(6, "密码至少6个字符"),
   confirmPassword: z.string().min(6, "确认密码至少6个字符"),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -133,7 +133,7 @@ export default function RegisterPage() {
                   <FormItem>
                     <FormLabel>{t('email')}</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder={t('enter_email')} {...field} />
+                      <Input type="text" placeholder={t('enter_email')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
