@@ -2337,27 +2337,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Excel导出路由
   // 导出所有调拨单到Excel
+  // 导出多个选定的调拨单（根据ID列表）
+  apiRouter.post("/warehouse-transfers/export-selected", async (req, res) => {
+    try {
+      const { transferIds } = req.body;
+      
+      if (!transferIds || !Array.isArray(transferIds) || transferIds.length === 0) {
+        return res.status(400).json({ error: "No transfer IDs provided" });
+      }
+      
+      // 获取所有请求的调拨单
+      const transfers = [];
+      for (const id of transferIds) {
+        const transfer = await storage.getWarehouseTransfer(parseInt(id));
+        if (transfer) {
+          // 获取源仓库和目标仓库信息
+          const sourceWarehouse = await storage.getWarehouse(transfer.sourceWarehouseId);
+          const targetWarehouse = await storage.getWarehouse(transfer.targetWarehouseId);
+          
+          // 获取调拨单明细
+          const items = await storage.getWarehouseTransferItems(transfer.id);
+          
+          // 将调拨单和相关信息添加到导出列表
+          transfers.push({
+            transfer,
+            sourceWarehouse,
+            targetWarehouse,
+            items
+          });
+        }
+      }
+      
+      if (transfers.length === 0) {
+        return res.status(404).json({ error: "No valid transfers found" });
+      }
+      
+      // 使用excel-handler导出多个调拨单
+      const filePath = exportMultipleTransfersToExcel(transfers);
+      
+      // 生成导出文件名
+      const dateStr = new Date().toISOString().split('T')[0];
+      const filename = `transfers_export_${dateStr}.xlsx`;
+      
+      res.download(filePath, filename, (err) => {
+        if (err) {
+          console.error("Download error:", err);
+          // 文件已发送或发生错误，删除临时文件
+          try {
+            fs.unlinkSync(filePath);
+          } catch (e) {
+            console.error("Error deleting temporary file:", e);
+          }
+        } else {
+          // 文件成功发送后，删除临时文件
+          try {
+            fs.unlinkSync(filePath);
+          } catch (e) {
+            console.error("Error deleting temporary file:", e);
+          }
+        }
+      });
+    } catch (error) {
+      console.error("Error exporting selected transfers:", error);
+      res.status(500).json({ error: "Failed to export transfers" });
+    }
+  });
+
   apiRouter.get("/warehouse-transfers/export-all", async (req, res) => {
     try {
       console.log("正在处理批量导出调拨单请求", req.query);
       
-      // 构建过滤参数 (与前端页面筛选相同)
-      const filter: any = {};
+      let transfers = [];
       
-      // 状态过滤
-      if (req.query.status) {
-        filter.status = req.query.status as string;
+      // 判断是否提供了多个订单ID（使用ids参数）
+      if (req.query.ids) {
+        // 解析传入的ids数组
+        const ids = (req.query.ids as string).split(',').map(id => parseInt(id.trim()));
+        console.log(`正在按ID列表导出 ${ids.length} 条调拨单`, ids);
+        
+        // 获取多个指定ID的调拨单
+        const transferPromises = ids.map(id => storage.getWarehouseTransfer(id));
+        const transferResults = await Promise.all(transferPromises);
+        
+        // 过滤掉未找到的调拨单
+        transfers = transferResults.filter(transfer => transfer !== undefined) as any[];
+      } else {
+        // 构建过滤参数 (与前端页面筛选相同)
+        const filter: any = {};
+        
+        // 状态过滤
+        if (req.query.status) {
+          filter.status = req.query.status as string;
+        }
+        
+        // 仓库过滤 (源仓库或目标仓库)
+        if (req.query.warehouseId) {
+          const warehouseId = parseInt(req.query.warehouseId as string);
+          // 简化处理，实际应该用OR条件查询两个字段
+          filter.sourceWarehouseId = warehouseId;
+        }
+        
+        // 获取调拨单列表
+        transfers = await storage.getWarehouseTransfers(filter);
       }
       
-      // 仓库过滤 (源仓库或目标仓库)
-      if (req.query.warehouseId) {
-        const warehouseId = parseInt(req.query.warehouseId as string);
-        // 简化处理，实际应该用OR条件查询两个字段
-        filter.sourceWarehouseId = warehouseId;
-      }
-      
-      // 获取调拨单列表
-      const transfers = await storage.getWarehouseTransfers(filter);
       console.log(`找到 ${transfers.length} 条符合条件的调拨单记录`);
       
       // 获取每个调拨单的源仓库和目标仓库信息
@@ -2644,6 +2727,491 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (err) {
       console.error("Error getting combined stats:", err);
       handleZodError(err, res);
+    }
+  });
+  
+  // 导出入库单Excel
+  apiRouter.get("/inbound-orders/export/:id", async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.id);
+      const order = await storage.getInboundOrder(orderId);
+      
+      if (!order) {
+        return res.status(404).json({ message: "入库单不存在" });
+      }
+      
+      // 获取入库单项目
+      const items = await storage.getInboundOrderItems(orderId);
+      
+      // 获取仓库信息
+      const warehouse = await storage.getWarehouse(order.warehouseId);
+      
+      if (!warehouse) {
+        return res.status(400).json({ message: "仓库信息不完整" });
+      }
+      
+      // 导出Excel文件
+      const exceljs = require("exceljs");
+      const workbook = new exceljs.Workbook();
+      const worksheet = workbook.addWorksheet("入库单");
+      
+      // 添加标题行
+      worksheet.addRow(["入库单号", "仓库", "状态", "创建时间", "总重量(kg)", "总体积(m³)"]);
+      
+      // 添加入库单信息
+      worksheet.addRow([
+        order.orderNumber,
+        warehouse.name,
+        order.status,
+        new Date(order.createdAt).toLocaleString(),
+        order.totalWeight,
+        order.totalVolume
+      ]);
+      
+      // 添加空行
+      worksheet.addRow([]);
+      
+      // 添加项目标题行
+      worksheet.addRow(["产品名称", "条码", "数量", "包装数", "重量(kg)", "体积(m³)", "外部订单号", "备注"]);
+      
+      // 添加项目数据
+      for (const item of items) {
+        worksheet.addRow([
+          item.productName,
+          item.barcode,
+          item.quantity,
+          item.packageCount,
+          item.weight,
+          item.volume,
+          item.externalOrderNumber || "",
+          item.remark || ""
+        ]);
+      }
+      
+      // 设置宽度
+      worksheet.columns.forEach(column => {
+        column.width = 20;
+      });
+      
+      // 生成文件路径
+      const filePath = path.join(process.cwd(), "public", "exports", `inbound_order_${order.orderNumber}_${new Date().toISOString().replace(/:/g, "-")}.xlsx`);
+      
+      // 确保导出目录存在
+      const dirname = path.dirname(filePath);
+      if (!fs.existsSync(dirname)) {
+        fs.mkdirSync(dirname, { recursive: true });
+      }
+      
+      // 写入文件
+      await workbook.xlsx.writeFile(filePath);
+      
+      // 设置响应头
+      const filename = path.basename(filePath);
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      
+      // 发送文件
+      res.download(filePath);
+      
+    } catch (err) {
+      console.error("导出Excel文件失败:", err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      res.status(500).json({ message: "导出Excel文件失败", error: errorMessage });
+    }
+  });
+  
+  // 批量导出入库单Excel
+  apiRouter.get("/inbound-orders/export-batch", async (req, res) => {
+    try {
+      console.log("正在处理批量导出入库单请求", req.query);
+      
+      let orders = [];
+      
+      // 判断是否提供了多个订单ID
+      if (req.query.ids) {
+        // 解析传入的ids数组
+        const ids = (req.query.ids as string).split(',').map(id => parseInt(id.trim()));
+        console.log(`正在按ID列表导出 ${ids.length} 条入库单`, ids);
+        
+        // 获取多个指定ID的入库单
+        const orderPromises = ids.map(id => storage.getInboundOrder(id));
+        const orderResults = await Promise.all(orderPromises);
+        
+        // 过滤掉未找到的入库单
+        orders = orderResults.filter(order => order !== undefined) as any[];
+      } else {
+        // 构建过滤参数
+        const filter: any = {};
+        
+        // 状态过滤
+        if (req.query.status) {
+          filter.status = req.query.status as string;
+        }
+        
+        // 仓库过滤
+        if (req.query.warehouseId) {
+          filter.warehouseId = parseInt(req.query.warehouseId as string);
+        }
+        
+        // 获取入库单列表
+        orders = await storage.getInboundOrders(filter);
+      }
+      
+      console.log(`找到 ${orders.length} 条符合条件的入库单记录`);
+      
+      if (orders.length === 0) {
+        return res.status(404).json({ message: "未找到符合条件的入库单" });
+      }
+      
+      // 导出Excel文件
+      const exceljs = require("exceljs");
+      const workbook = new exceljs.Workbook();
+      const worksheet = workbook.addWorksheet("入库单列表");
+      
+      // 添加标题行
+      worksheet.addRow(["入库单号", "仓库", "状态", "创建时间", "总重量(kg)", "总体积(m³)", "订单类型", "备注"]);
+      
+      // 添加每个入库单的信息
+      for (const order of orders) {
+        // 获取仓库信息
+        const warehouse = await storage.getWarehouse(order.warehouseId);
+        const warehouseName = warehouse ? warehouse.name : '未知仓库';
+        
+        worksheet.addRow([
+          order.orderNumber,
+          warehouseName,
+          order.status,
+          new Date(order.createdAt).toLocaleString(),
+          order.totalWeight,
+          order.totalVolume,
+          order.orderType || '',
+          order.notes || ''
+        ]);
+      }
+      
+      // 为每个入库单创建单独的工作表，包含详细信息
+      for (const order of orders) {
+        const orderWorksheet = workbook.addWorksheet(`入库单-${order.orderNumber}`);
+        
+        // 获取仓库信息
+        const warehouse = await storage.getWarehouse(order.warehouseId);
+        const warehouseName = warehouse ? warehouse.name : '未知仓库';
+        
+        // 添加入库单标题行
+        orderWorksheet.addRow(["入库单号", "仓库", "状态", "创建时间", "总重量(kg)", "总体积(m³)"]);
+        
+        // 添加入库单信息
+        orderWorksheet.addRow([
+          order.orderNumber,
+          warehouseName,
+          order.status,
+          new Date(order.createdAt).toLocaleString(),
+          order.totalWeight,
+          order.totalVolume
+        ]);
+        
+        // 添加空行
+        orderWorksheet.addRow([]);
+        
+        // 获取入库单项目
+        const items = await storage.getInboundOrderItems(order.id);
+        
+        // 添加项目标题行
+        orderWorksheet.addRow(["产品名称", "条码", "数量", "包装数", "重量(kg)", "体积(m³)", "外部订单号", "备注"]);
+        
+        // 添加项目数据
+        for (const item of items) {
+          orderWorksheet.addRow([
+            item.productName,
+            item.barcode,
+            item.quantity,
+            item.packageCount,
+            item.weight,
+            item.volume,
+            item.externalOrderNumber || "",
+            item.remark || ""
+          ]);
+        }
+        
+        // 设置宽度
+        orderWorksheet.columns.forEach(column => {
+          column.width = 20;
+        });
+      }
+      
+      // 设置主工作表宽度
+      worksheet.columns.forEach(column => {
+        column.width = 20;
+      });
+      
+      // 生成文件路径
+      const timestamp = new Date().toISOString().replace(/:/g, "-");
+      const filePath = path.join(process.cwd(), "public", "exports", `inbound_orders_batch_${timestamp}.xlsx`);
+      
+      // 确保导出目录存在
+      const dirname = path.dirname(filePath);
+      if (!fs.existsSync(dirname)) {
+        fs.mkdirSync(dirname, { recursive: true });
+      }
+      
+      // 写入文件
+      await workbook.xlsx.writeFile(filePath);
+      
+      // 设置响应头
+      const filename = path.basename(filePath);
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      
+      // 发送文件
+      res.download(filePath);
+      
+    } catch (err) {
+      console.error("批量导出Excel文件失败:", err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      res.status(500).json({ message: "批量导出Excel文件失败", error: errorMessage });
+    }
+  });
+  
+  // 导出出库单Excel
+  apiRouter.get("/outbound-orders/export/:id", async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.id);
+      const order = await storage.getOutboundOrder(orderId);
+      
+      if (!order) {
+        return res.status(404).json({ message: "出库单不存在" });
+      }
+      
+      // 获取出库单项目
+      const items = await storage.getOutboundOrderItems(orderId);
+      
+      // 获取仓库信息
+      const warehouse = await storage.getWarehouse(order.warehouseId);
+      
+      if (!warehouse) {
+        return res.status(400).json({ message: "仓库信息不完整" });
+      }
+      
+      // 导出Excel文件
+      const exceljs = require("exceljs");
+      const workbook = new exceljs.Workbook();
+      const worksheet = workbook.addWorksheet("出库单");
+      
+      // 添加标题行
+      worksheet.addRow(["出库单号", "仓库", "状态", "创建时间", "总重量(kg)", "总体积(m³)"]);
+      
+      // 添加出库单信息
+      worksheet.addRow([
+        order.orderNumber,
+        warehouse.name,
+        order.status,
+        new Date(order.createdAt).toLocaleString(),
+        order.totalWeight,
+        order.totalVolume
+      ]);
+      
+      // 添加空行
+      worksheet.addRow([]);
+      
+      // 添加项目标题行
+      worksheet.addRow(["产品名称", "条码", "数量", "包装数", "重量(kg)", "体积(m³)", "外部订单号", "备注"]);
+      
+      // 添加项目数据
+      for (const item of items) {
+        worksheet.addRow([
+          item.productName,
+          item.barcode,
+          item.quantity,
+          item.packageCount,
+          item.weight,
+          item.volume,
+          item.externalOrderNumber || "",
+          item.remark || ""
+        ]);
+      }
+      
+      // 设置宽度
+      worksheet.columns.forEach(column => {
+        column.width = 20;
+      });
+      
+      // 生成文件路径
+      const filePath = path.join(process.cwd(), "public", "exports", `outbound_order_${order.orderNumber}_${new Date().toISOString().replace(/:/g, "-")}.xlsx`);
+      
+      // 确保导出目录存在
+      const dirname = path.dirname(filePath);
+      if (!fs.existsSync(dirname)) {
+        fs.mkdirSync(dirname, { recursive: true });
+      }
+      
+      // 写入文件
+      await workbook.xlsx.writeFile(filePath);
+      
+      // 设置响应头
+      const filename = path.basename(filePath);
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      
+      // 发送文件
+      res.download(filePath);
+      
+    } catch (err) {
+      console.error("导出Excel文件失败:", err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      res.status(500).json({ message: "导出Excel文件失败", error: errorMessage });
+    }
+  });
+  
+  // 批量导出出库单Excel
+  apiRouter.get("/outbound-orders/export-batch", async (req, res) => {
+    try {
+      console.log("正在处理批量导出出库单请求", req.query);
+      
+      let orders = [];
+      
+      // 判断是否提供了多个订单ID
+      if (req.query.ids) {
+        // 解析传入的ids数组
+        const ids = (req.query.ids as string).split(',').map(id => parseInt(id.trim()));
+        console.log(`正在按ID列表导出 ${ids.length} 条出库单`, ids);
+        
+        // 获取多个指定ID的出库单
+        const orderPromises = ids.map(id => storage.getOutboundOrder(id));
+        const orderResults = await Promise.all(orderPromises);
+        
+        // 过滤掉未找到的出库单
+        orders = orderResults.filter(order => order !== undefined) as any[];
+      } else {
+        // 构建过滤参数
+        const filter: any = {};
+        
+        // 状态过滤
+        if (req.query.status) {
+          filter.status = req.query.status as string;
+        }
+        
+        // 仓库过滤
+        if (req.query.warehouseId) {
+          filter.warehouseId = parseInt(req.query.warehouseId as string);
+        }
+        
+        // 获取出库单列表
+        orders = await storage.getOutboundOrders(filter);
+      }
+      
+      console.log(`找到 ${orders.length} 条符合条件的出库单记录`);
+      
+      if (orders.length === 0) {
+        return res.status(404).json({ message: "未找到符合条件的出库单" });
+      }
+      
+      // 导出Excel文件
+      const exceljs = require("exceljs");
+      const workbook = new exceljs.Workbook();
+      const worksheet = workbook.addWorksheet("出库单列表");
+      
+      // 添加标题行
+      worksheet.addRow(["出库单号", "仓库", "状态", "创建时间", "总重量(kg)", "总体积(m³)", "订单类型", "目的地类型", "备注"]);
+      
+      // 添加每个出库单的信息
+      for (const order of orders) {
+        // 获取仓库信息
+        const warehouse = await storage.getWarehouse(order.warehouseId);
+        const warehouseName = warehouse ? warehouse.name : '未知仓库';
+        
+        worksheet.addRow([
+          order.orderNumber,
+          warehouseName,
+          order.status,
+          new Date(order.createdAt).toLocaleString(),
+          order.totalWeight,
+          order.totalVolume,
+          order.orderType || '',
+          order.destinationType || '',
+          order.notes || ''
+        ]);
+      }
+      
+      // 为每个出库单创建单独的工作表，包含详细信息
+      for (const order of orders) {
+        const orderWorksheet = workbook.addWorksheet(`出库单-${order.orderNumber}`);
+        
+        // 获取仓库信息
+        const warehouse = await storage.getWarehouse(order.warehouseId);
+        const warehouseName = warehouse ? warehouse.name : '未知仓库';
+        
+        // 添加出库单标题行
+        orderWorksheet.addRow(["出库单号", "仓库", "状态", "创建时间", "总重量(kg)", "总体积(m³)"]);
+        
+        // 添加出库单信息
+        orderWorksheet.addRow([
+          order.orderNumber,
+          warehouseName,
+          order.status,
+          new Date(order.createdAt).toLocaleString(),
+          order.totalWeight,
+          order.totalVolume
+        ]);
+        
+        // 添加空行
+        orderWorksheet.addRow([]);
+        
+        // 获取出库单项目
+        const items = await storage.getOutboundOrderItems(order.id);
+        
+        // 添加项目标题行
+        orderWorksheet.addRow(["产品名称", "条码", "数量", "包装数", "重量(kg)", "体积(m³)", "外部订单号", "备注"]);
+        
+        // 添加项目数据
+        for (const item of items) {
+          orderWorksheet.addRow([
+            item.productName,
+            item.barcode,
+            item.quantity,
+            item.packageCount,
+            item.weight,
+            item.volume,
+            item.externalOrderNumber || "",
+            item.remark || ""
+          ]);
+        }
+        
+        // 设置宽度
+        orderWorksheet.columns.forEach(column => {
+          column.width = 20;
+        });
+      }
+      
+      // 设置主工作表宽度
+      worksheet.columns.forEach(column => {
+        column.width = 20;
+      });
+      
+      // 生成文件路径
+      const timestamp = new Date().toISOString().replace(/:/g, "-");
+      const filePath = path.join(process.cwd(), "public", "exports", `outbound_orders_batch_${timestamp}.xlsx`);
+      
+      // 确保导出目录存在
+      const dirname = path.dirname(filePath);
+      if (!fs.existsSync(dirname)) {
+        fs.mkdirSync(dirname, { recursive: true });
+      }
+      
+      // 写入文件
+      await workbook.xlsx.writeFile(filePath);
+      
+      // 设置响应头
+      const filename = path.basename(filePath);
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      
+      // 发送文件
+      res.download(filePath);
+      
+    } catch (err) {
+      console.error("批量导出Excel文件失败:", err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      res.status(500).json({ message: "批量导出Excel文件失败", error: errorMessage });
     }
   });
   
