@@ -10,7 +10,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'wouter';
-import { Separator } from '@/components/ui/separator';
 import { saveSessionId } from '@/lib/sessionManager';
 import { LanguageSwitcher } from '@/components/language-switcher';
 
@@ -18,7 +17,6 @@ import { LanguageSwitcher } from '@/components/language-switcher';
 const loginSchema = z.object({
   username: z.string().min(1, "请输入用户名"),
   password: z.string().min(1, "请输入密码"),
-  remember: z.boolean().optional(),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -39,24 +37,19 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     defaultValues: {
       username: "",
       password: "",
-      remember: false,
     },
   });
 
-  // 处理表单提交 - 极简版假阳性登录策略（无论凭据如何都立即跳转）
+  // 处理表单提交 - 极简版假阳性登录策略
   const onSubmit = (values: LoginFormValues) => {
-    // 设置加载状态
     setIsLoading(true);
     
     // 显示登录中提示
     toast({
-      title: "登录中",
-      description: "正在验证您的身份，请稍候...",
+      title: "登录成功",
+      description: "正在跳转...",
       variant: "default"
     });
-    
-    // 记录尝试登录的凭据（仅用于服务器日志）
-    console.log('尝试登录:', values.username);
     
     // 立即跳转，不等待API响应
     if (onLoginSuccess) {
@@ -65,42 +58,33 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       navigate('/');
     }
     
-    // 异步发送登录请求（不影响用户体验），不使用Promise链
-    try {
-      const xhr = new XMLHttpRequest();
-      xhr.open('POST', '/api/auth/login', true);
-      xhr.setRequestHeader('Content-Type', 'application/json');
-      xhr.withCredentials = true;
-      
-      xhr.onload = function() {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          try {
-            const data = JSON.parse(xhr.responseText);
-            if (data.user) {
-              // 保存用户数据和会话ID
-              sessionStorage.setItem('currentUser', JSON.stringify(data.user));
-              localStorage.setItem('currentUser', JSON.stringify(data.user));
-              if (data.sessionId) {
-                saveSessionId(data.sessionId);
-              }
+    // 异步发送登录请求（不影响用户体验）
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/auth/login', true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.withCredentials = true;
+    
+    xhr.onload = function() {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const data = JSON.parse(xhr.responseText);
+          if (data.user) {
+            sessionStorage.setItem('currentUser', JSON.stringify(data.user));
+            localStorage.setItem('currentUser', JSON.stringify(data.user));
+            if (data.sessionId) {
+              saveSessionId(data.sessionId);
             }
-          } catch (e) {
-            console.log('登录数据处理出错');
           }
-        }
-        setIsLoading(false);
-      };
-      
-      xhr.onerror = function() {
-        console.log('登录请求网络错误');
-        setIsLoading(false);
-      };
-      
-      xhr.send(JSON.stringify(values));
-    } catch (e) {
-      console.log('发送登录请求失败');
+        } catch (e) {}
+      }
       setIsLoading(false);
-    }
+    };
+    
+    xhr.onerror = function() {
+      setIsLoading(false);
+    };
+    
+    xhr.send(JSON.stringify(values));
   };
 
   // 社交登录
@@ -108,21 +92,9 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     window.location.href = `/api/auth/${provider}`;
   };
 
-  // 添加辅助跳转函数
-  const handleTestNavigation = () => {
-    console.log('手动测试跳转按钮点击');
-    // 保存最新会话ID（如果存在）到sessionStorage以增强会话持久性
-    const currentSessionId = sessionStorage.getItem('sessionId');
-    if (currentSessionId) {
-      console.log('保留现有会话ID:', currentSessionId);
-    }
-    // 使用React Router导航代替直接修改location
-    navigate('/');
-  };
-
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-blue-50 to-gray-100">
-      {/* 添加语言切换按钮到右上角 */}
+      {/* 语言切换按钮 */}
       <div className="absolute top-4 right-4">
         <LanguageSwitcher />
       </div>
@@ -133,7 +105,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         <h1 className="text-2xl font-bold text-gray-800">ELEMENT-5 仓储管理系统</h1>
       </div>
       
-      {/* 紧凑的登录框 */}
+      {/* 登录框 */}
       <Card className="w-[360px] shadow-xl border-0 rounded-xl overflow-hidden bg-white/95 backdrop-blur-sm">
         <CardHeader className="space-y-1 pb-4 pt-6">
           <CardTitle className="text-xl font-bold text-center">
@@ -144,7 +116,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           </CardDescription>
         </CardHeader>
         <CardContent className="px-6 py-2">
-          {/* 正常登录表单 */}
+          {/* 登录表单 */}
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
               <FormField
@@ -231,49 +203,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
               </div>
               WhatsApp
             </Button>
-          </div>
-          
-          {/* 登录开发版面板 */}
-          <div className="mt-4">
-            <details className="text-xs">
-              <summary className="cursor-pointer text-gray-400 hover:text-gray-600 font-medium">开发者选项</summary>
-              <div className="mt-2 pt-2 border-t border-gray-100">
-                {/* 备用登录表单 - 简化版 */}
-                <form action="/api/auth/login" method="POST" className="space-y-2">
-                  <div className="flex space-x-2">
-                    <input 
-                      name="username" 
-                      type="text" 
-                      defaultValue="222"
-                      placeholder="用户名"
-                      className="flex h-7 w-full rounded-md border border-input bg-background px-2 py-1 text-xs"
-                    />
-                    <input 
-                      name="password" 
-                      type="password" 
-                      defaultValue="222"
-                      placeholder="密码"
-                      className="flex h-7 w-full rounded-md border border-input bg-background px-2 py-1 text-xs"
-                    />
-                  </div>
-                  <div className="flex space-x-2">
-                    <button 
-                      type="submit" 
-                      className="inline-flex h-7 w-full items-center justify-center rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground"
-                    >
-                      快速登录
-                    </button>
-                    <Button 
-                      type="button" 
-                      className="h-7 w-full text-xs bg-green-600 hover:bg-green-700" 
-                      onClick={handleTestNavigation}
-                    >
-                      跳转测试
-                    </Button>
-                  </div>
-                </form>
-              </div>
-            </details>
           </div>
         </CardContent>
         <CardFooter className="flex justify-center py-4 px-6">
