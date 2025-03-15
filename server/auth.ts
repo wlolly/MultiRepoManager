@@ -302,31 +302,35 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
     express: null
   };
   
-  // 1. 检查请求头中是否有客户端提供的会话ID（支持多种可能的头名称）
+  // 1. 从HTTP头检查会话ID (优先级最高)
   const headerVariations = [
     'x-session-id',
-    'X-Session-ID',
+    'X-Session-ID', 
+    'x-client-session-id',
+    'X-Client-Session-ID',
     'sessionid',
     'SessionId',
     'session-id',
-    'client-session-id',
-    'X-Client-Session-ID'
+    'client-session-id'
   ];
   
   // 尝试所有可能的头名称
   for (const headerName of headerVariations) {
-    const currentHeader = req.headers[headerName] as string;
-    if (currentHeader) {
-      // 处理可能的数组或逗号分隔的情况
-      if (Array.isArray(currentHeader)) {
-        clientSessionId = currentHeader[0];
-      } else if (typeof currentHeader === 'string' && currentHeader.includes(',')) {
-        clientSessionId = currentHeader.split(',')[0].trim();
-      } else if (typeof currentHeader === 'string') {
-        clientSessionId = currentHeader;
+    const headerValue = req.headers[headerName];
+    if (headerValue) {
+      let id = headerValue;
+      // 处理数组
+      if (Array.isArray(id)) {
+        id = id[0];
       }
       
-      if (clientSessionId && clientSessionId.length >= 16) {
+      // 处理逗号分隔 (可能存在多个ID情况)
+      if (typeof id === 'string' && id.includes(',')) {
+        id = id.split(',')[0].trim();
+      }
+      
+      if (typeof id === 'string' && id.length >= 16) {
+        clientSessionId = id;
         sessionSources.header = clientSessionId;
         console.log(`从请求头 [${headerName}] 获取会话ID: ${clientSessionId}`);
         break; // 找到有效会话ID后停止查找
