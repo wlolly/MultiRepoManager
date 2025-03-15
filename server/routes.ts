@@ -207,8 +207,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   apiRouter.post('/auth/users/:id/role', verifySession, isAdmin, updateUserRole);
 
   // 权限管理接口 - 获取页面权限
-  apiRouter.get('/permissions/pages', verifySession, async (req, res) => {
+  apiRouter.get('/permissions/pages', async (req, res) => {
     try {
+      // 检查是否已登录
+      if (!req.user) {
+        return res.status(401).json({ message: '未登录' });
+      }
+      
       const userId = (req.user as any).id;
       const permissions = await getUserPagePermissions(userId);
       res.json(permissions);
