@@ -191,7 +191,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           req.session.socialBound = hasSocialBound;
         }
         
-        // 返回成功响应
+        // 检查是否是表单提交请求
+        const isFormSubmit = req.headers['content-type']?.includes('application/x-www-form-urlencoded');
+        
+        // 如果是表单提交或明确指定需要重定向
+        if (isFormSubmit || req.body.redirect === 'true') {
+          // 根据是否需要绑定社交账号决定重定向到哪个页面
+          const redirectUrl = needSocialBinding ? '/settings' : '/';
+          console.log(`用户 ${user.username} 登录成功，重定向到 ${redirectUrl}`);
+          return res.redirect(redirectUrl);
+        }
+        
+        // 返回JSON响应（用于API调用）
         return res.json({
           message: '登录成功',
           success: true,
