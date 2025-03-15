@@ -117,7 +117,11 @@ export const pageNameEnum = mysqlEnum("page_name", [
   "users", // 用户管理
   "teams", // 团队管理
   "team-permissions", // 团队权限
-  "settings" // 系统设置
+  "settings", // 系统设置
+  "new-product", // 新增商品页面
+  "create-outbound-order", // 创建出库单页面
+  "create-inbound-order", // 创建入库单页面
+  "create-warehouse-transfer" // 创建仓库调拨单页面
 ]);
 
 // 团队页面权限表
