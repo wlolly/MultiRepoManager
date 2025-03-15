@@ -115,21 +115,31 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       
       // 检查是否需要绑定社交账号
       if (data.needSocialBinding) {
-        toast.warning("为了提高账户安全性，请前往设置页面绑定微信或WhatsApp", {
-          title: "请绑定社交账号",
+        toast.warning("系统安全策略要求您必须绑定社交账号才能继续使用", {
+          title: "需要绑定社交账号",
           duration: 6000,
         });
+        
+        // 如果需要绑定社交账号，则跳转到设置页面
+        setTimeout(() => {
+          try {
+            navigate('/settings?needBind=true');
+            console.log('正在跳转到设置页面进行社交账号绑定');
+          } catch (navError) {
+            console.error('导航失败:', navError);
+          }
+        }, 1000);
+      } else {
+        // 正常跳转到主页
+        setTimeout(() => {
+          try {
+            navigate('/');
+            console.log('成功导航到主页');
+          } catch (navError) {
+            console.error('导航失败:', navError);
+          }
+        }, 100);
       }
-      
-      // 延迟跳转，避免可能的冲突
-      setTimeout(() => {
-        try {
-          navigate('/');
-          console.log('成功导航到主页');
-        } catch (navError) {
-          console.error('导航失败:', navError);
-        }
-      }, 100);
       
     } catch (error: any) {
       console.error('登录错误:', error);
