@@ -523,7 +523,7 @@ export default function WarehouseTransfers() {
     setSelectedTransferId(null);
   };
   
-  // 导入弹窗相关状态
+  // 显示导入对话框
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [importErrors, setImportErrors] = useState<string[]>([]);
   const [importPreview, setImportPreview] = useState<any[]>([]);
@@ -540,8 +540,46 @@ export default function WarehouseTransfers() {
           <p className="text-muted-foreground">{t("warehouseTransfer.subtitle")}</p>
         </div>
         <div className="flex gap-2">
-          {/* 使用ExcelButtons组件 */}
-          <ExcelButtons 
+          {/* 使用独立按钮，临时代替SimpleExcelButtons */}
+          <Button
+            variant="outline"
+            size="default"
+            onClick={handleDownloadTemplate}
+            className="flex items-center"
+            title={t("warehouseTransfer.download_template_tooltip")}
+          >
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            {t("download_template")}
+          </Button>
+          <Button
+            variant="outline"
+            size="default"
+            onClick={() => setImportDialogOpen(true)}
+            className="flex items-center"
+            title={t("warehouseTransfer.import_tooltip")}
+          >
+            <FileUp className="mr-2 h-4 w-4" />
+            {t("import_excel")}
+          </Button>
+          <Button
+            variant="outline"
+            size="default"
+            onClick={() => {
+              if (filteredTransfers.length > 0) {
+                exportAllTransfersToExcel();
+              } else {
+                toast.error(t("warehouseTransfer.no_data_to_export"));
+              }
+            }}
+            className="flex items-center"
+            title={t("warehouseTransfer.export_tooltip")}
+          >
+            <FileDown className="mr-2 h-4 w-4" />
+            {t("export_excel")}
+          </Button>
+          {/* 已注释的SimpleExcelButtons组件
+          <SimpleExcelButtons
+            size="default"
             onDownloadTemplate={handleDownloadTemplate}
             onImport={() => setImportDialogOpen(true)}
             onExport={() => {
@@ -551,13 +589,13 @@ export default function WarehouseTransfers() {
                 toast.error(t("warehouseTransfer.no_data_to_export"));
               }
             }}
-            size="sm"
             tooltips={{
               template: t("warehouseTransfer.download_template_tooltip"),
               import: t("warehouseTransfer.import_tooltip"),
               export: t("warehouseTransfer.export_tooltip")
             }}
           />
+          */}
           {/* 创建调拨单按钮 */}
           <Button onClick={handleCreateTransfer}>
             <Plus className="mr-2 h-4 w-4" />
@@ -571,7 +609,7 @@ export default function WarehouseTransfers() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
                 {t("warehouseTransfer.total_transfers")}
               </CardTitle>
             </CardHeader>
@@ -579,19 +617,24 @@ export default function WarehouseTransfers() {
               <div className="text-2xl font-bold">{stats.totalTransfers}</div>
             </CardContent>
           </Card>
+          
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
                 {t("warehouseTransfer.pending_transfers")}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.pendingTransfers}</div>
+              <p className="text-xs text-muted-foreground">
+                {((stats.pendingTransfers / stats.totalTransfers) * 100 || 0).toFixed(1)}% {t("warehouseTransfer.of_total")}
+              </p>
             </CardContent>
           </Card>
+          
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
                 {t("warehouseTransfer.total_weight")}
               </CardTitle>
             </CardHeader>
@@ -599,9 +642,10 @@ export default function WarehouseTransfers() {
               <div className="text-2xl font-bold">{stats.totalWeight.toFixed(2)} kg</div>
             </CardContent>
           </Card>
+          
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
                 {t("warehouseTransfer.total_volume")}
               </CardTitle>
             </CardHeader>
@@ -619,8 +663,46 @@ export default function WarehouseTransfers() {
           <p className="text-sm text-muted-foreground">{t("warehouseTransfer.excel_description")}</p>
         </div>
         <div className="flex gap-2">
-          {/* 使用ExcelButtons组件 */}
-          <ExcelButtons 
+          {/* 使用独立按钮，临时代替SimpleExcelButtons */}
+          <Button
+            variant="outline"
+            size="default"
+            onClick={handleDownloadTemplate}
+            className="flex items-center"
+            title={t("warehouseTransfer.download_template_tooltip")}
+          >
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            {t("download_template")}
+          </Button>
+          <Button
+            variant="outline"
+            size="default"
+            onClick={() => setImportDialogOpen(true)}
+            className="flex items-center"
+            title={t("warehouseTransfer.import_tooltip")}
+          >
+            <FileUp className="mr-2 h-4 w-4" />
+            {t("import_excel")}
+          </Button>
+          <Button
+            variant="outline"
+            size="default"
+            onClick={() => {
+              if (filteredTransfers.length > 0) {
+                exportAllTransfersToExcel();
+              } else {
+                toast.error(t("warehouseTransfer.no_data_to_export"));
+              }
+            }}
+            className="flex items-center"
+            title={t("warehouseTransfer.export_tooltip")}
+          >
+            <FileDown className="mr-2 h-4 w-4" />
+            {t("export_excel")}
+          </Button>
+          {/* 已注释的SimpleExcelButtons组件
+          <SimpleExcelButtons
+            size="default"
             onDownloadTemplate={handleDownloadTemplate}
             onImport={() => setImportDialogOpen(true)}
             onExport={() => {
@@ -630,412 +712,320 @@ export default function WarehouseTransfers() {
                 toast.error(t("warehouseTransfer.no_data_to_export"));
               }
             }}
-            size="sm"
             tooltips={{
               template: t("warehouseTransfer.download_template_tooltip"),
               import: t("warehouseTransfer.import_tooltip"),
               export: t("warehouseTransfer.export_tooltip")
             }}
           />
+          */}
         </div>
       </div>
 
-      {/* 筛选器 */}
-      <Card className="mb-6">
-        <CardHeader className="pb-3">
-          <CardTitle>{t("warehouseTransfer.filter_title")}</CardTitle>
-          <CardDescription>
-            {t("warehouseTransfer.filter_description")}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {/* 搜索框 */}
-          <div className="space-y-2">
-            <Label htmlFor="search">{t("warehouseTransfer.search")}</Label>
-            <div className="relative">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="search"
-                placeholder={t("warehouseTransfer.search_placeholder")}
-                className="pl-8"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-          </div>
-          
-          {/* 仓库筛选 */}
-          <div className="space-y-2">
-            <Label htmlFor="warehouse">{t("warehouseTransfer.filter_warehouse")}</Label>
-            <Select
-              value={warehouseFilter}
-              onValueChange={setWarehouseFilter}
-            >
-              <SelectTrigger id="warehouse">
-                <SelectValue placeholder={t("warehouseTransfer.all_warehouses")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">{t("warehouseTransfer.all_warehouses")}</SelectItem>
-                {warehouses.map((warehouse) => (
-                  <SelectItem key={warehouse.id} value={warehouse.id.toString()}>
-                    {warehouse.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          {/* 状态筛选 */}
-          <div className="space-y-2">
-            <Label htmlFor="status">{t("warehouseTransfer.filter_status")}</Label>
-            <Select
-              value={statusFilter}
-              onValueChange={setStatusFilter}
-            >
-              <SelectTrigger id="status">
-                <SelectValue placeholder={t("warehouseTransfer.all_statuses")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">{t("warehouseTransfer.all_statuses")}</SelectItem>
-                <SelectItem value="pending">{t("warehouseTransfer.status_pending")}</SelectItem>
-                <SelectItem value="processing">{t("warehouseTransfer.status_processing")}</SelectItem>
-                <SelectItem value="completed">{t("warehouseTransfer.status_completed")}</SelectItem>
-                <SelectItem value="cancelled">{t("warehouseTransfer.status_cancelled")}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          {/* 日期筛选 */}
-          <div className="space-y-2">
-            <Label htmlFor="date">{t("warehouseTransfer.filter_date")}</Label>
-            <Select
-              value={dateFilter}
-              onValueChange={setDateFilter}
-            >
-              <SelectTrigger id="date">
-                <SelectValue placeholder={t("warehouseTransfer.all_dates")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">{t("warehouseTransfer.all_dates")}</SelectItem>
-                <SelectItem value="today">{t("warehouseTransfer.today")}</SelectItem>
-                <SelectItem value="yesterday">{t("warehouseTransfer.yesterday")}</SelectItem>
-                <SelectItem value="this-week">{t("warehouseTransfer.this_week")}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-        <CardFooter className="border-t px-6 py-4">
-          <div className="flex items-center justify-between w-full">
-            <Button 
-              variant="outline"
-              onClick={() => {
-                setSearchQuery("");
-                setStatusFilter("");
-                setDateFilter("");
-                setWarehouseFilter("");
-              }}
-              className="flex items-center"
-            >
-              <RefreshCw className="mr-2 h-4 w-4" />
-              {t("warehouseTransfer.reset_filters")}
-            </Button>
-            
-            <div className="flex items-center space-x-2">
-              <Tabs 
-                value={view} 
-                onValueChange={(v) => setView(v as "all" | "recent")}
-                className="w-full"
+      {/* 过滤和搜索 */}
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div className="flex items-center space-x-2 flex-1">
+          <Input
+            placeholder={t("warehouseTransfer.search_transfers")}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="max-w-sm"
+          />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Filter className="mr-2 h-4 w-4" />
+                {t("warehouseTransfer.filter")}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[200px]">
+              <DropdownMenuCheckboxItem
+                checked={statusFilter === ""}
+                onCheckedChange={() => setStatusFilter("")}
               >
-                <TabsList className="grid w-48 grid-cols-2">
-                  <TabsTrigger value="all">{t("warehouseTransfer.all_records")}</TabsTrigger>
-                  <TabsTrigger value="recent">{t("warehouseTransfer.recent_records")}</TabsTrigger>
-                </TabsList>
-              </Tabs>
+                {t("warehouseTransfer.all_statuses")}
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={statusFilter === "pending"}
+                onCheckedChange={() => setStatusFilter("pending")}
+              >
+                {t("warehouseTransfer.pending")}
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={statusFilter === "processing"}
+                onCheckedChange={() => setStatusFilter("processing")}
+              >
+                {t("warehouseTransfer.processing")}
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={statusFilter === "completed"}
+                onCheckedChange={() => setStatusFilter("completed")}
+              >
+                {t("warehouseTransfer.completed")}
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={statusFilter === "cancelled"}
+                onCheckedChange={() => setStatusFilter("cancelled")}
+              >
+                {t("warehouseTransfer.cancelled")}
+              </DropdownMenuCheckboxItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <Select value={warehouseFilter} onValueChange={setWarehouseFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder={t("warehouseTransfer.all_warehouses")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">{t("warehouseTransfer.all_warehouses")}</SelectItem>
+              {warehouses.map((warehouse) => (
+                <SelectItem key={warehouse.id} value={warehouse.id.toString()}>
+                  {warehouse.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <Select value={dateFilter} onValueChange={setDateFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder={t("warehouseTransfer.date_range")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">{t("warehouseTransfer.all_time")}</SelectItem>
+              <SelectItem value="today">{t("warehouseTransfer.today")}</SelectItem>
+              <SelectItem value="week">{t("warehouseTransfer.this_week")}</SelectItem>
+              <SelectItem value="month">{t("warehouseTransfer.this_month")}</SelectItem>
+              <SelectItem value="year">{t("warehouseTransfer.this_year")}</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          {/* 单个调拨单导出选项已移至全局Excel按钮 */}
+        </div>
+      </div>
+      
+      {/* 数据视图选择 */}
+      <Tabs defaultValue="all" value={view} onValueChange={(value) => setView(value as "all" | "recent")} className="mb-6">
+        <TabsList>
+          <TabsTrigger value="all">{t("warehouseTransfer.all_transfers")}</TabsTrigger>
+          <TabsTrigger value="recent">{t("warehouseTransfer.recent_transfers")}</TabsTrigger>
+        </TabsList>
+      </Tabs>
+      
+      {/* 调拨单列表 */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>{t("warehouseTransfer.warehouse_transfers_list")}</CardTitle>
+            <CardDescription>
+              {t("warehouseTransfer.found_count_items", { count: displayedTransfers.length })}
+            </CardDescription>
+          </div>
+          {selectedTransfers.length > 0 && (
+            <Button variant="outline" size="sm" onClick={exportSelectedTransfers}>
+              <FileDown className="mr-2 h-4 w-4" />
+              {t("warehouseTransfer.export_selected", { count: selectedTransfers.length })}
+            </Button>
+          )}
+        </CardHeader>
+        <CardContent>
+          {isLoadingTransfers ? (
+            <div className="flex items-center justify-center h-[200px]">
+              <p>{t("warehouseTransfer.loading")}...</p>
             </div>
+          ) : displayedTransfers.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-[200px] text-center">
+              <p className="text-muted-foreground mb-2">{t("warehouseTransfer.no_transfers_found")}</p>
+              <Button variant="outline" size="sm" onClick={handleCreateTransfer}>
+                <Plus className="mr-2 h-4 w-4" />
+                {t("warehouseTransfer.create_first_transfer")}
+              </Button>
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-12">
+                      <div className="flex items-center justify-center">
+                        <input
+                          type="checkbox"
+                          checked={selectAll}
+                          onChange={(e) => {
+                            setSelectAll(e.target.checked);
+                            if (e.target.checked) {
+                              // 选择所有显示的调拨单
+                              setSelectedTransfers(displayedTransfers.map(t => t.id));
+                            } else {
+                              // 取消所有选择
+                              setSelectedTransfers([]);
+                            }
+                          }}
+                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        />
+                      </div>
+                    </TableHead>
+                    <TableHead>{t("warehouseTransfer.reference_number")}</TableHead>
+                    <TableHead>{t("warehouseTransfer.source_warehouse")}</TableHead>
+                    <TableHead>{t("warehouseTransfer.target_warehouse")}</TableHead>
+                    <TableHead>{t("warehouseTransfer.status")}</TableHead>
+                    <TableHead className="text-right">{t("warehouseTransfer.items")}</TableHead>
+                    <TableHead className="text-right">{t("warehouseTransfer.weight")}</TableHead>
+                    <TableHead className="text-right">{t("warehouseTransfer.volume")}</TableHead>
+                    <TableHead>{t("warehouseTransfer.created_at")}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {displayedTransfers.map((transfer) => (
+                    <TableRow 
+                      key={transfer.id}
+                      className="hover:bg-muted/50"
+                    >
+                      <TableCell className="w-12">
+                        <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={selectedTransfers.includes(transfer.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedTransfers([...selectedTransfers, transfer.id]);
+                              } else {
+                                setSelectedTransfers(selectedTransfers.filter(id => id !== transfer.id));
+                              }
+                              // 同步全选状态
+                              if (!e.target.checked && selectAll) {
+                                setSelectAll(false);
+                              } else if (e.target.checked && selectedTransfers.length + 1 === displayedTransfers.length) {
+                                setSelectAll(true);
+                              }
+                            }}
+                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                          />
+                        </div>
+                      </TableCell>
+                      <TableCell 
+                        className="font-medium cursor-pointer"
+                        onClick={() => handleViewTransfer(transfer.id)}
+                      >{transfer.referenceNumber}</TableCell>
+                      <TableCell className="cursor-pointer" onClick={() => handleViewTransfer(transfer.id)}>
+                        {transfer.sourceWarehouse.name}
+                      </TableCell>
+                      <TableCell className="cursor-pointer" onClick={() => handleViewTransfer(transfer.id)}>
+                        {transfer.targetWarehouse.name}
+                      </TableCell>
+                      <TableCell className="cursor-pointer" onClick={() => handleViewTransfer(transfer.id)}>
+                        <Badge variant={getStatusBadgeVariant(transfer.status)}>
+                          {t(`warehouseTransfer.status.${transfer.status}`)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right cursor-pointer" onClick={() => handleViewTransfer(transfer.id)}>
+                        {transfer.totalItems}
+                      </TableCell>
+                      <TableCell className="text-right cursor-pointer" onClick={() => handleViewTransfer(transfer.id)}>
+                        {transfer.totalWeight.toFixed(2)} kg
+                      </TableCell>
+                      <TableCell className="text-right cursor-pointer" onClick={() => handleViewTransfer(transfer.id)}>
+                        {transfer.totalVolume.toFixed(3)} m³
+                      </TableCell>
+                      <TableCell className="cursor-pointer" onClick={() => handleViewTransfer(transfer.id)}>
+                        {formatDate(transfer.createdAt)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+        <CardFooter className="flex justify-between">
+          <div className="text-sm text-muted-foreground">
+            {searchQuery && filteredTransfers.length > 0 && 
+              t("warehouseTransfer.showing_filtered_results", { count: filteredTransfers.length })}
+          </div>
+          <div className="text-sm text-muted-foreground">
+            {filteredTransfers.length > 0 && (
+              <>
+                {t("warehouseTransfer.current_page_total")}: {formatDate(new Date())}
+                <br />
+                {t("warehouseTransfer.weight_volume_total")}: {totalWeight.toFixed(2)} kg / {totalVolume.toFixed(3)} m³
+              </>
+            )}
           </div>
         </CardFooter>
       </Card>
-      
-      {/* 批量操作区域 */}
-      {selectedTransfers.length > 0 && (
-        <Card className="mb-6 border border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-900">
-          <CardContent className="flex items-center justify-between py-4">
-            <div className="flex items-center space-x-2">
-              <Badge variant="outline" className="px-3 py-1 text-sm">
-                {t("warehouseTransfer.selected")}: {selectedTransfers.length}
-              </Badge>
-              <span className="text-sm text-muted-foreground">
-                {t("warehouseTransfer.total")}: {filteredTransfers.length}
-              </span>
-            </div>
-            <div className="flex gap-2">
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={() => {
-                  setSelectedTransfers([]);
-                  setSelectAll(false);
-                }}
-              >
-                {t("warehouseTransfer.deselect_all")}
-              </Button>
-              <Button 
-                size="sm"
-                onClick={() => setMultiExportDialogOpen(true)}
-              >
-                <FileDown className="mr-2 h-4 w-4" />
-                {t("warehouseTransfer.export_selected")}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-      
-      {/* 多选导出确认对话框 */}
-      <Dialog open={multiExportDialogOpen} onOpenChange={setMultiExportDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t("warehouseTransfer.export_selected_transfers")}</DialogTitle>
-            <DialogDescription>
-              {t("warehouseTransfer.export_selected_description", { count: selectedTransfers.length })}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <p className="text-sm text-muted-foreground mb-4">
-              {t("warehouseTransfer.export_selected_details")}
-            </p>
-            <div className="flex justify-between items-center">
-              <Badge variant="outline" className="px-3 py-1">
-                {t("warehouseTransfer.selected")}: {selectedTransfers.length}
-              </Badge>
-              {isExporting && <p className="text-sm text-muted-foreground">{t("warehouseTransfer.exporting")}...</p>}
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setMultiExportDialogOpen(false)}>
-              {t("common.cancel")}
-            </Button>
-            <Button onClick={exportSelectedTransfers} disabled={isExporting || selectedTransfers.length === 0}>
-              {isExporting ? t("warehouseTransfer.processing") : t("warehouseTransfer.confirm_export")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      {/* 调拨单列表 */}
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-12">
-                <input
-                  type="checkbox"
-                  className="h-4 w-4 rounded border-gray-300"
-                  checked={selectAll}
-                  onChange={() => {
-                    if (selectAll) {
-                      setSelectedTransfers([]);
-                    } else {
-                      setSelectedTransfers(filteredTransfers.map(t => t.id));
-                    }
-                    setSelectAll(!selectAll);
-                  }}
-                />
-              </TableHead>
-              <TableHead className="w-[100px]">{t("warehouseTransfer.reference")}</TableHead>
-              <TableHead>{t("warehouseTransfer.source_warehouse")}</TableHead>
-              <TableHead>{t("warehouseTransfer.target_warehouse")}</TableHead>
-              <TableHead className="hidden md:table-cell">{t("warehouseTransfer.created_at")}</TableHead>
-              <TableHead className="hidden md:table-cell">{t("warehouseTransfer.items")}</TableHead>
-              <TableHead className="hidden md:table-cell">{t("warehouseTransfer.weight")}</TableHead>
-              <TableHead className="hidden md:table-cell">{t("warehouseTransfer.volume")}</TableHead>
-              <TableHead>{t("warehouseTransfer.status")}</TableHead>
-              <TableHead className="text-right">{t("warehouseTransfer.actions")}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoadingTransfers ? (
-              <TableRow>
-                <TableCell colSpan={10} className="h-24 text-center">
-                  {t("warehouseTransfer.loading")}
-                </TableCell>
-              </TableRow>
-            ) : displayedTransfers.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={10} className="h-24 text-center">
-                  {t("warehouseTransfer.no_results")}
-                </TableCell>
-              </TableRow>
-            ) : (
-              displayedTransfers.map((transfer) => (
-                <TableRow key={transfer.id}>
-                  <TableCell>
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-gray-300"
-                      checked={selectedTransfers.includes(transfer.id)}
-                      onChange={() => {
-                        if (selectedTransfers.includes(transfer.id)) {
-                          setSelectedTransfers(selectedTransfers.filter(id => id !== transfer.id));
-                        } else {
-                          setSelectedTransfers([...selectedTransfers, transfer.id]);
-                        }
-                      }}
-                    />
-                  </TableCell>
-                  <TableCell className="font-mono text-xs">
-                    {transfer.referenceNumber}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{transfer.sourceWarehouse.name}</span>
-                      <span className="text-xs text-muted-foreground">{transfer.sourceWarehouse.location}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{transfer.targetWarehouse.name}</span>
-                      <span className="text-xs text-muted-foreground">{transfer.targetWarehouse.location}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    {formatDate(transfer.createdAt)}
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell text-center">
-                    {transfer.totalItems}
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    {transfer.totalWeight.toFixed(2)} kg
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    {transfer.totalVolume.toFixed(3)} m³
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={getStatusBadgeVariant(transfer.status)}>
-                      {t(`warehouseTransfer.status_${transfer.status}`)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">{t("warehouseTransfer.open_menu")}</span>
-                          <MoreHorizontalIcon className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>{t("warehouseTransfer.actions")}</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => openConfirmDialog(transfer.id, "view")}>
-                          <Eye className="mr-2 h-4 w-4" />
-                          {t("warehouseTransfer.view_details")}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => openConfirmDialog(transfer.id, "export")}>
-                          <FileDown className="mr-2 h-4 w-4" />
-                          {t("warehouseTransfer.export_to_excel")}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        {transfer.status === "pending" && (
-                          <DropdownMenuItem onClick={() => openConfirmDialog(transfer.id, "complete")}>
-                            <Check className="mr-2 h-4 w-4" />
-                            {t("warehouseTransfer.mark_as_completed")}
-                          </DropdownMenuItem>
-                        )}
-                        {(transfer.status === "pending" || transfer.status === "processing") && (
-                          <DropdownMenuItem onClick={() => openConfirmDialog(transfer.id, "cancel")}>
-                            <X className="mr-2 h-4 w-4" />
-                            {t("warehouseTransfer.cancel_transfer")}
-                          </DropdownMenuItem>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
-      
-      {/* 摘要信息 */}
-      <div className="mt-4 flex justify-between text-sm text-muted-foreground">
-        <div>
-          {t("warehouseTransfer.showing")} {displayedTransfers.length} {t("warehouseTransfer.of")} {filteredTransfers.length} {t("warehouseTransfer.transfers")}
-        </div>
-        <div>
-          {t("warehouseTransfer.total")}: {totalWeight.toFixed(2)} kg, {totalVolume.toFixed(3)} m³
-        </div>
-      </div>
-      
-      {/* 操作确认对话框 */}
-      <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {actionType === "export" && t("warehouseTransfer.confirm_export_title")}
-              {actionType === "view" && t("warehouseTransfer.confirm_view_title")}
-              {actionType === "cancel" && t("warehouseTransfer.confirm_cancel_title")}
-              {actionType === "complete" && t("warehouseTransfer.confirm_complete_title")}
-            </DialogTitle>
-            <DialogDescription>
-              {actionType === "export" && t("warehouseTransfer.confirm_export_description")}
-              {actionType === "view" && t("warehouseTransfer.confirm_view_description")}
-              {actionType === "cancel" && t("warehouseTransfer.confirm_cancel_description")}
-              {actionType === "complete" && t("warehouseTransfer.confirm_complete_description")}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmDialogOpen(false)}>
-              {t("common.cancel")}
-            </Button>
-            <Button onClick={confirmAction}>
-              {t("common.confirm")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      {/* 导入对话框 */}
+
+      {/* Excel导入对话框 */}
       <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-w-4xl">
           <DialogHeader>
-            <DialogTitle>{t("warehouseTransfer.import_title")}</DialogTitle>
+            <DialogTitle>{t("warehouseTransfer.import_from_excel")}</DialogTitle>
             <DialogDescription>
-              {t("warehouseTransfer.import_description")}
+              {t("warehouseTransfer.import_excel_description")}
             </DialogDescription>
           </DialogHeader>
           
-          {/* 上传区域 */}
-          <div className="grid grid-cols-1 gap-4 py-4">
-            {/* 文件上传 */}
-            <div className="space-y-2">
-              <Label htmlFor="file">{t("warehouseTransfer.select_file")}</Label>
+          <div className="space-y-4">
+            {/* 导入步骤指南 */}
+            <div className="bg-muted p-4 rounded-lg mb-4">
+              <h3 className="font-medium mb-2">{t("warehouseTransfer.import_steps")}：</h3>
+              <ol className="list-decimal pl-5 space-y-1 text-sm">
+                <li>{t("warehouseTransfer.download_first")}<Button 
+                  variant="link" 
+                  className="h-auto p-0 text-sm font-medium underline" 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleDownloadTemplate();
+                  }}
+                >{t("warehouseTransfer.template")}</Button>{t("warehouseTransfer.fill_template")}</li>
+                <li>{t("warehouseTransfer.upload_filled_file")}</li>
+                <li>{t("warehouseTransfer.system_will_verify")}</li>
+                <li>{t("warehouseTransfer.confirm_and_import")}</li>
+              </ol>
+              <div className="mt-2 text-xs text-muted-foreground">
+                <strong>{t("common.note")}：</strong> {t("warehouseTransfer.format_requirement")}
+              </div>
+            </div>
+            
+            <div className="grid w-full max-w-sm items-center gap-1.5">
+              <Label htmlFor="excel-file">{t("warehouseTransfer.excel_file")}</Label>
               <Input 
-                id="file" 
+                id="excel-file" 
                 type="file" 
                 accept=".xlsx,.xls" 
                 onChange={handleFileChange}
               />
-              {importFile && (
-                <p className="text-sm text-muted-foreground">
-                  {t("warehouseTransfer.selected_file")}: {importFile.name}
+              <div className="flex justify-between items-center">
+                <p className="text-xs text-muted-foreground">
+                  {t("warehouseTransfer.supported_formats")}: .xlsx, .xls
                 </p>
-              )}
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleDownloadTemplate}
+                  className="h-8 text-xs ml-2"
+                >
+                  <FileSpreadsheet className="mr-2 h-3 w-3" />
+                  {t("warehouseTransfer.download_template")}
+                </Button>
+              </div>
             </div>
             
-            {/* 仓库选择 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* 源仓库和目标仓库选择 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <div className="space-y-2">
-                <Label htmlFor="sourceWarehouse">{t("warehouseTransfer.source_warehouse")}</Label>
-                <Select
-                  value={sourceWarehouseId}
-                  onValueChange={setSourceWarehouseId}
-                >
-                  <SelectTrigger id="sourceWarehouse">
+                <Label htmlFor="source-warehouse">{t("warehouseTransfer.source_warehouse")}</Label>
+                <Select value={sourceWarehouseId} onValueChange={setSourceWarehouseId}>
+                  <SelectTrigger id="source-warehouse">
                     <SelectValue placeholder={t("warehouseTransfer.select_source_warehouse")} />
                   </SelectTrigger>
                   <SelectContent>
                     {warehouses.map((warehouse) => (
-                      <SelectItem key={warehouse.id} value={warehouse.id.toString()}>
+                      <SelectItem 
+                        key={`source-${warehouse.id}`} 
+                        value={warehouse.id.toString()}
+                        disabled={warehouse.id.toString() === targetWarehouseId}
+                      >
                         {warehouse.name}
                       </SelectItem>
                     ))}
@@ -1044,17 +1034,18 @@ export default function WarehouseTransfers() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="targetWarehouse">{t("warehouseTransfer.target_warehouse")}</Label>
-                <Select
-                  value={targetWarehouseId}
-                  onValueChange={setTargetWarehouseId}
-                >
-                  <SelectTrigger id="targetWarehouse">
+                <Label htmlFor="target-warehouse">{t("warehouseTransfer.target_warehouse")}</Label>
+                <Select value={targetWarehouseId} onValueChange={setTargetWarehouseId}>
+                  <SelectTrigger id="target-warehouse">
                     <SelectValue placeholder={t("warehouseTransfer.select_target_warehouse")} />
                   </SelectTrigger>
                   <SelectContent>
                     {warehouses.map((warehouse) => (
-                      <SelectItem key={warehouse.id} value={warehouse.id.toString()}>
+                      <SelectItem 
+                        key={`target-${warehouse.id}`} 
+                        value={warehouse.id.toString()}
+                        disabled={warehouse.id.toString() === sourceWarehouseId}
+                      >
                         {warehouse.name}
                       </SelectItem>
                     ))}
@@ -1063,24 +1054,23 @@ export default function WarehouseTransfers() {
               </div>
             </div>
             
-            {/* 备注 */}
-            <div className="space-y-2">
-              <Label htmlFor="notes">{t("warehouseTransfer.notes")}</Label>
-              <Input 
-                id="notes" 
+            {/* 备注输入框 */}
+            <div className="space-y-2 mt-4">
+              <Label htmlFor="import-notes">{t("warehouseTransfer.notes")}</Label>
+              <Input
+                id="import-notes"
                 value={importNotes}
                 onChange={(e) => setImportNotes(e.target.value)}
-                placeholder={t("warehouseTransfer.notes_placeholder")}
+                placeholder={t("warehouseTransfer.enter_notes")}
               />
             </div>
             
-            {/* 错误显示 */}
             {importErrors.length > 0 && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>{t("warehouseTransfer.import_errors")}</AlertTitle>
                 <AlertDescription>
-                  <ul className="list-disc list-inside text-sm mt-2">
+                  <ul className="list-disc pl-4 mt-2">
                     {importErrors.map((error, index) => (
                       <li key={index}>{error}</li>
                     ))}
@@ -1089,85 +1079,95 @@ export default function WarehouseTransfers() {
               </Alert>
             )}
             
-            {/* 预览表格 */}
             {importPreview.length > 0 && (
-              <div>
-                <h3 className="font-medium mb-2">{t("warehouseTransfer.preview")}</h3>
-                <div className="rounded-md border max-h-60 overflow-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[60px]">{t("warehouseTransfer.row")}</TableHead>
-                        <TableHead>{t("warehouseTransfer.product_name")}</TableHead>
-                        <TableHead>{t("warehouseTransfer.barcode")}</TableHead>
-                        <TableHead className="text-right">{t("warehouseTransfer.quantity")}</TableHead>
-                        <TableHead className="text-right">{t("warehouseTransfer.packages")}</TableHead>
-                        <TableHead className="text-right">{t("warehouseTransfer.weight")}</TableHead>
-                        <TableHead className="text-right">{t("warehouseTransfer.volume")}</TableHead>
-                        <TableHead>{t("warehouseTransfer.status")}</TableHead>
+              <div className="max-h-[400px] overflow-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[80px]">{t("warehouseTransfer.row")}</TableHead>
+                      <TableHead>{t("warehouseTransfer.product_name")}</TableHead>
+                      <TableHead>{t("warehouseTransfer.barcode")}</TableHead>
+                      <TableHead className="text-right">{t("warehouseTransfer.quantity")}</TableHead>
+                      <TableHead className="text-right">{t("warehouseTransfer.packages")}</TableHead>
+                      <TableHead className="text-right">{t("warehouseTransfer.status")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {importPreview.map((item, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{index + 1}</TableCell>
+                        <TableCell>{item.productName}</TableCell>
+                        <TableCell>{item.barcode}</TableCell>
+                        <TableCell className="text-right">{item.quantity}</TableCell>
+                        <TableCell className="text-right">{item.packageCount || 1}</TableCell>
+                        <TableCell className="text-right">
+                          {item.matched ? (
+                            <Badge variant="success">{t("warehouseTransfer.matched")}</Badge>
+                          ) : (
+                            <Badge variant="destructive">{t("warehouseTransfer.not_matched")}</Badge>
+                          )}
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {importPreview.map((item, index) => (
-                        <TableRow key={index}>
-                          <TableCell>{item.row}</TableCell>
-                          <TableCell>{item.productName}</TableCell>
-                          <TableCell>
-                            <span className="font-mono text-xs">{item.barcode}</span>
-                          </TableCell>
-                          <TableCell className="text-right">{item.quantity}</TableCell>
-                          <TableCell className="text-right">{item.packageCount || 1}</TableCell>
-                          <TableCell className="text-right">{item.weight.toFixed(2)} kg</TableCell>
-                          <TableCell className="text-right">{item.volume.toFixed(3)} m³</TableCell>
-                          <TableCell>
-                            <Badge variant={item.matched ? "success" : "destructive"}>
-                              {item.matched ? t("warehouseTransfer.matched") : t("warehouseTransfer.not_matched")}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
             )}
           </div>
           
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setImportDialogOpen(false)}>
-              {t("common.cancel")}
-            </Button>
-            <Button 
-              onClick={handleImportExcel}
-              disabled={!importFile || !sourceWarehouseId || !targetWarehouseId}
-            >
-              {t("warehouseTransfer.import")}
-            </Button>
+          <DialogFooter className="flex-col sm:flex-row justify-between gap-4">
+            <div className="w-full">
+              {importPreview.length > 0 && (
+                <div className="flex flex-col space-y-1">
+                  <div className="text-sm">
+                    <span className="font-medium">{t("warehouseTransfer.valid_items")}:</span>{" "}
+                    <Badge variant={importPreview.filter(item => item.matched).length === 0 ? "destructive" : "success"}>
+                      {importPreview.filter(item => item.matched).length}/{importPreview.length}
+                    </Badge>
+                  </div>
+                  {importPreview.filter(item => !item.matched).length > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      <AlertCircle className="h-3 w-3 inline mr-1" />
+                      {t("warehouseTransfer.unmatched_products_notice")}
+                    </p>
+                  )}
+                </div>
+              )}
+              
+              {/* 操作步骤引导 */}
+              {importFile && importPreview.length > 0 && (
+                <div className="mt-4 bg-muted rounded-md p-3 text-xs">
+                  <h4 className="font-medium mb-1">{t("warehouseTransfer.actions_after_import")}：</h4>
+                  <ol className="list-decimal list-inside space-y-1">
+                    <li>{t("warehouseTransfer.create_transfer_record")}</li>
+                    <li>{t("warehouseTransfer.generate_reference_number")}</li>
+                    <li>{t("warehouseTransfer.create_outbound_order")}</li>
+                    <li>{t("warehouseTransfer.create_inbound_order")}</li>
+                    <li>{t("warehouseTransfer.record_transfer_details")}</li>
+                  </ol>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex gap-2 self-end">
+              <Button 
+                variant="outline" 
+                onClick={() => setImportDialogOpen(false)}
+              >
+                {t("warehouseTransfer.cancel")}
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={!importFile || importPreview.length === 0 || importPreview.filter(item => item.matched).length === 0}
+                onClick={handleImportExcel}
+              >
+                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                {t("warehouseTransfer.import")}
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
-  );
-}
-
-// 缺少的MoreHorizontalIcon组件
-function MoreHorizontalIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <circle cx="12" cy="12" r="1" />
-      <circle cx="19" cy="12" r="1" />
-      <circle cx="5" cy="12" r="1" />
-    </svg>
   );
 }
