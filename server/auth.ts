@@ -3,8 +3,8 @@ import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
 // OAuth2策略暂时注释掉，直到我们可以安装依赖
 // import { Strategy as OAuth2Strategy } from 'passport-oauth2';
-import { storage } from './storage';
-import { db, storage as fallbackStorage } from './db';
+import { storage, memStorage } from './storage';
+import { useFallbackStorage } from './db';
 // 暂时注释掉这些依赖，采用session方式而不是JWT
 // import jwt from 'jsonwebtoken';
 // import bcrypt from 'bcryptjs';

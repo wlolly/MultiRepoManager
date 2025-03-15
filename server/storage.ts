@@ -1394,6 +1394,9 @@ export class DatabaseStorage implements IStorage {
   // 从warehouse-transfer-db.ts导入仓库调拨单相关功能
   private warehouseTransferDB: any;
   
+  // 从db.ts导入db对象
+  private db: any;
+  
   // 唯一码跟踪相关存储 - 使用内存存储实现
   private uniqueCodeTrackingMap: Map<string, UniqueCodeTracking>;
   private uniqueCodeHistoryMap: Map<number, UniqueCodeHistory>;
@@ -1403,6 +1406,11 @@ export class DatabaseStorage implements IStorage {
   private uniqueCodeTrackingService: any;
   
   constructor() {
+    // 使用动态导入以避免循环依赖
+    import('./db').then(module => {
+      this.db = module.db;
+    });
+    
     // 初始化唯一码跟踪相关存储
     this.uniqueCodeTrackingMap = new Map();
     this.uniqueCodeHistoryMap = new Map();
@@ -1539,23 +1547,23 @@ export class DatabaseStorage implements IStorage {
     };
     
     // MySQL不直接支持returning，所以我们需要先插入然后查询
-    const result = await db.insert(uniqueCodeTracking).values(insertData);
+    const result = await this.db.insert(uniqueCodeTracking).values(insertData);
     const trackingId = Number(result.insertId);
     
     // 获取刚插入的跟踪记录
-    const [trackingRecord] = await db.select().from(uniqueCodeTracking).where(eq(uniqueCodeTracking.id, trackingId));
+    const [trackingRecord] = await this.db.select().from(uniqueCodeTracking).where(eq(uniqueCodeTracking.id, trackingId));
     if (!trackingRecord) throw new Error(`Failed to retrieve unique code tracking after creation`);
     
     return trackingRecord;
   }
   
   async getUniqueCodeTracking(uniqueCode: string): Promise<UniqueCodeTracking | undefined> {
-    const [record] = await db.select().from(uniqueCodeTracking).where(eq(uniqueCodeTracking.uniqueCode, uniqueCode));
+    const [record] = await this.db.select().from(uniqueCodeTracking).where(eq(uniqueCodeTracking.uniqueCode, uniqueCode));
     return record || undefined;
   }
   
   async updateUniqueCodeTracking(uniqueCode: string, updates: Partial<UniqueCodeTracking>): Promise<UniqueCodeTracking | undefined> {
-    await db
+    await this.db
       .update(uniqueCodeTracking)
       .set({ ...updates, updatedAt: new Date() })
       .where(eq(uniqueCodeTracking.uniqueCode, uniqueCode));
@@ -1565,12 +1573,12 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getUniqueCodeTrackingByProduct(productId: number): Promise<UniqueCodeTracking[]> {
-    const records = await db.select().from(uniqueCodeTracking).where(eq(uniqueCodeTracking.productId, productId));
+    const records = await this.db.select().from(uniqueCodeTracking).where(eq(uniqueCodeTracking.productId, productId));
     return records;
   }
   
   async getUniqueCodeTrackingByWarehouse(warehouseId: number): Promise<UniqueCodeTracking[]> {
-    const records = await db.select().from(uniqueCodeTracking).where(eq(uniqueCodeTracking.currentWarehouseId, warehouseId));
+    const records = await this.db.select().from(uniqueCodeTracking).where(eq(uniqueCodeTracking.currentWarehouseId, warehouseId));
     return records;
   }
   
@@ -1594,18 +1602,18 @@ export class DatabaseStorage implements IStorage {
     };
     
     // MySQL不直接支持returning，所以我们需要先插入然后查询
-    const result = await db.insert(uniqueCodeHistory).values(insertData);
+    const result = await this.db.insert(uniqueCodeHistory).values(insertData);
     const historyId = Number(result.insertId);
     
     // 获取刚插入的历史记录
-    const [historyRecord] = await db.select().from(uniqueCodeHistory).where(eq(uniqueCodeHistory.id, historyId));
+    const [historyRecord] = await this.db.select().from(uniqueCodeHistory).where(eq(uniqueCodeHistory.id, historyId));
     if (!historyRecord) throw new Error(`Failed to retrieve unique code history after creation`);
     
     return historyRecord;
   }
   
   async getUniqueCodeHistory(uniqueCode: string): Promise<UniqueCodeHistory[]> {
-    const records = await db.select().from(uniqueCodeHistory)
+    const records = await this.db.select().from(uniqueCodeHistory)
       .where(eq(uniqueCodeHistory.uniqueCode, uniqueCode))
       .orderBy(desc(uniqueCodeHistory.operationDate));
     return records;
@@ -1801,7 +1809,7 @@ export class DatabaseStorage implements IStorage {
     endDate?: Date 
   }): Promise<any[]> {
     // 基本查询
-    let query = db.select({
+    let query = this.db.select({
       history: uniqueCodeHistory,
       product: products,
       sourceWarehouse: warehouses,
@@ -1810,8 +1818,7 @@ export class DatabaseStorage implements IStorage {
     })
     .from(uniqueCodeHistory)
     .leftJoin(products, eq(uniqueCodeHistory.productId, products.id))
-    .leftJoin(warehouses.as('sourceWarehouse'), eq(uniqueCodeHistory.sourceWarehouseId, warehouses.as('sourceWarehouse').id))
-    .leftJoin(warehouses.as('targetWarehouse'), eq(uniqueCodeHistory.targetWarehouseId, warehouses.as('targetWarehouse').id))
+    .leftJoin(warehouses, eq(uniqueCodeHistory.warehouseId, warehouses.id)) // Changed to join on warehouseId
     .leftJoin(users, eq(uniqueCodeHistory.userId, users.id));
     
     // 应用过滤条件
@@ -1876,18 +1883,18 @@ export class DatabaseStorage implements IStorage {
 
   // User methods
   async getUser(id: number): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
+    const [user] = await this.db.select().from(users).where(eq(users.id, id));
     return user || undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
+    const [user] = await this.db.select().from(users).where(eq(users.username, username));
     return user || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     // MySQL不直接支持returning，所以我们需要先插入然后查询
-    const result = await db.insert(users).values(insertUser);
+    const result = await this.db.insert(users).values(insertUser);
     const userId = Number(result.insertId);
     
     // 获取刚插入的用户
@@ -1898,23 +1905,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUsers(): Promise<User[]> {
-    return await db.select().from(users);
+    return await this.db.select().from(users);
   }
 
   // Repository methods
   async getRepository(id: number): Promise<Repository | undefined> {
-    const [repository] = await db.select().from(repositories).where(eq(repositories.id, id));
+    const [repository] = await this.db.select().from(repositories).where(eq(repositories.id, id));
     return repository || undefined;
   }
 
   async getRepositoryByName(name: string): Promise<Repository | undefined> {
-    const [repository] = await db.select().from(repositories).where(eq(repositories.name, name));
+    const [repository] = await this.db.select().from(repositories).where(eq(repositories.name, name));
     return repository || undefined;
   }
 
   async createRepository(insertRepository: InsertRepository): Promise<Repository> {
     // MySQL不直接支持returning，所以我们需要先插入然后查询
-    const result = await db.insert(repositories).values(insertRepository);
+    const result = await this.db.insert(repositories).values(insertRepository);
     const repositoryId = Number(result.insertId);
     
     // 获取刚插入的仓库
@@ -1925,7 +1932,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateRepository(id: number, repository: Partial<Repository>): Promise<Repository | undefined> {
-    await db
+    await this.db
       .update(repositories)
       .set({ ...repository, updatedAt: new Date() })
       .where(eq(repositories.id, id));
@@ -1935,7 +1942,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getRepositories(filters?: { ownerId?: number, language?: string, visibility?: string }): Promise<Repository[]> {
-    let query = db.select().from(repositories);
+    let query = this.db.select().from(repositories);
 
     if (filters) {
       if (filters.ownerId !== undefined) {
@@ -1957,13 +1964,13 @@ export class DatabaseStorage implements IStorage {
 
   // Team methods
   async getTeam(id: number): Promise<Team | undefined> {
-    const [team] = await db.select().from(teams).where(eq(teams.id, id));
+    const [team] = await this.db.select().from(teams).where(eq(teams.id, id));
     return team || undefined;
   }
 
   async createTeam(insertTeam: InsertTeam): Promise<Team> {
     // MySQL不直接支持returning，所以我们需要先插入然后查询
-    const result = await db.insert(teams).values(insertTeam);
+    const result = await this.db.insert(teams).values(insertTeam);
     const teamId = Number(result.insertId);
     
     // 获取刚插入的团队
@@ -1974,28 +1981,28 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTeams(): Promise<Team[]> {
-    return await db.select().from(teams);
+    return await this.db.select().from(teams);
   }
 
   // Team members methods
   async addTeamMember(insertTeamMember: InsertTeamMember): Promise<TeamMember> {
     // MySQL不直接支持returning，所以我们需要先插入然后查询
-    const result = await db.insert(teamMembers).values(insertTeamMember);
+    const result = await this.db.insert(teamMembers).values(insertTeamMember);
     const memberId = Number(result.insertId);
     
     // 获取刚插入的团队成员
-    const [teamMember] = await db.select().from(teamMembers).where(eq(teamMembers.id, memberId));
+    const [teamMember] = await this.db.select().from(teamMembers).where(eq(teamMembers.id, memberId));
     if (!teamMember) throw new Error(`Failed to retrieve team member after creation`);
     
     return teamMember;
   }
 
   async getTeamMembers(teamId: number): Promise<TeamMember[]> {
-    return await db.select().from(teamMembers).where(eq(teamMembers.teamId, teamId));
+    return await this.db.select().from(teamMembers).where(eq(teamMembers.teamId, teamId));
   }
 
   async removeTeamMember(teamId: number, userId: number): Promise<void> {
-    await db
+    await this.db
       .delete(teamMembers)
       .where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.userId, userId)));
   }
@@ -2003,35 +2010,35 @@ export class DatabaseStorage implements IStorage {
   // Team repositories methods
   async addTeamRepository(insertTeamRepository: InsertTeamRepository): Promise<TeamRepository> {
     // MySQL不直接支持returning，所以我们需要先插入然后查询
-    const result = await db.insert(teamRepositories).values(insertTeamRepository);
+    const result = await this.db.insert(teamRepositories).values(insertTeamRepository);
     const repoId = Number(result.insertId);
     
     // 获取刚插入的团队仓库关联
-    const [teamRepository] = await db.select().from(teamRepositories).where(eq(teamRepositories.id, repoId));
+    const [teamRepository] = await this.db.select().from(teamRepositories).where(eq(teamRepositories.id, repoId));
     if (!teamRepository) throw new Error(`Failed to retrieve team repository after creation`);
     
     return teamRepository;
   }
 
   async getTeamRepositories(teamId: number): Promise<TeamRepository[]> {
-    return await db.select().from(teamRepositories).where(eq(teamRepositories.teamId, teamId));
+    return await this.db.select().from(teamRepositories).where(eq(teamRepositories.teamId, teamId));
   }
 
   // Activity methods
   async createActivity(insertActivity: InsertActivity): Promise<Activity> {
     // MySQL不直接支持returning，所以我们需要先插入然后查询
-    const result = await db.insert(activities).values(insertActivity);
+    const result = await this.db.insert(activities).values(insertActivity);
     const activityId = Number(result.insertId);
     
     // 获取刚插入的活动
-    const [activity] = await db.select().from(activities).where(eq(activities.id, activityId));
+    const [activity] = await this.db.select().from(activities).where(eq(activities.id, activityId));
     if (!activity) throw new Error(`Failed to retrieve activity after creation`);
     
     return activity;
   }
 
   async getActivities(repositoryId?: number, limit?: number): Promise<Activity[]> {
-    let query = db.select().from(activities);
+    let query = this.db.select().from(activities);
 
     if (repositoryId !== undefined) {
       query = query.where(eq(activities.repositoryId, repositoryId));
