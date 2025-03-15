@@ -337,9 +337,22 @@ export default function App() {
       }
     });
     
-    // 检查用户是否已认证（存在token）
-    const token = localStorage.getItem('token');
-    setAuthenticated(!!token);
+    // 使用会话检查API检查认证状态
+    fetch('/api/auth/current-user', {
+      credentials: 'include'  // 包含会话cookie
+    })
+    .then(response => {
+      if (response.ok) {
+        setAuthenticated(true);
+      } else {
+        console.log("认证已过期，请重新登录");
+        setAuthenticated(false);
+      }
+    })
+    .catch(error => {
+      console.error("检查认证状态时出错:", error);
+      setAuthenticated(false);
+    });
   }, []);
   
   // 用于权限检查组件的认证状态更新
