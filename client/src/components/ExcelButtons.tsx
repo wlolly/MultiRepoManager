@@ -69,11 +69,13 @@ export function SimpleExcelButtons({
   onDownloadTemplate,
   onImport,
   onExport,
+  size = "default",
   tooltips
 }: {
   onDownloadTemplate: () => void;
   onImport: () => void;
   onExport: () => void;
+  size?: "default" | "sm" | "lg" | "icon";
   tooltips?: {
     template?: string;
     import?: string;
@@ -86,7 +88,7 @@ export function SimpleExcelButtons({
     <div className="flex gap-2">
       <Button
         variant="outline"
-        size="default"
+        size={size}
         onClick={onDownloadTemplate}
         className="flex items-center"
         title={tooltips?.template}
@@ -96,7 +98,7 @@ export function SimpleExcelButtons({
       </Button>
       <Button
         variant="outline"
-        size="default"
+        size={size}
         onClick={onImport}
         className="flex items-center"
         title={tooltips?.import}
@@ -106,7 +108,7 @@ export function SimpleExcelButtons({
       </Button>
       <Button
         variant="outline"
-        size="default"
+        size={size}
         onClick={onExport}
         className="flex items-center"
         title={tooltips?.export}

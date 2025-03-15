@@ -625,7 +625,6 @@ export default function WarehouseTransfers() {
         </div>
         <div className="flex gap-2">
           <SimpleExcelButtons
-            size="default"
             onDownloadTemplate={handleDownloadTemplate}
             onImport={() => setImportDialogOpen(true)}
             onExport={() => {
