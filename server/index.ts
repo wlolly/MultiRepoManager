@@ -385,12 +385,24 @@ app.use((req, res, next) => {
   next();
 });
 
+// 导入用户ID管理模块
+import { initializeUserIDTable } from './database/userID';
+
 (async () => {
   // 初始化文件清理调度器，每24小时清理一次过期文件
   scheduleCleanup();
   
   // 数据库已经通过db.ts初始化
   log('使用预初始化的数据库连接', 'mysql');
+  
+  // 初始化内部用户ID表（创建并设置定期清理任务）
+  try {
+    await initializeUserIDTable();
+    log('内部用户ID表初始化成功，有效期为2天', 'mysql');
+  } catch (error) {
+    console.error('初始化内部用户ID表失败:', error);
+    // 继续启动服务器，即使ID表初始化失败
+  }
   
   // 即使没有数据库连接，也继续启动服务器 - 确保应用的高可用性
   const server = await registerRoutes(app);

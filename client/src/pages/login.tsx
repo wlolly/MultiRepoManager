@@ -132,6 +132,11 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         return; // 防止多次导航
       }
       
+      console.log('等待3秒钟进行认证判断...');
+      
+      // 添加3秒延迟，等待系统进行认证判断
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
       console.log('准备跳转到主页...');
       
       // 如果需要绑定社交账号，显示提示并跳转到设置页面
