@@ -124,6 +124,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 初始化Passport认证
   initializePassport();
   app.use(passport.initialize());
+  app.use(passport.session());
 
   // 认证路由
   // 登录接口
@@ -140,21 +141,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // 生成JWT令牌
-      // 使用会话方式，不再需要token
-      // const token = generateToken(user);
-      
-      // 返回成功响应
-      return res.json({
-        message: '登录成功',
-        success: true,
-        user: {
-          id: user.id,
-          username: user.username,
-          fullName: user.fullName,
-          role: user.role,
-          avatarUrl: user.avatarUrl
+      // 使用req.login()登录会话
+      req.login(user, (err) => {
+        if (err) {
+          console.error('会话登录错误:', err);
+          return res.status(500).json({ 
+            message: '会话创建失败', 
+            success: false 
+          });
         }
+        
+        // 返回成功响应
+        return res.json({
+          message: '登录成功',
+          success: true,
+          user: {
+            id: user.id,
+            username: user.username,
+            fullName: user.fullName,
+            role: user.role,
+            avatarUrl: user.avatarUrl
+          }
+        });
       });
     })(req, res, next);
   });
