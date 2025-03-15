@@ -416,13 +416,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.redirect(redirectUrl);
         }
         
+        // 设置响应头，确保客户端获取会话信息
+        res.setHeader('X-Original-Session-ID', req.sessionID || '');
+        res.setHeader('X-Session-Authenticated', 'true');
+        
         // 返回JSON响应（用于API调用）
         return res.json({
           message: '登录成功',
           success: true,
           fallbackMode: useFallbackStorage,
           needSocialBinding: needSocialBinding, // 通知前端需要绑定社交账号
-          sessionId: req.sessionID, // 返回会话ID，方便调试
+          sessionId: req.sessionID, // 返回会话ID，方便客户端恢复
+          authenticated: true,
           user: {
             id: user.id,
             username: user.username,
