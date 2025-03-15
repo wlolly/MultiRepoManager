@@ -74,8 +74,11 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       if (onLoginSuccess) {
         onLoginSuccess();
       } else {
-        // 使用window.location.href进行导航，这在当前项目环境下更可靠
-        window.location.href = '/';
+        // 使用window.location.replace进行强制导航
+        console.log('准备跳转到首页...');
+        setTimeout(() => {
+          window.location.replace('/');
+        }, 500); // 添加短暂延迟确保会话信息已保存
       }
     })
     .catch(error => {
