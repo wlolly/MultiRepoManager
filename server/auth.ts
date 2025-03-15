@@ -831,6 +831,9 @@ export async function handleSocialCallback(provider: 'wechat' | 'whatsapp', req:
 }
 
 // 获取当前用户信息
+// 导入内部用户ID验证模块
+import { validateInternalUserID } from './database/userID';
+
 export async function getCurrentUser(req: Request, res: Response) {
   try {
     // 确保响应头包含原始会话ID，这对客户端很重要
@@ -903,6 +906,60 @@ export async function getCurrentUser(req: Request, res: Response) {
         }
       } catch (err) {
         console.error('从会话获取用户出错:', err);
+        // 继续处理，返回未认证状态
+      }
+    }
+    
+    // 检查内部用户ID认证 (如果会话中存在)
+    const internalUserId = req.session?.internalUserId;
+    if (internalUserId) {
+      console.log(`getCurrentUser: 尝试验证内部用户ID: ${internalUserId}`);
+      try {
+        // 验证内部用户ID并获取关联的用户ID
+        const validatedUserId = await validateInternalUserID(internalUserId);
+        
+        if (validatedUserId) {
+          console.log(`getCurrentUser: 内部用户ID验证成功，用户ID=${validatedUserId}`);
+          
+          // 获取用户详细信息
+          const currentStorage = useFallbackStorage ? memStorage : storage;
+          const internalUser = await currentStorage.getUser(validatedUserId);
+          
+          if (internalUser) {
+            console.log(`getCurrentUser: 成功从内部ID恢复用户 ${internalUser.username}`);
+            
+            // 手动设置req.user以避免未来重复查询
+            (req as any).user = internalUser;
+            
+            // 更新会话信息
+            req.session.userId = validatedUserId;
+            req.session.authenticated = true;
+            req.session.userRole = internalUser.role;
+            req.session.socialBound = hasSocialAccountBound(internalUser);
+            req.session.lastActivity = Date.now();
+            
+            // 异步保存会话
+            req.session.save(err => {
+              if (err) console.error('更新内部ID用户会话出错:', err);
+            });
+            
+            // 返回用户信息（排除敏感字段）
+            const { password, ...safeUser } = internalUser;
+            return res.json(safeUser);
+          } else {
+            console.log(`getCurrentUser: 内部ID ${internalUserId} 对应的用户ID ${validatedUserId} 不存在`);
+            // 清除无效的内部用户ID
+            delete req.session.internalUserId;
+            req.session.save();
+          }
+        } else {
+          console.log(`getCurrentUser: 内部用户ID验证失败或已过期`);
+          // 清除无效的内部用户ID
+          delete req.session.internalUserId;
+          req.session.save();
+        }
+      } catch (error) {
+        console.error('验证内部用户ID时出错:', error);
         // 继续处理，返回未认证状态
       }
     }

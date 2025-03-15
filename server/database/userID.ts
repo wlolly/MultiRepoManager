@@ -19,8 +19,12 @@ export async function initializeUserIDTable() {
       WHERE table_schema = DATABASE() AND table_name = 'internal_user_ids'
     `);
     
-    // @ts-ignore
-    if (checkTableExists.rows.length === 0) {
+    // 检查结果是否有rows属性且不为空
+    const rowsExist = checkTableExists && 
+                      (checkTableExists as any).rows && 
+                      (checkTableExists as any).rows.length > 0;
+    
+    if (!rowsExist) {
       console.log('[UserID] 创建内部用户ID表...');
       
       // 创建内部用户ID表
@@ -64,8 +68,9 @@ function setupCleanupTask() {
         WHERE expires_at < CURRENT_TIMESTAMP
       `);
       
-      // @ts-ignore
-      console.log(`[UserID] 已清理 ${result.rowsAffected || 0} 个过期ID`);
+      // 安全获取删除的行数
+      const count = result && (result as any).rowsAffected ? (result as any).rowsAffected : 0;
+      console.log(`[UserID] 已清理 ${count} 个过期ID`);
     } catch (error) {
       console.error('[UserID] 清理过期ID失败:', error);
     }
@@ -112,10 +117,12 @@ export async function validateInternalUserID(internalId: string): Promise<number
     `);
     
     // 检查是否找到有效ID
-    // @ts-ignore
-    if (result.rows && result.rows.length > 0) {
-      // @ts-ignore
-      const userId = result.rows[0].user_id;
+    const rowsExist = result && 
+                      (result as any).rows && 
+                      (result as any).rows.length > 0;
+    
+    if (rowsExist) {
+      const userId = (result as any).rows[0].user_id;
       console.log(`[UserID] 验证成功: ID ${internalId} 对应用户 ${userId}`);
       return userId;
     }
@@ -154,8 +161,8 @@ export async function cleanupExpiredIDs(): Promise<number> {
       WHERE expires_at < CURRENT_TIMESTAMP
     `);
     
-    // @ts-ignore
-    const count = result.rowsAffected || 0;
+    // 安全获取删除的行数
+    const count = result && (result as any).rowsAffected ? (result as any).rowsAffected : 0;
     console.log(`[UserID] 手动清理: 已删除 ${count} 个过期ID`);
     return count;
   } catch (error) {
