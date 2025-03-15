@@ -17,21 +17,24 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'warehouse-management-secret',
   resave: true, // 确保会话在服务器端保存，解决会话丢失问题
   saveUninitialized: true, // 修改为true，确保所有会话都被保存
-  name: 'wlolly.sid', // 自定义会话ID cookie名称
+  name: 'warehouse.sid', // 自定义会话ID cookie名称 (更简单的名称避免解析问题)
+  rolling: true, // 每次响应都重设cookie过期时间
+  proxy: true, // 信任反向代理，解决在Replit环境下cookie问题
   genid: function(req) {
-    // 使用随机UUID作为会话ID，更兼容ESM模式
-    return crypto.randomUUID();
+    // 使用更短的会话ID，避免cookie溢出
+    return crypto.randomBytes(16).toString('hex');
   },
   cookie: { 
     secure: false, // 开发环境不使用secure，避免cookie丢失
-    maxAge: 24 * 60 * 60 * 1000, // 24小时
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 延长到7天，确保测试期间不会过期
     httpOnly: true, // 阻止客户端JS访问cookie
     path: '/',
-    sameSite: 'lax' // 防止CSRF攻击的同时允许从外部链接访问
+    sameSite: 'lax', // 防止CSRF攻击的同时允许从外部链接访问
+    domain: process.env.DOMAIN || undefined // 自动适应当前域名
   },
   store: new MemoryStore({
     checkPeriod: 86400000, // 每24小时清理过期会话
-    ttl: 86400000 // 一天(24小时)的会话生命周期
+    ttl: 7 * 24 * 60 * 60 * 1000 // 7天的会话生命周期
   })
 }));
 
