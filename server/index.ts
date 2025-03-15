@@ -3,7 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { scheduleCleanup } from "./utils/file-cleanup";
 import session from "express-session";
-import { createConnection } from "./database";
+import { db } from "./db"; // 直接导入db，不使用createConnection
 import createMemoryStore from "memorystore";
 
 const MemoryStore = createMemoryStore(session);
@@ -59,14 +59,10 @@ app.use((req, res, next) => {
   // 初始化文件清理调度器，每24小时清理一次过期文件
   scheduleCleanup();
   
-  // 创建数据库连接
-  try {
-    await createConnection();
-    console.log('数据库连接成功!');
-  } catch (error) {
-    console.error('数据库连接失败:', error);
-  }
+  // 数据库已经通过db.ts初始化
+  log('使用预初始化的数据库连接', 'mysql');
   
+  // 即使没有数据库连接，也继续启动服务器 - 确保应用的高可用性
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
