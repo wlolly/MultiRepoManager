@@ -55,28 +55,60 @@ app.use(session({
     let clientSessionId = null;
     let sourceType = '';
     
-    // 检查所有可能的头名称
-    for (const headerName of headerVariations) {
-      const headerValue = req.headers[headerName];
-      if (headerValue) {
-        let id = headerValue;
-        // 处理数组
-        if (Array.isArray(id)) {
-          id = id[0];
-        }
-        
-        // 处理逗号分隔 (可能存在多个ID情况)
-        if (typeof id === 'string' && id.includes(',')) {
-          id = id.split(',')[0].trim();
-        }
-        
-        // 验证格式
-        if (typeof id === 'string' && id.length >= 16) {
-          clientSessionId = id;
-          sourceType = `头部(${headerName})`;
-          break;
+    // 优先处理常见的会话ID标头
+    const headers = req.headers || {};
+    
+    // 直接检查特定的头，这些是客户端最可能使用的
+    if (headers['x-client-session-id']) {
+      clientSessionId = extractCleanSessionId(headers['x-client-session-id']);
+      if (clientSessionId) {
+        sourceType = '头部(x-client-session-id)';
+      }
+    } 
+    
+    if (!clientSessionId && headers['x-session-id']) {
+      clientSessionId = extractCleanSessionId(headers['x-session-id']);
+      if (clientSessionId) {
+        sourceType = '头部(x-session-id)';
+      }
+    }
+    
+    // 如果上面的特定头没有找到，尝试所有可能的头名称
+    if (!clientSessionId) {
+      for (const headerName of headerVariations) {
+        const headerValue = headers[headerName];
+        if (headerValue) {
+          const id = extractCleanSessionId(headerValue);
+          if (id) {
+            clientSessionId = id;
+            sourceType = `头部(${headerName})`;
+            break;
+          }
         }
       }
+    }
+    
+    // 辅助函数：提取和清理会话ID，确保格式正确
+    function extractCleanSessionId(value: string | string[] | undefined): string | null {
+      if (!value) return null;
+      
+      let id = value;
+      // 处理数组
+      if (Array.isArray(id)) {
+        id = id[0];
+      }
+      
+      // 处理逗号分隔 (可能存在多个ID情况)
+      if (typeof id === 'string' && id.includes(',')) {
+        id = id.split(',')[0].trim();
+      }
+      
+      // 验证格式 - 必须是16个以上的十六进制字符
+      if (typeof id === 'string' && id.length >= 16 && /^[a-f0-9]+$/i.test(id)) {
+        return id;
+      }
+      
+      return null;
     }
     
     // 2. 如果头中没有找到，检查查询参数
@@ -85,10 +117,13 @@ app.use(session({
       
       for (const paramName of queryVariations) {
         const paramValue = req.query[paramName];
-        if (paramValue && typeof paramValue === 'string' && paramValue.length >= 16) {
-          clientSessionId = paramValue;
-          sourceType = `查询参数(${paramName})`;
-          break;
+        if (paramValue && typeof paramValue === 'string') {
+          const id = extractCleanSessionId(paramValue);
+          if (id) {
+            clientSessionId = id;
+            sourceType = `查询参数(${paramName})`;
+            break;
+          }
         }
       }
     }
@@ -99,10 +134,22 @@ app.use(session({
       
       for (const cookieName of cookieVariations) {
         const cookieValue = req.cookies[cookieName];
-        if (cookieValue && typeof cookieValue === 'string' && cookieValue.length >= 16) {
-          clientSessionId = cookieValue;
-          sourceType = `Cookie(${cookieName})`;
-          break;
+        if (cookieValue && typeof cookieValue === 'string') {
+          // 处理express-session签名cookie
+          let cleanCookieId = cookieValue;
+          if (cleanCookieId.includes('.')) {
+            cleanCookieId = cleanCookieId.split('.')[0];
+          }
+          if (cleanCookieId.startsWith('s%3A')) {
+            cleanCookieId = cleanCookieId.substring(4);
+          }
+          
+          const id = extractCleanSessionId(cleanCookieId);
+          if (id) {
+            clientSessionId = id;
+            sourceType = `Cookie(${cookieName})`;
+            break;
+          }
         }
       }
     }
@@ -122,6 +169,13 @@ app.use(session({
         if (req.sessionOptions) {
           req.sessionOptions.genid = () => clientSessionId;
         }
+        
+        // 如果存在响应对象，在响应头中设置会话信息
+        if (req.res) {
+          req.res.setHeader('X-Original-Session-ID', clientSessionId);
+          req.res.setHeader('X-Session-ID', clientSessionId);
+          req.res.setHeader('X-Client-Session-ID', clientSessionId);
+        }
       }
       
       return clientSessionId;
@@ -139,6 +193,9 @@ app.use(session({
     // 在响应头中添加新生成的会话ID，帮助客户端同步
     if (req.res) {
       req.res.setHeader('X-New-Session-ID', newSessionId);
+      req.res.setHeader('X-Original-Session-ID', newSessionId);
+      req.res.setHeader('X-Session-ID', newSessionId);
+      req.res.setHeader('X-Client-Session-ID', newSessionId);
     }
     
     return newSessionId;
