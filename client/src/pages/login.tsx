@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'wouter';
 import { Separator } from '@/components/ui/separator';
+import { saveSessionId } from '@/lib/sessionManager';
 
 // 登录表单验证模式
 const loginSchema = z.object({
@@ -108,12 +109,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           // 如果服务器返回了会话ID，保存在多个位置以增强持久性
           if (data.sessionId) {
             console.log('保存会话ID:', data.sessionId);
-            // 同时保存到sessionStorage和localStorage
-            sessionStorage.setItem('sessionId', data.sessionId);
-            localStorage.setItem('sessionId', data.sessionId);
-            
-            // 设置一个cookie，增加会话持久性（作为备用方案）
-            document.cookie = `sessionId=${data.sessionId}; path=/; max-age=2592000`; // 30天
+            // 使用会话管理器统一处理会话ID保存
+            saveSessionId(data.sessionId);
           }
         } catch (storageError) {
           console.error('保存用户数据失败:', storageError);
