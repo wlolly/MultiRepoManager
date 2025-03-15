@@ -161,6 +161,174 @@ export async function registerRoutes(app: Express): Promise<Server> {
       hasCookie: !!req.headers.cookie
     });
   });
+  
+  // 添加一个简单的测试页面，专门用于测试社交绑定功能
+  app.get('/test/social-binding', (req, res) => {
+    const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>社交绑定测试</title>
+      <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .card { border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 20px; }
+        button { background: #4CAF50; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; margin-right: 10px; }
+        input, select { width: 100%; padding: 8px; margin-bottom: 10px; box-sizing: border-box; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 4px; overflow: auto; }
+        .success { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
+      </style>
+    </head>
+    <body>
+      <h1>社交绑定测试</h1>
+      
+      <div class="card">
+        <h2>登录</h2>
+        <input type="text" id="username" placeholder="用户名" value="222">
+        <input type="password" id="password" placeholder="密码" value="222">
+        <button id="loginBtn">登录</button>
+        <button id="logoutBtn">登出</button>
+        <div id="loginResult"></div>
+      </div>
+      
+      <div class="card">
+        <h2>会话信息</h2>
+        <button id="checkSessionBtn">检查会话</button>
+        <pre id="sessionInfo">点击按钮查看会话信息</pre>
+      </div>
+      
+      <div class="card">
+        <h2>社交绑定</h2>
+        <select id="platform">
+          <option value="wechat">微信</option>
+          <option value="whatsapp">WhatsApp</option>
+        </select>
+        <input type="text" id="socialId" placeholder="社交账号ID" value="wxid_12345">
+        <button id="bindBtn">绑定账号</button>
+        <button id="checkBindingBtn">检查绑定状态</button>
+        <div id="bindResult"></div>
+      </div>
+      
+      <script>
+        document.addEventListener('DOMContentLoaded', () => {
+          // 页面加载完成后自动检查会话
+          checkSession();
+          
+          // 登录
+          document.getElementById('loginBtn').addEventListener('click', () => {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            fetch('/api/auth/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ username, password })
+            })
+            .then(res => res.json())
+            .then(data => {
+              if (data.success) {
+                document.getElementById('loginResult').innerHTML = 
+                  '<div class="success">登录成功</div>' +
+                  '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+              } else {
+                document.getElementById('loginResult').innerHTML = 
+                  '<div class="error">登录失败: ' + data.message + '</div>';
+              }
+              checkSession();
+            })
+            .catch(err => {
+              document.getElementById('loginResult').innerHTML = 
+                '<div class="error">请求错误: ' + err.message + '</div>';
+            });
+          });
+          
+          // 登出
+          document.getElementById('logoutBtn').addEventListener('click', () => {
+            fetch('/api/auth/logout', { method: 'POST' })
+            .then(res => {
+              if (res.ok) {
+                document.getElementById('loginResult').innerHTML = 
+                  '<div class="success">登出成功</div>';
+              } else {
+                return res.json().then(data => {
+                  document.getElementById('loginResult').innerHTML = 
+                    '<div class="error">登出失败: ' + data.message + '</div>';
+                });
+              }
+              checkSession();
+            })
+            .catch(err => {
+              document.getElementById('loginResult').innerHTML = 
+                '<div class="error">请求错误: ' + err.message + '</div>';
+            });
+          });
+          
+          // 检查会话
+          function checkSession() {
+            fetch('/session-info')
+            .then(res => res.json())
+            .then(data => {
+              document.getElementById('sessionInfo').innerText = JSON.stringify(data, null, 2);
+            })
+            .catch(err => {
+              document.getElementById('sessionInfo').innerText = '获取会话信息失败: ' + err.message;
+            });
+          }
+          
+          document.getElementById('checkSessionBtn').addEventListener('click', checkSession);
+          
+          // 绑定社交账号
+          document.getElementById('bindBtn').addEventListener('click', () => {
+            const platform = document.getElementById('platform').value;
+            const socialId = document.getElementById('socialId').value;
+            
+            fetch('/api/auth/bind-social', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ platform, socialId })
+            })
+            .then(res => res.json())
+            .then(data => {
+              if (data.success) {
+                document.getElementById('bindResult').innerHTML = 
+                  '<div class="success">绑定成功</div>' +
+                  '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+              } else {
+                document.getElementById('bindResult').innerHTML = 
+                  '<div class="error">绑定失败: ' + data.message + '</div>';
+              }
+              checkSession();
+            })
+            .catch(err => {
+              document.getElementById('bindResult').innerHTML = 
+                '<div class="error">请求错误: ' + err.message + '</div>';
+            });
+          });
+          
+          // 检查绑定状态
+          document.getElementById('checkBindingBtn').addEventListener('click', () => {
+            fetch('/api/auth/social-binding-status')
+            .then(res => res.json())
+            .then(data => {
+              document.getElementById('bindResult').innerHTML = 
+                '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            })
+            .catch(err => {
+              document.getElementById('bindResult').innerHTML = 
+                '<div class="error">检查绑定状态失败: ' + err.message + '</div>';
+            });
+          });
+        });
+      </script>
+    </body>
+    </html>
+    `;
+    
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
+  });
 
   // 认证路由
   // 登录接口
