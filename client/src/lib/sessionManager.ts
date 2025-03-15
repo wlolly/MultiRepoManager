@@ -78,6 +78,38 @@ function generateSessionId(): string {
   return result;
 }
 
+// 检查cookie中是否有express-session或标准会话ID
+function getExpressSessionId(): string | null {
+  // 按优先级检查各种可能的cookie名称
+  const warehouseSid = getCookie('warehouse.sid');
+  const connectSid = getCookie('connect.sid');
+  const expressSid = getCookie('express.sid');
+  
+  // 如果找到任何一个，尝试提取会话ID
+  if (warehouseSid || connectSid || expressSid) {
+    const rawSid = warehouseSid || connectSid || expressSid;
+    
+    // 确保rawSid不为null
+    if (rawSid) {
+      // 尝试解析会话ID - express session将ID存为s%3A[id].[signature]格式
+      if (rawSid.includes('.')) {
+        // 移除签名部分
+        const idPart = rawSid.split('.')[0];
+        
+        // 移除s%3A前缀(如果有)
+        if (idPart.startsWith('s%3A')) {
+          return decodeURIComponent(idPart.substring(4));
+        }
+        return idPart;
+      }
+      
+      return rawSid; // 可能没有签名，直接返回
+    }
+  }
+  
+  return null;
+}
+
 // 从各种可能的存储中获取会话ID
 export function getSessionId(): string {
   // 1. 如果已经有缓存的会话ID，优先返回（提高性能）
@@ -90,12 +122,14 @@ export function getSessionId(): string {
   const sessionIdFromSession = sessionStorage.getItem('sessionId');
   const sessionIdFromLocal = localStorage.getItem('sessionId');
   const sessionIdFromCookie = getCookie('sessionId');
+  const expressSessionId = getExpressSessionId(); // 检查express会话cookie
   
   // 输出调试信息，帮助追踪会话ID来源
   console.log('会话ID来源检查:', {
     sessionStorage: sessionIdFromSession || '无',
     localStorage: sessionIdFromLocal || '无',
-    cookie: sessionIdFromCookie || '无'
+    sessionCookie: sessionIdFromCookie || '无',
+    expressCookie: expressSessionId || '无',
   });
   
   // 检查是否以前生成的会话ID被存储在不同位置
@@ -106,18 +140,25 @@ export function getSessionId(): string {
   if (sessionIdFromSession) foundIds.push(sessionIdFromSession);
   if (sessionIdFromLocal) foundIds.push(sessionIdFromLocal);
   if (sessionIdFromCookie) foundIds.push(sessionIdFromCookie);
+  if (expressSessionId) foundIds.push(expressSessionId);
   
-  // 3. 检查是否有不一致的会话ID - 如果所有ID相同，则使用该ID
+  // 3. 检查是否有不一致的会话ID
   if (foundIds.length > 0) {
-    const allSame = foundIds.every(id => id === foundIds[0]);
-    
-    if (allSame) {
-      // 所有存储位置的ID都一致，直接使用
-      sessionId = foundIds[0];
+    // 首先看看是否有express会话ID，那应该优先级最高
+    if (expressSessionId) {
+      // Express会话cookie优先，可能是服务器最近创建的
+      sessionId = expressSessionId;
+      console.log(`优先使用Express会话ID: ${sessionId}`);
+    } 
+    // 其次，如果所有ID都一致，使用那个ID
+    else {
+      const allSame = foundIds.every(id => id === foundIds[0]);
       
-      // 记录会话成功加载
-      console.log(`从存储中加载会话ID (一致): ${sessionId}`);
-    } else {
+      if (allSame) {
+        // 所有存储位置的ID都一致，直接使用
+        sessionId = foundIds[0];
+        console.log(`从存储中加载会话ID (一致): ${sessionId}`);
+      } else {
       // 存在不一致的会话ID情况
       console.log(`从存储中找到不一致的会话ID: ${foundIds.join(', ')}`);
       
