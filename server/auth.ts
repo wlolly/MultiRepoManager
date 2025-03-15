@@ -385,28 +385,86 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
   // 如果没有找到会话ID，尝试从原始Cookie头中解析
   if (!clientSessionId && req.headers.cookie) {
     const cookieHeader = req.headers.cookie;
-    console.log(`[调试] 请求路径: ${req.path}, 原始cookie字符串: ${cookieHeader}`);
+    console.log(`[调试] 请求路径: ${req.path}, 原始cookie字符串: "${cookieHeader}"`);
     
-    // 解析cookie字符串
-    const cookies = cookieHeader.split(';').reduce((acc: {[key: string]: string}, current) => {
-      const [name, value] = current.trim().split('=');
-      if (name && value) {
-        const cleanName = name.trim();
-        const cleanValue = value.trim();
-        acc[cleanName] = cleanValue;
-        console.log(`[Cookie解析] 找到cookie: ${cleanName} = ${cleanValue}`);
+    try {
+      // 使用正则表达式直接匹配sessionId
+      const sessionIdMatch = cookieHeader.match(/sessionId=([^;]+)/);
+      if (sessionIdMatch && sessionIdMatch[1] && sessionIdMatch[1].length >= 16) {
+        clientSessionId = sessionIdMatch[1];
+        sessionSources.cookie = clientSessionId;
+        console.log(`[Cookie解析] 使用正则表达式直接匹配到sessionId: "${clientSessionId}"`);
+      } else {
+        console.log(`[Cookie解析] 使用正则表达式未能匹配到sessionId`);
+        
+        // 使用超简单的cookie解析方法 - 手动查找并提取sessionId
+        const sessionIdStart = cookieHeader.indexOf('sessionId=');
+        if (sessionIdStart !== -1) {
+          const valueStart = sessionIdStart + 'sessionId='.length;
+          const valueEnd = cookieHeader.indexOf(';', valueStart);
+          const sessionValue = valueEnd !== -1 
+            ? cookieHeader.substring(valueStart, valueEnd) 
+            : cookieHeader.substring(valueStart);
+            
+          if (sessionValue && sessionValue.length >= 16) {
+            clientSessionId = sessionValue;
+            sessionSources.cookie = sessionValue;
+            console.log(`[Cookie解析] 使用手动提取方法获取到sessionId: "${clientSessionId}"`);
+          } else {
+            console.log(`[Cookie解析] 手动提取的sessionId无效: "${sessionValue}"`);
+          }
+        } else {
+          console.log(`[Cookie解析] cookie字符串中不包含sessionId`);
+          
+          // 解析所有cookie并打印，用于调试
+          const cookies: {[key: string]: string} = {};
+          const cookieParts = cookieHeader.split(';');
+          
+          for (const part of cookieParts) {
+            if (part.includes('=')) {
+              const eqIndex = part.indexOf('=');
+              const key = part.slice(0, eqIndex).trim();
+              const value = part.slice(eqIndex + 1).trim();
+              cookies[key] = value;
+              console.log(`[Cookie解析] 找到cookie: "${key}" = "${value}"`);
+            }
+          }
+          
+          console.log(`[Cookie解析] 所有解析后的cookie:`, cookies);
+          
+          // 检查各种可能的会话cookie名称
+          const possibleSessionNames = ['sessionId', 'connect.sid', 'express.sid', 'sid', 'session', 'warehouse.sid'];
+          
+          for (const cookieName of possibleSessionNames) {
+            if (cookies[cookieName] && cookies[cookieName].length >= 16) {
+              let sessionValue = cookies[cookieName];
+              
+              // 处理签名的会话cookie (s%3A开头)
+              if (sessionValue.startsWith('s%3A')) {
+                sessionValue = sessionValue.substring(4);
+              }
+              
+              // 处理包含点的会话cookie (express.sid通常是这样的)
+              if (sessionValue.includes('.')) {
+                sessionValue = sessionValue.split('.')[0];
+              }
+              
+              if (sessionValue.length >= 16) {
+                sessionSources.cookie = sessionValue;
+                clientSessionId = sessionValue;
+                console.log(`从cookie ${cookieName} 解析得到会话ID: "${clientSessionId}"`);
+                break;
+              }
+            }
+          }
+        }
       }
-      return acc;
-    }, {});
+    } catch (err) {
+      console.error(`[Cookie解析] 解析cookie时出错:`, err);
+    }
     
-    console.log(`[Cookie解析] 所有解析后的cookie:`, cookies);
-    
-    if (cookies.sessionId && cookies.sessionId.length >= 16) {
-      sessionSources.cookie = cookies.sessionId;
-      clientSessionId = cookies.sessionId;
-      console.log(`从原始cookie头解析得到会话ID: ${clientSessionId}`);
-    } else {
-      console.log(`[Cookie解析] 未找到有效的sessionId cookie`);
+    if (!clientSessionId) {
+      console.log(`[Cookie解析] 最终未找到有效的会话cookie`);
     }
   }
   
