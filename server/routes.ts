@@ -174,6 +174,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // 获取当前用户信息
   apiRouter.get("/auth/me", verifySession, getCurrentUser);
+  apiRouter.get("/auth/current-user", getCurrentUser);
   
   // 登出接口
   apiRouter.post("/auth/logout", verifySession, logout);
