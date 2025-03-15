@@ -859,28 +859,49 @@ export default function NewOutboundOrderWithItems() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>No.</TableHead>
+                      <TableHead>{t("unique_code")}</TableHead>
                       <TableHead>{t("name")}</TableHead>
-                      <TableHead>{t("barcode")}</TableHead>
                       <TableHead>{t("quantity")}</TableHead>
                       <TableHead>{t("package_count")}</TableHead>
                       <TableHead>{t("weight")}</TableHead>
                       <TableHead>{t("volume")}</TableHead>
-                      <TableHead>{t("unique_code")}</TableHead>
+                      <TableHead>{t("remark")}</TableHead>
                       <TableHead>{t("actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {fields.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center py-4">
+                        <TableCell colSpan={9} className="text-center py-4">
                           {t("no_items_added")}
                         </TableCell>
                       </TableRow>
                     ) : (
                       fields.map((field, index) => (
                         <TableRow key={field.id}>
+                          <TableCell>{index + 1}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-1">
+                              <Input
+                                {...form.register(`items.${index}.uniqueCode`)}
+                                placeholder={t("unique_code")}
+                                className="w-24"
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  setCurrentScanItemIndex(index);
+                                  setIsScanningBarcode(true);
+                                }}
+                              >
+                                <ScanLine className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
                           <TableCell>{field.productName}</TableCell>
-                          <TableCell>{field.barcode}</TableCell>
                           <TableCell>
                             <Input
                               type="number"
@@ -917,24 +938,11 @@ export default function NewOutboundOrderWithItems() {
                             />
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center space-x-1">
-                              <Input
-                                {...form.register(`items.${index}.uniqueCode`)}
-                                placeholder={t("unique_code")}
-                                className="w-24"
-                              />
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => {
-                                  setCurrentScanItemIndex(index);
-                                  setIsScanningBarcode(true);
-                                }}
-                              >
-                                <ScanLine className="h-4 w-4" />
-                              </Button>
-                            </div>
+                            <Input
+                              {...form.register(`items.${index}.remark`)}
+                              placeholder={t("remark")}
+                              className="w-24"
+                            />
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center space-x-1">
