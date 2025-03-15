@@ -1,8 +1,9 @@
 /**
  * Excel处理工具
  * 处理仓库调拨单的Excel导入导出
+ * 使用ExcelJS库统一处理Excel文件操作
  */
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import path from 'path';
 import fs from 'fs';
 import { WarehouseTransfer, Product, Warehouse } from '@shared/schema';
@@ -24,66 +25,142 @@ if (!fs.existsSync(EXPORT_DIR)) {
  * @returns 模板文件路径
  */
 export function createTransferImportTemplate(): string {
-  // 表头定义 (中英文对照，方便用户理解)
-  const headers = [
-    '唯一码(Unique Code)', 
-    '产品ID(Product ID)', 
-    '产品名称(Product Name)', 
-    '数量(Quantity)', 
-    '件数(Package Count)', 
-    '重量kg(Weight)', 
-    '体积m³(Volume)',
-    '备注(Remark)'
+  // 创建新的工作簿
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'E5系统';
+  workbook.lastModifiedBy = 'E5系统';
+  workbook.created = new Date();
+  workbook.modified = new Date();
+  
+  // 创建主工作表
+  const worksheet = workbook.addWorksheet('仓库调拨单模板');
+  
+  // 定义列
+  worksheet.columns = [
+    { header: '唯一码(Unique Code)', key: 'uniqueCode', width: 15 },
+    { header: '产品ID(Product ID)', key: 'productId', width: 15 },
+    { header: '产品名称(Product Name)', key: 'productName', width: 30 },
+    { header: '数量(Quantity)', key: 'quantity', width: 10 },
+    { header: '件数(Package Count)', key: 'packageCount', width: 10 },
+    { header: '重量kg(Weight)', key: 'weight', width: 10 },
+    { header: '体积m³(Volume)', key: 'volume', width: 10 },
+    { header: '备注(Remark)', key: 'remark', width: 30 }
   ];
   
-  // 示例数据
+  // 设置表头样式
+  worksheet.getRow(1).font = { bold: true };
+  worksheet.getRow(1).fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FFD9EAD3' }
+  };
+  
+  // 添加示例数据
   const exampleData = [
-    ['11111', '1', '高精度工业传感器', '10', '2', '5.5', '0.03', '示例数据，导入时请删除'],
-    ['22222', '2', '工业电机', '5', '1', '15.0', '0.12', '示例数据，导入时请删除'],
-    ['', '3', '电子元件套装', '50', '5', '2.5', '0.01', '示例数据，导入时请删除'],
-    ['', '', '请在此处填写您的数据...', '', '', '', '', '']
+    {
+      uniqueCode: '11111',
+      productId: 1,
+      productName: '高精度工业传感器',
+      quantity: 10,
+      packageCount: 2,
+      weight: 5.5,
+      volume: 0.03,
+      remark: '示例数据，导入时请删除'
+    },
+    {
+      uniqueCode: '22222',
+      productId: 2,
+      productName: '工业电机',
+      quantity: 5,
+      packageCount: 1,
+      weight: 15.0,
+      volume: 0.12,
+      remark: '示例数据，导入时请删除'
+    },
+    {
+      uniqueCode: '',
+      productId: 3,
+      productName: '电子元件套装',
+      quantity: 50,
+      packageCount: 5,
+      weight: 2.5,
+      volume: 0.01,
+      remark: '示例数据，导入时请删除'
+    },
+    {
+      uniqueCode: '',
+      productId: '',
+      productName: '请在此处填写您的数据...',
+      quantity: '',
+      packageCount: '',
+      weight: '',
+      volume: '',
+      remark: ''
+    }
   ];
   
-  // 创建工作簿和工作表
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.aoa_to_sheet([headers].concat(exampleData));
+  // 添加示例数据行
+  worksheet.addRows(exampleData);
   
-  // 设置列宽
-  const colWidths = [10, 10, 30, 10, 10, 10, 10, 30];
-  ws['!cols'] = colWidths.map(width => ({ width }));
+  // 添加行边框
+  for (let i = 2; i <= exampleData.length + 1; i++) {
+    worksheet.getRow(i).eachCell({ includeEmpty: true }, cell => {
+      cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+    });
+  }
   
-  // 添加工作表到工作簿
-  XLSX.utils.book_append_sheet(wb, ws, '仓库调拨单模板');
-  
-  // 添加说明工作表
-  const instructionsData = [
-    ['仓库调拨单导入说明'],
-    [''],
-    ['1. 请不要修改表格的结构或删除标题行'],
-    ['2. 唯一码(Unique Code): 可选，产品的唯一标识码，1-5位数字'],
-    ['3. 产品ID(Product ID): 必填，系统中的产品ID'],
-    ['4. 产品名称(Product Name): 必填，请确保与系统中的产品名称匹配'],
-    ['5. 数量(Quantity): 必填，调拨的产品数量，必须为正整数'],
-    ['6. 件数(Package Count): 必填，调拨的包装件数，必须为正整数'],
-    ['7. 重量kg(Weight): 选填，调拨商品的总重量，单位为千克'],
-    ['8. 体积m³(Volume): 选填，调拨商品的总体积，单位为立方米'],
-    ['9. 备注(Remark): 选填，关于此调拨项的备注信息'],
-    [''],
-    ['注意: 导入前请先删除示例数据行'],
-    [''],
-    ['若有任何问题，请联系系统管理员']
+  // 创建说明工作表
+  const instructionSheet = workbook.addWorksheet('导入说明');
+  instructionSheet.columns = [
+    { header: '', key: 'instruction', width: 80 }
   ];
   
-  const instructionsWs = XLSX.utils.aoa_to_sheet(instructionsData);
-  instructionsWs['!cols'] = [{ width: 60 }];
-  XLSX.utils.book_append_sheet(wb, instructionsWs, '导入说明');
+  // 添加说明内容
+  const instructions = [
+    { instruction: '仓库调拨单导入说明' },
+    { instruction: '' },
+    { instruction: '1. 请不要修改表格的结构或删除标题行' },
+    { instruction: '2. 唯一码(Unique Code): 可选，产品的唯一标识码，1-5位数字' },
+    { instruction: '3. 产品ID(Product ID): 必填，系统中的产品ID' },
+    { instruction: '4. 产品名称(Product Name): 必填，请确保与系统中的产品名称匹配' },
+    { instruction: '5. 数量(Quantity): 必填，调拨的产品数量，必须为正整数' },
+    { instruction: '6. 件数(Package Count): 必填，调拨的包装件数，必须为正整数' },
+    { instruction: '7. 重量kg(Weight): 选填，调拨商品的总重量，单位为千克' },
+    { instruction: '8. 体积m³(Volume): 选填，调拨商品的总体积，单位为立方米' },
+    { instruction: '9. 备注(Remark): 选填，关于此调拨项的备注信息' },
+    { instruction: '' },
+    { instruction: '注意: 导入前请先删除示例数据行' },
+    { instruction: '' },
+    { instruction: '若有任何问题，请联系系统管理员' }
+  ];
   
-  // 保存工作簿到文件
+  // 设置标题样式
+  instructionSheet.getRow(1).font = { bold: true, size: 14 };
+  
+  // 添加说明行
+  instructionSheet.addRows(instructions);
+  
+  // 保存工作簿
   const templateFilename = 'warehouse_transfer_template.xlsx';
   const templatePath = path.join(TEMPLATE_DIR, templateFilename);
-  XLSX.writeFile(wb, templatePath);
   
-  return templatePath;
+  try {
+    // 写入文件
+    workbook.xlsx.writeFile(templatePath)
+      .catch(err => {
+        console.error('创建调拨单导入模板失败:', err);
+      });
+    
+    return templatePath;
+  } catch (err) {
+    console.error('创建调拨单导入模板失败:', err);
+    throw err;
+  }
 }
 
 /**
@@ -112,12 +189,20 @@ export async function parseTransferImportFile(filePath: string, storage?: any): 
 }> {
   try {
     // 读取Excel文件
-    const workbook = XLSX.readFile(filePath);
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.readFile(filePath);
     
-    // 转换为JSON
-    const rawData = XLSX.utils.sheet_to_json(worksheet);
+    // 获取第一个工作表
+    const worksheet = workbook.getWorksheet(1);
+    if (!worksheet) {
+      return {
+        items: [],
+        errors: ['工作表不存在'],
+        warnings: [],
+        matchedCount: 0,
+        unmatchedCount: 0
+      };
+    }
     
     const items: Array<{
       uniqueCode?: string;
@@ -134,58 +219,61 @@ export async function parseTransferImportFile(filePath: string, storage?: any): 
     
     const errors: string[] = [];
     const warnings: string[] = [];
-    let rowIndex = 2; // 开始于第2行，因为第1行是表头
     
     // 处理每一行数据
-    for (const row of rawData) {
-      const rowObj = row as Record<string, any>;
-      rowIndex++;
+    let rowIndex = 1; // 从第1行开始，标题行是第1行
+    
+    worksheet.eachRow({ includeEmpty: false }, async (row, rowNumber) => {
+      // 跳过标题行
+      if (rowNumber === 1) return;
       
-      // 提取字段(处理可能的中英文字段名)
-      const uniqueCode = rowObj['唯一码(Unique Code)'] || rowObj['唯一码'] || rowObj['Unique Code'] || '';
-      const productId = rowObj['产品ID(Product ID)'] || rowObj['产品ID'] || rowObj['Product ID'] || '';
-      const productName = rowObj['产品名称(Product Name)'] || rowObj['产品名称'] || rowObj['Product Name'] || '';
-      const quantity = rowObj['数量(Quantity)'] || rowObj['数量'] || rowObj['Quantity'] || '';
-      const packageCount = rowObj['件数(Package Count)'] || rowObj['件数'] || rowObj['Package Count'] || '';
-      const weight = rowObj['重量kg(Weight)'] || rowObj['重量'] || rowObj['Weight'] || '';
-      const volume = rowObj['体积m³(Volume)'] || rowObj['体积'] || rowObj['Volume'] || '';
-      const remark = rowObj['备注(Remark)'] || rowObj['备注'] || rowObj['Remark'] || '';
+      rowIndex = rowNumber;
+      
+      // 获取行数据
+      const uniqueCode = String(row.getCell(1).value || '').trim();
+      const productId = String(row.getCell(2).value || '').trim();
+      const productName = String(row.getCell(3).value || '').trim();
+      const quantity = String(row.getCell(4).value || '').trim();
+      const packageCount = String(row.getCell(5).value || '').trim();
+      const weight = String(row.getCell(6).value || '').trim();
+      const volume = String(row.getCell(7).value || '').trim();
+      const remark = String(row.getCell(8).value || '').trim();
       
       // 数据验证
       if (!productId && !productName) {
-        if (Object.keys(rowObj).some(key => rowObj[key])) {
+        if (row.values && row.values.some(value => value !== undefined && value !== null && value !== '')) {
           errors.push(`第${rowIndex}行: 产品ID和产品名称不能同时为空`);
         }
-        continue; // 跳过空行或无有效数据的行
+        return; // 跳过空行或无有效数据的行
       }
       
       if (!quantity) {
         errors.push(`第${rowIndex}行: 数量不能为空`);
-        continue;
+        return;
       }
       
-      const parsedQuantity = parseInt(String(quantity));
+      const parsedQuantity = parseInt(quantity);
       if (isNaN(parsedQuantity) || parsedQuantity <= 0) {
         errors.push(`第${rowIndex}行: 数量必须为正整数`);
-        continue;
+        return;
       }
       
-      const parsedPackageCount = parseInt(String(packageCount)) || parsedQuantity;
+      const parsedPackageCount = packageCount ? parseInt(packageCount) : parsedQuantity;
       if (isNaN(parsedPackageCount) || parsedPackageCount <= 0) {
         errors.push(`第${rowIndex}行: 件数必须为正整数`);
-        continue;
+        return;
       }
       
-      const parsedWeight = weight ? parseFloat(String(weight)) : undefined;
+      const parsedWeight = weight ? parseFloat(weight) : undefined;
       if (weight && (isNaN(parsedWeight!) || parsedWeight! < 0)) {
         errors.push(`第${rowIndex}行: 重量必须为非负数`);
-        continue;
+        return;
       }
       
-      const parsedVolume = volume ? parseFloat(String(volume)) : undefined;
+      const parsedVolume = volume ? parseFloat(volume) : undefined;
       if (volume && (isNaN(parsedVolume!) || parsedVolume! < 0)) {
         errors.push(`第${rowIndex}行: 体积必须为非负数`);
-        continue;
+        return;
       }
       
       // 唯一码验证 (如果提供)
@@ -193,17 +281,17 @@ export async function parseTransferImportFile(filePath: string, storage?: any): 
       let matchedProduct = null;
       
       if (uniqueCode) {
-        if (!/^\d{1,5}$/.test(String(uniqueCode))) {
+        if (!/^\d{1,5}$/.test(uniqueCode)) {
           errors.push(`第${rowIndex}行: 唯一码必须为1-5位数字`);
         } else if (storage) {
           // 使用存储接口验证唯一码是否有效
           try {
-            const product = await storage.getProductByUniqueCode(String(uniqueCode));
+            const product = await storage.getProductByUniqueCode(uniqueCode);
             if (product) {
               matched = true;
               matchedProduct = product;
               // 如果已提供产品名称与匹配到的产品不符，添加警告
-              if (productName && product.name !== String(productName)) {
+              if (productName && product.name !== productName) {
                 warnings.push(`第${rowIndex}行: 产品名称与唯一码匹配的产品名称不一致，将使用系统内产品信息`);
               }
             } else {
@@ -221,18 +309,40 @@ export async function parseTransferImportFile(filePath: string, storage?: any): 
       
       // 添加到待处理项
       items.push({
-        uniqueCode: uniqueCode ? String(uniqueCode) : undefined,
-        productId: productId ? parseInt(String(productId)) : (matchedProduct ? matchedProduct.id : undefined),
-        productName: productName ? String(productName) : (matchedProduct ? matchedProduct.name : undefined),
+        uniqueCode: uniqueCode || undefined,
+        productId: productId ? parseInt(productId) : (matchedProduct ? matchedProduct.id : undefined),
+        productName: productName || (matchedProduct ? matchedProduct.name : undefined),
         quantity: parsedQuantity,
         packageCount: parsedPackageCount,
         weight: parsedWeight || (matchedProduct ? matchedProduct.singleWeightKg * parsedQuantity : undefined),
         volume: parsedVolume || (matchedProduct ? matchedProduct.singleVolumeM3 * parsedQuantity : undefined),
-        remark: remark ? String(remark) : undefined,
+        remark: remark || undefined,
         matched,
         matchedProduct: matched ? matchedProduct : undefined
       });
-    }
+    });
+    
+    // 等待所有异步验证完成
+    await Promise.all(items.map(async (item) => {
+      // 如果已经有唯一码匹配，则无需进一步验证
+      if (item.matched) return;
+      
+      // 如果有产品ID但没有唯一码，尝试通过ID查找产品
+      if (item.productId && storage) {
+        try {
+          const product = await storage.getProduct(item.productId);
+          if (product) {
+            item.matched = true;
+            item.matchedProduct = product;
+            if (item.productName && product.name !== item.productName) {
+              warnings.push(`产品ID ${item.productId}: 产品名称不匹配，将使用系统内产品信息`);
+            }
+          }
+        } catch (err) {
+          console.error(`查找产品ID时出错:`, err);
+        }
+      }
+    }));
     
     // 统计匹配和未匹配的项目数量
     const matchedCount = items.filter(item => item.matched).length;
@@ -261,7 +371,7 @@ export async function parseTransferImportFile(filePath: string, storage?: any): 
  * @param transfers 调拨单数据列表
  * @returns 导出文件路径
  */
-export function exportMultipleTransfersToExcel(transfers: Array<{
+export async function exportMultipleTransfersToExcel(transfers: Array<{
   id: number;
   referenceNumber: string;
   sourceWarehouseId: number;
@@ -288,47 +398,76 @@ export function exportMultipleTransfersToExcel(transfers: Array<{
     username: string;
     fullName?: string;
   };
-}>): string {
-  // 创建工作簿
-  const wb = XLSX.utils.book_new();
-  
-  // 准备数据
-  const headers = [
-    '调拨单号', '源仓库', '目标仓库', '状态', '总数量', '总件数', '总重量(kg)', '总体积(m³)', '创建日期', '创建人', '备注'
-  ];
-  
-  const data = transfers.map(transfer => [
-    transfer.referenceNumber,
-    transfer.sourceWarehouse.name,
-    transfer.targetWarehouse.name,
-    transfer.status,
-    transfer.totalItems,
-    transfer.totalPackages,
-    transfer.totalWeight,
-    transfer.totalVolume,
-    new Date(transfer.createdAt).toLocaleString('zh-CN'),
-    transfer.creator?.fullName || transfer.creator?.username || '',
-    transfer.notes || ''
-  ]);
+}>): Promise<string> {
+  // 创建新的工作簿
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'E5系统';
+  workbook.lastModifiedBy = 'E5系统';
+  workbook.created = new Date();
+  workbook.modified = new Date();
   
   // 创建工作表
-  const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+  const worksheet = workbook.addWorksheet('调拨单列表');
   
-  // 设置列宽
-  ws['!cols'] = [
-    { width: 15 }, { width: 15 }, { width: 15 }, { width: 10 }, 
-    { width: 8 }, { width: 8 }, { width: 10 }, { width: 10 }, 
-    { width: 20 }, { width: 15 }, { width: 30 }
+  // 定义列
+  worksheet.columns = [
+    { header: '调拨单号', key: 'referenceNumber', width: 15 },
+    { header: '源仓库', key: 'sourceWarehouse', width: 15 },
+    { header: '目标仓库', key: 'targetWarehouse', width: 15 },
+    { header: '状态', key: 'status', width: 10 },
+    { header: '总数量', key: 'totalItems', width: 8 },
+    { header: '总件数', key: 'totalPackages', width: 8 },
+    { header: '总重量(kg)', key: 'totalWeight', width: 10 },
+    { header: '总体积(m³)', key: 'totalVolume', width: 10 },
+    { header: '创建日期', key: 'createdAt', width: 20 },
+    { header: '创建人', key: 'creator', width: 15 },
+    { header: '备注', key: 'notes', width: 30 }
   ];
   
-  // 添加工作表到工作簿
-  XLSX.utils.book_append_sheet(wb, ws, '调拨单列表');
+  // 设置表头样式
+  worksheet.getRow(1).font = { bold: true };
+  worksheet.getRow(1).fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FFD9EAD3' }
+  };
   
-  // 保存工作簿到文件
+  // 添加数据
+  transfers.forEach(transfer => {
+    worksheet.addRow({
+      referenceNumber: transfer.referenceNumber,
+      sourceWarehouse: transfer.sourceWarehouse.name,
+      targetWarehouse: transfer.targetWarehouse.name,
+      status: transfer.status,
+      totalItems: transfer.totalItems,
+      totalPackages: transfer.totalPackages,
+      totalWeight: transfer.totalWeight,
+      totalVolume: transfer.totalVolume,
+      createdAt: new Date(transfer.createdAt).toLocaleString('zh-CN'),
+      creator: transfer.creator?.fullName || transfer.creator?.username || '',
+      notes: transfer.notes || ''
+    });
+  });
+  
+  // 设置所有数据行的边框样式
+  for (let i = 2; i <= transfers.length + 1; i++) {
+    worksheet.getRow(i).eachCell({ includeEmpty: true }, cell => {
+      cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+    });
+  }
+  
+  // 保存工作簿
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const filename = `transfers_export_${timestamp}.xlsx`;
   const filePath = path.join(EXPORT_DIR, filename);
-  XLSX.writeFile(wb, filePath);
+  
+  // 写入文件
+  await workbook.xlsx.writeFile(filePath);
   
   return filePath;
 }
@@ -342,7 +481,7 @@ export function exportMultipleTransfersToExcel(transfers: Array<{
  * @param products 商品数据
  * @returns 导出文件路径
  */
-export function exportTransferToExcel(
+export async function exportTransferToExcel(
   transfer: WarehouseTransfer,
   items: Array<{
     productId: number;
@@ -361,32 +500,65 @@ export function exportTransferToExcel(
   sourceWarehouse: Warehouse,
   targetWarehouse: Warehouse,
   products: Record<number, Product>
-): string {
-  // 创建工作簿
-  const wb = XLSX.utils.book_new();
+): Promise<string> {
+  // 创建新的工作簿
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'E5系统';
+  workbook.lastModifiedBy = 'E5系统';
+  workbook.created = new Date();
+  workbook.modified = new Date();
   
-  // 1. 调拨单基本信息工作表
-  const headerData = [
-    ['仓库调拨单', '', '', '', '', '', ''],
-    ['', '', '', '', '', '', ''],
-    ['调拨单号', transfer.referenceNumber, '', '创建日期', new Date(transfer.createdAt).toLocaleString('zh-CN'), '', ''],
-    ['源仓库', sourceWarehouse.name, '', '目标仓库', targetWarehouse.name, '', ''],
-    ['总数量', transfer.totalItems, '', '总件数', transfer.totalPackages, '', ''],
-    ['总重量(kg)', transfer.totalWeight, '', '总体积(m³)', transfer.totalVolume, '', ''],
-    ['状态', transfer.status, '', '备注', transfer.notes || '', '', ''],
-    ['', '', '', '', '', '', ''],
-  ];
+  // 创建工作表
+  const worksheet = workbook.addWorksheet('仓库调拨单');
   
-  // 2. 调拨商品明细
-  const itemsHeader = [
-    ['序号', '唯一码', '产品ID', '产品名称', '产品条码', '产品分类', '数量', '件数', '重量(kg)', '体积(m³)', '备注']
-  ];
+  // 添加标题
+  worksheet.mergeCells('A1:G1');
+  const titleCell = worksheet.getCell('A1');
+  titleCell.value = '仓库调拨单';
+  titleCell.font = { bold: true, size: 16 };
+  titleCell.alignment = { horizontal: 'center' };
   
-  const itemsData = items.map((item, index) => {
+  // 添加空行
+  worksheet.addRow([]);
+  
+  // 添加调拨单基本信息
+  worksheet.addRow(['调拨单号', transfer.referenceNumber, '', '创建日期', new Date(transfer.createdAt).toLocaleString('zh-CN')]);
+  worksheet.addRow(['源仓库', sourceWarehouse.name, '', '目标仓库', targetWarehouse.name]);
+  worksheet.addRow(['总数量', transfer.totalItems, '', '总件数', transfer.totalPackages]);
+  worksheet.addRow(['总重量(kg)', transfer.totalWeight, '', '总体积(m³)', transfer.totalVolume]);
+  worksheet.addRow(['状态', transfer.status, '', '备注', transfer.notes || '']);
+  
+  // 添加空行
+  worksheet.addRow([]);
+  
+  // 添加明细表头
+  const detailsHeaderRow = worksheet.addRow([
+    '序号', '唯一码', '产品ID', '产品名称', '产品条码', '产品分类', 
+    '数量', '件数', '重量(kg)', '体积(m³)', '备注'
+  ]);
+  
+  // 设置明细表头样式
+  detailsHeaderRow.eachCell((cell) => {
+    cell.font = { bold: true };
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFFFD966' }
+    };
+    cell.border = {
+      top: { style: 'thin' },
+      left: { style: 'thin' },
+      bottom: { style: 'thin' },
+      right: { style: 'thin' }
+    };
+  });
+  
+  // 添加明细数据
+  items.forEach((item, index) => {
     // 获取产品信息
     const product = products[item.productId] || item.product || { name: '未知产品', barcode: '' };
     
-    return [
+    const itemRow = worksheet.addRow([
       index + 1,
       item.uniqueCode || '',
       item.productId,
@@ -398,53 +570,107 @@ export function exportTransferToExcel(
       typeof item.weight === 'string' ? parseFloat(item.weight) : item.weight,
       typeof item.volume === 'string' ? parseFloat(item.volume) : item.volume,
       item.remark || ''
-    ];
+    ]);
+    
+    // 设置明细行样式
+    itemRow.eachCell((cell) => {
+      cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+      };
+    });
   });
   
-  // 3. 为1C财务系统添加特定格式的元数据
-  const metaData = [
-    ['#1C:TRANSFER', '', '', ''], // 1C标记，表明这是调拨数据
-    ['VERSION', '1.0', '', ''], // 版本号
-    ['SOURCE_WAREHOUSE', sourceWarehouse.id, sourceWarehouse.name, ''],
-    ['TARGET_WAREHOUSE', targetWarehouse.id, targetWarehouse.name, ''],
-    ['DOCUMENT_NUMBER', transfer.referenceNumber, '', ''],
-    ['DOCUMENT_DATE', new Date(transfer.createdAt).toISOString().split('T')[0], '', ''],
-    ['TOTAL_ITEMS', transfer.totalItems, '', ''],
-    ['TOTAL_PACKAGES', transfer.totalPackages, '', ''],
-    ['TOTAL_WEIGHT', transfer.totalWeight, '', ''],
-    ['TOTAL_VOLUME', transfer.totalVolume, '', ''],
-    ['STATUS', transfer.status, '', ''],
-    ['', '', '', ''],
-    ['#ITEMS_START', '', '', ''], // 项目数据起始标记
-  ];
+  // 添加空行
+  worksheet.addRow([]);
   
-  // 4. 合并所有数据
-  const allData = [
-    ...headerData,
-    ...itemsHeader,
-    ...itemsData,
-    ['', '', '', '', '', '', '', '', '', '', ''],
-    ...metaData,
-    ...itemsData.map(item => ['ITEM', ...item]),
-    ['#ITEMS_END', '', '', ''], // 项目数据结束标记
-  ];
+  // 添加1C财务系统兼容的元数据
+  worksheet.addRow(['#1C:TRANSFER']); // 1C标记，表明这是调拨数据
+  worksheet.addRow(['VERSION', '1.0']);
+  worksheet.addRow(['SOURCE_WAREHOUSE', sourceWarehouse.id, sourceWarehouse.name]);
+  worksheet.addRow(['TARGET_WAREHOUSE', targetWarehouse.id, targetWarehouse.name]);
+  worksheet.addRow(['DOCUMENT_NUMBER', transfer.referenceNumber]);
+  worksheet.addRow(['DOCUMENT_DATE', new Date(transfer.createdAt).toISOString().split('T')[0]]);
+  worksheet.addRow(['TOTAL_ITEMS', transfer.totalItems]);
+  worksheet.addRow(['TOTAL_PACKAGES', transfer.totalPackages]);
+  worksheet.addRow(['TOTAL_WEIGHT', transfer.totalWeight]);
+  worksheet.addRow(['TOTAL_VOLUME', transfer.totalVolume]);
+  worksheet.addRow(['STATUS', transfer.status]);
   
-  // 5. 创建工作表并设置列宽
-  const ws = XLSX.utils.aoa_to_sheet(allData);
-  ws['!cols'] = [
-    { width: 8 }, { width: 10 }, { width: 10 }, { width: 30 }, 
-    { width: 15 }, { width: 15 }, { width: 8 }, { width: 8 }, 
-    { width: 10 }, { width: 10 }, { width: 25 }
-  ];
+  // 添加空行
+  worksheet.addRow([]);
   
-  // 6. 添加工作表到工作簿
-  XLSX.utils.book_append_sheet(wb, ws, '仓库调拨单');
+  // 添加项目数据起始标记
+  worksheet.addRow(['#ITEMS_START']);
   
-  // 7. 保存工作簿到文件
+  // 再次以特定格式添加项目数据
+  items.forEach((item, index) => {
+    // 获取产品信息
+    const product = products[item.productId] || item.product || { name: '未知产品', barcode: '' };
+    
+    worksheet.addRow([
+      'ITEM',
+      index + 1,
+      item.uniqueCode || '',
+      item.productId,
+      product.name,
+      product.barcode,
+      product.category || '',
+      item.quantity,
+      item.packageCount,
+      typeof item.weight === 'string' ? parseFloat(item.weight) : item.weight,
+      typeof item.volume === 'string' ? parseFloat(item.volume) : item.volume,
+      item.remark || ''
+    ]);
+  });
+  
+  // 添加项目数据结束标记
+  worksheet.addRow(['#ITEMS_END']);
+  
+  // 设置列宽
+  worksheet.columns.forEach((column, index) => {
+    let width = 10;
+    switch (index) {
+      case 0: // 序号/特殊标记列
+        width = 8;
+        break;
+      case 1: // 唯一码
+      case 2: // 产品ID
+        width = 10;
+        break;
+      case 3: // 产品名称
+        width = 30;
+        break;
+      case 4: // 产品条码
+      case 5: // 产品分类
+        width = 15;
+        break;
+      case 6: // 数量
+      case 7: // 件数
+        width = 8;
+        break;
+      case 8: // 重量
+      case 9: // 体积
+        width = 10;
+        break;
+      case 10: // 备注
+        width = 25;
+        break;
+      default:
+        width = 10;
+    }
+    column.width = width;
+  });
+  
+  // 保存工作簿
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const filename = `transfer_${transfer.referenceNumber}_${timestamp}.xlsx`;
   const filePath = path.join(EXPORT_DIR, filename);
-  XLSX.writeFile(wb, filePath);
+  
+  // 写入文件
+  await workbook.xlsx.writeFile(filePath);
   
   return filePath;
 }
