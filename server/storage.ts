@@ -192,6 +192,10 @@ export class MemStorage implements IStorage {
   // 仓库调拨相关存储
   private warehouseTransfersMap: Map<number, WarehouseTransfer>;
   private warehouseTransferItemsMap: Map<number, WarehouseTransferItem>;
+  
+  // 唯一码跟踪相关存储
+  private uniqueCodeTrackingMap: Map<string, UniqueCodeTracking>;
+  private uniqueCodeHistoryMap: Map<number, UniqueCodeHistory>;
 
   private userIdCounter: number;
   private repositoryIdCounter: number;
