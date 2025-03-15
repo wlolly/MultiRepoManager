@@ -12,18 +12,21 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// 添加标准中间件
+console.log("初始化Express应用中间件...");
+
 // 配置 express-session
 app.use(session({
   secret: process.env.SESSION_SECRET || 'warehouse-management-secret',
-  resave: true, // 确保会话在服务器端保存，解决会话丢失问题
-  saveUninitialized: true, // 修改为true，确保所有会话都被保存
+  resave: false, // 只在会话被修改时保存
+  saveUninitialized: false, // 只保存已初始化的会话，减少无用会话创建
   name: 'warehouse.sid', // 自定义会话ID cookie名称 (更简单的名称避免解析问题)
   rolling: true, // 每次响应都重设cookie过期时间
   proxy: true, // 信任反向代理，解决在Replit环境下cookie问题
   genid: function(req) {
-    // 生成一个短一些但仍然安全的会话ID
+    // 总是生成一个新的独特会话ID
     const sessionId = crypto.randomBytes(16).toString('hex');
-    console.log(`为请求生成新会话ID: ${sessionId}`);
+    console.log(`创建会话ID: ${sessionId}`);
     return sessionId;
   },
   cookie: { 
@@ -32,7 +35,7 @@ app.use(session({
     httpOnly: true, // 阻止客户端JS访问cookie
     path: '/',
     sameSite: 'lax', // 防止CSRF攻击的同时允许从外部链接访问
-    domain: process.env.DOMAIN || undefined // 自动适应当前域名
+    domain: undefined // 不指定域名，使用当前域名
   },
   store: new MemoryStore({
     checkPeriod: 86400000, // 每24小时清理过期会话
