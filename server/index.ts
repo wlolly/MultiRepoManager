@@ -112,6 +112,18 @@ app.use(session({
       if (isAuthRequest || req.path === '/api/auth/current-user') {
         console.log(`[会话追踪] 路径: ${req.path}，使用客户端提供的会话ID: ${clientSessionId}，来源: ${sourceType}`);
       }
+      
+      // 主动覆盖会话ID，确保后续处理都使用这个ID
+      if (req) {
+        // 直接修改请求对象的会话ID
+        (req as any).sessionID = clientSessionId;
+        
+        // 保存到请求会话选项中，确保是否save操作都使用正确的ID
+        if (req.sessionOptions) {
+          req.sessionOptions.genid = () => clientSessionId;
+        }
+      }
+      
       return clientSessionId;
     }
     
