@@ -2136,8 +2136,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Excel模板下载路由
   apiRouter.get("/warehouse-transfers/template", async (req, res) => {
     try {
-      // 创建模板文件
-      const templatePath = createTransferImportTemplate();
+      // 创建模板文件 (使用await等待文件写入完成)
+      const templatePath = await createTransferImportTemplate();
       
       // 发送文件给客户端
       downloadWithCleanup(res, templatePath, "warehouse_transfer_template.xlsx");
@@ -2511,8 +2511,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
       
-      // 导出Excel文件
-      const filePath = exportTransferToExcel(
+      // 导出Excel文件（使用await等待导出完成）
+      const filePath = await exportTransferToExcel(
         transfer, 
         items, 
         sourceWarehouse, 
