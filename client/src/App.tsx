@@ -10,6 +10,8 @@ import { useTranslation } from 'react-i18next';
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useQuery } from "@tanstack/react-query";
 import TestToast from "./pages/test-toast";
+import { usePermissions } from "./hooks/use-permissions";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 // 页面导入
 import Dashboard from "./pages/dashboard";
@@ -60,6 +62,7 @@ const navItems = [
 function Sidebar() {
   const [pathname] = useLocation();
   const { t } = useTranslation();
+  const { hasPagePermission, isLoading: isLoadingPermissions } = usePermissions();
 
   interface Activity {
     id: number;
@@ -128,6 +131,20 @@ function Sidebar() {
     }
   };
 
+  // 根据页面名称判断是否有权限访问
+  const pagePermissionMap = {
+    '/': 'dashboard',
+    '/warehouses': 'warehouses',
+    '/products': 'products',
+    '/warehouse-products': 'warehouse_products',
+    '/inbound-orders': 'inbound_orders',
+    '/outbound-orders': 'outbound_orders',
+    '/warehouse-transfers': 'warehouse_transfers',
+    '/api-configurations': 'api_configurations',
+    '/users': 'users_teams',
+    '/settings': 'settings'
+  };
+
   return (
     <div className="h-full bg-gray-900 text-white w-full md:w-64 overflow-y-auto">
       <div className="p-4 flex items-center border-b border-gray-800">
@@ -136,24 +153,43 @@ function Sidebar() {
       </div>
       
       <div className="p-4">
-        <Link to="/products/new" className="bg-blue-600 hover:bg-blue-700 w-full py-2 px-4 rounded-md flex items-center justify-center transition">
-          <i className="ri-add-line mr-2"></i> {t('new_product')}
-        </Link>
+        {hasPagePermission('products') && (
+          <Link to="/products/new" className="bg-blue-600 hover:bg-blue-700 w-full py-2 px-4 rounded-md flex items-center justify-center transition">
+            <i className="ri-add-line mr-2"></i> {t('new_product')}
+          </Link>
+        )}
       </div>
       
       <nav className="mt-2">
         <div className="px-4 py-2 text-gray-400 text-sm font-medium">{t('navigation')}</div>
-        {navItems.map((item) => (
-          <Link key={item.href} to={item.href} className={cn(
-            "flex items-center py-2 px-4 transition whitespace-nowrap overflow-hidden",
-            pathname === item.href
-              ? "bg-gray-800 text-blue-500" 
-              : "text-gray-300 hover:bg-gray-800 hover:text-white"
-          )}>
-            <i className={`${item.icon} mr-3 flex-shrink-0`}></i> 
-            <span className="truncate">{t(item.keyName)}</span>
-          </Link>
-        ))}
+        {isLoadingPermissions ? (
+          // 权限加载中的骨架屏
+          <div className="p-4 space-y-3">
+            {[1, 2, 3, 4, 5].map(n => (
+              <div key={n} className="h-8 bg-gray-800 animate-pulse rounded-md"></div>
+            ))}
+          </div>
+        ) : (
+          // 根据权限渲染菜单项
+          navItems.map((item) => {
+            const pageName = pagePermissionMap[item.href];
+            // 如果没有找到对应的页面权限标识，或者用户有该页面的权限，则显示菜单项
+            if (!pageName || hasPagePermission(pageName)) {
+              return (
+                <Link key={item.href} to={item.href} className={cn(
+                  "flex items-center py-2 px-4 transition whitespace-nowrap overflow-hidden",
+                  pathname === item.href
+                    ? "bg-gray-800 text-blue-500" 
+                    : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                )}>
+                  <i className={`${item.icon} mr-3 flex-shrink-0`}></i> 
+                  <span className="truncate">{t(item.keyName)}</span>
+                </Link>
+              );
+            }
+            return null; // 没有权限则不显示
+          })
+        )}
       </nav>
       
       <div className="px-4 py-2 mt-6 text-gray-400 text-sm font-medium">{t('recent_activity')}</div>

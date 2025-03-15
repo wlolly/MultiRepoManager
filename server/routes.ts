@@ -3428,6 +3428,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // 权限管理相关路由
+  // 获取当前用户的页面权限
+  apiRouter.get("/permissions/pages", async (req, res) => {
+    try {
+      // 检查用户是否已登录
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "未授权，请先登录" });
+      }
+      
+      const userId = req.session.userId;
+      const permissions = await getUserPagePermissions(userId);
+      
+      res.json(permissions);
+    } catch (err) {
+      console.error("获取页面权限错误:", err);
+      handleZodError(err, res);
+    }
+  });
+  
+  // 获取当前用户的仓库权限
+  apiRouter.get("/permissions/warehouses", async (req, res) => {
+    try {
+      // 检查用户是否已登录
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "未授权，请先登录" });
+      }
+      
+      const userId = req.session.userId;
+      const permissions = await getUserWarehousePermissions(userId);
+      
+      res.json(permissions);
+    } catch (err) {
+      console.error("获取仓库权限错误:", err);
+      handleZodError(err, res);
+    }
+  });
+  
+  // 检查用户是否有特定页面权限
+  apiRouter.get("/permissions/check-page/:pageName", async (req, res) => {
+    try {
+      // 检查用户是否已登录
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "未授权，请先登录" });
+      }
+      
+      const userId = req.session.userId;
+      const pageName = req.params.pageName;
+      
+      if (!pageName) {
+        return res.status(400).json({ error: "请提供页面名称" });
+      }
+      
+      const permissions = await getUserPagePermissions(userId);
+      const hasPermission = permissions[pageName] === true;
+      
+      res.json({ pageName, hasPermission });
+    } catch (err) {
+      console.error("检查页面权限错误:", err);
+      handleZodError(err, res);
+    }
+  });
+  
+  // 检查用户是否有特定仓库权限
+  apiRouter.get("/permissions/check-warehouse/:warehouseId", async (req, res) => {
+    try {
+      // 检查用户是否已登录
+      if (!req.session.userId) {
+        return res.status(401).json({ error: "未授权，请先登录" });
+      }
+      
+      const userId = req.session.userId;
+      const warehouseId = parseInt(req.params.warehouseId);
+      const checkManage = req.query.checkManage === 'true';
+      
+      if (isNaN(warehouseId)) {
+        return res.status(400).json({ error: "请提供有效的仓库ID" });
+      }
+      
+      const permissions = await getUserWarehousePermissions(userId);
+      const warehousePermission = permissions[warehouseId] || { canView: false, canManage: false };
+      
+      const hasPermission = checkManage ? warehousePermission.canManage : warehousePermission.canView;
+      
+      res.json({ 
+        warehouseId, 
+        hasPermission,
+        permissionType: checkManage ? 'manage' : 'view'
+      });
+    } catch (err) {
+      console.error("检查仓库权限错误:", err);
+      handleZodError(err, res);
+    }
+  });
+
   // 管理员专用接口 - 初始化测试数据
   apiRouter.post("/admin/initialize-test-data", async (req, res) => {
     try {
