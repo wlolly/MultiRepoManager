@@ -540,45 +540,23 @@ export default function WarehouseTransfers() {
           <p className="text-muted-foreground">{t("warehouseTransfer.subtitle")}</p>
         </div>
         <div className="flex gap-2">
-          {/* Excel操作按钮组 */}
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleDownloadTemplate}
-              className="flex items-center"
-              title={t("warehouseTransfer.download_template_tooltip")}
-            >
-              <FileSpreadsheet className="mr-2 h-4 w-4" />
-              {t("download_template")}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setImportDialogOpen(true)}
-              className="flex items-center"
-              title={t("warehouseTransfer.import_tooltip")}
-            >
-              <FileUp className="mr-2 h-4 w-4" />
-              {t("import_excel")}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                if (filteredTransfers.length > 0) {
-                  exportAllTransfersToExcel();
-                } else {
-                  toast.error(t("warehouseTransfer.no_data_to_export"));
-                }
-              }}
-              className="flex items-center"
-              title={t("warehouseTransfer.export_tooltip")}
-            >
-              <FileDown className="mr-2 h-4 w-4" />
-              {t("export_excel")}
-            </Button>
-          </div>
+          {/* 使用SimpleExcelButtons组件代替单独的按钮 */}
+          <SimpleExcelButtons
+            onDownloadTemplate={handleDownloadTemplate}
+            onImport={() => setImportDialogOpen(true)}
+            onExport={() => {
+              if (filteredTransfers.length > 0) {
+                exportAllTransfersToExcel();
+              } else {
+                toast.error(t("warehouseTransfer.no_data_to_export"));
+              }
+            }}
+            tooltips={{
+              template: t("warehouseTransfer.download_template_tooltip"),
+              import: t("warehouseTransfer.import_tooltip"),
+              export: t("warehouseTransfer.export_tooltip")
+            }}
+          />
           {/* 创建调拨单按钮 */}
           <Button onClick={handleCreateTransfer}>
             <Plus className="mr-2 h-4 w-4" />
@@ -646,44 +624,23 @@ export default function WarehouseTransfers() {
           <p className="text-sm text-muted-foreground">{t("warehouseTransfer.excel_description")}</p>
         </div>
         <div className="flex gap-2">
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="default"
-              onClick={handleDownloadTemplate}
-              className="flex items-center"
-              title={t("warehouseTransfer.download_template_tooltip")}
-            >
-              <FileSpreadsheet className="mr-2 h-4 w-4" />
-              {t("download_template")}
-            </Button>
-            <Button
-              variant="outline"
-              size="default"
-              onClick={() => setImportDialogOpen(true)}
-              className="flex items-center"
-              title={t("warehouseTransfer.import_tooltip")}
-            >
-              <FileUp className="mr-2 h-4 w-4" />
-              {t("import_excel")}
-            </Button>
-            <Button
-              variant="outline"
-              size="default"
-              onClick={() => {
-                if (filteredTransfers.length > 0) {
-                  exportAllTransfersToExcel();
-                } else {
-                  toast.error(t("warehouseTransfer.no_data_to_export"));
-                }
-              }}
-              className="flex items-center"
-              title={t("warehouseTransfer.export_tooltip")}
-            >
-              <FileDown className="mr-2 h-4 w-4" />
-              {t("export_excel")}
-            </Button>
-          </div>
+          <SimpleExcelButtons
+            size="default"
+            onDownloadTemplate={handleDownloadTemplate}
+            onImport={() => setImportDialogOpen(true)}
+            onExport={() => {
+              if (filteredTransfers.length > 0) {
+                exportAllTransfersToExcel();
+              } else {
+                toast.error(t("warehouseTransfer.no_data_to_export"));
+              }
+            }}
+            tooltips={{
+              template: t("warehouseTransfer.download_template_tooltip"),
+              import: t("warehouseTransfer.import_tooltip"),
+              export: t("warehouseTransfer.export_tooltip")
+            }}
+          />
         </div>
       </div>
 
