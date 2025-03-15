@@ -24,7 +24,7 @@ if (!fs.existsSync(EXPORT_DIR)) {
  * 创建仓库调拨单导入模板
  * @returns 模板文件路径
  */
-export function createTransferImportTemplate(): string {
+export async function createTransferImportTemplate(): Promise<string> {
   // 创建新的工作簿
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'E5系统';
@@ -150,12 +150,9 @@ export function createTransferImportTemplate(): string {
   const templatePath = path.join(TEMPLATE_DIR, templateFilename);
   
   try {
-    // 写入文件
-    workbook.xlsx.writeFile(templatePath)
-      .catch(err => {
-        console.error('创建调拨单导入模板失败:', err);
-      });
-    
+    // 写入文件并等待完成
+    await workbook.xlsx.writeFile(templatePath);
+    console.log('仓库调拨单导入模板创建成功:', templatePath);
     return templatePath;
   } catch (err) {
     console.error('创建调拨单导入模板失败:', err);
