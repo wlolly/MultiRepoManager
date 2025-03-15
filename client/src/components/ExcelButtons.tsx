@@ -84,8 +84,11 @@ export function SimpleExcelButtons({
 }) {
   const { t } = useTranslation();
   
+  // 为了调试，添加一个console.log
+  console.log("渲染SimpleExcelButtons组件");
+  
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-2" data-testid="simple-excel-buttons">
       <Button
         variant="outline"
         size={size}

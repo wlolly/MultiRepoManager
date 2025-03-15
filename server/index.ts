@@ -48,7 +48,8 @@ app.use((req, res, next) => {
     const message = err.message || "Internal Server Error";
 
     res.status(status).json({ message });
-    throw err;
+    // 不再抛出错误，只记录错误信息
+    console.error('[Error]', err.stack || err);
   });
 
   // importantly only setup vite in development and after
