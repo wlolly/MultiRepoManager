@@ -224,7 +224,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             fetch('/api/auth/login', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ username, password })
+              body: JSON.stringify({ username, password }),
+              credentials: 'include' // 确保包含cookie
             })
             .then(res => res.json())
             .then(data => {
@@ -246,7 +247,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // 登出
           document.getElementById('logoutBtn').addEventListener('click', () => {
-            fetch('/api/auth/logout', { method: 'POST' })
+            fetch('/api/auth/logout', { 
+              method: 'POST',
+              credentials: 'include' // 确保包含cookie
+            })
             .then(res => {
               if (res.ok) {
                 document.getElementById('loginResult').innerHTML = 
@@ -267,7 +271,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // 检查会话
           function checkSession() {
-            fetch('/session-info')
+            fetch('/session-info', {
+              credentials: 'include' // 确保包含cookie
+            })
             .then(res => res.json())
             .then(data => {
               document.getElementById('sessionInfo').innerText = JSON.stringify(data, null, 2);
@@ -287,7 +293,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             fetch('/api/auth/bind-social', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ platform, socialId })
+              body: JSON.stringify({ platform, socialId }),
+              credentials: 'include' // 确保包含cookie
             })
             .then(res => res.json())
             .then(data => {
@@ -309,7 +316,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // 检查绑定状态
           document.getElementById('checkBindingBtn').addEventListener('click', () => {
-            fetch('/api/auth/social-binding-status')
+            fetch('/api/auth/social-binding-status', {
+              credentials: 'include' // 确保包含cookie
+            })
             .then(res => res.json())
             .then(data => {
               document.getElementById('bindResult').innerHTML = 
@@ -334,6 +343,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 登录接口
   apiRouter.post("/auth/login", (req, res, next) => {
     console.log(`尝试登录: 用户名=${req.body.username}, 内存存储模式=${useFallbackStorage ? '开启' : '关闭'}`);
+    console.log(`当前会话ID: ${req.sessionID || '无'}, Cookie: ${req.headers.cookie || '无'}`);
     
     passport.authenticate('local', (err, user, info) => {
       if (err) {
@@ -356,81 +366,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`用户 ${user.username} 认证成功，准备创建会话`);
       
-      // 使用req.login()登录会话
-      req.login(user, (err) => {
+      // 先手动设置req.user，避免req.login可能的序列化问题
+      (req as any).user = user;
+      
+      // 确保会话对象存在
+      if (!req.session) {
+        console.error('严重错误: req.session不存在，无法保存会话状态');
+        return res.status(500).json({ 
+          message: '会话创建失败 - 会话对象缺失', 
+          success: false
+        });
+      }
+      
+      // 在会话中直接存储用户信息
+      const hasSocialBound = user.socialId && user.socialId !== '';
+      const needSocialBinding = user.userSource === 'local' && !hasSocialBound;
+      
+      // 更新会话数据
+      req.session.userId = user.id;
+      req.session.socialBound = hasSocialBound;
+      req.session.userRole = user.role; 
+      req.session.lastActivity = Date.now();
+      req.session.authenticated = true;
+      
+      // 调试输出会话内容
+      console.log(`更新会话数据: userId=${req.session.userId}, socialBound=${req.session.socialBound}, role=${req.session.userRole}, authenticated=${req.session.authenticated}`);
+      
+      // 强制保存会话 - 确保会话数据持久化
+      req.session.save((err) => {
         if (err) {
-          console.error('会话登录错误:', err);
+          console.error('会话保存错误:', err);
           return res.status(500).json({ 
-            message: '会话创建失败', 
+            message: '会话创建失败 - 无法保存会话数据', 
             success: false,
             error: err.message
           });
         }
         
-        console.log(`用户 ${user.username} 会话创建成功`);
+        console.log(`用户 ${user.username} 会话已保存，ID=${req.sessionID}`);
         
-        // 检查用户是否有社交绑定
-        const hasSocialBound = user.socialId && user.socialId !== '';
+        // 检查是否是表单提交请求
+        const isFormSubmit = req.headers['content-type']?.includes('application/x-www-form-urlencoded');
         
-        // 如果是通过用户名/密码登录的本地用户
-        const needSocialBinding = user.userSource === 'local' && !hasSocialBound;
-        
-        // 在会话中存储用户信息
-        if (req.session) {
-          // 更新会话数据
-          req.session.userId = user.id;
-          req.session.socialBound = hasSocialBound;
-          req.session.userRole = user.role; 
-          req.session.lastActivity = Date.now();
-          req.session.authenticated = true;
-          
-          // 强制保存会话 - 确保会话数据持久化
-          req.session.save((err) => {
-            if (err) {
-              console.error('会话保存错误:', err);
-              // 继续处理，不中断登录流程
-            } else {
-              console.log(`用户 ${user.username} 会话已保存，ID=${req.sessionID}`);
-            }
-            
-            // 继续处理响应
-            continueWithResponse();
-          });
-        } else {
-          console.warn('警告: req.session不存在，无法保存会话数据');
-          continueWithResponse();
+        // 如果是表单提交或明确指定需要重定向
+        if (isFormSubmit || req.body.redirect === 'true') {
+          // 根据是否需要绑定社交账号决定重定向到哪个页面
+          const redirectUrl = needSocialBinding ? '/settings' : '/';
+          console.log(`用户 ${user.username} 登录成功，重定向到 ${redirectUrl}`);
+          return res.redirect(redirectUrl);
         }
         
-        // 处理响应的函数
-        function continueWithResponse() {
-          // 检查是否是表单提交请求
-          const isFormSubmit = req.headers['content-type']?.includes('application/x-www-form-urlencoded');
-          
-          // 如果是表单提交或明确指定需要重定向
-          if (isFormSubmit || req.body.redirect === 'true') {
-            // 根据是否需要绑定社交账号决定重定向到哪个页面
-            const redirectUrl = needSocialBinding ? '/settings' : '/';
-            console.log(`用户 ${user.username} 登录成功，重定向到 ${redirectUrl}`);
-            return res.redirect(redirectUrl);
+        // 返回JSON响应（用于API调用）
+        return res.json({
+          message: '登录成功',
+          success: true,
+          fallbackMode: useFallbackStorage,
+          needSocialBinding: needSocialBinding, // 通知前端需要绑定社交账号
+          sessionId: req.sessionID, // 返回会话ID，方便调试
+          user: {
+            id: user.id,
+            username: user.username,
+            fullName: user.fullName,
+            role: user.role,
+            avatarUrl: user.avatarUrl,
+            userSource: user.userSource
           }
-          
-          // 返回JSON响应（用于API调用）
-          return res.json({
-            message: '登录成功',
-            success: true,
-            fallbackMode: useFallbackStorage,
-            needSocialBinding: needSocialBinding, // 通知前端需要绑定社交账号
-            sessionId: req.sessionID, // 返回会话ID，方便调试
-            user: {
-              id: user.id,
-              username: user.username,
-              fullName: user.fullName,
-              role: user.role,
-              avatarUrl: user.avatarUrl,
-              userSource: user.userSource
-            }
-          });
-        }
+        });
       });
     })(req, res, next);
   });

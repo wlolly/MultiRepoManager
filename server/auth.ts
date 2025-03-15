@@ -293,15 +293,23 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
         const user = await currentStorage.getUser(req.session.userId);
         
         if (user) {
-          // 使用 req.login 恢复用户会话
-          req.login(user, (err) => {
+          // 手动设置req.user而不是使用req.login，避免序列化问题
+          (req as any).user = user;
+          console.log(`成功恢复用户 ${user.username} 的会话`);
+          
+          // 确保会话中的信息是最新的
+          req.session.authenticated = true;
+          req.session.userId = user.id;
+          req.session.userRole = user.role;
+          req.session.socialBound = !!user.socialId && user.socialId !== '';
+          req.session.lastActivity = Date.now();
+          
+          // 保存会话以确保更改被持久化
+          req.session.save((err) => {
             if (err) {
-              console.error('会话恢复错误:', err);
-              return res.status(401).json({ message: '会话恢复失败，请重新登录' });
+              console.error('会话保存错误:', err);
             }
-            
-            console.log(`成功恢复用户 ${user.username} 的会话`);
-            // 更新会话后继续流程
+            // 即使保存失败，也继续流程
             next();
           });
           return; // 不要继续执行
@@ -325,17 +333,37 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
       // 如果会话中标记为authenticated但没有user对象，可能是序列化问题
       if (req.session?.authenticated === true) {
         console.log('会话标记为已认证，但用户对象丢失，可能是序列化问题');
-        return res.status(401).json({ 
-          message: '会话状态异常，请重新登录',
-          errorCode: 'SESSION_INVALID'
+        
+        // 尝试删除会话中的认证标记，避免循环错误
+        req.session.authenticated = false;
+        delete req.session.userId;
+        delete req.session.userRole;
+        
+        req.session.save(err => {
+          if (err) console.error('重置会话状态时出错:', err);
+          
+          return res.status(401).json({ 
+            message: '会话状态异常，请重新登录',
+            errorCode: 'SESSION_INVALID'
+          });
         });
+        
+        return;
       }
       
       console.log('会话验证失败：未找到用户信息');
       return res.status(401).json({ message: '未登录' });
     }
     
-    // 会话有效，继续
+    // 会话有效，确保会话信息同步
+    if (req.session) {
+      req.session.authenticated = true;
+      req.session.userId = (req.user as any).id;
+      req.session.userRole = (req.user as any).role;
+      req.session.lastActivity = Date.now();
+    }
+    
+    // 继续
     next();
   }
 }

@@ -21,8 +21,10 @@ app.use(session({
   rolling: true, // 每次响应都重设cookie过期时间
   proxy: true, // 信任反向代理，解决在Replit环境下cookie问题
   genid: function(req) {
-    // 使用更短的会话ID，避免cookie溢出
-    return crypto.randomBytes(16).toString('hex');
+    // 生成一个短一些但仍然安全的会话ID
+    const sessionId = crypto.randomBytes(16).toString('hex');
+    console.log(`为请求生成新会话ID: ${sessionId}`);
+    return sessionId;
   },
   cookie: { 
     secure: false, // 开发环境不使用secure，避免cookie丢失
@@ -34,7 +36,8 @@ app.use(session({
   },
   store: new MemoryStore({
     checkPeriod: 86400000, // 每24小时清理过期会话
-    ttl: 7 * 24 * 60 * 60 * 1000 // 7天的会话生命周期
+    ttl: 7 * 24 * 60 * 60 * 1000, // 7天的会话生命周期
+    stale: false // 不使用过期会话
   })
 }));
 
