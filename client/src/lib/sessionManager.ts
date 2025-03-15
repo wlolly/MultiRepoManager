@@ -79,9 +79,18 @@ export function processResponseHeaders(headers: Headers): string | null {
   if (Object.keys(headerInfo).length > 0) {
     console.log('响应头中的会话相关信息:', headerInfo);
   }
+
+  // 检查当前会话ID，确保我们不覆盖已验证的会话
+  const currentId = getSessionId();
   
   // 优先使用服务器原始会话ID，这是服务器最认可的会话ID
   if (originalSessionId && originalSessionId !== 'none' && originalSessionId !== '') {
+    // 如果当前会话已经登录，需要保持稳定而不是频繁更新
+    if (currentId && sessionStorage.getItem('currentUser')) {
+      console.log(`保留已验证的会话ID: ${currentId} (忽略服务器新会话: ${originalSessionId})`);
+      return currentId;
+    }
+    
     console.log(`从响应头中提取到原始会话ID: ${originalSessionId}`);
     saveSessionId(originalSessionId);
     return originalSessionId;
@@ -89,6 +98,12 @@ export function processResponseHeaders(headers: Headers): string | null {
   
   // 次优先使用客户端会话ID确认
   if (clientSessionId && clientSessionId !== 'none' && clientSessionId !== '') {
+    // 如果当前会话已经登录，保留而不覆盖
+    if (currentId && sessionStorage.getItem('currentUser')) {
+      console.log(`保留已验证的会话ID: ${currentId} (忽略客户端会话: ${clientSessionId})`);
+      return currentId;
+    }
+    
     console.log(`从响应头中提取到客户端会话ID: ${clientSessionId}`);
     saveSessionId(clientSessionId);
     return clientSessionId;
@@ -110,10 +125,22 @@ export function processResponseHeaders(headers: Headers): string | null {
         sessionId = sessionId.substring(4);
       }
       
+      // 如果当前会话已经登录，保留而不覆盖
+      if (currentId && sessionStorage.getItem('currentUser')) {
+        console.log(`保留已验证的会话ID: ${currentId} (忽略cookie会话: ${sessionId})`);
+        return currentId;
+      }
+      
       console.log(`从Set-Cookie中提取到会话ID: ${sessionId}`);
       saveSessionId(sessionId);
       return sessionId;
     }
+  }
+  
+  // 如果已有会话，优先保留它
+  if (currentId) {
+    console.log(`保留现有会话ID: ${currentId}`);
+    return currentId;
   }
   
   return null;
