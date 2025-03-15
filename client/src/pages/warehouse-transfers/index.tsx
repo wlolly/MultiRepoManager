@@ -551,7 +551,6 @@ export default function WarehouseTransfers() {
                 toast.error(t("warehouseTransfer.no_data_to_export"));
               }
             }}
-            size="sm"
             tooltips={{
               template: t("warehouseTransfer.download_template_tooltip"),
               import: t("warehouseTransfer.import_tooltip"),
@@ -630,7 +629,6 @@ export default function WarehouseTransfers() {
                 toast.error(t("warehouseTransfer.no_data_to_export"));
               }
             }}
-            size="sm"
             tooltips={{
               template: t("warehouseTransfer.download_template_tooltip"),
               import: t("warehouseTransfer.import_tooltip"),
