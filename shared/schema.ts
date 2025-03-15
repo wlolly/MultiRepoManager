@@ -92,15 +92,73 @@ export const teams = mysqlTable("teams", {
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  isActive: boolean("is_active").default(true), // 团队是否激活
 });
 
 export const insertTeamSchema = createInsertSchema(teams).pick({
   name: true,
   description: true,
+  isActive: true,
 });
 
 export type InsertTeam = z.infer<typeof insertTeamSchema>;
 export type Team = typeof teams.$inferSelect;
+
+// 系统页面枚举定义
+export const pageNameEnum = mysqlEnum("page_name", [
+  "dashboard", // 首页
+  "warehouses", // 仓库管理
+  "products", // 产品管理
+  "warehouse-products", // 仓库产品
+  "inbound-orders", // 入库单
+  "outbound-orders", // 出库单
+  "warehouse-transfers", // 仓库调拨
+  "api-configurations", // API配置
+  "users", // 用户管理
+  "teams", // 团队管理
+  "team-permissions", // 团队权限
+  "settings" // 系统设置
+]);
+
+// 团队页面权限表
+export const teamPagePermissions = mysqlTable("team_page_permissions", {
+  id: int("id").primaryKey().autoincrement(),
+  teamId: int("team_id").notNull().references(() => teams.id), // 团队ID
+  pageName: pageNameEnum.notNull(), // 页面名称
+  canAccess: boolean("can_access").default(false), // 是否可以访问该页面
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertTeamPagePermissionSchema = createInsertSchema(teamPagePermissions).pick({
+  teamId: true,
+  pageName: true,
+  canAccess: true,
+});
+
+export type InsertTeamPagePermission = z.infer<typeof insertTeamPagePermissionSchema>;
+export type TeamPagePermission = typeof teamPagePermissions.$inferSelect;
+
+// 团队仓库权限表
+export const teamWarehousePermissions = mysqlTable("team_warehouse_permissions", {
+  id: int("id").primaryKey().autoincrement(),
+  teamId: int("team_id").notNull().references(() => teams.id), // 团队ID
+  warehouseId: int("warehouse_id").notNull().references(() => warehouses.id), // 仓库ID
+  canView: boolean("can_view").default(false), // 是否可以查看该仓库
+  canManage: boolean("can_manage").default(false), // 是否可以管理该仓库
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertTeamWarehousePermissionSchema = createInsertSchema(teamWarehousePermissions).pick({
+  teamId: true,
+  warehouseId: true,
+  canView: true,
+  canManage: true,
+});
+
+export type InsertTeamWarehousePermission = z.infer<typeof insertTeamWarehousePermissionSchema>;
+export type TeamWarehousePermission = typeof teamWarehousePermissions.$inferSelect;
 
 // Team members (users in teams)
 export const teamMembers = mysqlTable("team_members", {
