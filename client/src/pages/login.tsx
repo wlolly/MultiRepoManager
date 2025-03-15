@@ -95,9 +95,20 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         duration: data.fallbackMode ? 6000 : 3000,
       });
       
+      // 将用户数据存储在sessionStorage中
+      if (data.user) {
+        try {
+          sessionStorage.setItem('currentUser', JSON.stringify(data.user));
+          console.log('用户数据已保存到会话存储');
+        } catch (storageError) {
+          console.error('保存用户数据失败:', storageError);
+        }
+      }
+      
       // 如果提供了登录成功回调，则调用
       if (onLoginSuccess) {
         onLoginSuccess();
+        return; // 防止多次导航
       }
       
       // 检查是否需要绑定社交账号
@@ -109,18 +120,15 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         });
       }
       
-      // 将用户数据存储在sessionStorage中
-      if (data.user) {
+      // 延迟跳转，避免可能的冲突
+      setTimeout(() => {
         try {
-          sessionStorage.setItem('currentUser', JSON.stringify(data.user));
-          console.log('用户数据已保存到会话存储');
-        } catch (storageError) {
-          console.error('保存用户数据失败:', storageError);
+          navigate('/');
+          console.log('成功导航到主页');
+        } catch (navError) {
+          console.error('导航失败:', navError);
         }
-      }
-      
-      // 跳转到主页
-      navigate('/');
+      }, 100);
       
     } catch (error: any) {
       console.error('登录错误:', error);
