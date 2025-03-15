@@ -2924,6 +2924,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           orderWorksheet.addRow([
             item.productName,
             item.barcode,
+            item.uniqueCode || "", 
             item.quantity,
             item.packageCount,
             item.weight,
@@ -3157,13 +3158,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const items = await storage.getOutboundOrderItems(order.id);
         
         // 添加项目标题行
-        orderWorksheet.addRow(["产品名称", "条码", "数量", "包装数", "重量(kg)", "体积(m³)", "外部订单号", "备注"]);
+        orderWorksheet.addRow(["产品名称", "条码", "唯一码", "数量", "包装数", "重量(kg)", "体积(m³)", "外部订单号", "备注"]);
         
         // 添加项目数据
         for (const item of items) {
           orderWorksheet.addRow([
             item.productName,
             item.barcode,
+            item.uniqueCode || "",
             item.quantity,
             item.packageCount,
             item.weight,
