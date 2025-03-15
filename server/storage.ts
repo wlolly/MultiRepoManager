@@ -17,7 +17,10 @@ import {
   ecommerceProducts, type EcommerceProduct, type InsertEcommerceProduct,
   // 仓库调拨单相关导入
   warehouseTransfers, type WarehouseTransfer, type InsertWarehouseTransfer,
-  warehouseTransferItems, type WarehouseTransferItem, type InsertWarehouseTransferItem
+  warehouseTransferItems, type WarehouseTransferItem, type InsertWarehouseTransferItem,
+  // 唯一码跟踪相关导入
+  uniqueCodeTracking, type UniqueCodeTracking, type InsertUniqueCodeTracking,
+  uniqueCodeHistory, type UniqueCodeHistory, type InsertUniqueCodeHistory
 } from "@shared/schema";
 import { processProductCode } from "./utils/product-code-matcher";
 import { db } from './db';
@@ -196,6 +199,7 @@ export class MemStorage implements IStorage {
   // 唯一码跟踪相关存储
   private uniqueCodeTrackingMap: Map<string, UniqueCodeTracking>;
   private uniqueCodeHistoryMap: Map<number, UniqueCodeHistory>;
+  private uniqueCodeHistoryIdCounter: number;
 
   private userIdCounter: number;
   private repositoryIdCounter: number;
@@ -249,6 +253,10 @@ export class MemStorage implements IStorage {
     // 初始化仓库调拨相关存储
     this.warehouseTransfersMap = new Map();
     this.warehouseTransferItemsMap = new Map();
+    
+    // 初始化唯一码跟踪相关存储
+    this.uniqueCodeTrackingMap = new Map();
+    this.uniqueCodeHistoryMap = new Map();
 
     // 初始化ID计数器
     this.userIdCounter = 1;
@@ -273,6 +281,9 @@ export class MemStorage implements IStorage {
     // 初始化仓库调拨相关ID计数器
     this.warehouseTransferIdCounter = 1;
     this.warehouseTransferItemIdCounter = 1;
+    
+    // 初始化唯一码跟踪相关ID计数器
+    this.uniqueCodeHistoryIdCounter = 1;
 
     // 初始化演示数据
     this.initializeDemoData();
