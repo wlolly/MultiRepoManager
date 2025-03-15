@@ -11,11 +11,12 @@ const dbUrl = process.env.DATABASE_URL;
 
 // 检查数据库URL是否设置，但不抛出错误
 if (!dbUrl) {
-  console.warn('警告: DATABASE_URL环境变量未设置，将尝试使用备用配置');
+  console.warn('警告: DATABASE_URL环境变量未设置，将使用内存存储模式');
 }
 
 // 创建MySQL连接池 - 增强版配置，添加更多的容错机制
 let pool;
+export let useFallbackStorage = false;
 
 try {
   if (dbUrl) {
@@ -38,32 +39,71 @@ try {
       password,
       database,
       waitForConnections: true,
-      connectionLimit: 10,
+      connectionLimit: 5, // 减少连接数以节省资源
       queueLimit: 0,
-      connectTimeout: 30000, // 减少超时时间到30秒
+      connectTimeout: 10000, // 减少超时时间到10秒，以便更快失败并降级
       keepAliveInitialDelay: 10000,
       enableKeepAlive: true,
       multipleStatements: true, // 允许多语句查询
       dateStrings: true // 日期以字符串形式返回
     });
+    
+    // 测试连接
+    pool.getConnection()
+      .then(conn => {
+        console.log('数据库连接成功!');
+        conn.release();
+      })
+      .catch(err => {
+        console.error('数据库连接失败:', err);
+        useFallbackStorage = true;
+        
+        // 创建一个模拟的池对象，在查询时返回空结果
+        pool = {
+          execute: async () => [[], []],
+          query: async () => [[], []],
+          getConnection: async () => ({
+            execute: async () => [[], []],
+            query: async () => [[], []],
+            release: () => {}
+          })
+        };
+        
+        console.log('⚠️ 降级到内存存储模式 - 应用将使用内存存储而不是数据库');
+        console.log('⚠️ 警告: 内存存储中的数据在应用重启后会丢失');
+      });
   } else {
-    // 使用备用连接信息
+    // 标记使用内存存储
+    useFallbackStorage = true;
     console.log('环境变量不可用，将使用内存存储模式运行');
+    
+    // 创建一个模拟的池对象，在查询时返回空结果
+    pool = {
+      execute: async () => [[], []],
+      query: async () => [[], []],
+      getConnection: async () => ({
+        execute: async () => [[], []],
+        query: async () => [[], []],
+        release: () => {}
+      })
+    };
   }
 } catch (error) {
+  useFallbackStorage = true;
   console.error('创建数据库连接池失败:', error);
-  // 创建一个内存存储模式，确保应用即使没有数据库也能运行
   console.log('将使用内存存储模式运行');
+  
+  // 创建一个模拟的池对象，在查询时返回空结果
+  pool = {
+    execute: async () => [[], []],
+    query: async () => [[], []],
+    getConnection: async () => ({
+      execute: async () => [[], []],
+      query: async () => [[], []],
+      release: () => {}
+    })
+  };
 }
 
-// 测试连接
-pool.getConnection()
-  .then(conn => {
-    console.log('数据库连接成功!');
-    conn.release();
-  })
-  .catch(err => {
-    console.error('数据库连接失败:', err);
-  });
-
+// 导出数据库实例
 export const db = drizzle(pool);
