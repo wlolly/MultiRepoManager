@@ -34,6 +34,11 @@ import {
   parseProductImportFile,
   exportProductsToExcel
 } from "./utils/excel-products";
+import {
+  downloadWithCleanup,
+  cleanupFile,
+  cleanupOldFiles
+} from "./utils/file-cleanup";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const apiRouter = express.Router();
@@ -2451,27 +2456,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
       );
       
-      // 导出到Excel
-      const excelFilePath = exportMultipleTransfersToExcel(transfersWithWarehouseInfo);
-      
-      // 设置响应头
-      const filename = path.basename(excelFilePath);
-      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-      
-      // 发送文件并在完成后清理临时文件
-      res.download(excelFilePath, filename, (err) => {
-        if (err) {
-          console.error("Download error:", err);
-        }
+      try {
+        // 导出到Excel
+        const excelFilePath = exportMultipleTransfersToExcel(transfersWithWarehouseInfo);
         
-        // 无论成功或失败，都尝试删除临时文件
-        try {
-          fs.unlinkSync(excelFilePath);
-        } catch (e) {
-          console.error("Error deleting temporary file:", e);
-        }
-      });
+        // 使用文件清理工具处理下载和清理
+        downloadWithCleanup(res, excelFilePath);
+      } catch (exportError) {
+        console.error("导出Excel文件生成失败:", exportError);
+        return res.status(500).json({ error: "导出Excel文件生成失败" });
+      }
       
     } catch (err) {
       console.error("批量导出Excel文件失败:", err);
