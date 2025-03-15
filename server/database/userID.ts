@@ -9,7 +9,7 @@ import { sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 
 // 检查internal_user_ids表是否存在，不存在则创建
-export async function initializeUserIDTable() {
+export async function initializeUserIDTable(retryCount = 0, maxRetries = 3) {
   try {
     console.log('[UserID] 初始化内部用户ID表...');
     
@@ -48,7 +48,22 @@ export async function initializeUserIDTable() {
     
     return true;
   } catch (error) {
-    console.error('[UserID] 初始化内部用户ID表失败:', error);
+    console.error(`[UserID] 初始化内部用户ID表失败 (尝试 ${retryCount + 1}/${maxRetries + 1}):`, error);
+    
+    // 实现重试逻辑
+    if (retryCount < maxRetries) {
+      const retryDelay = Math.pow(2, retryCount) * 1000; // 指数退避策略: 1s, 2s, 4s...
+      console.log(`[UserID] ${retryDelay/1000}秒后将重试初始化...`);
+      
+      return new Promise<boolean>((resolve) => {
+        setTimeout(() => {
+          console.log('[UserID] 开始重试初始化...');
+          resolve(initializeUserIDTable(retryCount + 1, maxRetries));
+        }, retryDelay);
+      });
+    }
+    
+    console.error('[UserID] 初始化内部用户ID表失败，已达到最大重试次数');
     return false;
   }
 }
@@ -80,7 +95,7 @@ function setupCleanupTask() {
 }
 
 // 为内部用户创建ID，有效期为两天
-export async function createInternalUserID(userId: number): Promise<string | null> {
+export async function createInternalUserID(userId: number, retryCount = 0, maxRetries = 2): Promise<string | null> {
   try {
     // 首先移除该用户的所有现有ID（避免重复）
     await removeUserIDs(userId);
@@ -101,13 +116,28 @@ export async function createInternalUserID(userId: number): Promise<string | nul
     console.log(`[UserID] 已为用户${userId}创建内部ID: ${internalId}，有效期至 ${expiresAt}`);
     return internalId;
   } catch (error) {
-    console.error('[UserID] 创建内部用户ID失败:', error);
+    console.error(`[UserID] 创建内部用户ID失败 (尝试 ${retryCount + 1}/${maxRetries + 1}):`, error);
+    
+    // 实现重试逻辑
+    if (retryCount < maxRetries) {
+      const retryDelay = Math.pow(2, retryCount) * 1000; // 指数退避策略: 1s, 2s, 4s...
+      console.log(`[UserID] ${retryDelay/1000}秒后将重试创建内部ID...`);
+      
+      return new Promise<string | null>((resolve) => {
+        setTimeout(() => {
+          console.log(`[UserID] 开始重试为用户${userId}创建内部ID...`);
+          resolve(createInternalUserID(userId, retryCount + 1, maxRetries));
+        }, retryDelay);
+      });
+    }
+    
+    console.error(`[UserID] 为用户${userId}创建内部ID失败，已达到最大重试次数`);
     return null;
   }
 }
 
 // 验证内部用户ID是否有效
-export async function validateInternalUserID(internalId: string): Promise<number | null> {
+export async function validateInternalUserID(internalId: string, retryCount = 0, maxRetries = 2): Promise<number | null> {
   try {
     // 查询匹配的有效ID
     const result = await db.execute(sql`
@@ -130,7 +160,22 @@ export async function validateInternalUserID(internalId: string): Promise<number
     console.log(`[UserID] 验证失败: ID ${internalId} 不存在或已过期`);
     return null;
   } catch (error) {
-    console.error('[UserID] 验证内部用户ID失败:', error);
+    console.error(`[UserID] 验证内部用户ID失败 (尝试 ${retryCount + 1}/${maxRetries + 1}):`, error);
+    
+    // 实现重试逻辑
+    if (retryCount < maxRetries) {
+      const retryDelay = Math.pow(2, retryCount) * 1000; // 指数退避策略: 1s, 2s, 4s...
+      console.log(`[UserID] ${retryDelay/1000}秒后将重试验证...`);
+      
+      return new Promise<number | null>((resolve) => {
+        setTimeout(() => {
+          console.log(`[UserID] 开始重试验证内部ID ${internalId}...`);
+          resolve(validateInternalUserID(internalId, retryCount + 1, maxRetries));
+        }, retryDelay);
+      });
+    }
+    
+    console.error(`[UserID] 验证内部ID ${internalId} 失败，已达到最大重试次数`);
     return null;
   }
 }
