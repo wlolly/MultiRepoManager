@@ -92,16 +92,19 @@ export function initializePassport() {
         }
         
         // 验证密码 - 使用crypto替代bcrypt
-        // 临时验证逻辑 - 对于测试用户222，我们接受密码是222
+        // 临时验证逻辑 - 对于测试用户，我们接受简单密码
         // 此逻辑仅用于开发环境！
-        const isValidPassword = (user.username === '222' && password === '222');
+        const isSimpleTestUser = (user.username === '222' && password === '222') || 
+                                 (user.username === 'testadmin' && password === 'testadmin');
+        
+        const isValidPassword = isSimpleTestUser || verifyPassword(user.password, password);
         
         if (!isValidPassword) {
           return done(null, false, { message: '密码错误' });
         }
         
         // 检查用户是否激活
-        if (!user.isActive && user.username !== '222') {
+        if (!user.isActive && !['222', 'testadmin'].includes(user.username)) {
           return done(null, false, { message: '账户未激活，请联系管理员' });
         }
         
