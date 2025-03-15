@@ -12,6 +12,7 @@ import { z } from 'zod';
 import { fromZodError } from 'zod-validation-error';
 import { userSourceEnum } from '@shared/schema';
 import crypto from 'crypto';
+import { validateInternalUserID } from './database/userID';
 
 // 密钥配置（生产环境应从环境变量获取或安全存储中获取）
 const SECRET_KEY = process.env.SECRET_KEY || 'your-secret-key-for-sessions';
@@ -274,17 +275,31 @@ export function generateSessionId(): string {
 }
 
 // 验证会话中间件 - 简化版本
+// 导入内部用户ID验证函数
+import { validateInternalUserID } from './database/userID';
+
 export function verifySession(req: Request, res: Response, next: NextFunction) {
-  // 简化的请求记录
-  if (!req.path.includes('/api/auth/current-user')) {
+  // 1. 白名单路径 - 无需验证的API路径可以直接跳过，减少性能开销
+  const publicPaths = [
+    '/api/auth/login',
+    '/api/auth/register',
+    '/api/public',
+    '/api/locale',
+    '/api/health'
+  ];
+  
+  if (publicPaths.some(path => req.path.startsWith(path))) {
+    return next();
+  }
+  
+  // 2. 简化的请求记录，避免日志过多
+  if (process.env.NODE_ENV !== 'production' && !req.path.includes('/api/auth/current-user')) {
     console.log(`请求: ${req.method} ${req.path}`);
   }
   
-  // 设置响应头，保持基本的请求跟踪
+  // 3. 设置基本响应头，保持请求跟踪能力
   res.setHeader('X-Request-Path', req.path);
   res.setHeader('X-Request-Method', req.method);
-  
-  // 直接使用Express会话ID
   const expressSessionId = req.sessionID;
   
   // 记录会话信息（简化版）
