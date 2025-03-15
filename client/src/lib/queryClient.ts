@@ -26,7 +26,10 @@ export async function apiRequest<T = any>(
   
   if (sessionId) {
     console.log(`API请求使用会话ID: ${sessionId}`);
+    // 使用两种大小写形式的会话ID头，确保服务器可以识别
     headers['X-Session-ID'] = sessionId;
+    headers['x-session-id'] = sessionId;
+    
     // 同时通过查询参数传递，确保所有情况都能接收到会话ID
     if (!url.includes('?')) {
       url = `${url}?sessionId=${sessionId}`;
@@ -91,7 +94,9 @@ export const getQueryFn: <T>(options: {
     
     if (sessionId) {
       console.log(`查询使用会话ID: ${sessionId}`);
+      // 使用两种大小写形式的会话ID头，确保服务器可以识别
       headers['X-Session-ID'] = sessionId;
+      headers['x-session-id'] = sessionId;
       
       // 同时通过查询参数传递，确保所有情况都能接收到会话ID
       if (!url.includes('?')) {

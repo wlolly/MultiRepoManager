@@ -271,19 +271,35 @@ export function generateSessionId(): string {
 
 // 验证会话中间件
 export function verifySession(req: Request, res: Response, next: NextFunction) {
-  // 检查请求头中是否有客户端提供的会话ID
-  const clientSessionId = req.headers['x-session-id'] as string;
+  // 检查各种可能的地方获取客户端会话ID（增强会话持久性）
+  
+  // 1. 检查请求头中是否有客户端提供的会话ID（支持大小写不敏感）
+  let clientSessionId = req.headers['x-session-id'] as string || 
+                        req.headers['X-Session-ID'] as string;
+                        
+  // 2. 检查URL查询参数中是否有会话ID
+  const querySessionId = (req.query.sessionId || req.query.sessionid) as string;
+  if (!clientSessionId && querySessionId) {
+    clientSessionId = querySessionId;
+    console.log(`从URL查询参数获取会话ID: ${clientSessionId}`);
+  }
   
   // 添加详细的会话调试信息
-  console.log(`验证会话: 
-    路径=${req.path},
-    会话ID=${req.sessionID || '无'}, 
-    客户端会话ID=${clientSessionId || '无'},
-    isAuthenticated=${req.isAuthenticated()}, 
-    用户=${req.user ? (req.user as any).username : '无'},
-    session.userId=${req.session?.userId || '无'}, 
-    session.authenticated=${req.session?.authenticated || false}
-  `);
+  console.log(`[会话调试] 路径: ${req.path}, 会话信息: ${JSON.stringify({
+    id: req.sessionID || clientSessionId,
+    userId: req.session?.userId,
+    socialBound: req.session?.socialBound,
+    isAuthenticated: req.isAuthenticated() || req.session?.authenticated
+  }, null, 2)}`);
+  
+  // 设置快速访问信息 - 添加关键信息到请求对象，方便其他中间件使用
+  res.locals.sessionInfo = {
+    sessionId: req.sessionID,
+    clientSessionId: clientSessionId,
+    authenticated: req.isAuthenticated() || req.session?.authenticated === true,
+    userId: req.session?.userId,
+    userRole: req.session?.userRole
+  };
   
   // 将原始会话ID和客户端会话ID添加到响应头中，方便调试
   res.setHeader('X-Original-Session-ID', req.sessionID || 'none');
