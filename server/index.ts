@@ -44,8 +44,18 @@ app.use(session({
   })
 }));
 
-// 添加会话活动时间跟踪
+// 添加会话活动时间跟踪和会话ID恢复
 app.use((req, res, next) => {
+  // 检查客户端提供的sessionId作为恢复机制
+  const clientSessionId = req.headers['x-session-id'] || req.query.sessionId;
+  if (clientSessionId && typeof clientSessionId === 'string' && req.sessionID !== clientSessionId) {
+    console.log(`客户端提供了不同的会话ID: ${clientSessionId}, 当前会话ID: ${req.sessionID || '无'}`);
+    
+    // 将此信息记录到响应头，帮助调试
+    res.setHeader('X-Original-Session-ID', req.sessionID || 'none');
+    res.setHeader('X-Client-Session-ID', clientSessionId);
+  }
+  
   if (req.session) {
     req.session.lastActivity = Date.now();
     
