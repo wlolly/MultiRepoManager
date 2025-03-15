@@ -80,9 +80,9 @@ export default function WarehouseTransfers() {
   const { t } = useTranslation();
   const [_, navigate] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("");
-  const [dateFilter, setDateFilter] = useState<string>("");
-  const [warehouseFilter, setWarehouseFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [dateFilter, setDateFilter] = useState<string>("all");
+  const [warehouseFilter, setWarehouseFilter] = useState<string>("all");
   const [view, setView] = useState<"all" | "recent">("all");
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [selectedTransferId, setSelectedTransferId] = useState<number | null>(null);
@@ -595,7 +595,7 @@ export default function WarehouseTransfers() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.totalWeight.toFixed(2)} kg</div>
+              <div className="text-2xl font-bold">{Number(stats.totalWeight).toFixed(2)} kg</div>
             </CardContent>
           </Card>
           <Card>
@@ -605,7 +605,7 @@ export default function WarehouseTransfers() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.totalVolume.toFixed(3)} m³</div>
+              <div className="text-2xl font-bold">{Number(stats.totalVolume).toFixed(3)} m³</div>
             </CardContent>
           </Card>
         </div>
@@ -673,7 +673,7 @@ export default function WarehouseTransfers() {
                 <SelectValue placeholder={t("warehouseTransfer.all_warehouses")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">{t("warehouseTransfer.all_warehouses")}</SelectItem>
+                <SelectItem value="all">{t("warehouseTransfer.all_warehouses")}</SelectItem>
                 {warehouses.map((warehouse) => (
                   <SelectItem key={warehouse.id} value={warehouse.id.toString()}>
                     {warehouse.name}
@@ -694,7 +694,7 @@ export default function WarehouseTransfers() {
                 <SelectValue placeholder={t("warehouseTransfer.all_statuses")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">{t("warehouseTransfer.all_statuses")}</SelectItem>
+                <SelectItem value="all">{t("warehouseTransfer.all_statuses")}</SelectItem>
                 <SelectItem value="pending">{t("warehouseTransfer.status_pending")}</SelectItem>
                 <SelectItem value="processing">{t("warehouseTransfer.status_processing")}</SelectItem>
                 <SelectItem value="completed">{t("warehouseTransfer.status_completed")}</SelectItem>
@@ -714,7 +714,7 @@ export default function WarehouseTransfers() {
                 <SelectValue placeholder={t("warehouseTransfer.all_dates")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">{t("warehouseTransfer.all_dates")}</SelectItem>
+                <SelectItem value="all">{t("warehouseTransfer.all_dates")}</SelectItem>
                 <SelectItem value="today">{t("warehouseTransfer.today")}</SelectItem>
                 <SelectItem value="yesterday">{t("warehouseTransfer.yesterday")}</SelectItem>
                 <SelectItem value="this-week">{t("warehouseTransfer.this_week")}</SelectItem>
@@ -728,9 +728,9 @@ export default function WarehouseTransfers() {
               variant="outline"
               onClick={() => {
                 setSearchQuery("");
-                setStatusFilter("");
-                setDateFilter("");
-                setWarehouseFilter("");
+                setStatusFilter("all");
+                setDateFilter("all");
+                setWarehouseFilter("all");
               }}
               className="flex items-center"
             >
