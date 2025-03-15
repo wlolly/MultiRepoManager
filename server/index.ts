@@ -33,13 +33,21 @@ app.use(session({
   },
   genid: function(req) {
     // 尝试从请求头、查询参数或cookie中获取客户端提供的会话ID
-    const clientSessionId = 
+    let clientSessionId = 
       req.headers['x-session-id'] || 
       req.query.sessionId || 
+      req.cookies?.sessionId ||
       req.cookies?.token;
     
+    // 处理可能的数组或逗号分隔的情况
+    if (Array.isArray(clientSessionId)) {
+      clientSessionId = clientSessionId[0];
+    } else if (typeof clientSessionId === 'string' && clientSessionId.includes(',')) {
+      clientSessionId = clientSessionId.split(',')[0].trim();
+    }
+    
     // 如果客户端提供了会话ID，验证其有效性并返回
-    if (clientSessionId && typeof clientSessionId === 'string' && clientSessionId.length >= 32) {
+    if (clientSessionId && typeof clientSessionId === 'string' && clientSessionId.length >= 16) {
       console.log(`使用客户端提供的会话ID: ${clientSessionId}`);
       return clientSessionId;
     }

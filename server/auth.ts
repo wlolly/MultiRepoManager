@@ -276,12 +276,24 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
   // 1. 检查请求头中是否有客户端提供的会话ID（支持大小写不敏感）
   let clientSessionId = req.headers['x-session-id'] as string || 
                         req.headers['X-Session-ID'] as string;
+  
+  // 处理可能的数组或逗号分隔的情况
+  if (Array.isArray(clientSessionId)) {
+    clientSessionId = clientSessionId[0];
+  } else if (typeof clientSessionId === 'string' && clientSessionId.includes(',')) {
+    clientSessionId = clientSessionId.split(',')[0].trim();
+  }
                         
   // 2. 检查URL查询参数中是否有会话ID
   const querySessionId = (req.query.sessionId || req.query.sessionid) as string;
   if (!clientSessionId && querySessionId) {
     clientSessionId = querySessionId;
     console.log(`从URL查询参数获取会话ID: ${clientSessionId}`);
+    
+    // 处理URL参数中可能的数组或逗号分隔的情况
+    if (typeof clientSessionId === 'string' && clientSessionId.includes(',')) {
+      clientSessionId = clientSessionId.split(',')[0].trim();
+    }
   }
   
   // 3. 检查cookie中是否有会话ID (这是浏览器自动提供的备份方案)
