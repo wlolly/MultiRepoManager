@@ -15,9 +15,12 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { CreateProductDialog } from "@/components/products/create-product-dialog";
 import { useTranslation } from "react-i18next";
+import { usePermissions } from "@/hooks/use-permissions";
+import { Link } from "wouter";
 
 export default function Dashboard() {
   const { t } = useTranslation();
+  const { isAuthenticated, loading: authLoading } = usePermissions();
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [warehouseFilter, setWarehouseFilter] = useState<string>("all");
