@@ -140,6 +140,28 @@
             </tr>
         </table>
         
+        <h2>社交账号绑定测试</h2>
+        <div>
+            <div class="form-group">
+                <label for="provider">提供商:</label>
+                <select id="provider" name="provider">
+                    <option value="wechat">微信</option>
+                    <option value="whatsapp">WhatsApp</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="socialId">社交ID:</label>
+                <input type="text" id="socialId" name="socialId" placeholder="请输入社交平台ID">
+            </div>
+            <div class="form-group">
+                <label for="socialData">社交数据(可选):</label>
+                <input type="text" id="socialData" name="socialData" placeholder="JSON格式的社交账号数据">
+            </div>
+            <button id="bindSocialBtn">绑定社交账号</button>
+            <button id="checkBindingBtn">检查绑定状态</button>
+        </div>
+        <div class="response" id="socialBindResponse">尚未进行社交绑定操作</div>
+        
         <h2>特殊操作</h2>
         <button id="checkStatus">检查状态</button>
         <button id="clearCookies">清除所有Cookie</button>
@@ -323,6 +345,67 @@
             setTimeout(() => {
                 window.location.reload();
             }, 500);
+        });
+        
+        // 绑定社交账号按钮
+        document.getElementById('bindSocialBtn').addEventListener('click', async () => {
+            if (!currentUser) {
+                alert('请先登录后再进行社交账号绑定');
+                return;
+            }
+            
+            const provider = document.getElementById('provider').value;
+            const socialId = document.getElementById('socialId').value;
+            const socialData = document.getElementById('socialData').value;
+            
+            if (!provider || !socialId) {
+                alert('请输入必要的社交账号信息');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/auth/bind-social', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        provider,
+                        socialId,
+                        socialData: socialData ? JSON.parse(socialData) : null
+                    }),
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                document.getElementById('socialBindResponse').textContent = JSON.stringify(data, null, 2);
+                
+                // 如果绑定成功，刷新登录状态
+                if (data.bound) {
+                    checkLoginStatus();
+                }
+            } catch (error) {
+                document.getElementById('socialBindResponse').textContent = `绑定社交账号出错: ${error.message}`;
+            }
+        });
+        
+        // 检查社交绑定状态按钮
+        document.getElementById('checkBindingBtn').addEventListener('click', async () => {
+            if (!currentUser) {
+                alert('请先登录后再检查社交账号绑定状态');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/auth/social-binding-status', {
+                    credentials: 'include'
+                });
+                
+                const data = await response.json();
+                document.getElementById('socialBindResponse').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('socialBindResponse').textContent = `获取绑定状态出错: ${error.message}`;
+            }
         });
     </script>
 </body>

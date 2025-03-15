@@ -486,13 +486,50 @@ export async function getCurrentUser(req: Request, res: Response) {
 
 // 登出
 export function logout(req: Request, res: Response) {
+  const sessionId = req.sessionID;
+  const username = (req.user as any)?.username || '未知用户';
+  
+  console.log(`用户 ${username} 尝试登出，会话ID=${sessionId}`);
+  
+  // 清除Passport中的用户数据
   req.logout((err) => {
     if (err) {
-      return res.status(500).json({ message: '登出失败' });
+      console.error(`用户 ${username} 登出过程中出错:`, err);
+      return res.status(500).json({ 
+        message: '登出失败',
+        error: err.message 
+      });
     }
     
-    res.clearCookie('token');
-    res.json({ message: '登出成功' });
+    // 销毁整个会话
+    if (req.session) {
+      req.session.destroy((err) => {
+        if (err) {
+          console.error(`销毁会话失败:`, err);
+          return res.status(500).json({ 
+            message: '登出成功，但会话清理失败',
+            error: err.message
+          });
+        }
+        
+        // 清除浏览器端的cookie
+        res.clearCookie('token');
+        res.clearCookie('connect.sid');
+        
+        console.log(`用户 ${username} 成功登出，会话已销毁`);
+        res.json({ 
+          message: '登出成功',
+          sessionDestroyed: true
+        });
+      });
+    } else {
+      // 如果没有会话，直接返回成功
+      res.clearCookie('token');
+      res.json({ 
+        message: '登出成功',
+        sessionDestroyed: false
+      });
+    }
   });
 }
 
