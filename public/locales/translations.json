@@ -2197,6 +2197,76 @@
     "kk": "Жеткізуші",
     "uz": "Ta'minotchi"
   },
+  "login": {
+    "zh": "登录",
+    "en": "Login",
+    "ru": "Вход",
+    "kk": "Кіру",
+    "uz": "Kirish"
+  },
+  "enter_credentials_to_login": {
+    "zh": "输入您的凭据进行登录",
+    "en": "Enter your credentials to login",
+    "ru": "Введите ваши данные для входа",
+    "kk": "Кіру үшін тіркелгі деректеріңізді енгізіңіз",
+    "uz": "Tizimga kirish uchun ma'lumotlaringizni kiriting"
+  },
+  "username": {
+    "zh": "用户名",
+    "en": "Username",
+    "ru": "Имя пользователя",
+    "kk": "Пайдаланушы аты",
+    "uz": "Foydalanuvchi nomi"
+  },
+  "enter_username": {
+    "zh": "输入用户名",
+    "en": "Enter username",
+    "ru": "Введите имя пользователя",
+    "kk": "Пайдаланушы атын енгізіңіз",
+    "uz": "Foydalanuvchi nomini kiriting"
+  },
+  "password": {
+    "zh": "密码",
+    "en": "Password",
+    "ru": "Пароль",
+    "kk": "Құпия сөз",
+    "uz": "Parol"
+  },
+  "enter_password": {
+    "zh": "输入密码",
+    "en": "Enter password",
+    "ru": "Введите пароль",
+    "kk": "Құпия сөзді енгізіңіз",
+    "uz": "Parolni kiriting"
+  },
+  "logging_in": {
+    "zh": "登录中...",
+    "en": "Logging in...",
+    "ru": "Выполняется вход...",
+    "kk": "Кіру орындалуда...",
+    "uz": "Kirilmoqda..."
+  },
+  "or_continue_with": {
+    "zh": "或继续使用",
+    "en": "OR CONTINUE WITH",
+    "ru": "ИЛИ ПРОДОЛЖИТЬ С",
+    "kk": "НЕМЕСЕ ЖАЛҒАСТЫРУ",
+    "uz": "YOKI DAVOM ETING"
+  },
+  "no_account": {
+    "zh": "还没有账户?",
+    "en": "Don't have an account?",
+    "ru": "Нет учетной записи?",
+    "kk": "Тіркелгіңіз жоқ па?",
+    "uz": "Hisobingiz yo'qmi?"
+  },
+  "register": {
+    "zh": "注册",
+    "en": "Register",
+    "ru": "Регистрация",
+    "kk": "Тіркелу",
+    "uz": "Ro'yxatdan o'tish"
+  },
   "warehouseTransfer": {
     "title": {
       "zh": "仓库调拨管理",
