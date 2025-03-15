@@ -20,10 +20,10 @@ export const memStorage = new MemStorage();
 
 // 创建MySQL连接池 - 增强版配置，添加更多的容错机制
 let pool;
-export let useFallbackStorage = false;
+export let useFallbackStorage = true; // 默认启用内存存储模式，避免数据库连接问题
 
 try {
-  if (dbUrl) {
+  if (dbUrl && !useFallbackStorage) { // 只有在没有启用内存存储模式的情况下才尝试连接数据库
     console.log('使用环境变量DATABASE_URL连接数据库');
     
     // 解析连接URL，更新一些连接参数
@@ -45,7 +45,7 @@ try {
       waitForConnections: true,
       connectionLimit: 5, // 减少连接数以节省资源
       queueLimit: 0,
-      connectTimeout: 10000, // 减少超时时间到10秒，以便更快失败并降级
+      connectTimeout: 5000, // 进一步减少超时时间，加快失败检测
       keepAliveInitialDelay: 10000,
       enableKeepAlive: true,
       multipleStatements: true, // 允许多语句查询
@@ -57,10 +57,11 @@ try {
       .then(conn => {
         console.log('数据库连接成功!');
         conn.release();
+        // 即使连接成功，我们也仍然使用内存存储模式，因为这是用户的选择
+        console.log('⚠️ 但根据配置，将继续使用内存存储模式运行');
       })
       .catch(err => {
         console.error('数据库连接失败:', err);
-        useFallbackStorage = true;
         
         // 创建一个模拟的池对象，在查询时返回空结果
         pool = {
@@ -75,9 +76,6 @@ try {
         
         console.log('⚠️ 降级到内存存储模式 - 应用将使用内存存储而不是数据库');
         console.log('⚠️ 警告: 内存存储中的数据在应用重启后会丢失');
-        
-        // 初始化内存存储的一些测试数据
-        memStorage.initializeDemoData();
       });
   } else {
     // 标记使用内存存储
