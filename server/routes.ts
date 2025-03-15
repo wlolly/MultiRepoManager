@@ -565,7 +565,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // 确保目录和文件存在
       if (fs.existsSync(templatePath)) {
-        res.download(templatePath, 'product_import_template.xlsx');
+        downloadWithCleanup(res, templatePath, "product_import_template.xlsx");
       } else {
         res.status(500).json({ error: "模板文件创建失败" });
       }
@@ -2140,7 +2140,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const templatePath = createTransferImportTemplate();
       
       // 发送文件给客户端
-      res.download(templatePath, 'warehouse_transfer_template.xlsx');
+      downloadWithCleanup(res, templatePath, "warehouse_transfer_template.xlsx");
     } catch (err) {
       console.error("创建模板文件失败:", err);
       res.status(500).json({ message: "创建模板文件失败", error: err.message });
@@ -2806,24 +2806,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 写入文件
       await workbook.xlsx.writeFile(filePath);
       
-      // 设置响应头
+            // 生成文件名
       const filename = path.basename(filePath);
-      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       
-      // 发送文件并在完成后清理临时文件
-      res.download(filePath, filename, (err) => {
-        if (err) {
-          console.error("Download error:", err);
-        }
-        
-        // 无论成功或失败，都尝试删除临时文件
-        try {
-          fs.unlinkSync(filePath);
-        } catch (e) {
-          console.error("Error deleting temporary file:", e);
-        }
-      });
+      // 使用文件清理工具处理下载和清理
+      downloadWithCleanup(res, filePath, filename);
       
     } catch (err) {
       console.error("导出Excel文件失败:", err);
@@ -2969,24 +2956,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 写入文件
       await workbook.xlsx.writeFile(filePath);
       
-      // 设置响应头
+            // 生成文件名
       const filename = path.basename(filePath);
-      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       
-      // 发送文件并在完成后清理临时文件
-      res.download(filePath, filename, (err) => {
-        if (err) {
-          console.error("Download error:", err);
-        }
-        
-        // 无论成功或失败，都尝试删除临时文件
-        try {
-          fs.unlinkSync(filePath);
-        } catch (e) {
-          console.error("Error deleting temporary file:", e);
-        }
-      });
+      // 使用文件清理工具处理下载和清理
+      downloadWithCleanup(res, filePath, filename);
       
     } catch (err) {
       console.error("批量导出Excel文件失败:", err);
@@ -3070,24 +3044,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 写入文件
       await workbook.xlsx.writeFile(filePath);
       
-      // 设置响应头
+            // 生成文件名
       const filename = path.basename(filePath);
-      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       
-      // 发送文件并在完成后清理临时文件
-      res.download(filePath, filename, (err) => {
-        if (err) {
-          console.error("Download error:", err);
-        }
-        
-        // 无论成功或失败，都尝试删除临时文件
-        try {
-          fs.unlinkSync(filePath);
-        } catch (e) {
-          console.error("Error deleting temporary file:", e);
-        }
-      });
+      // 使用文件清理工具处理下载和清理
+      downloadWithCleanup(res, filePath, filename);
       
     } catch (err) {
       console.error("导出Excel文件失败:", err);
@@ -3234,24 +3195,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 写入文件
       await workbook.xlsx.writeFile(filePath);
       
-      // 设置响应头
+            // 生成文件名
       const filename = path.basename(filePath);
-      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       
-      // 发送文件并在完成后清理临时文件
-      res.download(filePath, filename, (err) => {
-        if (err) {
-          console.error("Download error:", err);
-        }
-        
-        // 无论成功或失败，都尝试删除临时文件
-        try {
-          fs.unlinkSync(filePath);
-        } catch (e) {
-          console.error("Error deleting temporary file:", e);
-        }
-      });
+      // 使用文件清理工具处理下载和清理
+      downloadWithCleanup(res, filePath, filename);
       
     } catch (err) {
       console.error("批量导出Excel文件失败:", err);
