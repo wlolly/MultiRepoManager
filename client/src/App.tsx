@@ -28,6 +28,7 @@ import ApiConfigurations from "./pages/api-configurations";
 import TeamPermissions from "./pages/team-permissions";
 import LoginPage from "./pages/login";
 import RegisterPage from "./pages/register";
+import AdminSocialAuthConfig from "./pages/admin-social-auth";
 
 // 仓库系统页面
 import WarehouseProducts from "./pages/warehouse-products";
@@ -437,6 +438,7 @@ export default function App() {
               
               {/* API配置页面 */}
               <ProtectedRoute path="/api-configurations" component={ApiConfigurations} pageName="api_configurations" />
+              <ProtectedRoute path="/admin/social-auth" component={AdminSocialAuthConfig} pageName="admin" />
               
               {/* 团队权限管理页面 */}
               <ProtectedRoute path="/team-permissions" component={TeamPermissions} pageName="team_permissions" />
