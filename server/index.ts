@@ -32,24 +32,79 @@ app.use(session({
     domain: undefined // 不指定域名，使用当前域名
   },
   genid: function(req) {
-    // 尝试从请求头、查询参数或cookie中获取客户端提供的会话ID
-    let clientSessionId = 
-      req.headers['x-session-id'] || 
-      req.query.sessionId || 
-      req.cookies?.sessionId ||
-      req.cookies?.token;
+    // 从多个来源查找客户端会话ID - 扩展检查以提高兼容性
+    const headerSources = [
+      req.headers['x-session-id'],
+      req.headers['X-Session-ID'],
+      req.headers['sessionid'],
+      req.headers['SessionId'],
+      req.headers['session-id'],
+      req.headers['client-session-id'],
+      req.headers['X-Client-Session-ID']
+    ];
     
-    // 处理可能的数组或逗号分隔的情况
-    if (Array.isArray(clientSessionId)) {
-      clientSessionId = clientSessionId[0];
-    } else if (typeof clientSessionId === 'string' && clientSessionId.includes(',')) {
-      clientSessionId = clientSessionId.split(',')[0].trim();
+    const querySources = [
+      req.query.sessionId,
+      req.query.sessionid,
+      req.query.session_id,
+      req.query.sid
+    ];
+    
+    const cookieSources = [
+      req.cookies?.sessionId,
+      req.cookies?.sid,
+      req.cookies?.token,
+      req.cookies?.authToken
+    ];
+    
+    // 按优先级合并所有可能的来源
+    const allPossibleIds = [
+      ...headerSources, 
+      ...querySources, 
+      ...cookieSources
+    ].filter(Boolean);
+    
+    // 处理第一个有效的会话ID
+    let clientSessionId = null;
+    
+    for (const possibleId of allPossibleIds) {
+      if (!possibleId) continue;
+      
+      let id = possibleId;
+      // 处理数组
+      if (Array.isArray(id)) {
+        id = id[0];
+      }
+      
+      // 处理逗号分隔
+      if (typeof id === 'string' && id.includes(',')) {
+        id = id.split(',')[0].trim();
+      }
+      
+      // 验证格式
+      if (typeof id === 'string' && id.length >= 16) {
+        clientSessionId = id;
+        break; // 找到第一个有效ID后停止
+      }
     }
     
-    // 如果客户端提供了会话ID，验证其有效性并返回
-    if (clientSessionId && typeof clientSessionId === 'string' && clientSessionId.length >= 16) {
-      console.log(`使用客户端提供的会话ID: ${clientSessionId}`);
+    // 如果发现有效的客户端会话ID，使用它
+    if (clientSessionId) {
+      // 记录所有来源以便调试
+      const sources = {
+        path: req.path,
+        headers: headerSources.some(Boolean) ? '有' : '无',
+        query: querySources.some(Boolean) ? '有' : '无',
+        cookies: cookieSources.some(Boolean) ? '有' : '无'
+      };
+      
+      console.log(`使用客户端提供的会话ID: ${clientSessionId} (来源: ${JSON.stringify(sources)})`);
       return clientSessionId;
+    }
+    
+    // 如果请求路径是相关的API，生成新会话时记录更详细的日志
+    if (req.path.includes('/api/auth/')) {
+      console.log(`请求路径: ${req.path}，未找到客户端会话ID，生成新的会话ID`);
     }
     
     // 否则生成一个新的会话ID
