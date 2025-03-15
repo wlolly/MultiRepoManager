@@ -24,11 +24,12 @@ function generateSessionId(): string {
 
 // 从各种可能的存储中获取会话ID
 export function getSessionId(): string {
-  // 如果已经有缓存的会话ID，直接返回
+  // 1. 如果已经有缓存的会话ID，优先返回（提高性能）
   if (currentSessionId) {
     return currentSessionId;
   }
 
+  // 2. 从所有可能的存储中检索会话ID
   // 优先级：sessionStorage > localStorage > cookie
   const sessionIdFromSession = sessionStorage.getItem('sessionId');
   const sessionIdFromLocal = localStorage.getItem('sessionId');
@@ -41,17 +42,45 @@ export function getSessionId(): string {
     cookie: sessionIdFromCookie || '无'
   });
   
-  // 确定最终使用的会话ID
-  let sessionId = sessionIdFromSession || sessionIdFromLocal || sessionIdFromCookie;
+  // 检查是否以前生成的会话ID被存储在不同位置
+  let sessionId: string | null = null;
   
-  // 如果没有找到会话ID，生成一个新ID并保存起来
+  // 跟踪找到的所有会话ID，防止使用不一致的ID
+  const foundIds: string[] = [];
+  if (sessionIdFromSession) foundIds.push(sessionIdFromSession);
+  if (sessionIdFromLocal) foundIds.push(sessionIdFromLocal);
+  if (sessionIdFromCookie) foundIds.push(sessionIdFromCookie);
+  
+  // 3. 检查是否有不一致的会话ID - 如果所有ID相同，则使用该ID
+  if (foundIds.length > 0) {
+    const allSame = foundIds.every(id => id === foundIds[0]);
+    
+    if (allSame) {
+      // 所有存储位置的ID都一致，直接使用
+      sessionId = foundIds[0];
+      
+      // 记录会话成功加载
+      console.log(`从存储中加载会话ID (一致): ${sessionId}`);
+    } else {
+      // 存在不一致的会话ID情况
+      console.log(`从存储中找到不一致的会话ID: ${foundIds.join(', ')}`);
+      
+      // 使用存在时间最长的会话ID：sessionStorage仅在当前浏览上下文，
+      // localStorage和cookie更持久，优先使用localStorage
+      sessionId = sessionIdFromLocal || sessionIdFromSession || sessionIdFromCookie;
+      
+      console.log(`选择最优会话ID: ${sessionId}`);
+    }
+  }
+  
+  // 4. 如果没有找到会话ID，生成一个新ID并保存起来
   if (!sessionId) {
     sessionId = generateSessionId();
     console.log(`没有找到现有会话ID，生成新ID: ${sessionId}`);
-    saveSessionId(sessionId);
   }
   
-  // 无论是找到还是新生成，都保存一次以确保在所有存储层同步
+  // 5. 确保会话ID在所有存储层同步一致
+  saveSessionId(sessionId);
   currentSessionId = sessionId;
   
   return sessionId;

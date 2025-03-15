@@ -302,21 +302,49 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
     express: null
   };
   
-  // 1. 检查请求头中是否有客户端提供的会话ID（支持大小写不敏感）
-  const headerSessionId = req.headers['x-session-id'] as string || 
-                         req.headers['X-Session-ID'] as string;
+  // 1. 检查请求头中是否有客户端提供的会话ID（支持多种可能的头名称）
+  const headerVariations = [
+    'x-session-id',
+    'X-Session-ID',
+    'sessionid',
+    'SessionId',
+    'session-id',
+    'client-session-id',
+    'X-Client-Session-ID'
+  ];
   
-  // 处理可能的数组或逗号分隔的情况
-  if (Array.isArray(headerSessionId)) {
-    clientSessionId = headerSessionId[0];
-  } else if (typeof headerSessionId === 'string' && headerSessionId.includes(',')) {
-    clientSessionId = headerSessionId.split(',')[0].trim();
-  } else if (typeof headerSessionId === 'string') {
-    clientSessionId = headerSessionId;
+  // 尝试所有可能的头名称
+  for (const headerName of headerVariations) {
+    const currentHeader = req.headers[headerName] as string;
+    if (currentHeader) {
+      // 处理可能的数组或逗号分隔的情况
+      if (Array.isArray(currentHeader)) {
+        clientSessionId = currentHeader[0];
+      } else if (typeof currentHeader === 'string' && currentHeader.includes(',')) {
+        clientSessionId = currentHeader.split(',')[0].trim();
+      } else if (typeof currentHeader === 'string') {
+        clientSessionId = currentHeader;
+      }
+      
+      if (clientSessionId && clientSessionId.length >= 16) {
+        sessionSources.header = clientSessionId;
+        console.log(`从请求头 [${headerName}] 获取会话ID: ${clientSessionId}`);
+        break; // 找到有效会话ID后停止查找
+      }
+    }
   }
   
-  if (clientSessionId && clientSessionId.length >= 16) {
-    sessionSources.header = clientSessionId;
+  // 如果未找到会话ID，检查所有请求头，以防客户端使用了非标准名称
+  if (!clientSessionId) {
+    // 记录所有请求头用于调试（仅限开发环境）
+    const allHeaders = Object.keys(req.headers).join(', ');
+    const headerValues = Object.entries(req.headers)
+      .filter(([key]) => key.toLowerCase().includes('session'))
+      .map(([key, value]) => `${key}: ${value}`);
+    
+    if (headerValues.length > 0) {
+      console.log(`发现潜在会话头: ${headerValues.join(', ')}`);
+    }
   }
                         
   // 2. 检查URL查询参数中是否有会话ID
