@@ -3212,6 +3212,221 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // 唯一码跟踪路由
+  // 获取唯一码跟踪记录
+  apiRouter.get("/unique-code/:code", async (req, res) => {
+    try {
+      const uniqueCode = req.params.code;
+      const tracking = await storage.getUniqueCodeTracking(uniqueCode);
+      
+      if (!tracking) {
+        return res.status(404).json({ message: "唯一码不存在" });
+      }
+      
+      res.json(tracking);
+    } catch (err) {
+      console.error("获取唯一码跟踪记录失败:", err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      res.status(500).json({ message: "获取唯一码跟踪记录失败", error: errorMessage });
+    }
+  });
+  
+  // 获取唯一码历史记录
+  apiRouter.get("/unique-code/:code/history", async (req, res) => {
+    try {
+      const uniqueCode = req.params.code;
+      const history = await storage.getUniqueCodeHistory(uniqueCode);
+      
+      res.json(history);
+    } catch (err) {
+      console.error("获取唯一码历史记录失败:", err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      res.status(500).json({ message: "获取唯一码历史记录失败", error: errorMessage });
+    }
+  });
+  
+  // 验证唯一码是否可用
+  apiRouter.get("/unique-code/:code/verify", async (req, res) => {
+    try {
+      const uniqueCode = req.params.code;
+      const warehouseId = req.query.warehouseId ? parseInt(req.query.warehouseId as string) : undefined;
+      
+      if (warehouseId && isNaN(warehouseId)) {
+        return res.status(400).json({ message: "无效的仓库ID" });
+      }
+      
+      const isAvailable = warehouseId 
+        ? await storage.verifyUniqueCodeAvailable(uniqueCode, warehouseId)
+        : !!(await storage.getUniqueCodeTracking(uniqueCode));
+      
+      res.json({ isAvailable });
+    } catch (err) {
+      console.error("验证唯一码失败:", err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      res.status(500).json({ message: "验证唯一码失败", error: errorMessage });
+    }
+  });
+  
+  // 按产品ID获取唯一码列表
+  apiRouter.get("/products/:id/unique-codes", async (req, res) => {
+    try {
+      const productId = parseInt(req.params.id);
+      
+      if (isNaN(productId)) {
+        return res.status(400).json({ message: "无效的产品ID" });
+      }
+      
+      const trackingList = await storage.getUniqueCodeTrackingByProduct(productId);
+      res.json(trackingList);
+    } catch (err) {
+      console.error("获取产品唯一码列表失败:", err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      res.status(500).json({ message: "获取产品唯一码列表失败", error: errorMessage });
+    }
+  });
+  
+  // 按仓库ID获取唯一码列表
+  apiRouter.get("/warehouses/:id/unique-codes", async (req, res) => {
+    try {
+      const warehouseId = parseInt(req.params.id);
+      
+      if (isNaN(warehouseId)) {
+        return res.status(400).json({ message: "无效的仓库ID" });
+      }
+      
+      const trackingList = await storage.getUniqueCodeTrackingByWarehouse(warehouseId);
+      res.json(trackingList);
+    } catch (err) {
+      console.error("获取仓库唯一码列表失败:", err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      res.status(500).json({ message: "获取仓库唯一码列表失败", error: errorMessage });
+    }
+  });
+  
+  // 生成唯一码报告
+  apiRouter.get("/unique-code-report", async (req, res) => {
+    try {
+      const filter: { 
+        productId?: number, 
+        warehouseId?: number, 
+        status?: string, 
+        startDate?: Date, 
+        endDate?: Date 
+      } = {};
+      
+      if (req.query.productId) {
+        filter.productId = parseInt(req.query.productId as string);
+      }
+      
+      if (req.query.warehouseId) {
+        filter.warehouseId = parseInt(req.query.warehouseId as string);
+      }
+      
+      if (req.query.status) {
+        filter.status = req.query.status as string;
+      }
+      
+      if (req.query.startDate) {
+        filter.startDate = new Date(req.query.startDate as string);
+      }
+      
+      if (req.query.endDate) {
+        filter.endDate = new Date(req.query.endDate as string);
+      }
+      
+      const report = await storage.generateUniqueCodeReport(filter);
+      res.json(report);
+    } catch (err) {
+      console.error("生成唯一码报告失败:", err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      res.status(500).json({ message: "生成唯一码报告失败", error: errorMessage });
+    }
+  });
+  
+  // 唯一码入库操作
+  apiRouter.post("/unique-code/inbound", async (req, res) => {
+    try {
+      const { uniqueCode, productId, warehouseId, inboundOrderId, inboundItemId, userId } = req.body;
+      
+      if (!uniqueCode || !productId || !warehouseId || !inboundOrderId || !inboundItemId || !userId) {
+        return res.status(400).json({ message: "缺少必要参数" });
+      }
+      
+      const result = await storage.registerUniqueCodeInbound(
+        uniqueCode,
+        parseInt(productId),
+        parseInt(warehouseId),
+        parseInt(inboundOrderId),
+        parseInt(inboundItemId),
+        parseInt(userId)
+      );
+      
+      res.json(result);
+    } catch (err) {
+      console.error("唯一码入库操作失败:", err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      res.status(500).json({ message: "唯一码入库操作失败", error: errorMessage });
+    }
+  });
+  
+  // 唯一码出库操作
+  apiRouter.post("/unique-code/outbound", async (req, res) => {
+    try {
+      const { uniqueCode, outboundOrderId, outboundItemId, userId } = req.body;
+      
+      if (!uniqueCode || !outboundOrderId || !outboundItemId || !userId) {
+        return res.status(400).json({ message: "缺少必要参数" });
+      }
+      
+      const result = await storage.registerUniqueCodeOutbound(
+        uniqueCode,
+        parseInt(outboundOrderId),
+        parseInt(outboundItemId),
+        parseInt(userId)
+      );
+      
+      if (!result) {
+        return res.status(404).json({ message: "唯一码不存在或无法出库" });
+      }
+      
+      res.json(result);
+    } catch (err) {
+      console.error("唯一码出库操作失败:", err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      res.status(500).json({ message: "唯一码出库操作失败", error: errorMessage });
+    }
+  });
+  
+  // 唯一码调拨操作
+  apiRouter.post("/unique-code/transfer", async (req, res) => {
+    try {
+      const { uniqueCode, sourceWarehouseId, targetWarehouseId, transferId, transferItemId, userId } = req.body;
+      
+      if (!uniqueCode || !sourceWarehouseId || !targetWarehouseId || !transferId || !transferItemId || !userId) {
+        return res.status(400).json({ message: "缺少必要参数" });
+      }
+      
+      const result = await storage.registerUniqueCodeTransfer(
+        uniqueCode,
+        parseInt(sourceWarehouseId),
+        parseInt(targetWarehouseId),
+        parseInt(transferId),
+        parseInt(transferItemId),
+        parseInt(userId)
+      );
+      
+      if (!result) {
+        return res.status(404).json({ message: "唯一码不存在或无法调拨" });
+      }
+      
+      res.json(result);
+    } catch (err) {
+      console.error("唯一码调拨操作失败:", err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      res.status(500).json({ message: "唯一码调拨操作失败", error: errorMessage });
+    }
+  });
+  
   // 管理员专用接口 - 初始化测试数据
   apiRouter.post("/admin/initialize-test-data", async (req, res) => {
     try {
