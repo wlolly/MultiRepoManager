@@ -337,10 +337,10 @@ export default function App() {
             <Route path="/test-toast" component={TestToast} />
             
             {/* 主页与通用页面 */}
-            <Route path="/" component={Dashboard} />
+            <ProtectedRoute path="/" component={Dashboard} pageName="dashboard" />
             <Route path="/search" component={Search} />
-            <Route path="/settings" component={Settings} />
-            <Route path="/users" component={Users} />
+            <ProtectedRoute path="/settings" component={Settings} pageName="settings" />
+            <ProtectedRoute path="/users" component={Users} pageName="users_teams" />
             
             {/* 代码仓库相关页面 */}
             <Route path="/my-repositories" component={MyRepositories} />
@@ -350,30 +350,30 @@ export default function App() {
             <Route path="/repository/:id" component={Repository} />
             
             {/* 仓库管理系统页面 */}
-            <Route path="/warehouses" component={Warehouses} />
-            <Route path="/warehouse-products" component={WarehouseProducts} />
-            <Route path="/warehouse-products/new" component={NewWarehouseProduct} />
-            <Route path="/products" component={ProductsPage} />
-            <Route path="/products/product-detail/:id" component={ProductDetail} />
+            <ProtectedRoute path="/warehouses" component={Warehouses} pageName="warehouses" />
+            <ProtectedRoute path="/warehouse-products" component={WarehouseProducts} pageName="warehouse_products" />
+            <ProtectedRoute path="/warehouse-products/new" component={NewWarehouseProduct} pageName="warehouse_products" />
+            <ProtectedRoute path="/products" component={ProductsPage} pageName="products" />
+            <ProtectedRoute path="/products/product-detail/:id" component={ProductDetail} pageName="products" />
             <Route path="/product-search" component={ProductSearch} />
             
             {/* 入库单页面 */}
-            <Route path="/inbound-orders" component={InboundOrders} />
-            <Route path="/inbound-order/:id" component={InboundOrder} />
-            <Route path="/inbound-orders/new-multi" component={NewMultiInboundOrder} />
+            <ProtectedRoute path="/inbound-orders" component={InboundOrders} pageName="inbound_orders" />
+            <ProtectedRoute path="/inbound-order/:id" component={InboundOrder} pageName="inbound_orders" />
+            <ProtectedRoute path="/inbound-orders/new-multi" component={NewMultiInboundOrder} pageName="inbound_orders" />
             
             {/* 出库单页面 */}
-            <Route path="/outbound-orders" component={OutboundOrders} />
-            <Route path="/outbound-order/:id" component={OutboundOrder} />
-            <Route path="/outbound-orders/advanced" component={AdvancedOutboundOrder} />
+            <ProtectedRoute path="/outbound-orders" component={OutboundOrders} pageName="outbound_orders" />
+            <ProtectedRoute path="/outbound-order/:id" component={OutboundOrder} pageName="outbound_orders" />
+            <ProtectedRoute path="/outbound-orders/advanced" component={AdvancedOutboundOrder} pageName="outbound_orders" />
             
             {/* 仓库调拨单页面 */}
-            <Route path="/warehouse-transfers" component={WarehouseTransfers} />
-            <Route path="/warehouse-transfers/new" component={NewWarehouseTransfer} />
-            <Route path="/warehouse-transfers/import" component={WarehouseTransferImport} />
+            <ProtectedRoute path="/warehouse-transfers" component={WarehouseTransfers} pageName="warehouse_transfers" />
+            <ProtectedRoute path="/warehouse-transfers/new" component={NewWarehouseTransfer} pageName="warehouse_transfers" />
+            <ProtectedRoute path="/warehouse-transfers/import" component={WarehouseTransferImport} pageName="warehouse_transfers" />
             
             {/* API配置页面 */}
-            <Route path="/api-configurations" component={ApiConfigurations} />
+            <ProtectedRoute path="/api-configurations" component={ApiConfigurations} pageName="api_configurations" />
             
             {/* 404页面必须放在最后 */}
             <Route component={NotFound} />
