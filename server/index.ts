@@ -38,81 +38,30 @@ app.use(session({
   })
 }));
 
-// 添加会话活动时间跟踪和会话ID恢复
+// 添加会话活动时间跟踪中间件
+// 注意：会话ID恢复逻辑已移至 auth.ts 中的 verifySession 函数
 app.use((req, res, next) => {
-  // 获取各种可能的客户端会话ID来源
-  const clientSessionId = 
-    req.headers['x-session-id'] as string || 
-    req.headers['X-Session-ID'] as string || 
-    req.query.sessionId as string;
-  
-  // 将会话信息记录到响应头，帮助调试
-  res.setHeader('X-Original-Session-ID', req.sessionID || 'none');
-  res.setHeader('X-Client-Session-ID', clientSessionId || 'none');
-  
-  // 如果客户端提供了会话ID，并且与当前会话ID不同，尝试恢复客户端会话
-  if (clientSessionId && typeof clientSessionId === 'string' && 
-      req.sessionID !== clientSessionId && req.sessionStore) {
-      
-    console.log(`客户端提供了会话ID: ${clientSessionId}, 当前会话ID: ${req.sessionID}`);
-    
-    // 使用客户端提供的会话ID查找会话
-    (req.sessionStore as any).get(clientSessionId, (err: Error, clientSession: any) => {
-      if (err) {
-        console.error(`通过客户端会话ID加载会话错误:`, err);
-        continueWithSession();
-        return;
-      }
-      
-      if (clientSession && clientSession.userId) {
-        console.log(`找到客户端会话 ${clientSessionId}: userId=${clientSession.userId}, 认证=${clientSession.authenticated}`);
-        
-        // 记录一下当前会话ID
-        const currentSessionId = req.sessionID;
-        
-        // 强制使用客户端会话ID
-        (req as any).sessionID = clientSessionId;
-        
-        // 合并到当前会话
-        req.session.userId = clientSession.userId;
-        req.session.authenticated = clientSession.authenticated;
-        req.session.userRole = clientSession.userRole;
-        req.session.socialBound = clientSession.socialBound;
-        req.session.lastActivity = Date.now();
-        
-        req.session.save((saveErr) => {
-          if (saveErr) {
-            console.error('保存恢复的会话出错:', saveErr);
-          }
-          continueWithSession();
-        });
-      } else {
-        console.log(`未找到有效的客户端会话或会话不包含userId`);
-        continueWithSession();
-      }
-    });
-  } else {
-    continueWithSession();
+  // 只更新会话活动时间，不处理会话ID恢复
+  // 这样避免与 auth.ts 中的 verifySession 函数冲突
+  if (req.session) {
+    req.session.lastActivity = Date.now();
   }
   
-  // 继续处理会话信息
-  function continueWithSession() {
-    if (req.session) {
-      req.session.lastActivity = Date.now();
-      
-      // 会话调试日志
-      if (process.env.DEBUG === 'session' || process.env.NODE_ENV !== 'production') {
-        const sessionInfo = {
-          id: req.sessionID,
-          userId: req.session.userId,
-          socialBound: req.session.socialBound,
-          isAuthenticated: !!req.session.userId
-        };
-        console.log(`[会话调试] 路径: ${req.path}, 会话信息:`, sessionInfo);
-      }
-    }
-    next();
+  // 将会话ID添加到响应头，方便客户端和服务器调试
+  res.setHeader('X-Original-Session-ID', req.sessionID || '');
+  
+  // 会话调试日志
+  if (process.env.DEBUG === 'session' || process.env.NODE_ENV !== 'production') {
+    const sessionInfo = {
+      id: req.sessionID,
+      userId: req.session?.userId,
+      socialBound: req.session?.socialBound,
+      isAuthenticated: !!req.session?.userId
+    };
+    console.log(`[会话调试] 路径: ${req.path}, 会话信息:`, JSON.stringify(sessionInfo, null, 2));
   }
+  
+  next();
 });
 
 // API响应捕获和日志记录中间件
