@@ -25,6 +25,7 @@ import Search from "./pages/search";
 import Settings from "./pages/settings";
 import Users from "./pages/users";
 import ApiConfigurations from "./pages/api-configurations";
+import TeamPermissions from "./pages/team-permissions";
 
 // 仓库系统页面
 import WarehouseProducts from "./pages/warehouse-products";
@@ -55,6 +56,7 @@ const navItems = [
   { icon: "ri-exchange-fill", keyName: "warehouse_transfers", href: "/warehouse-transfers" },
   { icon: "ri-cloud-line", keyName: "api_configurations", href: "/api-configurations" },
   { icon: "ri-group-line", keyName: "users_teams", href: "/users" },
+  { icon: "ri-shield-keyhole-line", keyName: "team_permissions", href: "/team-permissions" },
   { icon: "ri-settings-line", keyName: "settings", href: "/settings" },
 ];
 
@@ -142,6 +144,7 @@ function Sidebar() {
     '/warehouse-transfers': 'warehouse_transfers',
     '/api-configurations': 'api_configurations',
     '/users': 'users_teams',
+    '/team-permissions': 'team_permissions',
     '/settings': 'settings'
   };
 
@@ -374,6 +377,9 @@ export default function App() {
             
             {/* API配置页面 */}
             <ProtectedRoute path="/api-configurations" component={ApiConfigurations} pageName="api_configurations" />
+            
+            {/* 团队权限管理页面 */}
+            <ProtectedRoute path="/team-permissions" component={TeamPermissions} pageName="team_permissions" />
             
             {/* 404页面必须放在最后 */}
             <Route component={NotFound} />

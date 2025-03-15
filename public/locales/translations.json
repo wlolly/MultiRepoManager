@@ -1490,6 +1490,167 @@
     "kk": "API баптаулары",
     "uz": "API sozlamalari"
   },
+  "team_permissions": {
+    "zh": "团队权限",
+    "en": "Team Permissions",
+    "ru": "Разрешения команды",
+    "kk": "Команда рұқсаттары",
+    "uz": "Jamoa ruxsatlari"
+  },
+  "team_permissions_description": {
+    "zh": "管理团队成员对系统页面和仓库的访问权限",
+    "en": "Manage team members' access to system pages and warehouses",
+    "ru": "Управление доступом членов команды к страницам системы и складам",
+    "kk": "Команда мүшелерінің жүйе беттеріне және қоймаларға қол жеткізуін басқару",
+    "uz": "Jamoa a'zolarining tizim sahifalari va omborlariga kirishini boshqarish"
+  },
+  "page_permissions": {
+    "zh": "页面权限",
+    "en": "Page Permissions",
+    "ru": "Разрешения страницы",
+    "kk": "Бет рұқсаттары",
+    "uz": "Sahifa ruxsatlari"
+  },
+  "warehouse_permissions": {
+    "zh": "仓库权限",
+    "en": "Warehouse Permissions",
+    "ru": "Разрешения склада",
+    "kk": "Қойма рұқсаттары",
+    "uz": "Ombor ruxsatlari"
+  },
+  "can_access": {
+    "zh": "可访问",
+    "en": "Can Access",
+    "ru": "Имеет доступ",
+    "kk": "Қол жеткізе алады",
+    "uz": "Kirish huquqi bor"
+  },
+  "can_view": {
+    "zh": "可查看",
+    "en": "Can View",
+    "ru": "Может просматривать",
+    "kk": "Көре алады",
+    "uz": "Ko'rish huquqi bor"
+  },
+  "can_manage": {
+    "zh": "可管理",
+    "en": "Can Manage",
+    "ru": "Может управлять",
+    "kk": "Басқара алады",
+    "uz": "Boshqarish huquqi bor"
+  },
+  "page_name": {
+    "zh": "页面名称",
+    "en": "Page Name",
+    "ru": "Название страницы",
+    "kk": "Бет атауы",
+    "uz": "Sahifa nomi"
+  },
+  "warehouse_name": {
+    "zh": "仓库名称",
+    "en": "Warehouse Name",
+    "ru": "Название склада",
+    "kk": "Қойма атауы",
+    "uz": "Ombor nomi"
+  },
+  "permission_settings": {
+    "zh": "权限设置",
+    "en": "Permission Settings",
+    "ru": "Настройки разрешений",
+    "kk": "Рұқсат параметрлері",
+    "uz": "Ruxsat sozlamalari"
+  },
+  "save_permissions": {
+    "zh": "保存权限设置",
+    "en": "Save Permissions",
+    "ru": "Сохранить разрешения",
+    "kk": "Рұқсаттарды сақтау",
+    "uz": "Ruxsatlarni saqlash"
+  },
+  "permissions_saved": {
+    "zh": "权限设置已保存",
+    "en": "Permissions Saved",
+    "ru": "Разрешения сохранены",
+    "kk": "Рұқсаттар сақталды",
+    "uz": "Ruxsatlar saqlandi"
+  },
+  "permissions_save_failed": {
+    "zh": "权限设置保存失败",
+    "en": "Failed to Save Permissions",
+    "ru": "Не удалось сохранить разрешения",
+    "kk": "Рұқсаттарды сақтау сәтсіз аяқталды",
+    "uz": "Ruxsatlarni saqlash amalga oshmadi"
+  },
+  "page_dashboard": {
+    "zh": "控制面板",
+    "en": "Dashboard",
+    "ru": "Панель управления",
+    "kk": "Басқару тақтасы",
+    "uz": "Boshqaruv paneli"
+  },
+  "page_products": {
+    "zh": "产品管理",
+    "en": "Products",
+    "ru": "Товары",
+    "kk": "Өнімдер",
+    "uz": "Mahsulotlar"
+  },
+  "page_warehouses": {
+    "zh": "仓库管理",
+    "en": "Warehouses",
+    "ru": "Склады",
+    "kk": "Қоймалар",
+    "uz": "Omborlar"
+  },
+  "page_inbound_orders": {
+    "zh": "入库单",
+    "en": "Inbound Orders",
+    "ru": "Приходные ордера",
+    "kk": "Кіріс тапсырыстары",
+    "uz": "Kirish buyurtmalari"
+  },
+  "page_outbound_orders": {
+    "zh": "出库单",
+    "en": "Outbound Orders",
+    "ru": "Расходные ордера",
+    "kk": "Шығыс тапсырыстары",
+    "uz": "Chiqish buyurtmalari"
+  },
+  "page_warehouse_transfers": {
+    "zh": "仓库调拨",
+    "en": "Warehouse Transfers",
+    "ru": "Перемещения",
+    "kk": "Қойма аударымдары",
+    "uz": "Ombor o'tkazmalari"
+  },
+  "page_api_configurations": {
+    "zh": "API配置",
+    "en": "API Configurations",
+    "ru": "Настройки API",
+    "kk": "API баптаулары",
+    "uz": "API sozlamalari"
+  },
+  "page_settings": {
+    "zh": "系统设置",
+    "en": "Settings",
+    "ru": "Настройки",
+    "kk": "Параметрлер",
+    "uz": "Sozlamalar"
+  },
+  "page_users": {
+    "zh": "用户管理",
+    "en": "Users",
+    "ru": "Пользователи",
+    "kk": "Пайдаланушылар",
+    "uz": "Foydalanuvchilar"
+  },
+  "page_team_permissions": {
+    "zh": "团队权限",
+    "en": "Team Permissions",
+    "ru": "Разрешения команды",
+    "kk": "Команда рұқсаттары",
+    "uz": "Jamoa ruxsatlari"
+  },
   "api_configurations_description": {
     "zh": "管理电商平台API连接以自动生成订单",
     "en": "Manage e-commerce platform API connections for automated orders",
