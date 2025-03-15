@@ -903,10 +903,10 @@ export default function WarehouseTransfers() {
                     {transfer.totalItems}
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
-                    {transfer.totalWeight.toFixed(2)} kg
+                    {Number(transfer.totalWeight).toFixed(2)} kg
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
-                    {transfer.totalVolume.toFixed(3)} m³
+                    {Number(transfer.totalVolume).toFixed(3)} m³
                   </TableCell>
                   <TableCell>
                     <Badge variant={getStatusBadgeVariant(transfer.status)}>
@@ -960,7 +960,7 @@ export default function WarehouseTransfers() {
           {t("warehouseTransfer.showing")} {displayedTransfers.length} {t("warehouseTransfer.of")} {filteredTransfers.length} {t("warehouseTransfer.transfers")}
         </div>
         <div>
-          {t("warehouseTransfer.total")}: {totalWeight.toFixed(2)} kg, {totalVolume.toFixed(3)} m³
+          {t("warehouseTransfer.total")}: {Number(totalWeight).toFixed(2)} kg, {Number(totalVolume).toFixed(3)} m³
         </div>
       </div>
       
@@ -1115,8 +1115,8 @@ export default function WarehouseTransfers() {
                           </TableCell>
                           <TableCell className="text-right">{item.quantity}</TableCell>
                           <TableCell className="text-right">{item.packageCount || 1}</TableCell>
-                          <TableCell className="text-right">{item.weight.toFixed(2)} kg</TableCell>
-                          <TableCell className="text-right">{item.volume.toFixed(3)} m³</TableCell>
+                          <TableCell className="text-right">{Number(item.weight).toFixed(2)} kg</TableCell>
+                          <TableCell className="text-right">{Number(item.volume).toFixed(3)} m³</TableCell>
                           <TableCell>
                             <Badge variant={item.matched ? "success" : "destructive"}>
                               {item.matched ? t("warehouseTransfer.matched") : t("warehouseTransfer.not_matched")}
