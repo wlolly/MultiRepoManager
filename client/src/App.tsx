@@ -338,11 +338,22 @@ export default function App() {
     });
     
     // 使用会话检查API检查认证状态
+    console.log("开始检查认证状态...");
     fetch('/api/auth/current-user', {
       credentials: 'include'  // 包含会话cookie
     })
-    .then(response => {
+    .then(async response => {
+      console.log("认证检查响应状态:", response.status, response.statusText);
+      
+      try {
+        const data = await response.json();
+        console.log("认证检查响应数据:", data);
+      } catch (e) {
+        console.log("解析响应JSON出错:", e);
+      }
+      
       if (response.ok) {
+        console.log("认证成功，用户已登录");
         setAuthenticated(true);
       } else {
         console.log("认证已过期，请重新登录");
