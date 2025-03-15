@@ -47,43 +47,43 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     // 显示登录中提示
     toast.success("登录成功，正在跳转...");
     
-    // 设置一个特别短的超时，让toast消息显示出来
-    setTimeout(() => {
-      // 立即跳转，不等待API响应
+    // 使用fetch进行API请求，确保能正确处理cookie和会话
+    fetch('/api/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(values),
+      credentials: 'include' // 确保包含cookie
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log('登录响应:', data);
+      
+      // 保存用户数据和会话ID（如果有）
+      if (data.user) {
+        sessionStorage.setItem('currentUser', JSON.stringify(data.user));
+        localStorage.setItem('currentUser', JSON.stringify(data.user));
+      }
+      
+      if (data.sessionId) {
+        saveSessionId(data.sessionId);
+      }
+      
+      // 登录成功，进行页面跳转
       if (onLoginSuccess) {
         onLoginSuccess();
       } else {
-        window.location.replace('/');
+        navigate('/'); // 使用wouter的导航方法
       }
-    }, 100);
-    
-    // 异步发送登录请求（不影响用户体验）
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', '/api/auth/login', true);
-    xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.withCredentials = true;
-    
-    xhr.onload = function() {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        try {
-          const data = JSON.parse(xhr.responseText);
-          if (data.user) {
-            sessionStorage.setItem('currentUser', JSON.stringify(data.user));
-            localStorage.setItem('currentUser', JSON.stringify(data.user));
-            if (data.sessionId) {
-              saveSessionId(data.sessionId);
-            }
-          }
-        } catch (e) {}
-      }
+    })
+    .catch(error => {
+      console.error('登录请求错误:', error);
+      toast.error("登录过程中发生错误，请重试");
+    })
+    .finally(() => {
       setIsLoading(false);
-    };
-    
-    xhr.onerror = function() {
-      setIsLoading(false);
-    };
-    
-    xhr.send(JSON.stringify(values));
+    });
   };
 
   // 社交登录
