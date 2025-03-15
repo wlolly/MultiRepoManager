@@ -24,7 +24,8 @@ import {
 } from "@shared/schema";
 import { processProductCode } from "./utils/product-code-matcher";
 import { db } from './db';
-import { eq, and, gt, count, desc, sql } from 'drizzle-orm';
+import { eq, and, or, gte, lte, gt, lt, count, desc, SQL, is, asc } from 'drizzle-orm';
+import { MySqlRawQueryResult } from 'drizzle-orm/mysql-core';
 
 export interface IStorage {
   // User methods
@@ -1372,15 +1373,32 @@ export class DatabaseStorage implements IStorage {
   // 从warehouse-transfer-db.ts导入仓库调拨单相关功能
   private warehouseTransferDB: any;
   
+  // 唯一码跟踪相关存储 - 使用内存存储实现
+  private uniqueCodeTrackingMap: Map<string, UniqueCodeTracking>;
+  private uniqueCodeHistoryMap: Map<number, UniqueCodeHistory>;
+  private uniqueCodeHistoryIdCounter: number;
+  
+  // 引入唯一码跟踪服务
+  private uniqueCodeTrackingService: any;
+  
   constructor() {
+    // 初始化唯一码跟踪相关存储
+    this.uniqueCodeTrackingMap = new Map();
+    this.uniqueCodeHistoryMap = new Map();
+    this.uniqueCodeHistoryIdCounter = 1;
+    
     // 使用动态导入初始化服务
     Promise.all([
       import('./services/warehouse-transfer.service'),
-      import('./warehouse-transfer-db')
-    ]).then(([transferServiceModule, transferDBModule]) => {
+      import('./warehouse-transfer-db'),
+      import('./services/unique-code-tracking.service')
+    ]).then(([transferServiceModule, transferDBModule, uniqueCodeTrackingModule]) => {
       const WarehouseTransferService = transferServiceModule.WarehouseTransferService;
       this.warehouseTransferService = new WarehouseTransferService(this);
       this.warehouseTransferDB = transferDBModule;
+      
+      const UniqueCodeTrackingService = uniqueCodeTrackingModule.UniqueCodeTrackingService;
+      this.uniqueCodeTrackingService = new UniqueCodeTrackingService(this);
     });
   }
   
@@ -1477,6 +1495,357 @@ export class DatabaseStorage implements IStorage {
       this.warehouseTransferDB = transferDBModule;
     }
     return this.warehouseTransferDB.deleteWarehouseTransferItem(id);
+  }
+  
+  // 唯一码跟踪相关方法
+  async trackUniqueCode(tracking: InsertUniqueCodeTracking): Promise<UniqueCodeTracking> {
+    const insertData = {
+      ...tracking,
+      uniqueCode: tracking.uniqueCode,
+      productId: tracking.productId,
+      warehouseId: tracking.currentWarehouseId,
+      status: tracking.status,
+      inboundOrderId: tracking.lastOperationType === 'inbound' ? tracking.lastOperationId : null,
+      quantity: 1, // 默认值
+      remark: null,
+      initialWarehouseId: tracking.initialWarehouseId,
+      currentWarehouseId: tracking.currentWarehouseId,
+      lastOperationType: tracking.lastOperationType,
+      lastOperationId: tracking.lastOperationId,
+      lastOperationItemId: tracking.lastOperationItemId,
+      lastOperationDate: tracking.lastOperationDate || new Date(),
+      lastOperationUserId: tracking.lastOperationUserId,
+    };
+    
+    // MySQL不直接支持returning，所以我们需要先插入然后查询
+    const result = await db.insert(uniqueCodeTracking).values(insertData);
+    const trackingId = Number(result.insertId);
+    
+    // 获取刚插入的跟踪记录
+    const [trackingRecord] = await db.select().from(uniqueCodeTracking).where(eq(uniqueCodeTracking.id, trackingId));
+    if (!trackingRecord) throw new Error(`Failed to retrieve unique code tracking after creation`);
+    
+    return trackingRecord;
+  }
+  
+  async getUniqueCodeTracking(uniqueCode: string): Promise<UniqueCodeTracking | undefined> {
+    const [record] = await db.select().from(uniqueCodeTracking).where(eq(uniqueCodeTracking.uniqueCode, uniqueCode));
+    return record || undefined;
+  }
+  
+  async updateUniqueCodeTracking(uniqueCode: string, updates: Partial<UniqueCodeTracking>): Promise<UniqueCodeTracking | undefined> {
+    await db
+      .update(uniqueCodeTracking)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(uniqueCodeTracking.uniqueCode, uniqueCode));
+    
+    // 获取更新后的跟踪记录
+    return await this.getUniqueCodeTracking(uniqueCode);
+  }
+  
+  async getUniqueCodeTrackingByProduct(productId: number): Promise<UniqueCodeTracking[]> {
+    const records = await db.select().from(uniqueCodeTracking).where(eq(uniqueCodeTracking.productId, productId));
+    return records;
+  }
+  
+  async getUniqueCodeTrackingByWarehouse(warehouseId: number): Promise<UniqueCodeTracking[]> {
+    const records = await db.select().from(uniqueCodeTracking).where(eq(uniqueCodeTracking.currentWarehouseId, warehouseId));
+    return records;
+  }
+  
+  async addUniqueCodeHistory(history: InsertUniqueCodeHistory): Promise<UniqueCodeHistory> {
+    const insertData = {
+      userId: history.userId,
+      uniqueCode: history.uniqueCode,
+      warehouseId: history.targetWarehouseId || history.sourceWarehouseId || 0,
+      productId: history.productId,
+      quantity: 1,
+      remark: history.details || null,
+      transferId: history.transferId,
+      transferItemId: history.transferItemId,
+      inboundOrderId: history.inboundOrderId,
+      inboundItemId: history.inboundItemId,
+      outboundOrderId: history.outboundOrderId,
+      outboundItemId: history.outboundItemId,
+      operationType: history.operationType,
+      operationStatus: history.status,
+      operationDate: new Date(),
+    };
+    
+    // MySQL不直接支持returning，所以我们需要先插入然后查询
+    const result = await db.insert(uniqueCodeHistory).values(insertData);
+    const historyId = Number(result.insertId);
+    
+    // 获取刚插入的历史记录
+    const [historyRecord] = await db.select().from(uniqueCodeHistory).where(eq(uniqueCodeHistory.id, historyId));
+    if (!historyRecord) throw new Error(`Failed to retrieve unique code history after creation`);
+    
+    return historyRecord;
+  }
+  
+  async getUniqueCodeHistory(uniqueCode: string): Promise<UniqueCodeHistory[]> {
+    const records = await db.select().from(uniqueCodeHistory)
+      .where(eq(uniqueCodeHistory.uniqueCode, uniqueCode))
+      .orderBy(desc(uniqueCodeHistory.operationDate));
+    return records;
+  }
+  
+  // 唯一码业务操作
+  async registerUniqueCodeInbound(
+    uniqueCode: string,
+    productId: number,
+    warehouseId: number,
+    inboundOrderId: number,
+    inboundItemId: number,
+    userId: number
+  ): Promise<UniqueCodeTracking> {
+    // 创建或更新唯一码跟踪记录
+    const existingTracking = await this.getUniqueCodeTracking(uniqueCode);
+    
+    // 历史记录数据
+    const historyData: InsertUniqueCodeHistory = {
+      uniqueCode,
+      operationType: "inbound",
+      sourceWarehouseId: null,
+      targetWarehouseId: warehouseId,
+      productId,
+      userId,
+      status: "active",
+      inboundOrderId,
+      inboundItemId,
+      outboundOrderId: null,
+      outboundItemId: null,
+      transferId: null,
+      transferItemId: null,
+      details: `产品进入仓库 ID: ${warehouseId}`
+    };
+    
+    await this.addUniqueCodeHistory(historyData);
+    
+    if (existingTracking) {
+      // 更新现有跟踪记录
+      const updatedTracking = await this.updateUniqueCodeTracking(uniqueCode, {
+        currentWarehouseId: warehouseId,
+        status: "active",
+        lastOperationType: "inbound",
+        lastOperationId: inboundOrderId,
+        lastOperationItemId: inboundItemId,
+        lastOperationDate: new Date(),
+        lastOperationUserId: userId
+      });
+      
+      if (!updatedTracking) throw new Error(`Failed to update unique code tracking for ${uniqueCode}`);
+      return updatedTracking;
+    } else {
+      // 创建新的跟踪记录
+      const trackingData: InsertUniqueCodeTracking = {
+        uniqueCode,
+        productId,
+        currentWarehouseId: warehouseId,
+        initialWarehouseId: warehouseId,
+        status: "active",
+        lastOperationType: "inbound",
+        lastOperationId: inboundOrderId,
+        lastOperationItemId: inboundItemId,
+        lastOperationDate: new Date(),
+        lastOperationUserId: userId
+      };
+      
+      return this.trackUniqueCode(trackingData);
+    }
+  }
+  
+  async registerUniqueCodeOutbound(
+    uniqueCode: string,
+    outboundOrderId: number,
+    outboundItemId: number,
+    userId: number
+  ): Promise<UniqueCodeTracking | undefined> {
+    const existingTracking = await this.getUniqueCodeTracking(uniqueCode);
+    if (!existingTracking) return undefined;
+    
+    const { productId, currentWarehouseId } = existingTracking;
+    
+    // 历史记录数据
+    const historyData: InsertUniqueCodeHistory = {
+      uniqueCode,
+      operationType: "outbound",
+      sourceWarehouseId: currentWarehouseId,
+      targetWarehouseId: null,
+      productId,
+      userId,
+      status: "inactive",
+      inboundOrderId: null,
+      inboundItemId: null,
+      outboundOrderId,
+      outboundItemId,
+      transferId: null,
+      transferItemId: null,
+      details: `产品已出库，离开仓库 ID: ${currentWarehouseId}`
+    };
+    
+    await this.addUniqueCodeHistory(historyData);
+    
+    // 更新跟踪记录
+    return this.updateUniqueCodeTracking(uniqueCode, {
+      currentWarehouseId: null,
+      status: "inactive",
+      lastOperationType: "outbound",
+      lastOperationId: outboundOrderId,
+      lastOperationItemId: outboundItemId,
+      lastOperationDate: new Date(),
+      lastOperationUserId: userId
+    });
+  }
+  
+  async registerUniqueCodeTransfer(
+    uniqueCode: string,
+    sourceWarehouseId: number,
+    targetWarehouseId: number,
+    transferId: number,
+    transferItemId: number,
+    userId: number
+  ): Promise<UniqueCodeTracking | undefined> {
+    const existingTracking = await this.getUniqueCodeTracking(uniqueCode);
+    if (!existingTracking) return undefined;
+    
+    const { productId } = existingTracking;
+    
+    // 出库历史记录
+    const outHistoryData: InsertUniqueCodeHistory = {
+      uniqueCode,
+      operationType: "transfer_out",
+      sourceWarehouseId,
+      targetWarehouseId,
+      productId,
+      userId,
+      status: "in_transit",
+      inboundOrderId: null,
+      inboundItemId: null,
+      outboundOrderId: null,
+      outboundItemId: null,
+      transferId,
+      transferItemId,
+      details: `产品调拨发出，离开仓库 ID: ${sourceWarehouseId}`
+    };
+    
+    await this.addUniqueCodeHistory(outHistoryData);
+    
+    // 入库历史记录
+    const inHistoryData: InsertUniqueCodeHistory = {
+      uniqueCode,
+      operationType: "transfer_in",
+      sourceWarehouseId,
+      targetWarehouseId,
+      productId,
+      userId,
+      status: "active",
+      inboundOrderId: null,
+      inboundItemId: null,
+      outboundOrderId: null,
+      outboundItemId: null,
+      transferId,
+      transferItemId,
+      details: `产品调拨接收，进入仓库 ID: ${targetWarehouseId}`
+    };
+    
+    await this.addUniqueCodeHistory(inHistoryData);
+    
+    // 更新跟踪记录
+    return this.updateUniqueCodeTracking(uniqueCode, {
+      currentWarehouseId: targetWarehouseId,
+      status: "active",
+      lastOperationType: "transfer",
+      lastOperationId: transferId,
+      lastOperationItemId: transferItemId,
+      lastOperationDate: new Date(),
+      lastOperationUserId: userId
+    });
+  }
+  
+  async verifyUniqueCodeAvailable(uniqueCode: string, warehouseId: number): Promise<boolean> {
+    const tracking = await this.getUniqueCodeTracking(uniqueCode);
+    
+    // 验证唯一码是否存在，且处于活动状态，且在指定仓库
+    return !!tracking && 
+           tracking.status === "active" && 
+           tracking.currentWarehouseId === warehouseId;
+  }
+  
+  async generateUniqueCodeReport(filter?: { 
+    productId?: number, 
+    warehouseId?: number, 
+    status?: string, 
+    startDate?: Date, 
+    endDate?: Date 
+  }): Promise<any[]> {
+    // 基本查询
+    let query = db.select({
+      history: uniqueCodeHistory,
+      product: products,
+      sourceWarehouse: warehouses,
+      targetWarehouse: warehouses,
+      user: users
+    })
+    .from(uniqueCodeHistory)
+    .leftJoin(products, eq(uniqueCodeHistory.productId, products.id))
+    .leftJoin(warehouses.as('sourceWarehouse'), eq(uniqueCodeHistory.sourceWarehouseId, warehouses.as('sourceWarehouse').id))
+    .leftJoin(warehouses.as('targetWarehouse'), eq(uniqueCodeHistory.targetWarehouseId, warehouses.as('targetWarehouse').id))
+    .leftJoin(users, eq(uniqueCodeHistory.userId, users.id));
+    
+    // 应用过滤条件
+    if (filter) {
+      if (filter.productId !== undefined) {
+        query = query.where(eq(uniqueCodeHistory.productId, filter.productId));
+      }
+      
+      if (filter.warehouseId !== undefined) {
+        query = query.where(
+          or(
+            eq(uniqueCodeHistory.sourceWarehouseId, filter.warehouseId),
+            eq(uniqueCodeHistory.targetWarehouseId, filter.warehouseId)
+          )
+        );
+      }
+      
+      if (filter.status) {
+        query = query.where(eq(uniqueCodeHistory.operationStatus, filter.status));
+      }
+      
+      if (filter.startDate) {
+        query = query.where(gte(uniqueCodeHistory.operationDate, filter.startDate));
+      }
+      
+      if (filter.endDate) {
+        query = query.where(lte(uniqueCodeHistory.operationDate, filter.endDate));
+      }
+    }
+    
+    // 排序并执行查询
+    const results = await query.orderBy(desc(uniqueCodeHistory.operationDate));
+    
+    // 转换结果
+    return results.map(result => ({
+      ...result.history,
+      product: result.product ? { 
+        id: result.product.id, 
+        name: result.product.name, 
+        barcode: result.product.barcode 
+      } : null,
+      sourceWarehouse: result.sourceWarehouse ? { 
+        id: result.sourceWarehouse.id, 
+        name: result.sourceWarehouse.name 
+      } : null,
+      targetWarehouse: result.targetWarehouse ? { 
+        id: result.targetWarehouse.id, 
+        name: result.targetWarehouse.name 
+      } : null,
+      user: result.user ? { 
+        id: result.user.id, 
+        username: result.user.username, 
+        fullName: result.user.fullName 
+      } : null
+    }));
   }
   
   // 辅助函数：计算体积
