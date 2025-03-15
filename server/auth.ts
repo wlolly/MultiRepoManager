@@ -61,9 +61,12 @@ export function initializePassport() {
   // 反序列化用户
   passport.deserializeUser(async (id: number, done) => {
     try {
-      const user = await storage.getUser(id);
+      // 使用当前活动的存储获取用户
+      const currentStorage = useFallbackStorage ? memStorage : storage;
+      const user = await currentStorage.getUser(id);
       done(null, user);
     } catch (error) {
+      console.error('用户反序列化错误:', error);
       done(error, null);
     }
   });
@@ -77,15 +80,20 @@ export function initializePassport() {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
+        // 使用当前活动的存储获取用户
+        const currentStorage = useFallbackStorage ? memStorage : storage;
+        
         // 查找用户
-        const user = await storage.getUserByUsername(username);
+        const user = await currentStorage.getUserByUsername(username);
         
         if (!user) {
+          console.log(`登录失败: 用户 ${username} 不存在`);
           return done(null, false, { message: '用户不存在' });
         }
         
         // 检查用户是否已绑定社交账号（已绑定则禁止密码登录）
         if (hasSocialAccountBound(user)) {
+          console.log(`登录失败: 用户 ${username} 已绑定社交账号`);
           return done(null, false, { 
             message: '您已绑定社交账号，请使用微信或WhatsApp登录', 
             socialBound: true 
@@ -101,26 +109,30 @@ export function initializePassport() {
         const isValidPassword = isSimpleTestUser || verifyPassword(user.password, password);
         
         if (!isValidPassword) {
+          console.log(`登录失败: 用户 ${username} 密码错误`);
           return done(null, false, { message: '密码错误' });
         }
         
         // 检查用户是否激活
         if (!user.isActive && !['222', 'testadmin'].includes(user.username)) {
+          console.log(`登录失败: 用户 ${username} 未激活`);
           return done(null, false, { message: '账户未激活，请联系管理员' });
         }
         
         // 更新登录时间 (如果storage支持)
         try {
-          if (storage.updateUser) {
-            await storage.updateUser(user.id, { lastLoginAt: new Date() });
+          if (currentStorage.updateUser) {
+            await currentStorage.updateUser(user.id, { lastLoginAt: new Date() });
           }
         } catch (err) {
           console.log('未能更新登录时间，但不影响登录:', err);
         }
         
         // 登录成功
+        console.log(`登录成功: 用户 ${username}`);
         return done(null, user);
       } catch (error) {
+        console.error('登录过程中发生错误:', error);
         return done(error);
       }
     })
@@ -329,12 +341,29 @@ export async function getCurrentUser(req: Request, res: Response) {
     const user = req.user as any;
     
     if (!user) {
+      console.log('getCurrentUser: 没有用户会话');
       return res.status(401).json({ message: '未认证' });
     }
     
-    // 排除敏感信息
-    const { password, ...safeUser } = user;
+    // 获取最新的用户信息，确保数据是最新的
+    try {
+      // 使用当前活动的存储
+      const currentStorage = useFallbackStorage ? memStorage : storage;
+      const updatedUser = await currentStorage.getUser(user.id);
+      
+      if (updatedUser) {
+        // 排除敏感信息
+        const { password, ...safeUser } = updatedUser;
+        console.log(`getCurrentUser: 成功获取用户 ${updatedUser.username} 的信息`);
+        return res.json(safeUser);
+      }
+    } catch (err) {
+      console.error('获取最新用户信息失败，使用会话中用户信息:', err);
+    }
     
+    // 如果无法获取更新的用户信息，则使用会话中的信息
+    const { password, ...safeUser } = user;
+    console.log(`getCurrentUser: 使用会话中的用户 ${user.username} 信息`);
     res.json(safeUser);
   } catch (error) {
     console.error('获取当前用户信息错误:', error);
