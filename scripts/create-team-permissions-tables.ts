@@ -12,12 +12,15 @@ import {
 } from '../shared/schema';
 
 async function createPermissionTables() {
+  // 创建与服务器中相同配置的连接
   const connection = await mysql.createConnection({
-    host: process.env.PGHOST || 'localhost',
-    port: parseInt(process.env.PGPORT || '3306'),
-    user: process.env.PGUSER || 'root',
-    password: process.env.PGPASSWORD || '',
-    database: process.env.PGDATABASE || 'test',
+    host: '77.243.80.129',
+    port: 3307,
+    user: 'root',
+    password: '@Hzca1575@',
+    database: 'wlolly',
+    waitForConnections: true,
+    connectTimeout: 60000, // 60s connection timeout
   });
 
   console.log('连接到数据库成功');
@@ -35,18 +38,8 @@ async function createPermissionTables() {
       );
     }
 
-    // 创建页面权限枚举类型
-    console.log('创建 page_name 枚举类型');
-    await connection.execute(`
-      CREATE TYPE IF NOT EXISTS page_name AS ENUM (
-        'dashboard', 'warehouses', 'products', 'warehouse-products', 'inbound-orders', 
-        'outbound-orders', 'warehouse-transfers', 'api-configurations', 'users', 
-        'teams', 'team-permissions', 'settings'
-      )
-    `).catch(err => {
-      // MySQL不支持枚举类型，我们将使用VARCHAR替代
-      console.log('MySQL不支持枚举类型，将使用VARCHAR替代');
-    });
+    // MySQL不支持枚举类型，我们将使用VARCHAR代替
+    console.log('MySQL不支持枚举类型，使用VARCHAR替代');
 
     // 创建团队页面权限表
     console.log('创建 team_page_permissions 表');
