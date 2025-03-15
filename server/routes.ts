@@ -2378,8 +2378,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       try {
-        // 使用excel-handler导出多个调拨单
-        const filePath = exportMultipleTransfersToExcel(transfers);
+        // 使用excel-handler导出多个调拨单(异步)
+        const filePath = await exportMultipleTransfersToExcel(transfers);
         
         // 生成导出文件名
         const dateStr = new Date().toISOString().split('T')[0];
@@ -2457,8 +2457,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       
       try {
-        // 导出到Excel
-        const excelFilePath = exportMultipleTransfersToExcel(transfersWithWarehouseInfo);
+        // 导出到Excel(异步)
+        const excelFilePath = await exportMultipleTransfersToExcel(transfersWithWarehouseInfo);
         
         // 生成导出文件名
         const dateStr = new Date().toISOString().split('T')[0];
