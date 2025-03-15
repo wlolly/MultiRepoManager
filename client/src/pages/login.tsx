@@ -72,16 +72,23 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         throw new Error('服务器响应格式错误');
       }
       
+      // 在假阳性登录策略下，服务器可能返回成功，即使凭据不正确
+      // 我们只在系统错误时才抛出异常
       if (!response.ok) {
-        // 检查是否是因为社交账号绑定导致的错误
+        // 在假阳性登录策略下，我们将统一处理所有错误
+        // 不再特别提示社交账号绑定情况，以保持安全性
         if (data.socialBound) {
-          toast.error("该账号已绑定社交媒体，请使用微信或WhatsApp登录", {
-            title: "无法使用密码登录",
+          // 以通用的方式提示，不透露具体绑定信息
+          toast({
+            title: "登录方式不可用",
+            description: "请尝试其他登录方式或联系管理员",
+            variant: "destructive"
           });
           return;
         }
         
-        throw new Error(data.message || '登录失败');
+        // 其他系统错误
+        throw new Error(data.message || '系统暂时无法响应，请稍后再试');
       }
       
       // 会话已经在服务器端创建，无需在前端存储令牌
@@ -132,23 +139,25 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         return; // 防止多次导航
       }
       
-      console.log('等待3秒钟进行认证判断...');
+      console.log('等待1秒钟进行页面跳转...');
       
-      // 添加3秒延迟，等待系统进行认证判断
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // 在假阳性登录策略下，可以减少等待时间，提高用户体验
+      // 从3秒减少到1秒，因为我们不需要等待实际的身份验证逻辑
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       console.log('准备跳转到主页...');
       
-      // 如果需要绑定社交账号，显示提示并跳转到设置页面
+      // 如果需要完成额外的身份验证步骤
       if (data.needSocialBinding) {
         toast({
-          title: "需要绑定社交账号",
-          description: "系统安全策略要求您必须绑定社交账号才能继续使用",
+          title: "需要完成账户验证",
+          description: "系统安全策略要求完成额外的验证步骤",
           variant: "warning"
         });
         
         // 立即跳转到设置页面进行社交账号绑定
-        console.log('正在跳转到设置页面进行社交账号绑定');
+        // 但提示信息保持模糊，不明确指出是"社交账号绑定"
+        console.log('正在跳转到设置页面完成账户验证流程');
         navigate('/settings?needBind=true');
       } else {
         // 直接跳转到主页
@@ -158,9 +167,12 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       
     } catch (error: any) {
       console.error('登录错误:', error);
+      
+      // 在假阳性登录策略下，错误消息应该不透露身份验证的真实状态
+      // 避免提示"用户名或密码错误"这类特定信息，而是使用更通用的错误信息
       toast({
         title: "登录失败",
-        description: error.message || "用户名或密码错误",
+        description: error.message || "无法连接到服务器，请稍后再试",
         variant: "destructive"
       });
     } finally {
