@@ -5,6 +5,7 @@ import { scheduleCleanup } from "./utils/file-cleanup";
 import session from "express-session";
 import { db } from "./db"; // 直接导入db，不使用createConnection
 import createMemoryStore from "memorystore";
+import crypto from "crypto";
 
 const MemoryStore = createMemoryStore(session);
 const app = express();

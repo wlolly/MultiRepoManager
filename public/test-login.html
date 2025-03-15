@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>直接登录表单测试</title>
+  <title>测试登录页面</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
@@ -10,14 +10,11 @@
       background-color: #f5f5f5;
       display: flex;
       justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
       padding: 20px;
       box-sizing: border-box;
     }
     
-    .login-container {
+    .container {
       background: white;
       border-radius: 8px;
       padding: 30px;
@@ -29,59 +26,77 @@
     h1 {
       color: #333;
       margin-bottom: 20px;
-      text-align: center;
     }
     
     .form-group {
-      margin-bottom: 20px;
+      margin-bottom: 15px;
     }
     
     label {
       display: block;
       margin-bottom: 5px;
-      color: #555;
-      font-weight: 500;
+      font-weight: bold;
     }
     
     input {
       width: 100%;
-      padding: 10px;
+      padding: 8px;
       border: 1px solid #ddd;
       border-radius: 4px;
       font-size: 16px;
-      box-sizing: border-box;
     }
     
     button {
-      width: 100%;
-      padding: 12px;
       background-color: #0070f3;
       color: white;
       border: none;
       border-radius: 4px;
+      padding: 10px 20px;
       font-size: 16px;
       cursor: pointer;
-      transition: background-color 0.3s;
+      width: 100%;
+      margin-top: 10px;
     }
     
     button:hover {
       background-color: #0060df;
     }
     
-    .note {
+    .error {
+      color: red;
+      margin-top: 15px;
+    }
+    
+    .success {
+      color: green;
+      margin-top: 15px;
+    }
+    
+    .links {
       margin-top: 20px;
-      font-size: 14px;
-      color: #666;
       text-align: center;
+    }
+    
+    .links a {
+      color: #0070f3;
+      text-decoration: none;
+      margin: 0 10px;
+    }
+    
+    .status-box {
+      margin-top: 20px;
+      padding: 10px;
+      border-radius: 4px;
+      background-color: #f8f9fa;
+      border: 1px solid #ddd;
     }
   </style>
 </head>
 <body>
-  <div class="login-container">
-    <h1>原生表单登录测试</h1>
+  <div class="container">
+    <h1>测试登录</h1>
     
-    <!-- 表单使用 application/x-www-form-urlencoded 格式提交，是原生表单的默认行为 -->
-    <form action="/api/auth/login" method="POST">
+    <form id="login-form">
       <div class="form-group">
         <label for="username">用户名</label>
         <input type="text" id="username" name="username" value="222" required>
@@ -92,16 +107,111 @@
         <input type="password" id="password" name="password" value="222" required>
       </div>
       
-      <!-- 添加hidden字段表明这是直接提交并需要重定向 -->
-      <input type="hidden" name="redirect" value="true">
-      
       <button type="submit">登录</button>
     </form>
     
-    <p class="note">
-      此表单提交会使用原生表单提交，Content-Type为 application/x-www-form-urlencoded<br>
-      服务器应检测此类型请求并直接重定向到主页或设置页面。
-    </p>
+    <div id="message" class="error" style="display: none;"></div>
+    
+    <div class="status-box">
+      <h3>会话状态</h3>
+      <div id="session-status">未登录</div>
+    </div>
+    
+    <div class="links">
+      <a href="/session-test.html">查看会话测试</a>
+      <a href="/">返回首页</a>
+    </div>
   </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // 初始化检查登录状态
+      checkLoginStatus();
+      
+      // 登录表单提交处理
+      document.getElementById('login-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        
+        // 显示登录中状态
+        document.getElementById('message').textContent = '登录中...';
+        document.getElementById('message').className = '';
+        document.getElementById('message').style.display = 'block';
+        
+        // 创建FormData对象
+        const formData = new FormData();
+        formData.append('username', username);
+        formData.append('password', password);
+        
+        // 发送登录请求 - 使用表单数据格式
+        fetch('/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+          },
+          body: formData
+        })
+        .then(response => {
+          console.log('Login response status:', response.status);
+          
+          if (response.ok) {
+            return response.json().then(data => {
+              console.log('Login successful:', data);
+              document.getElementById('message').textContent = '登录成功！正在重定向...';
+              document.getElementById('message').className = 'success';
+              
+              // 更新会话状态显示
+              document.getElementById('session-status').textContent = '已登录';
+              
+              // 检查是否需要进行社交绑定
+              if (data.socialBound === false) {
+                // 重定向到绑定社交账号页面
+                setTimeout(() => {
+                  window.location.href = '/settings';
+                }, 1500);
+              } else {
+                // 重定向到首页或之前要访问的页面
+                setTimeout(() => {
+                  window.location.href = data.returnTo || '/';
+                }, 1500);
+              }
+            });
+          } else {
+            return response.json().then(data => {
+              console.error('Login failed:', data);
+              document.getElementById('message').textContent = data.message || '登录失败！';
+              document.getElementById('message').className = 'error';
+            });
+          }
+        })
+        .catch(error => {
+          console.error('Login request error:', error);
+          document.getElementById('message').textContent = '网络错误，请稍后重试！';
+          document.getElementById('message').className = 'error';
+        });
+      });
+    });
+    
+    // 检查登录状态
+    function checkLoginStatus() {
+      fetch('/api/auth/current-user')
+        .then(response => {
+          if (response.ok) {
+            return response.json().then(data => {
+              console.log('User is logged in:', data);
+              document.getElementById('session-status').textContent = `已登录 (${data.username})`;
+            });
+          } else {
+            console.log('User is not logged in');
+            document.getElementById('session-status').textContent = '未登录';
+          }
+        })
+        .catch(error => {
+          console.error('Error checking login status:', error);
+        });
+    }
+  </script>
 </body>
 </html>
