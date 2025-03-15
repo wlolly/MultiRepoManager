@@ -61,9 +61,18 @@ export function initializePassport() {
   // 反序列化用户
   passport.deserializeUser(async (id: number, done) => {
     try {
+      console.log(`反序列化用户: 尝试获取ID=${id}的用户`);
+      
       // 使用当前活动的存储获取用户
       const currentStorage = useFallbackStorage ? memStorage : storage;
       const user = await currentStorage.getUser(id);
+      
+      if (!user) {
+        console.log(`反序列化用户失败: ID=${id}的用户不存在`);
+        return done(null, false);
+      }
+      
+      console.log(`反序列化用户成功: 用户=${user.username}, ID=${user.id}`);
       done(null, user);
     } catch (error) {
       console.error('用户反序列化错误:', error);
@@ -262,8 +271,20 @@ export function generateSessionId(): string {
 
 // 验证会话中间件
 export function verifySession(req: Request, res: Response, next: NextFunction) {
-  // 检查是否有会话
-  console.log(`验证会话: 会话ID=${req.sessionID || '无'}, isAuthenticated=${req.isAuthenticated()}, 用户=${req.user ? (req.user as any).username : '无'}`);
+  // 添加详细的会话调试信息
+  console.log(`验证会话: 
+    会话ID=${req.sessionID || '无'}, 
+    isAuthenticated=${req.isAuthenticated()}, 
+    用户=${req.user ? (req.user as any).username : '无'},
+    session.userId=${req.session?.userId || '无'}, 
+    session.cookie=${JSON.stringify(req.session?.cookie || {})}
+  `);
+  
+  // 尝试通过会话中的userId直接验证
+  if (req.session?.userId && !req.user) {
+    console.log(`通过会话中的userId=${req.session.userId}尝试恢复用户`);
+    // 这里我们不中断流程，让Passport自己处理
+  }
   
   if (!req.user) {
     console.log('会话验证失败：未找到用户信息');
