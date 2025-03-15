@@ -55,10 +55,9 @@ export function usePermissions(): PermissionsHook {
       });
       
       if (currentUserResponse.status === 401) {
-        // 认证失败，重定向到登录页面
+        // 认证失败，但不自动跳转（允许非登录用户访问公开内容）
         setIsAuthenticated(false);
-        navigate('/login');
-        console.log('未登录，请先登录');
+        console.log('未登录，但允许访问公开内容');
         setLoading(false);
         return;
       }
