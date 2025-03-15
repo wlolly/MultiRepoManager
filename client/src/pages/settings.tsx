@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, Database, RefreshCw } from "lucide-react";
+import { AlertCircle, Database, RefreshCw, Check, X } from "lucide-react";
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -22,6 +22,145 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+
+// 社交账号绑定组件
+function SocialBindingSection() {
+  const { t } = useTranslation();
+  const { toast } = useToast();
+  const [bindStatus, setBindStatus] = useState<{ bound: boolean, provider: string | null }>({ bound: false, provider: null });
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // 获取绑定状态
+  useEffect(() => {
+    const fetchBindingStatus = async () => {
+      try {
+        const response = await fetch('/api/auth/social-binding-status', {
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setBindStatus(data);
+        }
+      } catch (error) {
+        console.error('获取社交绑定状态错误:', error);
+      }
+    };
+    
+    fetchBindingStatus();
+  }, []);
+  
+  // 模拟绑定社交账号
+  const handleBindSocial = async (provider: string) => {
+    try {
+      setIsLoading(true);
+      
+      // 实际应用中应跳转到社交登录页面，这里仅为演示
+      // window.location.href = `/api/auth/${provider}`;
+      
+      // 演示：直接调用API以模拟已获取授权码并绑定账号
+      const response = await fetch('/api/auth/bind-social', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          provider,
+          socialId: 'mock_' + provider + '_' + Date.now(),
+          socialData: JSON.stringify({ name: 'Mock User' })
+        }),
+        credentials: 'include'
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        toast({
+          title: t('settings.security.bindSuccess', '绑定成功'),
+          description: t('settings.security.bindSuccessDescription', '您已成功绑定社交账号'),
+          variant: 'default'
+        });
+        
+        // 更新状态
+        setBindStatus({ bound: true, provider });
+      } else {
+        throw new Error(data.message || '绑定失败');
+      }
+    } catch (error) {
+      console.error('绑定社交账号错误:', error);
+      toast({
+        title: t('settings.security.bindFailed', '绑定失败'),
+        description: (error instanceof Error) ? error.message : '请稍后再试',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="font-medium">{t('settings.security.wechatBinding', '微信绑定')}</p>
+          <p className="text-sm text-gray-500">{t('settings.security.wechatBindingDescription', '绑定微信账号进行登录')}</p>
+        </div>
+        <div className="flex items-center">
+          {bindStatus.bound && bindStatus.provider === 'wechat' ? (
+            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 flex items-center">
+              <Check className="h-3 w-3 mr-1" />
+              {t('settings.security.bound', '已绑定')}
+            </Badge>
+          ) : (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => handleBindSocial('wechat')}
+              disabled={isLoading || (bindStatus.bound && bindStatus.provider !== 'wechat')}
+            >
+              {isLoading ? t('settings.security.binding', '绑定中...') : t('settings.security.bind', '立即绑定')}
+            </Button>
+          )}
+        </div>
+      </div>
+      
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="font-medium">{t('settings.security.whatsappBinding', 'WhatsApp绑定')}</p>
+          <p className="text-sm text-gray-500">{t('settings.security.whatsappBindingDescription', '绑定WhatsApp账号进行登录')}</p>
+        </div>
+        <div className="flex items-center">
+          {bindStatus.bound && bindStatus.provider === 'whatsapp' ? (
+            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 flex items-center">
+              <Check className="h-3 w-3 mr-1" />
+              {t('settings.security.bound', '已绑定')}
+            </Badge>
+          ) : (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => handleBindSocial('whatsapp')}
+              disabled={isLoading || (bindStatus.bound && bindStatus.provider !== 'whatsapp')}
+            >
+              {isLoading ? t('settings.security.binding', '绑定中...') : t('settings.security.bind', '立即绑定')}
+            </Button>
+          )}
+        </div>
+      </div>
+      
+      {bindStatus.bound && (
+        <Alert className="mt-4 bg-blue-50 text-blue-700 border-blue-200">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>{t('settings.security.socialBindingNotice', '社交账号已绑定')}</AlertTitle>
+          <AlertDescription>
+            {t('settings.security.socialBindingNoticeDescription', '您的账号已绑定社交媒体，下次请使用社交媒体直接登录，将无法使用用户名密码登录。')}
+          </AlertDescription>
+        </Alert>
+      )}
+    </div>
+  );
+}
 
 export default function Settings() {
   const { toast } = useToast();
@@ -269,6 +408,14 @@ export default function Settings() {
                     <Button type="submit">{t('settings.security.changePasswordButton', '修改密码')}</Button>
                   </div>
                 </form>
+                
+                <div className="mt-8 pt-6 border-t border-gray-200">
+                  <h3 className="text-lg font-medium mb-4">{t('settings.security.socialBinding', '社交账号绑定')}</h3>
+                  <p className="text-gray-500 mb-4">
+                    {t('settings.security.socialBindingDescription', '绑定社交账号以便更安全地登录系统')}
+                  </p>
+                  <SocialBindingSection />
+                </div>
                 
                 <div className="mt-8 pt-6 border-t border-gray-200">
                   <h3 className="text-lg font-medium mb-4">{t('settings.security.twoFactorAuth', '双因素认证')}</h3>
