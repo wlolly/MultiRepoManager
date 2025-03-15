@@ -284,6 +284,14 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
     console.log(`从URL查询参数获取会话ID: ${clientSessionId}`);
   }
   
+  // 3. 检查cookie中是否有会话ID (这是浏览器自动提供的备份方案)
+  if (!clientSessionId && req.cookies && req.cookies.sessionId) {
+    clientSessionId = req.cookies.sessionId;
+    console.log(`从cookie获取会话ID: ${clientSessionId}`);
+  }
+  
+  console.log(`请求路径: ${req.path}, 会话ID: ${req.sessionID}, 客户端会话ID: ${clientSessionId || 'none'}, 已认证: ${!!req.session?.userId}`);
+  
   // 添加详细的会话调试信息
   console.log(`[会话调试] 路径: ${req.path}, 会话信息: ${JSON.stringify({
     id: req.sessionID || clientSessionId,
@@ -305,6 +313,13 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
   res.setHeader('X-Original-Session-ID', req.sessionID || 'none');
   res.setHeader('X-Client-Session-ID', clientSessionId || 'none');
   
+  // 如果要使用的会话ID与当前会话ID一致，不需要额外处理
+  if (clientSessionId === req.sessionID) {
+    console.log('客户端会话ID与当前会话ID一致，无需恢复');
+    proceedWithCurrentSession();
+    return;
+  }
+  
   // 如果客户端提供了会话ID，并且与当前会话ID不同，尝试恢复客户端会话
   if (clientSessionId && clientSessionId !== req.sessionID && req.sessionStore) {
     console.log(`尝试使用客户端提供的会话ID: ${clientSessionId}`);
@@ -320,14 +335,19 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
       if (clientSession && clientSession.userId) {
         console.log(`找到客户端会话: userId=${clientSession.userId}, authenticated=${clientSession.authenticated}`);
         
+        // 强制设置当前会话ID为客户端提供的会话ID
+        // 这确保我们使用客户端会话ID而不是服务器生成的新ID
+        if (req.sessionID !== clientSessionId) {
+          console.log(`将当前会话ID ${req.sessionID} 替换为客户端会话ID ${clientSessionId}`);
+          (req as any).sessionID = clientSessionId;
+        }
+        
         // 合并到当前会话
         req.session.userId = clientSession.userId;
         req.session.authenticated = clientSession.authenticated;
         req.session.userRole = clientSession.userRole;
         req.session.socialBound = clientSession.socialBound;
         req.session.lastActivity = Date.now();
-        
-        // 保存会话并继续验证
         req.session.save((err) => {
           if (err) console.error('保存合并会话出错:', err);
           restoreUserFromSession();
