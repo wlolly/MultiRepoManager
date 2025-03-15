@@ -539,10 +539,22 @@ export function attachSessionToRequest(url: string, headers: Record<string, stri
     headers['X-Session-ID'] = cleanSessionId;
     headers['x-session-id'] = cleanSessionId;
     headers['sessionid'] = cleanSessionId;
-    headers['SessionId'] = cleanSessionId;
+    headers['SessionId'] = cleanSessionId; 
     headers['session-id'] = cleanSessionId;
     headers['client-session-id'] = cleanSessionId;
     headers['X-Client-Session-ID'] = cleanSessionId;
+    
+    // 不仅设置会话ID头，也同时添加到查询参数中，提高传递成功率
+    const urlObj = new URL(url, window.location.origin);
+    urlObj.searchParams.set('sessionId', cleanSessionId);
+    
+    // 如果是关键API路径，输出更详细的调试信息
+    if (isImportantRequest) {
+      console.log(`${logPrefix} 会话ID ${cleanSessionId} 已添加到请求头和查询参数`);
+    }
+    
+    // 返回修改后的URL而不是原始URL
+    return { url: urlObj.toString(), headers };
     
     // 添加更详细的会话信息到请求头，帮助服务器侧调试
     const currentUserJson = sessionStorage.getItem('currentUser');
@@ -573,11 +585,6 @@ export function attachSessionToRequest(url: string, headers: Record<string, stri
         console.error(`${logPrefix} 解析会话状态出错:`, e);
       }
     }
-    
-    // 同时通过URL参数传递（作为备用方案）
-    // 使用与服务器期望匹配的参数名称
-    const separator = url.includes('?') ? '&' : '?';
-    url = `${url}${separator}sessionId=${cleanSessionId}`;
     
     // 也添加到cookie中，进一步增强会话持久性
     // 使用我们的统一Cookie设置函数
