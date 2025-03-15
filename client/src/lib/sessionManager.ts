@@ -89,7 +89,7 @@ export function getSessionId(): string {
   // 优先级：sessionStorage > localStorage > cookie
   const sessionIdFromSession = sessionStorage.getItem('sessionId');
   const sessionIdFromLocal = localStorage.getItem('sessionId');
-  const sessionIdFromCookie = getCookieValue('sessionId');
+  const sessionIdFromCookie = getCookie('sessionId');
   
   // 输出调试信息，帮助追踪会话ID来源
   console.log('会话ID来源检查:', {
@@ -175,13 +175,24 @@ export function saveSessionId(sessionId: string) {
     sessionStorage.setItem('sessionId', sessionId);
     localStorage.setItem('sessionId', sessionId);
     
-    // 设置为cookie (30天有效期)
-    const secure = window.location.protocol === 'https:';
+    // 设置会话cookie (30天有效期)
     const maxAge = 30 * 24 * 60 * 60; // 30天过期，单位：秒
-    document.cookie = `sessionId=${encodeURIComponent(sessionId)}; path=/; max-age=${maxAge}; SameSite=Lax${secure ? '; secure' : ''}`; 
+    
+    // 使用我们的统一Cookie设置函数
+    setCookie('sessionId', sessionId, {
+      path: '/',
+      maxAge,
+      sameSite: 'Lax',
+      secure: window.location.protocol === 'https:'
+    });
     
     // 同时设置与服务器匹配的会话cookie名称
-    document.cookie = `warehouse.sid=${encodeURIComponent(sessionId)}; path=/; max-age=${maxAge}; SameSite=Lax${secure ? '; secure' : ''}`;
+    setCookie('warehouse.sid', sessionId, {
+      path: '/',
+      maxAge,
+      sameSite: 'Lax',
+      secure: window.location.protocol === 'https:'
+    });
     
     // 触发会话ID更新事件，使其他组件可以响应会话变化
     window.dispatchEvent(new CustomEvent('sessionIdChanged', { detail: { sessionId } }));
@@ -572,10 +583,23 @@ export function attachSessionToRequest(url: string, headers: Record<string, stri
     url = `${url}${separator}sessionId=${cleanSessionId}`;
     
     // 也添加到cookie中，进一步增强会话持久性
-    const secure = window.location.protocol === 'https:';
     const maxAge = 30 * 24 * 60 * 60; // 30天过期，单位：秒
-    document.cookie = `sessionId=${encodeURIComponent(cleanSessionId)}; path=/; max-age=${maxAge}; SameSite=Lax${secure ? '; secure' : ''}`;
-    document.cookie = `warehouse.sid=${encodeURIComponent(cleanSessionId)}; path=/; max-age=${maxAge}; SameSite=Lax${secure ? '; secure' : ''}`;
+    
+    // 使用我们的统一Cookie设置函数
+    setCookie('sessionId', cleanSessionId, {
+      path: '/',
+      maxAge,
+      sameSite: 'Lax',
+      secure: window.location.protocol === 'https:'
+    });
+    
+    // 同时设置与服务器匹配的会话cookie名称
+    setCookie('warehouse.sid', cleanSessionId, {
+      path: '/',
+      maxAge,
+      sameSite: 'Lax',
+      secure: window.location.protocol === 'https:'
+    });
     
     // 如果是认证相关请求，特别记录
     if (isImportantRequest) {
@@ -603,10 +627,23 @@ export function attachSessionToRequest(url: string, headers: Record<string, stri
     url = `${url}${separator}sessionId=${newSessionId}`;
     
     // 也添加到cookie中
-    const secure = window.location.protocol === 'https:';
     const maxAge = 30 * 24 * 60 * 60; // 30天过期，单位：秒
-    document.cookie = `sessionId=${encodeURIComponent(newSessionId)}; path=/; max-age=${maxAge}; SameSite=Lax${secure ? '; secure' : ''}`;
-    document.cookie = `warehouse.sid=${encodeURIComponent(newSessionId)}; path=/; max-age=${maxAge}; SameSite=Lax${secure ? '; secure' : ''}`;
+    
+    // 使用我们的统一Cookie设置函数
+    setCookie('sessionId', newSessionId, {
+      path: '/',
+      maxAge,
+      sameSite: 'Lax',
+      secure: window.location.protocol === 'https:'
+    });
+    
+    // 同时设置与服务器匹配的会话cookie名称
+    setCookie('warehouse.sid', newSessionId, {
+      path: '/',
+      maxAge,
+      sameSite: 'Lax',
+      secure: window.location.protocol === 'https:'
+    });
     
     // 如果是认证相关请求，特别记录
     if (path.includes('/api/auth/')) {
@@ -621,31 +658,7 @@ export function attachSessionToRequest(url: string, headers: Record<string, stri
 }
 
 // 从cookie中获取值的辅助函数（增强版）
-function getCookieValue(name: string): string | null {
-  const cookies = document.cookie.split(';');
-  const encodedName = encodeURIComponent(name);
-  
-  for (let cookie of cookies) {
-    // 按第一个等号分隔，因为cookie值中可能含有等号
-    const cookie_parts = cookie.trim().split('=');
-    const cookieName = cookie_parts.shift()?.trim() || '';
-    // 剩余部分作为值，处理值中可能含有等号的情况
-    const cookieValue = cookie_parts.join('=');
-    
-    // 匹配名称（既检查原始名称也检查编码后的名称）
-    if (cookieName === name || cookieName === encodedName) {
-      try {
-        // 尝试解码
-        return decodeURIComponent(cookieValue);
-      } catch (e) {
-        // 如果解码失败，返回原始值
-        console.error(`无法解码cookie值: ${cookieValue}`, e);
-        return cookieValue;
-      }
-    }
-  }
-  return null;
-}
+// 以前的getCookieValue已被替换为上面定义的getCookie函数
 
 // 清除所有会话相关存储
 export function clearSession() {
