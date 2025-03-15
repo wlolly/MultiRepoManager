@@ -264,6 +264,9 @@ export default function WarehouseTransfers() {
         description: t("warehouseTransfer.export_failed"),
         variant: "destructive"
       });
+    } finally {
+      // 重置导出状态
+      setIsExporting(false);
     }
   };
 
