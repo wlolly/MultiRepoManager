@@ -294,12 +294,16 @@ export class MemStorage implements IStorage {
   private initializeDemoData() {
     // Create some demo users
     const demoUsers = [
-      { username: "liuyang", password: "password", fullName: "Liu Yang", avatarUrl: "https://randomuser.me/api/portraits/men/1.jpg" },
-      { username: "chenwei", password: "password", fullName: "Chen Wei", avatarUrl: "https://randomuser.me/api/portraits/women/2.jpg" },
-      { username: "wangxin", password: "password", fullName: "Wang Xin", avatarUrl: "https://randomuser.me/api/portraits/men/3.jpg" },
-      { username: "zhangmin", password: "password", fullName: "Zhang Min", avatarUrl: "https://randomuser.me/api/portraits/women/4.jpg" },
-      { username: "zhaoling", password: "password", fullName: "Zhao Ling", avatarUrl: "https://randomuser.me/api/portraits/women/5.jpg" },
-      { username: "zhangwei", password: "password", fullName: "Zhang Wei", avatarUrl: "https://randomuser.me/api/portraits/men/6.jpg" }
+      { username: "liuyang", password: "password", fullName: "Liu Yang", avatarUrl: "https://randomuser.me/api/portraits/men/1.jpg", isActive: true, role: "user", userSource: "local" },
+      { username: "chenwei", password: "password", fullName: "Chen Wei", avatarUrl: "https://randomuser.me/api/portraits/women/2.jpg", isActive: true, role: "user", userSource: "local" },
+      { username: "wangxin", password: "password", fullName: "Wang Xin", avatarUrl: "https://randomuser.me/api/portraits/men/3.jpg", isActive: true, role: "user", userSource: "local" },
+      { username: "zhangmin", password: "password", fullName: "Zhang Min", avatarUrl: "https://randomuser.me/api/portraits/women/4.jpg", isActive: true, role: "user", userSource: "local" },
+      { username: "zhaoling", password: "password", fullName: "Zhao Ling", avatarUrl: "https://randomuser.me/api/portraits/women/5.jpg", isActive: true, role: "user", userSource: "local" },
+      { username: "zhangwei", password: "password", fullName: "Zhang Wei", avatarUrl: "https://randomuser.me/api/portraits/men/6.jpg", isActive: true, role: "user", userSource: "local" },
+      // 添加测试账号
+      { username: "222", password: "222", fullName: "测试用户", avatarUrl: "https://randomuser.me/api/portraits/men/7.jpg", isActive: true, role: "admin", userSource: "local" },
+      // 添加已绑定社交账号的测试用户
+      { username: "wechat_user", password: "password", fullName: "微信用户", avatarUrl: "https://randomuser.me/api/portraits/men/8.jpg", isActive: true, role: "user", userSource: "wechat", socialId: "wx_12345678" }
     ];
 
     demoUsers.forEach(user => this.createUser(user));
