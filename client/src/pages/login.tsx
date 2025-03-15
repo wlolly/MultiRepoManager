@@ -169,6 +169,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {/* 正常登录表单 */}
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
@@ -202,17 +203,52 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? t('logging_in') : t('login')}
               </Button>
-              
-              {/* 测试跳转按钮，用于调试 */}
-              <Button 
-                type="button" 
-                className="w-full mt-2 bg-green-600 hover:bg-green-700" 
-                onClick={handleTestNavigation}
-              >
-                测试跳转到主页
-              </Button>
             </form>
           </Form>
+
+          {/* 备用登录表单 - 直接提交到后端，无客户端处理 */}
+          <div className="mt-4 pt-4 border-t">
+            <h3 className="text-sm font-bold text-center mb-2">备用登录方式</h3>
+            <form action="/api/auth/login" method="POST" className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">用户名</label>
+                <input 
+                  name="username" 
+                  type="text" 
+                  defaultValue="222"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">密码</label>
+                <input 
+                  name="password" 
+                  type="password" 
+                  defaultValue="222"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                />
+              </div>
+              
+              <button 
+                type="submit" 
+                className="inline-flex h-10 w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+              >
+                直接提交登录
+              </button>
+            </form>
+          </div>
+          
+          {/* 测试跳转按钮 */}
+          <div className="mt-4">
+            <Button 
+              type="button" 
+              className="w-full bg-green-600 hover:bg-green-700" 
+              onClick={handleTestNavigation}
+            >
+              测试跳转到主页
+            </Button>
+          </div>
           
           <div className="mt-6">
             <div className="relative">
