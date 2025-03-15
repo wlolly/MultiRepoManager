@@ -91,9 +91,9 @@ export function initializePassport() {
           return done(null, false, { message: '用户不存在' });
         }
         
-        // 检查用户是否已绑定社交账号（已绑定则禁止密码登录）
-        if (hasSocialAccountBound(user)) {
-          console.log(`登录失败: 用户 ${username} 已绑定社交账号`);
+        // 检查用户是否已绑定社交账号（已绑定则强制使用社交账号登录）
+        if (user.userSource !== 'local' && hasSocialAccountBound(user)) {
+          console.log(`登录失败: 用户 ${username} 已绑定社交账号，应使用社交账号登录`);
           return done(null, false, { 
             message: '您已绑定社交账号，请使用微信或WhatsApp登录', 
             socialBound: true 
@@ -326,6 +326,44 @@ export async function handleSocialCallback(provider: 'wechat' | 'whatsapp', req:
     
     if (!user) {
       return res.redirect('/login?error=认证失败');
+    }
+    
+    // 检查是否是绑定操作（从URL参数中获取）
+    const isBinding = req.query.binding === 'true';
+    
+    // 如果是绑定操作且有session用户
+    if (isBinding && req.session?.userId) {
+      try {
+        // 使用当前活动的存储
+        const currentStorage = useFallbackStorage ? memStorage : storage;
+        
+        // 获取session中的用户
+        const sessionUser = await currentStorage.getUser(req.session.userId);
+        
+        if (sessionUser) {
+          // 检查社交账号是否已被其他用户绑定
+          const existingUser = await currentStorage.getUserBySocialId(user.socialId);
+          if (existingUser && existingUser.id !== sessionUser.id) {
+            return res.redirect('/settings?error=该社交账号已被其他用户绑定');
+          }
+          
+          // 更新用户社交账号信息
+          await currentStorage.updateUser(sessionUser.id, {
+            socialId: user.socialId,
+            socialData: user.socialData || null,
+            userSource: provider,
+            updatedAt: new Date()
+          });
+          
+          console.log(`用户 ${sessionUser.username} 成功绑定 ${provider} 账号`);
+          
+          // 重定向到设置页面，显示成功消息
+          return res.redirect('/settings?binding=success');
+        }
+      } catch (err) {
+        console.error('绑定社交账号出错:', err);
+        return res.redirect('/settings?error=绑定社交账号失败');
+      }
     }
     
     // Passport会自动设置会话，所以我们不需要额外操作

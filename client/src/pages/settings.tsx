@@ -35,6 +35,30 @@ function SocialBindingSection() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [showBindPrompt, setShowBindPrompt] = useState(false);
+  const [showBindAlert, setShowBindAlert] = useState(false);
+  const [isBindingMandatory, setIsBindingMandatory] = useState(false);
+  
+  // 检查URL查询参数
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('binding') === 'success') {
+      toast.success('社交账号绑定成功！', { duration: 5000 });
+    } else if (urlParams.get('error')) {
+      toast.error(`绑定失败: ${urlParams.get('error')}`, { duration: 5000 });
+    }
+    
+    // 如果需要绑定，显示提示
+    if (urlParams.get('needBind') === 'true') {
+      setShowBindAlert(true);
+      setIsBindingMandatory(true);
+    }
+    
+    // 移除URL参数，保持URL整洁
+    if (urlParams.has('binding') || urlParams.has('error') || urlParams.has('needBind')) {
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+    }
+  }, [toast]);
   
   // 获取绑定状态
   useEffect(() => {
@@ -52,6 +76,20 @@ function SocialBindingSection() {
           // 如果是本地账户且尚未绑定社交账号，显示提示
           if (data.userSource === 'local' && !data.bound) {
             setShowBindPrompt(true);
+            
+            // 从会话存储中检查是否需要强制绑定
+            const userData = sessionStorage.getItem('currentUser');
+            if (userData) {
+              try {
+                const user = JSON.parse(userData);
+                if (user.needSocialBinding) {
+                  setShowBindAlert(true);
+                  setIsBindingMandatory(true);
+                }
+              } catch (e) {
+                console.error('解析用户数据失败', e);
+              }
+            }
           }
         }
       } catch (error) {
@@ -73,12 +111,22 @@ function SocialBindingSection() {
   
   return (
     <div className="space-y-4">
-      {showBindPrompt && (
+      {showBindAlert && (
         <Alert variant="destructive" className="mb-6">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>{t('settings.security.bindingRequired', '需要绑定社交账号')}</AlertTitle>
           <AlertDescription>
-            {t('settings.security.bindingRequiredDescription', '根据系统安全策略，您需要绑定微信或WhatsApp账号才能继续使用系统。绑定后，您将只能通过社交媒体账号登录。')}
+            {t('settings.security.bindingRequiredDescription', '根据系统安全策略，您必须绑定微信或WhatsApp账号才能继续使用系统。绑定后，您将只能通过社交媒体账号登录。')}
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      {showBindPrompt && !showBindAlert && (
+        <Alert className="mb-6 bg-yellow-50 border-yellow-200 text-yellow-800">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>{t('settings.security.bindingRecommended', '建议绑定社交账号')}</AlertTitle>
+          <AlertDescription>
+            {t('settings.security.bindingRecommendedDescription', '为了提高账号安全性，建议您绑定微信或WhatsApp账号。绑定后，您将只能通过社交媒体账号登录。')}
           </AlertDescription>
         </Alert>
       )}
@@ -96,10 +144,11 @@ function SocialBindingSection() {
             </Badge>
           ) : (
             <Button 
-              variant="outline" 
+              variant={isBindingMandatory ? "default" : "outline"}
               size="sm"
               onClick={() => handleBindSocial('wechat')}
               disabled={isLoading || (bindStatus.bound && bindStatus.provider !== 'wechat')}
+              className={isBindingMandatory ? "animate-pulse" : ""}
             >
               {isLoading ? t('settings.security.binding', '绑定中...') : t('settings.security.bind', '立即绑定')}
             </Button>
@@ -120,10 +169,11 @@ function SocialBindingSection() {
             </Badge>
           ) : (
             <Button 
-              variant="outline" 
+              variant={isBindingMandatory ? "default" : "outline"}
               size="sm"
               onClick={() => handleBindSocial('whatsapp')}
               disabled={isLoading || (bindStatus.bound && bindStatus.provider !== 'whatsapp')}
+              className={isBindingMandatory ? "animate-pulse" : ""}
             >
               {isLoading ? t('settings.security.binding', '绑定中...') : t('settings.security.bind', '立即绑定')}
             </Button>
