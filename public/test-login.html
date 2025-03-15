@@ -140,18 +140,20 @@
         document.getElementById('message').className = '';
         document.getElementById('message').style.display = 'block';
         
-        // 创建FormData对象
-        const formData = new FormData();
-        formData.append('username', username);
-        formData.append('password', password);
+        // 创建JSON数据
+        const loginData = {
+          username: username,
+          password: password
+        };
         
-        // 发送登录请求 - 使用表单数据格式
+        // 发送登录请求 - 使用JSON格式
         fetch('/api/auth/login', {
           method: 'POST',
           headers: {
             'Accept': 'application/json',
+            'Content-Type': 'application/json'
           },
-          body: formData
+          body: JSON.stringify(loginData)
         })
         .then(response => {
           console.log('Login response status:', response.status);
