@@ -5,6 +5,7 @@ import { memStorage, useFallbackStorage } from "./db";
 import { getUserPagePermissions, getUserWarehousePermissions } from "./middleware/permission-middleware";
 import socialAuthConfig from './social-auth-config';
 import * as warehouseMatcher from './utils/warehouse-matcher';
+import { createInternalUserID } from './database/userID';
 import { 
   insertUserSchema, 
   insertRepositorySchema, 
@@ -342,6 +343,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // 认证路由
+
   // 登录接口
   apiRouter.post("/auth/login", (req, res, next) => {
     console.log(`尝试登录: 用户名=${req.body.username}, 内存存储模式=${useFallbackStorage ? '开启' : '关闭'}`);
@@ -393,6 +395,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // 调试输出会话内容
       console.log(`更新会话数据: userId=${req.session.userId}, socialBound=${req.session.socialBound}, role=${req.session.userRole}, authenticated=${req.session.authenticated}`);
+      
+      // 创建内部用户ID (有效期为两天)
+      createInternalUserID(user.id).then(internalId => {
+        if (internalId) {
+          console.log(`已为用户 ${user.username} 创建内部ID: ${internalId}，有效期为2天`);
+          // 在会话中记录内部用户ID
+          req.session.internalUserId = internalId;
+          
+          // 保存会话
+          req.session.save();
+        } else {
+          console.warn(`无法为用户 ${user.username} 创建内部ID，将使用常规会话认证`);
+        }
+      }).catch(error => {
+        console.error(`创建内部用户ID时出错:`, error);
+      });
       
       // 强制保存会话 - 确保会话数据持久化
       req.session.save((err) => {
