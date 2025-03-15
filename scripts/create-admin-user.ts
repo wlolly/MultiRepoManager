@@ -2,18 +2,28 @@
  * 创建管理员用户脚本
  * 此脚本用于创建一个具有管理员权限的账户，用户名为 222，密码为 222
  */
-import bcrypt from 'bcryptjs';
 import { db } from '../server/db';
 import { users } from '../shared/schema';
+import { eq } from 'drizzle-orm';
+import * as crypto from 'crypto';
+
+// 简单的密码哈希函数（替代bcryptjs）
+function hashPassword(password: string): string {
+  // 创建一个固定的salt值，这里只用于示例
+  const salt = 'e5warehouse-salt';
+  // 使用SHA-256哈希算法
+  return crypto.createHmac('sha256', salt)
+    .update(password)
+    .digest('hex');
+}
 
 async function createAdminUser() {
   try {
     console.log('开始创建管理员用户...');
     
     // 检查用户是否已存在
-    const existingUser = await db.query.users.findFirst({
-      where: (users, { eq }) => eq(users.username, '222')
-    });
+    const existingUsers = await db.select().from(users).where(eq(users.username, '222')).execute();
+    const existingUser = existingUsers.length > 0 ? existingUsers[0] : null;
     
     if (existingUser) {
       console.log('用户名为 222 的用户已存在，正在更新为管理员权限...');
@@ -24,19 +34,18 @@ async function createAdminUser() {
           role: 'admin',
           isActive: true
         })
-        .where(users.username === '222')
+        .where(eq(users.username, '222'))
         .execute();
       
       console.log('用户已更新为管理员！');
       return;
     }
     
-    // 加密密码
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash('222', salt);
+    // 使用自定义函数哈希密码
+    const hashedPassword = hashPassword('222');
     
     // 创建管理员用户
-    const result = await db.insert(users).values({
+    await db.insert(users).values({
       username: '222',
       fullName: '管理员',
       email: 'admin@example.com',
