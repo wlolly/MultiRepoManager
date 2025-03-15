@@ -17,7 +17,7 @@ console.log("初始化Express应用中间件...");
 
 // 配置 express-session
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'warehouse-management-secret',
+  secret: process.env.SESSION_SECRET || 'warehouse-management-secret-2025-03-15',
   resave: false, // 只在会话被修改时保存
   saveUninitialized: false, // 只保存已初始化的会话，减少无用会话创建
   name: 'warehouse.sid', // 自定义会话ID cookie名称 (更简单的名称避免解析问题)
@@ -288,6 +288,13 @@ app.use((req, res, next) => {
       // 添加到响应头，让客户端知道我们收到了它的会话ID
       res.setHeader('X-Client-Session-ID', cleanHeaderId);
       
+      // 设置客户端ID cookie以确保一致性
+      res.cookie('sessionId', cleanHeaderId, {
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30天
+        httpOnly: true,
+        path: '/'
+      });
+      
       // 关键修改：设置请求的sessionID为客户端提供的ID
       // 这确保后续的会话处理会使用客户端提供的会话ID
       (req as any).sessionID = cleanHeaderId;
@@ -339,6 +346,15 @@ app.use((req, res, next) => {
   // 始终将当前会话ID添加到响应头，确保客户端能够同步
   res.setHeader('X-Original-Session-ID', req.sessionID || '');
   res.setHeader('X-Session-ID', req.sessionID || '');  // 添加一个常用的响应头名
+  
+  // 确保始终有一个客户端cookie
+  if (req.sessionID) {
+    res.cookie('sessionId', req.sessionID, {
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30天
+      httpOnly: true,
+      path: '/'
+    });
+  }
   
   // 会话调试日志
   if (process.env.DEBUG === 'session' || process.env.NODE_ENV !== 'production') {
