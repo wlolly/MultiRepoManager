@@ -12,10 +12,12 @@ async function createUniqueCodeTrackingTable() {
   
   // 创建数据库连接
   const connection = await mysql.createConnection({
-    host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'warehouse_system'
+    host: '77.243.80.129',
+    port: 3307,
+    user: 'root',
+    password: '@Hzca1575@',
+    database: 'wlolly',
+    connectTimeout: 60000, // 60s connection timeout
   });
 
   try {
