@@ -120,16 +120,33 @@ app.use(session({
 }));
 
 // 添加会话活动时间跟踪中间件
-// 注意：会话ID恢复逻辑已移至 auth.ts 中的 verifySession 函数
+// 注意：主要的会话ID恢复逻辑已移至 auth.ts 中的 verifySession 函数
 app.use((req, res, next) => {
-  // 只更新会话活动时间，不处理会话ID恢复
-  // 这样避免与 auth.ts 中的 verifySession 函数冲突
+  // 检查请求头中的客户端会话ID - 确保优先使用
+  const headerSessionId = 
+    req.headers['x-session-id'] || 
+    req.headers['X-Session-ID'] || 
+    req.headers['sessionid'] || 
+    req.headers['session-id'];
+  
+  // 如果发现有效的客户端会话ID，且与当前会话ID不同，尝试同步它
+  if (headerSessionId && typeof headerSessionId === 'string' && 
+      headerSessionId.length >= 16 && req.sessionID !== headerSessionId) {
+    
+    console.log(`在中间件中发现客户端会话ID: ${headerSessionId}，当前会话ID: ${req.sessionID}`);
+    
+    // 添加到响应头，让客户端知道我们收到了它的会话ID
+    res.setHeader('X-Client-Session-ID', headerSessionId);
+  }
+    
+  // 更新会话活动时间
   if (req.session) {
     req.session.lastActivity = Date.now();
   }
   
-  // 将会话ID添加到响应头，方便客户端和服务器调试
+  // 始终将当前会话ID添加到响应头，确保客户端能够同步
   res.setHeader('X-Original-Session-ID', req.sessionID || '');
+  res.setHeader('X-Session-ID', req.sessionID || '');  // 添加一个常用的响应头名
   
   // 会话调试日志
   if (process.env.DEBUG === 'session' || process.env.NODE_ENV !== 'production') {
