@@ -151,6 +151,22 @@ export interface IStorage {
   createWarehouseTransferItem(item: InsertWarehouseTransferItem): Promise<WarehouseTransferItem>;
   updateWarehouseTransferItem(id: number, item: Partial<WarehouseTransferItem>): Promise<WarehouseTransferItem | undefined>;
   deleteWarehouseTransferItem(id: number): Promise<void>;
+  
+  // 唯一码跟踪相关方法
+  trackUniqueCode(tracking: InsertUniqueCodeTracking): Promise<UniqueCodeTracking>;
+  getUniqueCodeTracking(uniqueCode: string): Promise<UniqueCodeTracking | undefined>;
+  updateUniqueCodeTracking(uniqueCode: string, updates: Partial<UniqueCodeTracking>): Promise<UniqueCodeTracking | undefined>;
+  getUniqueCodeTrackingByProduct(productId: number): Promise<UniqueCodeTracking[]>;
+  getUniqueCodeTrackingByWarehouse(warehouseId: number): Promise<UniqueCodeTracking[]>;
+  addUniqueCodeHistory(history: InsertUniqueCodeHistory): Promise<UniqueCodeHistory>;
+  getUniqueCodeHistory(uniqueCode: string): Promise<UniqueCodeHistory[]>;
+  
+  // 唯一码业务操作
+  registerUniqueCodeInbound(uniqueCode: string, productId: number, warehouseId: number, inboundOrderId: number, inboundItemId: number, userId: number): Promise<UniqueCodeTracking>;
+  registerUniqueCodeOutbound(uniqueCode: string, outboundOrderId: number, outboundItemId: number, userId: number): Promise<UniqueCodeTracking | undefined>;
+  registerUniqueCodeTransfer(uniqueCode: string, sourceWarehouseId: number, targetWarehouseId: number, transferId: number, transferItemId: number, userId: number): Promise<UniqueCodeTracking | undefined>;
+  verifyUniqueCodeAvailable(uniqueCode: string, warehouseId: number): Promise<boolean>;
+  generateUniqueCodeReport(filter?: { productId?: number, warehouseId?: number, status?: string, startDate?: Date, endDate?: Date }): Promise<any[]>;
 }
 
 export class MemStorage implements IStorage {

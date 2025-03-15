@@ -513,3 +513,93 @@ export const insertWarehouseTransferItemSchema = createInsertSchema(warehouseTra
 
 export type InsertWarehouseTransferItem = z.infer<typeof insertWarehouseTransferItemSchema>;
 export type WarehouseTransferItem = typeof warehouseTransferItems.$inferSelect;
+
+// 唯一码跟踪表
+export const uniqueCodeTracking = mysqlTable("unique_code_tracking", {
+  id: int("id").primaryKey().autoincrement(),
+  uniqueCode: varchar("unique_code", { length: 50 }).notNull().unique(), // 唯一码
+  productId: int("product_id").notNull().references(() => products.id), // 商品ID
+  warehouseId: int("warehouse_id").notNull().references(() => warehouses.id), // 仓库ID
+  currentStatus: mysqlEnum("current_status", [
+    "in_stock", "transferred", "sold", "returned", "scrapped"
+  ]).notNull().default("in_stock"), // 当前状态
+  quantity: int("quantity").notNull().default(1), // 数量
+  inboundOrderId: int("inbound_order_id").references(() => inboundOrders.id), // 入库单ID
+  inboundItemId: int("inbound_item_id"), // 入库单明细ID
+  outboundOrderId: int("outbound_order_id").references(() => outboundOrders.id), // 出库单ID
+  outboundItemId: int("outbound_item_id"), // 出库单明细ID
+  transferId: int("transfer_id").references(() => warehouseTransfers.id), // 调拨单ID
+  transferItemId: int("transfer_item_id"), // 调拨单明细ID
+  lastOperationType: mysqlEnum("last_operation_type", [
+    "inbound", "outbound", "transfer", "adjust"
+  ]).notNull(), // 最后操作类型
+  lastOperationDate: timestamp("last_operation_date").notNull().defaultNow(), // 最后操作日期
+  remark: text("remark"), // 备注
+  createdAt: timestamp("created_at").notNull().defaultNow(), // 创建时间
+  updatedAt: timestamp("updated_at").notNull().defaultNow(), // 更新时间
+});
+
+export const insertUniqueCodeTrackingSchema = createInsertSchema(uniqueCodeTracking).pick({
+  uniqueCode: true,
+  productId: true,
+  warehouseId: true,
+  currentStatus: true,
+  quantity: true,
+  inboundOrderId: true,
+  inboundItemId: true,
+  outboundOrderId: true,
+  outboundItemId: true,
+  transferId: true,
+  transferItemId: true,
+  lastOperationType: true,
+  lastOperationDate: true,
+  remark: true,
+});
+
+export type InsertUniqueCodeTracking = z.infer<typeof insertUniqueCodeTrackingSchema>;
+export type UniqueCodeTracking = typeof uniqueCodeTracking.$inferSelect;
+
+// 唯一码流转历史表
+export const uniqueCodeHistory = mysqlTable("unique_code_history", {
+  id: int("id").primaryKey().autoincrement(),
+  uniqueCode: varchar("unique_code", { length: 50 }).notNull(), // 唯一码
+  productId: int("product_id").notNull().references(() => products.id), // 商品ID
+  warehouseId: int("warehouse_id").notNull().references(() => warehouses.id), // 仓库ID
+  operationType: mysqlEnum("operation_type", [
+    "inbound", "outbound", "transfer_in", "transfer_out", "adjust"
+  ]).notNull(), // 操作类型
+  quantity: int("quantity").notNull().default(1), // 数量
+  orderId: int("order_id"), // 单据ID
+  orderItemId: int("order_item_id"), // 单据明细ID
+  transferId: int("transfer_id"), // 调拨单ID
+  transferItemId: int("transfer_item_id"), // 调拨单明细ID
+  oldStatus: mysqlEnum("old_status", [
+    "in_stock", "transferred", "sold", "returned", "scrapped"
+  ]), // 旧状态
+  newStatus: mysqlEnum("new_status", [
+    "in_stock", "transferred", "sold", "returned", "scrapped"
+  ]).notNull(), // 新状态
+  operationDate: timestamp("operation_date").notNull().defaultNow(), // 操作日期
+  userId: int("user_id").references(() => users.id), // 操作用户ID
+  remark: text("remark"), // 备注
+});
+
+export const insertUniqueCodeHistorySchema = createInsertSchema(uniqueCodeHistory).pick({
+  uniqueCode: true,
+  productId: true,
+  warehouseId: true,
+  operationType: true,
+  quantity: true,
+  orderId: true,
+  orderItemId: true,
+  transferId: true,
+  transferItemId: true,
+  oldStatus: true,
+  newStatus: true,
+  operationDate: true,
+  userId: true,
+  remark: true,
+});
+
+export type InsertUniqueCodeHistory = z.infer<typeof insertUniqueCodeHistorySchema>;
+export type UniqueCodeHistory = typeof uniqueCodeHistory.$inferSelect;
