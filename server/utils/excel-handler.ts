@@ -89,9 +89,10 @@ export function createTransferImportTemplate(): string {
 /**
  * 解析导入的Excel文件
  * @param filePath Excel文件路径
+ * @param storage 存储接口，用于验证唯一码
  * @returns 解析后的调拨单项目数据
  */
-export function parseTransferImportFile(filePath: string): {
+export async function parseTransferImportFile(filePath: string, storage?: any): Promise<{
   items: Array<{
     uniqueCode?: string;
     productId?: number;
@@ -101,9 +102,14 @@ export function parseTransferImportFile(filePath: string): {
     weight?: number;
     volume?: number;
     remark?: string;
+    matched?: boolean; // 标记是否匹配到产品
+    matchedProduct?: any; // 匹配到的产品信息
   }>;
   errors: string[];
-} {
+  warnings: string[]; // 添加警告信息，不阻止导入但需要注意
+  matchedCount: number; // 匹配到产品的数量
+  unmatchedCount: number; // 未匹配到产品的数量
+}> {
   try {
     // 读取Excel文件
     const workbook = XLSX.readFile(filePath);
@@ -122,9 +128,12 @@ export function parseTransferImportFile(filePath: string): {
       weight?: number;
       volume?: number;
       remark?: string;
+      matched?: boolean;
+      matchedProduct?: any;
     }> = [];
     
     const errors: string[] = [];
+    const warnings: string[] = [];
     let rowIndex = 2; // 开始于第2行，因为第1行是表头
     
     // 处理每一行数据
@@ -180,33 +189,69 @@ export function parseTransferImportFile(filePath: string): {
       }
       
       // 唯一码验证 (如果提供)
+      let matched = false;
+      let matchedProduct = null;
+      
       if (uniqueCode) {
         if (!/^\d{1,5}$/.test(String(uniqueCode))) {
           errors.push(`第${rowIndex}行: 唯一码必须为1-5位数字`);
+        } else if (storage) {
+          // 使用存储接口验证唯一码是否有效
+          try {
+            const product = await storage.getProductByUniqueCode(String(uniqueCode));
+            if (product) {
+              matched = true;
+              matchedProduct = product;
+              // 如果已提供产品名称与匹配到的产品不符，添加警告
+              if (productName && product.name !== String(productName)) {
+                warnings.push(`第${rowIndex}行: 产品名称与唯一码匹配的产品名称不一致，将使用系统内产品信息`);
+              }
+            } else {
+              errors.push(`第${rowIndex}行: 唯一码 "${uniqueCode}" 在系统中不存在`);
+            }
+          } catch (err) {
+            console.error(`验证唯一码时出错:`, err);
+            errors.push(`第${rowIndex}行: 验证唯一码时出错: ${(err as Error).message}`);
+          }
         }
       } else {
         // 当没有提供唯一码时添加警告
-        errors.push(`第${rowIndex}行: 未提供唯一码，无法自动匹配产品`);
+        warnings.push(`第${rowIndex}行: 未提供唯一码，无法自动匹配产品`);
       }
       
       // 添加到待处理项
       items.push({
         uniqueCode: uniqueCode ? String(uniqueCode) : undefined,
-        productId: productId ? parseInt(String(productId)) : undefined,
-        productName: productName ? String(productName) : undefined,
+        productId: productId ? parseInt(String(productId)) : (matchedProduct ? matchedProduct.id : undefined),
+        productName: productName ? String(productName) : (matchedProduct ? matchedProduct.name : undefined),
         quantity: parsedQuantity,
         packageCount: parsedPackageCount,
-        weight: parsedWeight,
-        volume: parsedVolume,
-        remark: remark ? String(remark) : undefined
+        weight: parsedWeight || (matchedProduct ? matchedProduct.singleWeightKg * parsedQuantity : undefined),
+        volume: parsedVolume || (matchedProduct ? matchedProduct.singleVolumeM3 * parsedQuantity : undefined),
+        remark: remark ? String(remark) : undefined,
+        matched,
+        matchedProduct: matched ? matchedProduct : undefined
       });
     }
     
-    return { items, errors };
+    // 统计匹配和未匹配的项目数量
+    const matchedCount = items.filter(item => item.matched).length;
+    const unmatchedCount = items.length - matchedCount;
+    
+    return { 
+      items, 
+      errors, 
+      warnings,
+      matchedCount,
+      unmatchedCount
+    };
   } catch (error) {
     return { 
       items: [], 
-      errors: [`Excel文件解析失败: ${(error as Error).message}`] 
+      errors: [`Excel文件解析失败: ${(error as Error).message}`],
+      warnings: [],
+      matchedCount: 0,
+      unmatchedCount: 0
     };
   }
 }

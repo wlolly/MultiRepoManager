@@ -2149,54 +2149,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "请上传Excel文件" });
       }
       
-      // 解析导入的Excel文件
-      const { items, errors } = parseTransferImportFile(req.file.path);
-      
-      // 获取所有产品ID并匹配数据库中的产品
-      const productIds = items
-        .filter(item => item.productId)
-        .map(item => item.productId as number);
-      
-      // 获取产品数据（如果有产品ID）
-      let matchedProducts: Record<number, any> = {};
-      if (productIds.length > 0) {
-        const productPromises = productIds.map(id => storage.getProduct(id));
-        const products = await Promise.all(productPromises);
-        
-        products.forEach(product => {
-          if (product) {
-            matchedProducts[product.id] = product;
-          }
-        });
-      }
+      // 解析导入的Excel文件，并通过storage验证唯一码
+      const { items, errors, warnings, matchedCount, unmatchedCount } = await parseTransferImportFile(req.file.path, storage);
       
       // 处理预览数据，添加匹配信息
-      const preview = items.map((item, index) => {
-        const matched = item.productId ? !!matchedProducts[item.productId] : false;
-        const productName = item.productId && matchedProducts[item.productId] 
-          ? matchedProducts[item.productId].name 
-          : item.productName || '未知产品';
-        const barcode = item.productId && matchedProducts[item.productId]
-          ? matchedProducts[item.productId].barcode
-          : '';
-          
+      const preview = await Promise.all(items.map(async (item, index) => {
+        // 如果已经直接匹配到了产品（通过唯一码）
+        if (item.matched && item.matchedProduct) {
+          const product = item.matchedProduct;
+          return {
+            row: index + 2, // 从Excel的第2行开始（第1行是表头）
+            uniqueCode: item.uniqueCode || '',
+            productId: product.id,
+            productName: product.name,
+            barcode: product.barcode,
+            quantity: item.quantity,
+            packageCount: item.packageCount,
+            weight: item.weight || (product.singleWeightKg * item.quantity),
+            volume: item.volume || (product.singleVolumeM3 * item.quantity),
+            status: '已匹配 (唯一码)',
+            matched: true,
+            matchSource: '唯一码'
+          };
+        } 
+        // 否则，检查是否有产品ID可以匹配
+        else if (item.productId) {
+          try {
+            const product = await storage.getProduct(item.productId);
+            if (product) {
+              return {
+                row: index + 2,
+                uniqueCode: item.uniqueCode || '',
+                productId: product.id,
+                productName: product.name,
+                barcode: product.barcode,
+                quantity: item.quantity,
+                packageCount: item.packageCount,
+                weight: item.weight || (product.singleWeightKg * item.quantity),
+                volume: item.volume || (product.singleVolumeM3 * item.quantity),
+                status: '已匹配 (产品ID)',
+                matched: true,
+                matchSource: '产品ID'
+              };
+            }
+          } catch (error) {
+            console.warn(`获取产品ID ${item.productId} 失败:`, error);
+          }
+        }
+        
+        // 未匹配到产品的情况
         return {
-          row: index + 2, // 从Excel的第2行开始（第1行是表头）
-          productName,
-          barcode,
+          row: index + 2,
+          uniqueCode: item.uniqueCode || '',
+          productId: item.productId,
+          productName: item.productName || '未知产品',
+          barcode: '',
           quantity: item.quantity,
           packageCount: item.packageCount,
           weight: item.weight || 0,
           volume: item.volume || 0,
-          status: matched ? '已匹配' : '未匹配',
-          matched
+          status: '未匹配',
+          matched: false,
+          matchSource: '无'
         };
-      });
+      }));
       
       // 返回预览数据
       res.status(200).json({
         preview,
-        errors
+        errors,
+        warnings,
+        stats: {
+          matchedCount,
+          unmatchedCount,
+          totalCount: items.length
+        }
       });
       
     } catch (err) {
@@ -2221,14 +2248,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "请提供有效的源仓库和目标仓库ID" });
       }
       
-      // 解析导入的Excel文件
-      const { items, errors } = parseTransferImportFile(req.file.path);
+      // 解析导入的Excel文件，使用storage进行产品验证
+      const { items, errors, warnings, matchedCount, unmatchedCount } = await parseTransferImportFile(req.file.path, storage);
       
       // 如果有验证错误，返回错误信息
       if (errors.length > 0) {
         return res.status(400).json({ 
           message: "导入文件包含错误",
           errors,
+          warnings,
+          matchedCount,
+          unmatchedCount,
           itemsCount: items.length,
           // 如果有有效的项目，一并返回
           items: items.length > 0 ? items : undefined
@@ -2262,18 +2292,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // 添加调拨单项目
       for (const item of items) {
-        if (!item.productId) continue;
-        
-        await storage.createWarehouseTransferItem({
-          transferId: transfer.id,
-          productId: item.productId,
-          quantity: item.quantity,
-          packageCount: item.packageCount,
-          weight: item.weight ? item.weight.toString() : "0",
-          volume: item.volume ? item.volume.toString() : "0",
-          uniqueCode: item.uniqueCode,
-          remark: item.remark
-        });
+        // 如果有匹配的产品（通过唯一码或产品ID）
+        if ((item.matched && item.matchedProduct) || item.productId) {
+          let productId: number;
+          
+          // 如果是通过唯一码匹配的，使用匹配产品的ID
+          if (item.matched && item.matchedProduct) {
+            productId = item.matchedProduct.id;
+          } else if (item.productId) {
+            productId = item.productId;
+          } else {
+            console.warn("跳过无效产品ID的调拨项目");
+            continue; // 跳过无效的项目
+          }
+          
+          await storage.createWarehouseTransferItem({
+            transferId: transfer.id,
+            productId: productId,
+            quantity: item.quantity,
+            packageCount: item.packageCount,
+            weight: item.weight ? item.weight.toString() : "0",
+            volume: item.volume ? item.volume.toString() : "0",
+            uniqueCode: item.uniqueCode,
+            remark: item.remark || `通过${item.matched ? '唯一码' : '产品ID'}匹配`
+          });
+        }
       }
       
       // 返回创建的调拨单信息
@@ -2287,7 +2330,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
     } catch (err) {
       console.error("导入Excel文件失败:", err);
-      res.status(500).json({ message: "导入Excel文件失败", error: err.message });
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      res.status(500).json({ message: "导入Excel文件失败", error: errorMessage });
     }
   });
   
@@ -2346,9 +2390,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 发送文件
       res.download(excelFilePath);
       
-    } catch (err: any) {
+    } catch (err) {
       console.error("批量导出Excel文件失败:", err);
-      res.status(500).json({ message: "批量导出Excel文件失败", error: err.message });
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      res.status(500).json({ message: "批量导出Excel文件失败", error: errorMessage });
     }
   });
 
@@ -2397,9 +2442,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 发送文件给客户端
       res.download(filePath, `transfer_${transfer.referenceNumber}.xlsx`);
       
-    } catch (err: any) {
+    } catch (err) {
       console.error("导出Excel文件失败:", err);
-      res.status(500).json({ message: "导出Excel文件失败", error: err.message });
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      res.status(500).json({ message: "导出Excel文件失败", error: errorMessage });
     }
   });
 
