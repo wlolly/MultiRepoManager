@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Link } from 'wouter';
 import { Separator } from '@/components/ui/separator';
 import { saveSessionId } from '@/lib/sessionManager';
+import { LanguageSwitcher } from '@/components/language-switcher';
 
 // 登录表单验证模式
 const loginSchema = z.object({
@@ -177,6 +178,11 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      {/* 添加语言切换按钮到右上角 */}
+      <div className="absolute top-4 right-4">
+        <LanguageSwitcher />
+      </div>
+      
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">
