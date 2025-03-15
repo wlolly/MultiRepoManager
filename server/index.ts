@@ -31,6 +31,24 @@ app.use(session({
     sameSite: 'lax', // 防止CSRF攻击的同时允许从外部链接访问
     domain: undefined // 不指定域名，使用当前域名
   },
+  genid: function(req) {
+    // 尝试从请求头、查询参数或cookie中获取客户端提供的会话ID
+    const clientSessionId = 
+      req.headers['x-session-id'] || 
+      req.query.sessionId || 
+      req.cookies?.token;
+    
+    // 如果客户端提供了会话ID，验证其有效性并返回
+    if (clientSessionId && typeof clientSessionId === 'string' && clientSessionId.length >= 32) {
+      console.log(`使用客户端提供的会话ID: ${clientSessionId}`);
+      return clientSessionId;
+    }
+    
+    // 否则生成一个新的会话ID
+    const newSessionId = crypto.randomBytes(16).toString('hex');
+    console.log(`生成新会话ID: ${newSessionId}`);
+    return newSessionId;
+  },
   store: new MemoryStore({
     checkPeriod: 86400000, // 每24小时清理过期会话
     ttl: 30 * 24 * 60 * 60 * 1000, // 30天的会话生命周期 (延长至30天)
