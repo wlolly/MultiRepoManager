@@ -135,7 +135,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (req.path.startsWith('/api/auth')) {
       console.log(`请求路径: ${req.path}, 会话ID: ${req.sessionID || '无'}, 已认证: ${req.isAuthenticated ? req.isAuthenticated() : '未知'}`);
     }
+    
+    // 记录会话信息
+    console.log(`[会话调试] 路径: ${req.path}, 会话信息:`, {
+      id: req.sessionID,
+      userId: req.session?.userId,
+      socialBound: req.session?.socialBound,
+      isAuthenticated: req.session?.authenticated || false
+    });
+    
     next();
+  });
+  
+  // 提供会话信息端点
+  app.get('/session-info', (req, res) => {
+    // 返回会话信息用于调试
+    res.json({
+      sessionID: req.sessionID,
+      userId: req.session?.userId,
+      socialBound: req.session?.socialBound,
+      authenticated: req.session?.authenticated || false,
+      userRole: req.session?.userRole,
+      lastActivity: req.session?.lastActivity,
+      // 避免返回敏感信息
+      hasCookie: !!req.headers.cookie
+    });
   });
 
   // 认证路由
