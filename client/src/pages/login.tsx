@@ -73,10 +73,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       if (!response.ok) {
         // 检查是否是因为社交账号绑定导致的错误
         if (data.socialBound) {
-          toast({
-            variant: "destructive",
+          toast.error("该账号已绑定社交媒体，请使用微信或WhatsApp登录", {
             title: "无法使用密码登录",
-            description: "该账号已绑定社交媒体，请使用微信或WhatsApp登录",
           });
           return;
         }
@@ -87,13 +85,17 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       // 会话已经在服务器端创建，无需在前端存储令牌
       
       // 设置身份验证状态
-      toast({
-        title: data.fallbackMode ? "登录成功(内存模式)" : "登录成功",
-        description: data.fallbackMode ? 
-          "警告: 系统运行在内存模式，数据在重启后将丢失" : 
-          "欢迎回来！",
-        duration: data.fallbackMode ? 6000 : 3000,
-      });
+      if (data.fallbackMode) {
+        toast.warning("警告: 系统运行在内存模式，数据在重启后将丢失", {
+          title: "登录成功(内存模式)",
+          duration: 6000,
+        });
+      } else {
+        toast.success("欢迎回来！", {
+          title: "登录成功",
+          duration: 3000,
+        });
+      }
       
       // 将用户数据存储在sessionStorage中
       if (data.user) {
@@ -113,9 +115,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       
       // 检查是否需要绑定社交账号
       if (data.needSocialBinding) {
-        toast({
+        toast.warning("为了提高账户安全性，请前往设置页面绑定微信或WhatsApp", {
           title: "请绑定社交账号",
-          description: "为了提高账户安全性，请前往设置页面绑定微信或WhatsApp",
           duration: 6000,
         });
       }
@@ -132,10 +133,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       
     } catch (error: any) {
       console.error('登录错误:', error);
-      toast({
-        variant: "destructive",
+      toast.error(error.message || "用户名或密码错误", {
         title: "登录失败",
-        description: error.message || "用户名或密码错误",
       });
     } finally {
       setIsLoading(false);
