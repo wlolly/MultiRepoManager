@@ -273,82 +273,28 @@ export function generateSessionId(): string {
   return crypto.randomBytes(32).toString('hex');
 }
 
-// 验证会话中间件
+// 验证会话中间件 - 简化版本
 export function verifySession(req: Request, res: Response, next: NextFunction) {
-  // 记录当前请求的基本信息，方便调试
-  const requestInfo = {
-    method: req.method,
-    path: req.path,
-    ip: req.ip,
-    userAgent: req.headers['user-agent'] || 'unknown',
-    time: new Date().toISOString()
-  };
+  // 简化的请求记录
+  if (!req.path.includes('/api/auth/current-user')) {
+    console.log(`请求: ${req.method} ${req.path}`);
+  }
   
-  // 设置响应头，以便客户端能够追踪会话请求来源
+  // 设置响应头，保持基本的请求跟踪
   res.setHeader('X-Request-Path', req.path);
   res.setHeader('X-Request-Method', req.method);
   
-  // 记录请求信息，但简化输出避免日志过大
-  if (!req.path.includes('/api/auth/current-user')) {
-    console.log(`收到请求: ${JSON.stringify(requestInfo)}`);
-  }
+  // 直接使用Express会话ID
+  const expressSessionId = req.sessionID;
   
-  // 检查各种可能的地方获取客户端会话ID（增强会话持久性）
-  let clientSessionId: string | undefined;
-  const sessionSources: Record<string, string | null> = {
-    header: null,
-    query: null,
-    cookie: null,
-    express: null
-  };
-  
-  // 1. 从HTTP头检查会话ID (优先级最高)
-  const headerVariations = [
-    'x-session-id',
-    'X-Session-ID', 
-    'x-client-session-id',
-    'X-Client-Session-ID',
-    'sessionid',
-    'SessionId',
-    'session-id',
-    'client-session-id'
-  ];
-  
-  // 尝试所有可能的头名称
-  for (const headerName of headerVariations) {
-    const headerValue = req.headers[headerName];
-    if (headerValue) {
-      let id = headerValue;
-      // 处理数组
-      if (Array.isArray(id)) {
-        id = id[0];
-      }
-      
-      // 处理逗号分隔 (可能存在多个ID情况)
-      if (typeof id === 'string' && id.includes(',')) {
-        id = id.split(',')[0].trim();
-      }
-      
-      if (typeof id === 'string' && id.length >= 16) {
-        clientSessionId = id;
-        sessionSources.header = clientSessionId;
-        console.log(`从请求头 [${headerName}] 获取会话ID: ${clientSessionId}`);
-        break; // 找到有效会话ID后停止查找
-      }
-    }
-  }
-  
-  // 如果未找到会话ID，检查所有请求头，以防客户端使用了非标准名称
-  if (!clientSessionId) {
-    // 记录所有请求头用于调试（仅限开发环境）
-    const allHeaders = Object.keys(req.headers).join(', ');
-    const headerValues = Object.entries(req.headers)
-      .filter(([key]) => key.toLowerCase().includes('session'))
-      .map(([key, value]) => `${key}: ${value}`);
-    
-    if (headerValues.length > 0) {
-      console.log(`发现潜在会话头: ${headerValues.join(', ')}`);
-    }
+  // 记录会话信息（简化版）
+  if (req.path.includes('/api/auth') || process.env.NODE_ENV !== 'production') {
+    console.log(`[会话调试] 路径: ${req.path}, 会话信息:`, {
+      id: expressSessionId,
+      userId: req.session?.userId,
+      socialBound: req.session?.socialBound,
+      isAuthenticated: !!req.session?.authenticated
+    });
   }
                         
   // 2. 检查URL查询参数中是否有会话ID
