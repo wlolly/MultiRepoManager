@@ -40,11 +40,31 @@ export function processResponseHeaders(headers: Headers) {
   const originalSessionId = headers.get('X-Original-Session-ID');
   const clientSessionId = headers.get('X-Client-Session-ID');
   
-  // 如果服务器返回了有效的会话ID，则保存
+  // 优先使用服务器原始会话ID，这是服务器最认可的会话ID
   if (originalSessionId && originalSessionId !== 'none') {
-    console.log(`从响应头中提取到会话ID: ${originalSessionId}`);
+    console.log(`从响应头中提取到原始会话ID: ${originalSessionId}`);
     saveSessionId(originalSessionId);
     return originalSessionId;
+  }
+  
+  // 如果服务器没有原始会话ID但确认了我们的客户端会话ID，也保存它
+  if (clientSessionId && clientSessionId !== 'none') {
+    console.log(`从响应头中提取到客户端会话ID: ${clientSessionId}`);
+    saveSessionId(clientSessionId);
+    return clientSessionId;
+  }
+  
+  // 尝试从Set-Cookie响应头中提取会话ID
+  const setCookieHeader = headers.get('Set-Cookie');
+  if (setCookieHeader) {
+    // 从Set-Cookie中提取express.sid或connect.sid形式的会话ID
+    const sidMatch = setCookieHeader.match(/(?:express|connect)\.sid=([^;]+)/);
+    if (sidMatch && sidMatch[1]) {
+      const sessionId = decodeURIComponent(sidMatch[1].split('.')[0]);
+      console.log(`从Set-Cookie中提取到会话ID: ${sessionId}`);
+      saveSessionId(sessionId);
+      return sessionId;
+    }
   }
   
   return null;
