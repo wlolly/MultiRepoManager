@@ -15,14 +15,14 @@ app.use(express.urlencoded({ extended: false }));
 app.use(session({
   secret: process.env.SESSION_SECRET || 'warehouse-management-secret',
   resave: true, // 确保会话在服务器端保存，解决会话丢失问题
-  saveUninitialized: false, // 不保存未初始化的会话，提高安全性
+  saveUninitialized: true, // 修改为true，确保所有会话都被保存
   name: 'wlolly.sid', // 自定义会话ID cookie名称
   genid: function(req) {
     // 使用随机UUID作为会话ID，更兼容ESM模式
     return crypto.randomUUID();
   },
   cookie: { 
-    secure: process.env.NODE_ENV === 'production', // 生产环境使用secure
+    secure: false, // 开发环境不使用secure，避免cookie丢失
     maxAge: 24 * 60 * 60 * 1000, // 24小时
     httpOnly: true, // 阻止客户端JS访问cookie
     path: '/',
