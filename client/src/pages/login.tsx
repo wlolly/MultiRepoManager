@@ -113,16 +113,16 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       
       // 根据登录模式显示不同的提示
       if (data.fallbackMode) {
-        toastContext.addToast({
+        toast({
           title: "登录成功(内存模式)",
           description: "警告: 系统运行在内存模式，数据在重启后将丢失",
-          type: "warning"
+          variant: "warning"
         });
       } else {
-        toastContext.addToast({
+        toast({
           title: "登录成功",
           description: "欢迎回来！",
-          type: "success"
+          variant: "default"
         });
       }
       
@@ -136,10 +136,10 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       
       // 如果需要绑定社交账号，显示提示并跳转到设置页面
       if (data.needSocialBinding) {
-        toastContext.addToast({
+        toast({
           title: "需要绑定社交账号",
           description: "系统安全策略要求您必须绑定社交账号才能继续使用",
-          type: "warning"
+          variant: "warning"
         });
         
         // 立即跳转到设置页面进行社交账号绑定
@@ -153,8 +153,10 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       
     } catch (error: any) {
       console.error('登录错误:', error);
-      toast.error(error.message || "用户名或密码错误", {
+      toast({
         title: "登录失败",
+        description: error.message || "用户名或密码错误",
+        variant: "destructive"
       });
     } finally {
       setIsLoading(false);
