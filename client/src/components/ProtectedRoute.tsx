@@ -1,4 +1,4 @@
-import { ReactNode, FC } from 'react';
+import { ReactNode, FC, useEffect, useState } from 'react';
 import { Route, useLocation } from 'wouter';
 import { usePermissions } from '@/hooks/use-permissions';
 
@@ -28,40 +28,54 @@ export const ProtectedRoute: FC<ProtectedRouteProps> = ({
 }) => {
   const { isAuthenticated, loading, hasPagePermission, canViewWarehouse, canManageWarehouse } = usePermissions();
   const [, navigate] = useLocation();
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
 
-  // 检查权限
-  const checkPermission = () => {
-    // 如果未认证，重定向到登录页面
-    if (!isAuthenticated && !loading) {
+  // 使用useEffect检查权限，避免在渲染过程中导航
+  useEffect(() => {
+    if (loading) return;
+
+    // 检查权限
+    let permissionResult = true;
+
+    // 如果未认证
+    if (!isAuthenticated) {
       navigate('/login');
-      return false;
+      permissionResult = false;
     }
-    
     // 如果需要页面权限检查
-    if (pageName && !hasPagePermission(pageName)) {
+    else if (pageName && !hasPagePermission(pageName)) {
       navigate('/');  // 无权限跳转到首页
-      return false;
+      permissionResult = false;
     }
-    
     // 如果需要仓库权限检查
-    if (warehouseId !== undefined) {
+    else if (warehouseId !== undefined) {
       if (requireManageWarehouse) {
         // 需要管理权限
         if (!canManageWarehouse(warehouseId)) {
           navigate('/warehouses');  // 无权限跳转到仓库列表
-          return false;
+          permissionResult = false;
         }
       } else {
         // 只需要查看权限
         if (!canViewWarehouse(warehouseId)) {
           navigate('/warehouses');  // 无权限跳转到仓库列表
-          return false;
+          permissionResult = false;
         }
       }
     }
-    
-    return true;
-  };
+
+    setHasPermission(permissionResult);
+  }, [
+    loading, 
+    isAuthenticated, 
+    pageName, 
+    warehouseId, 
+    requireManageWarehouse, 
+    hasPagePermission, 
+    canViewWarehouse, 
+    canManageWarehouse,
+    navigate
+  ]);
 
   return (
     <Route
@@ -71,12 +85,12 @@ export const ProtectedRoute: FC<ProtectedRouteProps> = ({
     >
       {(params) => {
         // 权限检查
-        if (loading) {
+        if (loading || hasPermission === null) {
           // 权限加载中显示加载状态
           return <div className="flex items-center justify-center p-8">正在加载...</div>;
         }
         
-        return checkPermission() ? <Component {...params} /> : null;
+        return hasPermission ? <Component {...params} /> : null;
       }}
     </Route>
   );
