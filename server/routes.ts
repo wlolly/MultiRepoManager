@@ -3226,7 +3226,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 仓库名称映射相关API
   apiRouter.get("/warehouse-mappings", async (req, res) => {
     try {
-      const warehouseMatcher = await import('./utils/warehouse-matcher');
       const mappings = warehouseMatcher.getAllWarehouseMappings();
       res.json(mappings);
     } catch (err) {
@@ -3243,7 +3242,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "外部仓库名称和内部仓库ID都是必填项" });
       }
       
-      const warehouseMatcher = await import('./utils/warehouse-matcher');
       warehouseMatcher.addWarehouseMapping(externalName, parseInt(internalId));
       
       res.status(201).json({ 
@@ -3261,7 +3259,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { externalName } = req.params;
       
-      const warehouseMatcher = await import('./utils/warehouse-matcher');
       warehouseMatcher.removeWarehouseMapping(externalName);
       
       res.status(204).end();
@@ -3282,7 +3279,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 获取所有仓库
       const warehouses = await storage.getWarehouses();
       
-      const warehouseMatcher = await import('./utils/warehouse-matcher');
       const suggestion = warehouseMatcher.findMostSimilarWarehouse(
         externalName,
         warehouses.map(w => ({ id: w.id, name: w.name }))
