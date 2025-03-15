@@ -28,13 +28,19 @@ import { Badge } from "@/components/ui/badge";
 function SocialBindingSection() {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const [bindStatus, setBindStatus] = useState<{ bound: boolean, provider: string | null }>({ bound: false, provider: null });
+  const [bindStatus, setBindStatus] = useState<{ bound: boolean, provider: string | null, userSource: string | null }>({ 
+    bound: false, 
+    provider: null,
+    userSource: null 
+  });
   const [isLoading, setIsLoading] = useState(false);
+  const [showBindPrompt, setShowBindPrompt] = useState(false);
   
   // 获取绑定状态
   useEffect(() => {
     const fetchBindingStatus = async () => {
       try {
+        setIsLoading(true);
         const response = await fetch('/api/auth/social-binding-status', {
           credentials: 'include'
         });
@@ -42,61 +48,41 @@ function SocialBindingSection() {
         if (response.ok) {
           const data = await response.json();
           setBindStatus(data);
+          
+          // 如果是本地账户且尚未绑定社交账号，显示提示
+          if (data.userSource === 'local' && !data.bound) {
+            setShowBindPrompt(true);
+          }
         }
       } catch (error) {
         console.error('获取社交绑定状态错误:', error);
+        toast.error('获取社交绑定状态失败，请刷新页面重试');
+      } finally {
+        setIsLoading(false);
       }
     };
     
     fetchBindingStatus();
-  }, []);
+  }, [toast]);
   
-  // 模拟绑定社交账号
-  const handleBindSocial = async (provider: string) => {
-    try {
-      setIsLoading(true);
-      
-      // 实际应用中应跳转到社交登录页面，这里仅为演示
-      // window.location.href = `/api/auth/${provider}`;
-      
-      // 演示：直接调用API以模拟已获取授权码并绑定账号
-      const response = await fetch('/api/auth/bind-social', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          provider,
-          socialId: 'mock_' + provider + '_' + Date.now(),
-          socialData: JSON.stringify({ name: 'Mock User' })
-        }),
-        credentials: 'include'
-      });
-      
-      const data = await response.json();
-      
-      if (response.ok) {
-        toast.success(t('settings.security.bindSuccessDescription', '您已成功绑定社交账号'), {
-          title: t('settings.security.bindSuccess', '绑定成功')
-        });
-        
-        // 更新状态
-        setBindStatus({ bound: true, provider });
-      } else {
-        throw new Error(data.message || '绑定失败');
-      }
-    } catch (error) {
-      console.error('绑定社交账号错误:', error);
-      toast.error((error instanceof Error) ? error.message : '请稍后再试', {
-        title: t('settings.security.bindFailed', '绑定失败')
-      });
-    } finally {
-      setIsLoading(false);
-    }
+  // 启动社交账号绑定流程
+  const handleBindSocial = (provider: string) => {
+    // 跳转到社交登录页面
+    window.location.href = `/api/auth/${provider}?binding=true`;
   };
   
   return (
     <div className="space-y-4">
+      {showBindPrompt && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>{t('settings.security.bindingRequired', '需要绑定社交账号')}</AlertTitle>
+          <AlertDescription>
+            {t('settings.security.bindingRequiredDescription', '根据系统安全策略，您需要绑定微信或WhatsApp账号才能继续使用系统。绑定后，您将只能通过社交媒体账号登录。')}
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <div className="flex items-center justify-between">
         <div>
           <p className="font-medium">{t('settings.security.wechatBinding', '微信绑定')}</p>
