@@ -549,9 +549,6 @@ export function attachSessionToRequest(url: string, headers: Record<string, stri
       console.log(`${logPrefix} 会话ID ${cleanSessionId} 已添加到请求头和查询参数`);
     }
     
-    // 返回修改后的URL而不是原始URL
-    return { url: urlObj.toString(), headers };
-    
     // 添加更详细的会话信息到请求头，帮助服务器侧调试
     const currentUserJson = sessionStorage.getItem('currentUser');
     const isAuthenticated = !!currentUserJson;
@@ -603,6 +600,9 @@ export function attachSessionToRequest(url: string, headers: Record<string, stri
     if (isImportantRequest) {
       console.log(`${logPrefix} 这是一个认证相关请求，会话ID: ${cleanSessionId}, 认证状态: ${isAuthenticated ? '已认证' : '未认证'}`);
     }
+    
+    // 返回修改后的URL和增强的请求头
+    return { url: urlObj.toString(), headers };
   } else {
     // 对于没有会话ID的情况，生成一个新的
     const newSessionId = generateSessionId();
@@ -611,13 +611,8 @@ export function attachSessionToRequest(url: string, headers: Record<string, stri
     // 保存并使用新生成的会话ID
     saveSessionId(newSessionId);
     
-    // 使用同样的头设置逻辑
+    // 使用同样的头设置逻辑 - 简化为核心头，减少混乱
     headers['X-Session-ID'] = newSessionId;
-    headers['x-session-id'] = newSessionId;
-    headers['sessionid'] = newSessionId;
-    headers['SessionId'] = newSessionId;
-    headers['session-id'] = newSessionId;
-    headers['client-session-id'] = newSessionId;
     headers['X-Client-Session-ID'] = newSessionId;
     
     // 同时通过URL参数传递
@@ -645,12 +640,13 @@ export function attachSessionToRequest(url: string, headers: Record<string, stri
     if (path.includes('/api/auth/')) {
       console.log(`${logPrefix} 这是一个认证相关请求，使用新生成的会话ID: ${newSessionId}`);
     }
+    
+    // 添加请求追踪标识
+    headers['X-Request-Time'] = Date.now().toString();
+    
+    // 返回修改后的URL和增强的请求头
+    return { url, headers };
   }
-  
-  // 添加请求追踪标识
-  headers['X-Request-Time'] = Date.now().toString();
-  
-  return { url, headers };
 }
 
 // 从cookie中获取值的辅助函数（增强版）
