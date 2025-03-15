@@ -2,10 +2,24 @@
  * 会话管理器
  * 统一管理客户端会话相关功能
  * 支持会话持久化和多存储层同步
+ * 提供请求防重复、会话一致性、自动恢复等功能
  */
 
 // 存储当前使用的会话ID以便快速访问
 let currentSessionId: string | null = null;
+
+// 存储最近的请求时间戳，用于实现请求去抖动
+const requestTimestamps: Record<string, number> = {};
+
+// 存储请求锁，防止同一URI的请求在短时间内并发执行
+const requestLocks: Record<string, boolean> = {};
+
+// 存储请求计数器，记录每个路径的请求频率
+const requestCounters: Record<string, { count: number, firstRequest: number }> = {};
+
+// 设置防抖动阈值
+const DEBOUNCE_THRESHOLD_MS = 300; // 300毫秒内的重复请求会被去抖
+const MAX_REQUESTS_PER_MINUTE = 5; // 每分钟最多允许的相同请求数
 
 /**
  * 生成随机会话ID
@@ -314,13 +328,117 @@ export function processResponseHeaders(headers: Headers): string | null {
   return null;
 }
 
+/**
+ * 去抖动HTTP请求
+ * 防止短时间内重复触发同样的请求
+ * @param url 原始请求URL
+ * @param headers 原始请求头
+ * @returns 是否应该继续处理请求 (true=继续, false=请求正在进行中)
+ */
+export function debounceHttpRequests(url: string, headers: Record<string, string> = {}): boolean {
+  // 提取路径信息
+  const urlObj = new URL(url, window.location.origin);
+  const path = urlObj.pathname;
+  const method = headers['X-HTTP-Method'] || 'GET';
+  
+  // 关键请求标识
+  const requestKey = `${method}-${path}`;
+  const now = Date.now();
+  
+  // 日志前缀
+  const logPrefix = `[RequestDebounce] ${method} ${path} |`;
+  
+  // 1. 处理请求锁 - 防止并发请求
+  if (requestLocks[requestKey]) {
+    console.log(`${logPrefix} 请求被锁定，正在处理中，跳过重复请求`);
+    return false;
+  }
+  
+  // 2. 处理请求去抖动
+  const lastRequestTime = requestTimestamps[requestKey] || 0;
+  const timeSinceLastRequest = now - lastRequestTime;
+  
+  // 针对特定URL设置不同的去抖时间阈值
+  let debounceThreshold = DEBOUNCE_THRESHOLD_MS;
+  
+  // 身份验证请求使用较长的去抖时间，降低认证请求频率
+  if (path.includes('/api/auth/') || path.includes('/current-user')) {
+    debounceThreshold = 500; // 500毫秒
+  }
+  
+  // 如果请求频率太高，跳过这次请求
+  if (timeSinceLastRequest < debounceThreshold) {
+    console.log(`${logPrefix} 请求频率过高(${timeSinceLastRequest}ms < ${debounceThreshold}ms)，跳过此次请求`);
+    return false;
+  }
+  
+  // 3. 处理请求计数（防止短时间内大量相同请求）
+  // 记录请求计数
+  if (!requestCounters[requestKey]) {
+    requestCounters[requestKey] = { count: 0, firstRequest: now };
+  }
+  
+  const counter = requestCounters[requestKey];
+  counter.count++;
+  
+  // 检查是否已经一分钟了，如果是则重置计数器
+  if (now - counter.firstRequest > 60000) {
+    counter.count = 1;
+    counter.firstRequest = now;
+  }
+  
+  // 如果一分钟内请求次数过多，启用更严格的频率限制
+  if (counter.count > MAX_REQUESTS_PER_MINUTE) {
+    console.log(`${logPrefix} 一分钟内请求次数过多(${counter.count}次)，启用更严格的频率限制`);
+    
+    // 上次请求与当前请求的时间间隔必须超过指数级增长的时间
+    const requiredDelay = Math.min(1000 * Math.pow(1.5, counter.count - MAX_REQUESTS_PER_MINUTE), 10000);
+    if (timeSinceLastRequest < requiredDelay) {
+      console.log(`${logPrefix} 请求被限制(${timeSinceLastRequest}ms < ${requiredDelay}ms)，跳过此次请求`);
+      return false;
+    }
+  }
+  
+  // 更新请求时间戳
+  requestTimestamps[requestKey] = now;
+  
+  // 设置请求锁（由调用方解锁）
+  requestLocks[requestKey] = true;
+  
+  // 记录重要请求
+  const isImportantRequest = path.includes('/api/auth/') || path.includes('/current-user');
+  if (isImportantRequest) {
+    console.log(`${logPrefix} 允许处理此认证请求`);
+  }
+  
+  return true;
+}
+
+/**
+ * 解锁请求
+ * 在请求完成后调用这个方法解锁请求锁定
+ * @param url 请求URL
+ * @param headers 请求头
+ */
+export function unlockRequest(url: string, headers: Record<string, string> = {}): void {
+  const urlObj = new URL(url, window.location.origin);
+  const path = urlObj.pathname;
+  const method = headers['X-HTTP-Method'] || 'GET';
+  
+  // 请求标识
+  const requestKey = `${method}-${path}`;
+  
+  // 解锁请求
+  if (requestLocks[requestKey]) {
+    requestLocks[requestKey] = false;
+  }
+}
+
 // 附加会话ID到API请求
 export function attachSessionToRequest(url: string, headers: Record<string, string> = {}): {
   url: string;
   headers: Record<string, string>;
 } {
-  const sessionId = getSessionId();
-  
   // 提取更多路径信息，方便调试
   const urlObj = new URL(url, window.location.origin);
   const path = urlObj.pathname;
@@ -328,6 +446,22 @@ export function attachSessionToRequest(url: string, headers: Record<string, stri
   
   // 日志前缀
   const logPrefix = `[SessionManager] ${method} ${path} |`;
+  
+  // 是否是重要请求（认证相关）
+  const isImportantRequest = url.includes('/api/auth/') || url.includes('/current-user');
+  
+  // 应用去抖动逻辑 - 除非是内部路径
+  if (!path.startsWith('/src/') && !path.startsWith('/node_modules/') && !path.includes('.')) {
+    // 进行请求去抖动检查
+    if (!debounceHttpRequests(url, headers)) {
+      // 如果请求被去抖动逻辑阻止，返回原始URL和头（上层代码负责处理）
+      console.log(`${logPrefix} 请求被去抖动逻辑阻止，不附加会话信息`);
+      return { url, headers: { ...headers, 'X-Request-Debounced': 'true' } };
+    }
+  }
+  
+  // 获取会话ID
+  const sessionId = getSessionId();
   
   if (sessionId) {
     // 确保只传递一个干净的会话ID，避免逗号分隔问题
@@ -341,7 +475,6 @@ export function attachSessionToRequest(url: string, headers: Record<string, stri
     }
     
     // 去除日志噪音 - 只在关键API或调试时打印详细日志
-    const isImportantRequest = url.includes('/api/auth/') || url.includes('/current-user');
     if (isImportantRequest) {
       console.log(`${logPrefix} 附加会话ID ${cleanSessionId} 到请求`);
     }
@@ -423,10 +556,13 @@ export function attachSessionToRequest(url: string, headers: Record<string, stri
     document.cookie = `sessionId=${newSessionId}; path=/; max-age=2592000; SameSite=Lax`;
     
     // 如果是认证相关请求，特别记录
-    if (url.includes('/api/auth/')) {
+    if (path.includes('/api/auth/')) {
       console.log(`${logPrefix} 这是一个认证相关请求，使用新生成的会话ID: ${newSessionId}`);
     }
   }
+  
+  // 添加请求追踪标识
+  headers['X-Request-Time'] = Date.now().toString();
   
   return { url, headers };
 }

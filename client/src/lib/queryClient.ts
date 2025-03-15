@@ -1,5 +1,12 @@
-import { QueryClient, QueryFunction } from "@tanstack/react-query";
-import { getSessionId, saveSessionId, attachSessionToRequest, processResponseHeaders } from "./sessionManager";
+import { QueryClient, QueryFunction, QueryCache } from "@tanstack/react-query";
+import { 
+  getSessionId, 
+  saveSessionId, 
+  attachSessionToRequest, 
+  processResponseHeaders,
+  debounceHttpRequests,
+  unlockRequest
+} from "./sessionManager";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -211,6 +218,36 @@ export async function apiRequest<T = any>(
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
+
+// 对于特定的API路径，控制缓存和重试行为
+const API_PATH_CONFIG: Record<string, { 
+  cacheTime?: number; // 缓存时间(毫秒)
+  maxRetries?: number; // 最大重试次数
+  staleTime?: number; // 过期时间(毫秒)
+  retryDelay?: number; // 重试延迟(毫秒)
+}> = {
+  '/api/auth/current-user': {
+    cacheTime: 10 * 60 * 1000, // 缓存10分钟
+    maxRetries: 1, // 最多重试1次
+    staleTime: 60 * 1000, // 1分钟后标记为过期
+    retryDelay: 3000 // 3秒重试延迟
+  },
+  '/api/repositories': {
+    cacheTime: 5 * 60 * 1000, // 缓存5分钟
+    staleTime: 2 * 60 * 1000 // 2分钟后标记为过期
+  }
+};
+
+// 查询函数缓存，防止会话ID请求泛滥
+const queryCache = new Map<string, {
+  timestamp: number,
+  promise: Promise<any>,
+  data: any
+}>();
+
+// 查询防抖计时器
+const debounceTimers = new Map<string, NodeJS.Timeout>();
+
 export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
 }) => QueryFunction<T> =
@@ -220,44 +257,220 @@ export const getQueryFn: <T>(options: {
     const headers: Record<string, string> = {};
     let url = queryKey[0] as string;
     
+    // 获取URL路径
+    const urlObj = new URL(url, window.location.origin);
+    const path = urlObj.pathname;
+    
+    // 获取此API路径的特定配置
+    const pathConfig = API_PATH_CONFIG[path] || {};
+    
+    // 为特定API路径实现防抖
+    if (path === '/api/auth/current-user') {
+      // 生成一个唯一的查询键
+      const cacheKey = JSON.stringify(queryKey);
+      
+      // 如果已有未过期的缓存，直接返回缓存的数据
+      const cached = queryCache.get(cacheKey);
+      const now = Date.now();
+      
+      if (cached && (now - cached.timestamp < (pathConfig.cacheTime || 30000))) {
+        console.log(`[QueryClient] 使用缓存响应: ${path}`);
+        
+        // 如果有正在进行的请求，等待它完成
+        if (!cached.data && cached.promise) {
+          console.log(`[QueryClient] 等待进行中的请求: ${path}`);
+          return cached.promise;
+        }
+        
+        return cached.data;
+      }
+      
+      // 如果有防抖计时器，清除它
+      if (debounceTimers.has(cacheKey)) {
+        clearTimeout(debounceTimers.get(cacheKey)!);
+      }
+      
+      // 创建新的请求并设置防抖
+      const promise = new Promise<any>((resolve, reject) => {
+        // 添加300毫秒防抖
+        debounceTimers.set(cacheKey, setTimeout(async () => {
+          try {
+            // 使用会话管理器附加会话ID到请求
+            const { url: enhancedUrl, headers: enhancedHeaders } = attachSessionToRequest(url, headers);
+            
+            // 发送请求
+            console.log(`[QueryClient] 发送请求: ${path}`);
+            const res = await fetch(enhancedUrl, {
+              credentials: "include",
+              headers: enhancedHeaders
+            });
+            
+            // 处理401错误
+            if (unauthorizedBehavior === "returnNull" && res.status === 401) {
+              console.log(`[QueryClient] 查询返回401未授权: ${path}`);
+              
+              try {
+                const errorText = await res.text();
+                const errorData = JSON.parse(errorText);
+                handleSessionInfo(res, errorData);
+                
+                // 更新缓存
+                queryCache.set(cacheKey, {
+                  timestamp: Date.now(),
+                  promise: null as any,
+                  data: null
+                });
+                
+                resolve(null);
+              } catch (e) {
+                handleSessionInfo(res);
+                resolve(null);
+              }
+              return;
+            }
+            
+            // 处理其他错误
+            if (!res.ok) {
+              const errorText = await res.text();
+              let errorData;
+              try {
+                errorData = JSON.parse(errorText);
+              } catch (e) {
+                errorData = { message: errorText || res.statusText };
+              }
+              throw new Error(errorData.message || `${res.status}: ${res.statusText}`);
+            }
+            
+            // 处理成功响应
+            const data = await res.json();
+            handleSessionInfo(res, data);
+            
+            // 更新缓存
+            queryCache.set(cacheKey, {
+              timestamp: Date.now(),
+              promise: null as any,
+              data
+            });
+            
+            resolve(data);
+          } catch (error) {
+            console.error(`[QueryClient] 请求失败: ${path}`, error);
+            queryCache.delete(cacheKey); // 从缓存中移除失败的请求
+            reject(error);
+          } finally {
+            debounceTimers.delete(cacheKey);
+          }
+        }, 300));
+      });
+      
+      // 添加到缓存
+      queryCache.set(cacheKey, {
+        timestamp: Date.now(),
+        promise,
+        data: null
+      });
+      
+      return promise;
+    }
+    
+    // 对于非特殊处理的路径，使用普通逻辑
     // 使用会话管理器附加会话ID到请求
     const { url: enhancedUrl, headers: enhancedHeaders } = attachSessionToRequest(url, headers);
     
-    const res = await fetch(enhancedUrl, {
-      credentials: "include", // 确保cookies会随请求发送
-      headers: enhancedHeaders
-    });
+    // 增加请求超时设置
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30秒超时
     
-    // 简单处理401错误
-    if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-      console.log(`查询返回401未授权: ${queryKey[0]}`);
+    try {
+      const res = await fetch(enhancedUrl, {
+        credentials: "include", // 确保cookies会随请求发送
+        headers: enhancedHeaders,
+        signal: controller.signal
+      });
       
-      // 尝试解析错误响应
-      let errorData;
-      try {
-        const errorText = await res.text();
-        errorData = JSON.parse(errorText);
-        // 处理会话信息
-        handleSessionInfo(res, errorData);
-      } catch (e) {
-        // 如果解析失败，至少处理响应头
-        handleSessionInfo(res);
+      // 清除超时
+      clearTimeout(timeoutId);
+      
+      // 简单处理401错误
+      if (unauthorizedBehavior === "returnNull" && res.status === 401) {
+        console.log(`[QueryClient] 查询返回401未授权: ${path}`);
+        
+        // 尝试解析错误响应
+        let errorData;
+        try {
+          const errorText = await res.text();
+          errorData = JSON.parse(errorText);
+          // 处理会话信息
+          handleSessionInfo(res, errorData);
+        } catch (e) {
+          // 如果解析失败，至少处理响应头
+          handleSessionInfo(res);
+        }
+        
+        return null;
       }
+  
+      // 处理其他错误
+      await throwIfResNotOk(res);
       
-      return null;
+      // 处理成功响应
+      const data = await res.json();
+      
+      // 处理响应中的会话信息
+      handleSessionInfo(res, data);
+      
+      return data;
+    } catch (error) {
+      // 如果超时了，抛出明确的错误
+      if ((error as any).name === 'AbortError') {
+        throw new Error(`请求超时: ${path}`);
+      }
+      throw error;
     }
-
-    // 处理其他错误
-    await throwIfResNotOk(res);
-    
-    // 处理成功响应
-    const data = await res.json();
-    
-    // 处理响应中的会话信息
-    handleSessionInfo(res, data);
-    
-    return data;
   };
+
+/**
+ * 基于路径决定查询配置
+ * @param queryKey 查询键
+ */
+function getQueryConfigForPath(queryKey: unknown[]): {
+  retry: boolean | number;
+  retryDelay?: (attemptIndex: number) => number;
+  staleTime?: number;
+  cacheTime?: number;
+} {
+  if (!queryKey || !queryKey.length || typeof queryKey[0] !== 'string') {
+    return { retry: false, staleTime: Infinity };
+  }
+
+  const path = queryKey[0] as string;
+  
+  // 身份验证请求特殊处理
+  if (path.includes('/api/auth/')) {
+    return {
+      retry: 1, // 最多重试1次
+      retryDelay: (attemptIndex) => Math.min(1000 * Math.pow(2, attemptIndex), 10000), // 指数退避
+      staleTime: 60 * 1000, // 1分钟过期
+      cacheTime: 5 * 60 * 1000 // 5分钟缓存
+    };
+  }
+  
+  // 仓库管理相关的API请求
+  if (path.includes('/api/warehouses') || path.includes('/api/products')) {
+    return {
+      retry: 1,
+      retryDelay: (attemptIndex) => 1000 * Math.pow(1.5, attemptIndex),
+      staleTime: 2 * 60 * 1000, // 2分钟过期
+      cacheTime: 5 * 60 * 1000 // 5分钟缓存
+    };
+  }
+  
+  // 默认配置
+  return {
+    retry: false,
+    staleTime: Infinity
+  };
+}
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -267,9 +480,25 @@ export const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       staleTime: Infinity,
       retry: false,
+      retryDelay: (attemptIndex) => Math.min(1000 * Math.pow(2, attemptIndex), 30000),
     },
     mutations: {
       retry: false,
     },
   },
+  // 实现自定义查询/缓存策略
+  queryCache: new QueryCache({
+    onError: (error, query) => {
+      // 如果error是401错误且是认证相关请求，可以触发重新登录流程
+      if ((error as any)?.status === 401 && (query.queryKey[0] as string)?.includes('/api/auth/')) {
+        console.log('[QueryCache] 认证请求返回401，可能需要重新登录');
+        // 延迟后尝试清除认证状态
+        setTimeout(() => {
+          window.dispatchEvent(new Event('session_expired'));
+        }, 500);
+      }
+    }
+  }),
+  // 自定义每个查询的配置
+  queryDefaults: (queryKey) => getQueryConfigForPath(queryKey)
 });
