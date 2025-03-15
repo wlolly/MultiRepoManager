@@ -1,4 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { getSessionId, attachSessionToRequest, processResponseHeaders } from "./sessionManager";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -19,42 +20,24 @@ export async function apiRequest<T = any>(
     body: options?.body
   });
   
-  // 添加会话ID到请求头中以提高会话持久性
+  // 初始化请求头
   const headers: Record<string, string> = options?.body ? { "Content-Type": "application/json" } : {};
-  // 尝试从多个地方获取会话ID，提高获取成功率
-  const sessionId = sessionStorage.getItem('sessionId') || localStorage.getItem('sessionId');
   
-  if (sessionId) {
-    console.log(`API请求使用会话ID: ${sessionId}`);
-    // 使用两种大小写形式的会话ID头，确保服务器可以识别
-    headers['X-Session-ID'] = sessionId;
-    headers['x-session-id'] = sessionId;
-    
-    // 同时通过查询参数传递，确保所有情况都能接收到会话ID
-    if (!url.includes('?')) {
-      url = `${url}?sessionId=${sessionId}`;
-    } else {
-      url = `${url}&sessionId=${sessionId}`;
-    }
-  }
+  // 使用会话管理器附加会话ID到请求
+  const { url: enhancedUrl, headers: enhancedHeaders } = attachSessionToRequest(url, headers);
   
   try {
-    const res = await fetch(url, {
+    const res = await fetch(enhancedUrl, {
       method: options?.method || 'GET',
-      headers: headers,
+      headers: enhancedHeaders,
       body: typeof options?.body === 'string' ? options.body : options?.body ? JSON.stringify(options.body) : undefined,
       credentials: "include",
     });
 
     console.log(`API Response status: ${res.status}`, res);
     
-    // 从响应头中检查是否服务器使用了我们提供的会话ID
-    const originalSessionId = res.headers.get('X-Original-Session-ID');
-    const clientSessionId = res.headers.get('X-Client-Session-ID');
-    
-    if (originalSessionId && clientSessionId) {
-      console.log(`服务器信息 - 原始会话ID: ${originalSessionId}, 客户端会话ID: ${clientSessionId}`);
-    }
+    // 处理响应头中的会话信息
+    processResponseHeaders(res.headers);
     
     if (!res.ok) {
       const text = await res.text();
@@ -65,11 +48,10 @@ export async function apiRequest<T = any>(
     const data = await res.json();
     console.log("API Response data:", data);
     
-    // 如果响应中包含会话ID，保存到sessionStorage和localStorage
+    // 如果响应中包含会话ID，使用会话管理器保存
     if (data.sessionId) {
       console.log(`从API响应中保存会话ID: ${data.sessionId}`);
-      sessionStorage.setItem('sessionId', data.sessionId);
-      localStorage.setItem('sessionId', data.sessionId);
+      saveSessionId(data.sessionId);
     }
     
     return data;
@@ -85,39 +67,20 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    // 尝试从多个地方获取会话ID，提高获取成功率
-    const sessionId = sessionStorage.getItem('sessionId') || localStorage.getItem('sessionId');
-    
     // 准备请求头和URL
     const headers: Record<string, string> = {};
     let url = queryKey[0] as string;
     
-    if (sessionId) {
-      console.log(`查询使用会话ID: ${sessionId}`);
-      // 使用两种大小写形式的会话ID头，确保服务器可以识别
-      headers['X-Session-ID'] = sessionId;
-      headers['x-session-id'] = sessionId;
-      
-      // 同时通过查询参数传递，确保所有情况都能接收到会话ID
-      if (!url.includes('?')) {
-        url = `${url}?sessionId=${sessionId}`;
-      } else {
-        url = `${url}&sessionId=${sessionId}`;
-      }
-    }
+    // 使用会话管理器附加会话ID到请求
+    const { url: enhancedUrl, headers: enhancedHeaders } = attachSessionToRequest(url, headers);
     
-    const res = await fetch(url, {
+    const res = await fetch(enhancedUrl, {
       credentials: "include",
-      headers: headers
+      headers: enhancedHeaders
     });
     
-    // 从响应头中检查是否服务器使用了我们提供的会话ID
-    const originalSessionId = res.headers.get('X-Original-Session-ID');
-    const clientSessionId = res.headers.get('X-Client-Session-ID');
-    
-    if (originalSessionId && clientSessionId) {
-      console.log(`服务器信息 - 原始会话ID: ${originalSessionId}, 客户端会话ID: ${clientSessionId}`);
-    }
+    // 处理响应头中的会话信息
+    processResponseHeaders(res.headers);
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
       console.log(`查询返回401未授权: ${queryKey[0]}`);
@@ -127,11 +90,10 @@ export const getQueryFn: <T>(options: {
     await throwIfResNotOk(res);
     const data = await res.json();
     
-    // 如果响应中包含会话ID，保存到sessionStorage和localStorage
+    // 如果响应中包含会话ID，使用会话管理器保存
     if (data && data.sessionId) {
       console.log(`从查询响应中保存会话ID: ${data.sessionId}`);
-      sessionStorage.setItem('sessionId', data.sessionId);
-      localStorage.setItem('sessionId', data.sessionId);
+      saveSessionId(data.sessionId);
     }
     
     return data;
