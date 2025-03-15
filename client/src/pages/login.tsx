@@ -151,6 +151,12 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     window.location.href = `/api/auth/${provider}`;
   };
 
+  // 添加辅助跳转函数
+  const handleTestNavigation = () => {
+    console.log('手动测试跳转按钮点击');
+    window.location.href = '/';
+  };
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <Card className="w-full max-w-md">
@@ -195,6 +201,15 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
               
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? t('logging_in') : t('login')}
+              </Button>
+              
+              {/* 测试跳转按钮，用于调试 */}
+              <Button 
+                type="button" 
+                className="w-full mt-2 bg-green-600 hover:bg-green-700" 
+                onClick={handleTestNavigation}
+              >
+                测试跳转到主页
               </Button>
             </form>
           </Form>
