@@ -486,18 +486,25 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
           return;
         }
         
+        // 记录详细的会话数据，帮助调试
+        console.log(`客户端会话ID ${clientSessionId} 的数据:`, clientSession ? JSON.stringify({
+          hasSession: true,
+          userId: clientSession.userId,
+          authenticated: clientSession.authenticated,
+          role: clientSession.userRole,
+          lastActivity: clientSession.lastActivity
+        }) : '会话不存在');
+        
         // 如果找到了有效的会话数据，并且包含用户ID
         if (clientSession && clientSession.userId) {
           console.log(`找到有效的客户端会话数据: userId=${clientSession.userId}, authenticated=${clientSession.authenticated}`);
           
-          // 将找到的会话数据复制到当前会话中
-          Object.assign(req.session, {
-            userId: clientSession.userId,
-            authenticated: true,
-            userRole: clientSession.userRole,
-            socialBound: clientSession.socialBound,
-            lastActivity: Date.now()
-          });
+          // 完全替换当前会话，确保所有数据都正确同步
+          (req as any).session = clientSession;
+          
+          // 确保用户身份验证状态正确
+          req.session.authenticated = true;
+          req.session.lastActivity = Date.now();
           
           // 设置当前会话ID为客户端会话ID，确保持续性
           (req as any).sessionID = clientSessionId;
@@ -505,12 +512,16 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
             (req.session as any).id = clientSessionId;
           }
           
+          // 在响应头中设置标记，让客户端知道成功恢复
+          res.setHeader('X-Session-Restored', 'true');
+          res.setHeader('X-Session-Used', clientSessionId);
+          
           // 保存当前会话
           req.session.save((err) => {
             if (err) {
               console.error('保存恢复的会话出错:', err);
             } else {
-              console.log(`成功保存恢复的会话数据`);
+              console.log(`成功保存恢复的会话数据，会话ID: ${clientSessionId}, 用户ID: ${req.session.userId}`);
             }
             
             // 从会话中的用户ID恢复完整的用户对象
