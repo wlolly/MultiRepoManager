@@ -273,26 +273,71 @@ export function generateSessionId(): string {
 export function verifySession(req: Request, res: Response, next: NextFunction) {
   // 添加详细的会话调试信息
   console.log(`验证会话: 
+    路径=${req.path},
     会话ID=${req.sessionID || '无'}, 
     isAuthenticated=${req.isAuthenticated()}, 
     用户=${req.user ? (req.user as any).username : '无'},
     session.userId=${req.session?.userId || '无'}, 
-    session.cookie=${JSON.stringify(req.session?.cookie || {})}
+    session.authenticated=${req.session?.authenticated || false}
   `);
   
   // 尝试通过会话中的userId直接验证
   if (req.session?.userId && !req.user) {
     console.log(`通过会话中的userId=${req.session.userId}尝试恢复用户`);
-    // 这里我们不中断流程，让Passport自己处理
+    
+    // 尝试从存储中加载用户
+    (async () => {
+      try {
+        // 使用当前活动的存储
+        const currentStorage = useFallbackStorage ? memStorage : storage;
+        const user = await currentStorage.getUser(req.session.userId);
+        
+        if (user) {
+          // 使用 req.login 恢复用户会话
+          req.login(user, (err) => {
+            if (err) {
+              console.error('会话恢复错误:', err);
+              return res.status(401).json({ message: '会话恢复失败，请重新登录' });
+            }
+            
+            console.log(`成功恢复用户 ${user.username} 的会话`);
+            // 更新会话后继续流程
+            next();
+          });
+          return; // 不要继续执行
+        }
+      } catch (error) {
+        console.error('恢复用户会话出错:', error);
+      }
+      
+      // 如果恢复失败，继续检查req.user
+      continueAuthCheck();
+    })();
+  } else {
+    // 直接进行认证检查
+    continueAuthCheck();
   }
   
-  if (!req.user) {
-    console.log('会话验证失败：未找到用户信息');
-    return res.status(401).json({ message: '未登录' });
+  // 检查用户认证状态的函数
+  function continueAuthCheck() {
+    // 检查是否已登录
+    if (!req.user) {
+      // 如果会话中标记为authenticated但没有user对象，可能是序列化问题
+      if (req.session?.authenticated === true) {
+        console.log('会话标记为已认证，但用户对象丢失，可能是序列化问题');
+        return res.status(401).json({ 
+          message: '会话状态异常，请重新登录',
+          errorCode: 'SESSION_INVALID'
+        });
+      }
+      
+      console.log('会话验证失败：未找到用户信息');
+      return res.status(401).json({ message: '未登录' });
+    }
+    
+    // 会话有效，继续
+    next();
   }
-  
-  // 会话有效，继续
-  next();
 }
 
 // 检查是否为管理员中间件

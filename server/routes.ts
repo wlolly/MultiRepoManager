@@ -183,40 +183,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // 如果是通过用户名/密码登录的本地用户
         const needSocialBinding = user.userSource === 'local' && !hasSocialBound;
         
-        // 如果会话需要存储用户ID，可以通过req.session.userId实现
+        // 在会话中存储用户信息
         if (req.session) {
+          // 更新会话数据
           req.session.userId = user.id;
-          
-          // 可选：记录是否有社交绑定
           req.session.socialBound = hasSocialBound;
+          req.session.userRole = user.role; 
+          req.session.lastActivity = Date.now();
+          req.session.authenticated = true;
+          
+          // 强制保存会话 - 确保会话数据持久化
+          req.session.save((err) => {
+            if (err) {
+              console.error('会话保存错误:', err);
+              // 继续处理，不中断登录流程
+            } else {
+              console.log(`用户 ${user.username} 会话已保存，ID=${req.sessionID}`);
+            }
+            
+            // 继续处理响应
+            continueWithResponse();
+          });
+        } else {
+          console.warn('警告: req.session不存在，无法保存会话数据');
+          continueWithResponse();
         }
         
-        // 检查是否是表单提交请求
-        const isFormSubmit = req.headers['content-type']?.includes('application/x-www-form-urlencoded');
-        
-        // 如果是表单提交或明确指定需要重定向
-        if (isFormSubmit || req.body.redirect === 'true') {
-          // 根据是否需要绑定社交账号决定重定向到哪个页面
-          const redirectUrl = needSocialBinding ? '/settings' : '/';
-          console.log(`用户 ${user.username} 登录成功，重定向到 ${redirectUrl}`);
-          return res.redirect(redirectUrl);
-        }
-        
-        // 返回JSON响应（用于API调用）
-        return res.json({
-          message: '登录成功',
-          success: true,
-          fallbackMode: useFallbackStorage,
-          needSocialBinding: needSocialBinding, // 通知前端需要绑定社交账号
-          user: {
-            id: user.id,
-            username: user.username,
-            fullName: user.fullName,
-            role: user.role,
-            avatarUrl: user.avatarUrl,
-            userSource: user.userSource
+        // 处理响应的函数
+        function continueWithResponse() {
+          // 检查是否是表单提交请求
+          const isFormSubmit = req.headers['content-type']?.includes('application/x-www-form-urlencoded');
+          
+          // 如果是表单提交或明确指定需要重定向
+          if (isFormSubmit || req.body.redirect === 'true') {
+            // 根据是否需要绑定社交账号决定重定向到哪个页面
+            const redirectUrl = needSocialBinding ? '/settings' : '/';
+            console.log(`用户 ${user.username} 登录成功，重定向到 ${redirectUrl}`);
+            return res.redirect(redirectUrl);
           }
-        });
+          
+          // 返回JSON响应（用于API调用）
+          return res.json({
+            message: '登录成功',
+            success: true,
+            fallbackMode: useFallbackStorage,
+            needSocialBinding: needSocialBinding, // 通知前端需要绑定社交账号
+            sessionId: req.sessionID, // 返回会话ID，方便调试
+            user: {
+              id: user.id,
+              username: user.username,
+              fullName: user.fullName,
+              role: user.role,
+              avatarUrl: user.avatarUrl,
+              userSource: user.userSource
+            }
+          });
+        }
       });
     })(req, res, next);
   });
@@ -613,6 +635,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error getting product stats:", err);
       handleZodError(err, res);
     }
+  });
+  
+  // 会话信息端点 - 用于调试
+  app.get("/session-info", (req, res) => {
+    // 组装会话信息（排除敏感数据）
+    const sessionInfo = {
+      sessionID: req.sessionID,
+      authenticated: req.isAuthenticated(),
+      user: req.user ? {
+        id: (req.user as any).id,
+        username: (req.user as any).username,
+        role: (req.user as any).role
+      } : null,
+      sessionData: {
+        userId: req.session?.userId,
+        socialBound: req.session?.socialBound,
+        userRole: req.session?.userRole,
+        authenticated: req.session?.authenticated,
+        lastActivity: req.session?.lastActivity ? new Date(req.session.lastActivity).toISOString() : null
+      },
+      cookies: req.headers.cookie,
+      timestamp: new Date().toISOString()
+    };
+    
+    console.log(`会话信息请求: 会话ID=${req.sessionID}, 已认证=${req.isAuthenticated()}`);
+    res.json(sessionInfo);
   });
   
   // 产品搜索路由 - 必须放在产品id路由之前
