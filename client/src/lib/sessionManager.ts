@@ -157,12 +157,17 @@ export function attachSessionToRequest(url: string, headers: Record<string, stri
     console.log(`附加会话ID ${sessionId} 到请求`);
     
     // 添加到请求头（常用两种格式，增加兼容性）
-    headers['X-Session-ID'] = sessionId;
-    headers['x-session-id'] = sessionId;
+    // 确保只传递一个干净的会话ID，避免逗号分隔问题
+    const cleanSessionId = (sessionId.includes(',')) 
+      ? sessionId.split(',')[0].trim() 
+      : sessionId;
+    
+    headers['X-Session-ID'] = cleanSessionId;
+    headers['x-session-id'] = cleanSessionId;
     
     // 同时通过URL参数传递（作为备用方案）
     const separator = url.includes('?') ? '&' : '?';
-    url = `${url}${separator}sessionId=${sessionId}`;
+    url = `${url}${separator}sessionId=${cleanSessionId}`;
   } else {
     console.log('没有找到可用的会话ID，请求将使用新会话');
   }
