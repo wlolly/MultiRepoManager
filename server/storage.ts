@@ -2055,10 +2055,10 @@ export class DatabaseStorage implements IStorage {
 
   // Stats methods
   async getLanguageDistribution(): Promise<{ language: string, count: number, percentage: number }[]> {
-    const repoCount = await db.select({ count: count() }).from(repositories);
+    const repoCount = await this.db.select({ count: count() }).from(repositories);
     const totalRepos = repoCount[0].count;
 
-    const result = await db
+    const result = await this.db
       .select({
         language: repositories.language,
         count: count(),
@@ -2074,17 +2074,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getRepositoryStats(): Promise<{ totalRepositories: number, totalUsers: number, languagesCount: number, recentCommits: number }> {
-    const repoCount = await db.select({ count: count() }).from(repositories);
-    const userCount = await db.select({ count: count() }).from(users);
+    const repoCount = await this.db.select({ count: count() }).from(repositories);
+    const userCount = await this.db.select({ count: count() }).from(users);
     
-    const languagesResult = await db
+    const languagesResult = await this.db
       .select({ language: repositories.language })
       .from(repositories)
       .groupBy(repositories.language);
     
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     
-    const commitCount = await db
+    const commitCount = await this.db
       .select({ count: count() })
       .from(activities)
       .where(and(
@@ -2102,23 +2102,23 @@ export class DatabaseStorage implements IStorage {
 
   // 商品相关方法
   async getProduct(id: number): Promise<Product | undefined> {
-    const [product] = await db.select().from(products).where(eq(products.id, id));
+    const [product] = await this.db.select().from(products).where(eq(products.id, id));
     return product || undefined;
   }
 
   async getProductByBarcode(barcode: string): Promise<Product | undefined> {
-    const [product] = await db.select().from(products).where(eq(products.barcode, barcode));
+    const [product] = await this.db.select().from(products).where(eq(products.barcode, barcode));
     return product || undefined;
   }
   
   async getProductByUniqueCode(uniqueCode: string): Promise<Product | undefined> {
-    const [product] = await db.select().from(products).where(eq(products.uniqueCode, uniqueCode));
+    const [product] = await this.db.select().from(products).where(eq(products.uniqueCode, uniqueCode));
     return product || undefined;
   }
 
   async createProduct(insertProduct: InsertProduct): Promise<Product> {
     // MySQL不直接支持returning，所以我们需要先插入然后查询
-    const result = await db.insert(products).values(insertProduct);
+    const result = await this.db.insert(products).values(insertProduct);
     const productId = Number(result.insertId);
     
     // 获取刚插入的产品
@@ -2129,7 +2129,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateProduct(id: number, product: Partial<Product>): Promise<Product | undefined> {
-    await db
+    await this.db
       .update(products)
       .set({ ...product, updatedAt: new Date() })
       .where(eq(products.id, id));
@@ -2139,7 +2139,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getProducts(filter?: { warehouseId?: number, category?: string }): Promise<Product[]> {
-    let query = db.select().from(products);
+    let query = this.db.select().from(products);
     
     if (filter) {
       if (filter.warehouseId !== undefined) {
@@ -2165,7 +2165,7 @@ export class DatabaseStorage implements IStorage {
     totalVolume: number;   // 总体积(m3)
   }> {
     // 获取所有产品
-    const allProducts = await db.select().from(products);
+    const allProducts = await this.db.select().from(products);
     
     // 获取所有唯一分类
     const categories = new Set<string>();
@@ -2217,13 +2217,13 @@ export class DatabaseStorage implements IStorage {
 
   // 仓库相关方法
   async getWarehouse(id: number): Promise<Warehouse | undefined> {
-    const [warehouse] = await db.select().from(warehouses).where(eq(warehouses.id, id));
+    const [warehouse] = await this.db.select().from(warehouses).where(eq(warehouses.id, id));
     return warehouse || undefined;
   }
 
   async createWarehouse(insertWarehouse: InsertWarehouse): Promise<Warehouse> {
     // MySQL不直接支持returning，所以我们需要先插入然后查询
-    const result = await db.insert(warehouses).values(insertWarehouse);
+    const result = await this.db.insert(warehouses).values(insertWarehouse);
     const warehouseId = Number(result.insertId);
     
     // 获取刚插入的仓库
@@ -2234,7 +2234,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateWarehouse(id: number, warehouse: Partial<Warehouse>): Promise<Warehouse | undefined> {
-    await db
+    await this.db
       .update(warehouses)
       .set(warehouse)
       .where(eq(warehouses.id, id));
@@ -2244,12 +2244,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getWarehouses(): Promise<Warehouse[]> {
-    return await db.select().from(warehouses);
+    return await this.db.select().from(warehouses);
   }
 
   // 入库单相关方法
   async getInboundOrder(id: number): Promise<InboundOrder | undefined> {
-    const [inboundOrder] = await db.select().from(inboundOrders).where(eq(inboundOrders.id, id));
+    const [inboundOrder] = await this.db.select().from(inboundOrders).where(eq(inboundOrders.id, id));
     
     if (!inboundOrder) return undefined;
     
@@ -2280,7 +2280,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getInboundOrderByNumber(orderNumber: string): Promise<InboundOrder | undefined> {
-    const [inboundOrder] = await db.select().from(inboundOrders).where(eq(inboundOrders.orderNumber, orderNumber));
+    const [inboundOrder] = await this.db.select().from(inboundOrders).where(eq(inboundOrders.orderNumber, orderNumber));
     return inboundOrder || undefined;
   }
 
@@ -2288,7 +2288,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // MySQL不直接支持returning，所以我们需要先插入然后查询
       console.log("即将插入入库单数据:", JSON.stringify(insertInboundOrder));
-      const result = await db.insert(inboundOrders).values(insertInboundOrder);
+      const result = await this.db.insert(inboundOrders).values(insertInboundOrder);
       
       // 处理insertId可能在不同位置的情况
       let orderId;
@@ -2348,7 +2348,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateInboundOrder(id: number, inboundOrder: Partial<InboundOrder>): Promise<InboundOrder | undefined> {
-    await db
+    await this.db
       .update(inboundOrders)
       .set(inboundOrder)
       .where(eq(inboundOrders.id, id));
@@ -2358,7 +2358,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getInboundOrders(filter?: { warehouseId?: number, status?: string }): Promise<InboundOrder[]> {
-    let query = db.select().from(inboundOrders);
+    let query = this.db.select().from(inboundOrders);
 
     if (filter) {
       if (filter.warehouseId !== undefined) {
@@ -2409,7 +2409,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // MySQL不直接支持returning，所以我们需要先插入然后查询
       console.log("插入入库单明细:", JSON.stringify(insertInboundOrderItem));
-      const result = await db.insert(inboundOrderItems).values(insertInboundOrderItem);
+      const result = await this.db.insert(inboundOrderItems).values(insertInboundOrderItem);
       
       // 处理insertId可能在不同位置的情况
       let itemId;
@@ -2426,7 +2426,7 @@ export class DatabaseStorage implements IStorage {
         } else {
           // 如果无法获取ID，尝试通过联合查询
           console.log("无法获取明细ID，尝试通过订单ID和商品ID查询最新插入的项目");
-          const recentItems = await db.select()
+          const recentItems = await this.db.select()
                                      .from(inboundOrderItems)
                                      .where(eq(inboundOrderItems.inboundOrderId, insertInboundOrderItem.inboundOrderId))
                                      .orderBy(desc(inboundOrderItems.id))
@@ -2446,7 +2446,7 @@ export class DatabaseStorage implements IStorage {
       if (isNaN(itemId) || itemId <= 0) {
         console.log("获取到的明细ID无效:", itemId);
         // 尝试通过关联字段查询
-        const recentItems = await db.select()
+        const recentItems = await this.db.select()
                                    .from(inboundOrderItems)
                                    .where(eq(inboundOrderItems.inboundOrderId, insertInboundOrderItem.inboundOrderId))
                                    .orderBy(desc(inboundOrderItems.id))
@@ -2466,7 +2466,7 @@ export class DatabaseStorage implements IStorage {
       if (!inboundOrderItem) {
         console.log("无法通过ID查询到入库单明细，尝试通过订单ID查询最新项目");
         // 尝试通过关联字段查询
-        const recentItems = await db.select()
+        const recentItems = await this.db.select()
                                    .from(inboundOrderItems)
                                    .where(eq(inboundOrderItems.inboundOrderId, insertInboundOrderItem.inboundOrderId))
                                    .orderBy(desc(inboundOrderItems.id))
@@ -2487,12 +2487,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getInboundOrderItem(id: number): Promise<InboundOrderItem | undefined> {
-    const [item] = await db.select().from(inboundOrderItems).where(eq(inboundOrderItems.id, id));
+    const [item] = await this.db.select().from(inboundOrderItems).where(eq(inboundOrderItems.id, id));
     return item || undefined;
   }
 
   async updateInboundOrderItem(id: number, inboundOrderItem: Partial<InboundOrderItem>): Promise<InboundOrderItem | undefined> {
-    await db
+    await this.db
       .update(inboundOrderItems)
       .set(inboundOrderItem)
       .where(eq(inboundOrderItems.id, id));
@@ -2502,12 +2502,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteInboundOrderItem(id: number): Promise<void> {
-    await db.delete(inboundOrderItems).where(eq(inboundOrderItems.id, id));
+    await this.db.delete(inboundOrderItems).where(eq(inboundOrderItems.id, id));
   }
 
   // 出库单相关方法
   async getOutboundOrder(id: number): Promise<OutboundOrder | undefined> {
-    const [outboundOrder] = await db.select().from(outboundOrders).where(eq(outboundOrders.id, id));
+    const [outboundOrder] = await this.db.select().from(outboundOrders).where(eq(outboundOrders.id, id));
     
     if (!outboundOrder) return undefined;
     
@@ -2538,7 +2538,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getOutboundOrderByNumber(orderNumber: string): Promise<OutboundOrder | undefined> {
-    const [outboundOrder] = await db.select().from(outboundOrders).where(eq(outboundOrders.orderNumber, orderNumber));
+    const [outboundOrder] = await this.db.select().from(outboundOrders).where(eq(outboundOrders.orderNumber, orderNumber));
     return outboundOrder || undefined;
   }
 
@@ -2546,7 +2546,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // MySQL不直接支持returning，所以我们需要先插入然后查询
       console.log("即将插入出库单数据:", JSON.stringify(insertOutboundOrder));
-      const result = await db.insert(outboundOrders).values(insertOutboundOrder);
+      const result = await this.db.insert(outboundOrders).values(insertOutboundOrder);
       
       // 处理insertId可能在不同位置的情况
       let orderId;
@@ -2607,7 +2607,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateOutboundOrder(id: number, outboundOrder: Partial<OutboundOrder>): Promise<OutboundOrder | undefined> {
-    await db
+    await this.db
       .update(outboundOrders)
       .set(outboundOrder)
       .where(eq(outboundOrders.id, id));
@@ -2617,7 +2617,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getOutboundOrders(filter?: { warehouseId?: number, status?: string }): Promise<OutboundOrder[]> {
-    let query = db.select().from(outboundOrders);
+    let query = this.db.select().from(outboundOrders);
 
     if (filter) {
       if (filter.warehouseId !== undefined) {
@@ -2668,7 +2668,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // MySQL不直接支持returning，所以我们需要先插入然后查询
       console.log("插入出库单明细:", JSON.stringify(insertOutboundOrderItem));
-      const result = await db.insert(outboundOrderItems).values(insertOutboundOrderItem);
+      const result = await this.db.insert(outboundOrderItems).values(insertOutboundOrderItem);
       
       // 处理insertId可能在不同位置的情况
       let itemId;
@@ -2685,7 +2685,7 @@ export class DatabaseStorage implements IStorage {
         } else {
           // 如果无法获取ID，尝试通过联合查询
           console.log("无法获取明细ID，尝试通过订单ID和商品ID查询最新插入的项目");
-          const recentItems = await db.select()
+          const recentItems = await this.db.select()
                                      .from(outboundOrderItems)
                                      .where(eq(outboundOrderItems.outboundOrderId, insertOutboundOrderItem.outboundOrderId))
                                      .orderBy(desc(outboundOrderItems.id))
@@ -2705,7 +2705,7 @@ export class DatabaseStorage implements IStorage {
       if (isNaN(itemId) || itemId <= 0) {
         console.log("获取到的明细ID无效:", itemId);
         // 尝试通过关联字段查询
-        const recentItems = await db.select()
+        const recentItems = await this.db.select()
                                    .from(outboundOrderItems)
                                    .where(eq(outboundOrderItems.outboundOrderId, insertOutboundOrderItem.outboundOrderId))
                                    .orderBy(desc(outboundOrderItems.id))
@@ -2725,7 +2725,7 @@ export class DatabaseStorage implements IStorage {
       if (!outboundOrderItem) {
         console.log("无法通过ID查询到出库单明细，尝试通过订单ID查询最新项目");
         // 尝试通过关联字段查询
-        const recentItems = await db.select()
+        const recentItems = await this.db.select()
                                    .from(outboundOrderItems)
                                    .where(eq(outboundOrderItems.outboundOrderId, insertOutboundOrderItem.outboundOrderId))
                                    .orderBy(desc(outboundOrderItems.id))
@@ -2746,12 +2746,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getOutboundOrderItem(id: number): Promise<OutboundOrderItem | undefined> {
-    const [item] = await db.select().from(outboundOrderItems).where(eq(outboundOrderItems.id, id));
+    const [item] = await this.db.select().from(outboundOrderItems).where(eq(outboundOrderItems.id, id));
     return item || undefined;
   }
 
   async updateOutboundOrderItem(id: number, outboundOrderItem: Partial<OutboundOrderItem>): Promise<OutboundOrderItem | undefined> {
-    await db
+    await this.db
       .update(outboundOrderItems)
       .set(outboundOrderItem)
       .where(eq(outboundOrderItems.id, id));
@@ -2761,17 +2761,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteOutboundOrderItem(id: number): Promise<void> {
-    await db.delete(outboundOrderItems).where(eq(outboundOrderItems.id, id));
+    await this.db.delete(outboundOrderItems).where(eq(outboundOrderItems.id, id));
   }
   
   // 电商平台API配置方法
   async getApiConfiguration(id: number): Promise<ApiConfiguration | undefined> {
-    const [config] = await db.select().from(apiConfigurations).where(eq(apiConfigurations.id, id));
+    const [config] = await this.db.select().from(apiConfigurations).where(eq(apiConfigurations.id, id));
     return config || undefined;
   }
   
   async getApiConfigurationByName(name: string): Promise<ApiConfiguration | undefined> {
-    const [config] = await db.select().from(apiConfigurations).where(eq(apiConfigurations.name, name));
+    const [config] = await this.db.select().from(apiConfigurations).where(eq(apiConfigurations.name, name));
     return config || undefined;
   }
   
@@ -2779,7 +2779,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // MySQL不直接支持returning，所以我们需要先插入然后查询
       console.log("即将插入API配置数据:", JSON.stringify(insertConfig));
-      const result = await db.insert(apiConfigurations).values(insertConfig);
+      const result = await this.db.insert(apiConfigurations).values(insertConfig);
       
       // 处理insertId可能在不同位置的情况
       let configId;
@@ -2839,7 +2839,7 @@ export class DatabaseStorage implements IStorage {
   }
   
   async updateApiConfiguration(id: number, config: Partial<ApiConfiguration>): Promise<ApiConfiguration | undefined> {
-    await db
+    await this.db
       .update(apiConfigurations)
       .set({ ...config, updatedAt: new Date() })
       .where(eq(apiConfigurations.id, id));
@@ -2849,23 +2849,23 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getApiConfigurations(): Promise<ApiConfiguration[]> {
-    return await db.select().from(apiConfigurations);
+    return await this.db.select().from(apiConfigurations);
   }
   
   // 电商平台产品方法
   async getEcommerceProduct(id: number): Promise<EcommerceProduct | undefined> {
-    const [product] = await db.select().from(ecommerceProducts).where(eq(ecommerceProducts.id, id));
+    const [product] = await this.db.select().from(ecommerceProducts).where(eq(ecommerceProducts.id, id));
     return product || undefined;
   }
   
   async getEcommerceProductByPlatformId(platformId: string): Promise<EcommerceProduct | undefined> {
-    const [product] = await db.select().from(ecommerceProducts)
+    const [product] = await this.db.select().from(ecommerceProducts)
       .where(eq(ecommerceProducts.platformId, platformId));
     return product || undefined;
   }
   
   async getEcommerceProductByPlatformCode(platformCode: string): Promise<EcommerceProduct | undefined> {
-    const [product] = await db.select().from(ecommerceProducts)
+    const [product] = await this.db.select().from(ecommerceProducts)
       .where(eq(ecommerceProducts.platformCode, platformCode));
     return product || undefined;
   }
@@ -2874,7 +2874,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // MySQL不直接支持returning，所以我们需要先插入然后查询
       console.log("即将插入电商产品数据:", JSON.stringify(insertProduct));
-      const result = await db.insert(ecommerceProducts).values(insertProduct);
+      const result = await this.db.insert(ecommerceProducts).values(insertProduct);
       
       // 处理insertId可能在不同位置的情况
       let productId;
@@ -2972,7 +2972,7 @@ export class DatabaseStorage implements IStorage {
       updateData.updatedAt = new Date();
     }
     
-    await db
+    await this.db
       .update(ecommerceProducts)
       .set(updateData)
       .where(eq(ecommerceProducts.id, id));
@@ -2982,7 +2982,7 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getEcommerceProducts(filter?: { platformSource?: string, matchedProductId?: number }): Promise<EcommerceProduct[]> {
-    let query = db.select().from(ecommerceProducts);
+    let query = this.db.select().from(ecommerceProducts);
     
     if (filter) {
       if (filter.platformSource) {
@@ -3003,8 +3003,8 @@ export class DatabaseStorage implements IStorage {
   }
   
   async findProductsByMatchedCode(matchedCode: string): Promise<Product[]> {
-    return await db.select().from(products)
-      .where(sql`${products.barcode} LIKE ${`%${matchedCode}%`}`);
+    return await this.db.select().from(products)
+      .where(eq(products.barcode, matchedCode));
   }
   
   async matchPlatformProducts(platformSource: string): Promise<{
