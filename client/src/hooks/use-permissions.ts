@@ -49,31 +49,30 @@ export function usePermissions(): PermissionsHook {
     try {
       setLoading(true);
       
-      // 检查认证状态
-      const token = localStorage.getItem('token');
-      if (!token) {
+      // 获取当前用户信息，检查会话是否有效
+      const currentUserResponse = await fetch('/api/auth/current-user', {
+        credentials: 'include' // 包含会话cookie
+      });
+      
+      if (currentUserResponse.status === 401) {
+        // 认证失败，重定向到登录页面
         setIsAuthenticated(false);
+        navigate('/login');
+        console.log('未登录，请先登录');
         setLoading(false);
         return;
       }
       
       // 获取页面权限
       const pageResponse = await fetch('/api/permissions/pages', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        credentials: 'include' // 包含会话cookie
       });
       
       if (pageResponse.status === 401) {
-        // 认证失败，清除token并重定向到登录页面
-        localStorage.removeItem('token');
+        // 认证失败，重定向到登录页面
         setIsAuthenticated(false);
         navigate('/login');
-        toast({
-          variant: "destructive",
-          title: "认证失败",
-          description: "请重新登录",
-        });
+        console.log('认证已过期，请重新登录');
         setLoading(false);
         return;
       }
@@ -83,9 +82,7 @@ export function usePermissions(): PermissionsHook {
       
       // 获取仓库权限
       const warehouseResponse = await fetch('/api/permissions/warehouses', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        credentials: 'include' // 包含会话cookie
       });
       
       const warehouseData = await warehouseResponse.json();
@@ -94,11 +91,8 @@ export function usePermissions(): PermissionsHook {
       
     } catch (error) {
       console.error('获取权限失败:', error);
-      toast({
-        variant: "destructive",
-        title: "权限加载失败",
-        description: "无法获取您的权限信息",
-      });
+      // 使用console.log代替toast，避免出错
+      console.error('权限加载失败：无法获取您的权限信息');
     } finally {
       setLoading(false);
     }
@@ -106,14 +100,8 @@ export function usePermissions(): PermissionsHook {
 
   // 组件挂载时获取权限
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      fetchPermissions();
-      setIsAuthenticated(true);
-    } else {
-      setIsAuthenticated(false);
-      setLoading(false);
-    }
+    // 尝试获取当前会话信息，检查认证状态
+    fetchPermissions();
   }, []);
 
   // 检查页面权限

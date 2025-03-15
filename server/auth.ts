@@ -67,6 +67,11 @@ export function initializePassport() {
     }
   });
 
+  // 检查用户是否已绑定社交账号
+  function hasSocialAccountBound(user: any): boolean {
+    return user.socialId !== null && user.socialId !== undefined && user.socialId !== '';
+  }
+
   // 本地策略 - 用户名密码登录
   passport.use(
     new LocalStrategy(async (username, password, done) => {
@@ -76,6 +81,14 @@ export function initializePassport() {
         
         if (!user) {
           return done(null, false, { message: '用户不存在' });
+        }
+        
+        // 检查用户是否已绑定社交账号（已绑定则禁止密码登录）
+        if (hasSocialAccountBound(user)) {
+          return done(null, false, { 
+            message: '您已绑定社交账号，请使用微信或WhatsApp登录', 
+            socialBound: true 
+          });
         }
         
         // 验证密码 - 使用crypto替代bcrypt
@@ -387,5 +400,74 @@ export async function updateUserRole(req: Request, res: Response) {
   } catch (error) {
     console.error('更新用户角色错误:', error);
     res.status(500).json({ message: '更新用户角色失败' });
+  }
+}
+
+// 绑定社交账号
+export async function bindSocialAccount(req: Request, res: Response) {
+  try {
+    // 需要先验证用户已登录
+    if (!req.user) {
+      return res.status(401).json({ message: '未登录，请先登录后再绑定社交账号' });
+    }
+    
+    const userId = (req.user as any).id;
+    const { provider, socialId, socialData } = req.body;
+    
+    // 验证必填参数
+    if (!provider || !socialId) {
+      return res.status(400).json({ message: '缺少必要参数' });
+    }
+    
+    // 验证提供商类型
+    if (provider !== 'wechat' && provider !== 'whatsapp') {
+      return res.status(400).json({ message: '不支持的社交平台类型' });
+    }
+    
+    // 检查社交账号是否已被其他用户绑定
+    const existingUser = await storage.getUserBySocialId(socialId);
+    if (existingUser && existingUser.id !== userId) {
+      return res.status(400).json({ message: '该社交账号已被其他用户绑定' });
+    }
+    
+    // 更新用户社交账号信息
+    await storage.updateUser(userId, {
+      socialId,
+      socialData: socialData || null,
+      userSource: provider as 'wechat' | 'whatsapp',
+      updatedAt: new Date()
+    });
+    
+    res.json({ 
+      message: '社交账号绑定成功',
+      provider,
+      bound: true
+    });
+  } catch (error) {
+    console.error('绑定社交账号错误:', error);
+    res.status(500).json({ message: '绑定社交账号失败，请稍后再试' });
+  }
+}
+
+// 获取用户绑定状态
+export async function getSocialBindingStatus(req: Request, res: Response) {
+  try {
+    // 需要先验证用户已登录
+    if (!req.user) {
+      return res.status(401).json({ message: '未登录' });
+    }
+    
+    const user = req.user as any;
+    const hasSocialBound = user.socialId !== null && user.socialId !== undefined && user.socialId !== '';
+    
+    // 返回绑定状态
+    res.json({
+      bound: hasSocialBound,
+      provider: user.userSource !== 'local' ? user.userSource : null,
+      userSource: user.userSource
+    });
+  } catch (error) {
+    console.error('获取社交绑定状态错误:', error);
+    res.status(500).json({ message: '获取绑定状态失败' });
   }
 }

@@ -52,16 +52,26 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(values),
+        credentials: 'include' // 包含会话cookie
       });
       
       const data = await response.json();
       
       if (!response.ok) {
+        // 检查是否是因为社交账号绑定导致的错误
+        if (data.socialBound) {
+          toast({
+            variant: "destructive",
+            title: "无法使用密码登录",
+            description: "该账号已绑定社交媒体，请使用微信或WhatsApp登录",
+          });
+          return;
+        }
+        
         throw new Error(data.message || '登录失败');
       }
       
-      // 保存令牌到本地存储
-      localStorage.setItem('token', data.token);
+      // 会话已经在服务器端创建，无需在前端存储令牌
       
       // 设置身份验证状态
       toast({
@@ -74,10 +84,20 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         onLoginSuccess();
       }
       
+      // 检查是否需要绑定社交账号
+      if (data.needSocialBinding) {
+        toast({
+          title: "请绑定社交账号",
+          description: "为了提高账户安全性，请前往设置页面绑定微信或WhatsApp",
+          duration: 6000,
+        });
+      }
+      
       // 跳转到主页
       navigate('/');
       
     } catch (error: any) {
+      console.error('登录错误:', error);
       toast({
         variant: "destructive",
         title: "登录失败",

@@ -34,7 +34,9 @@ import {
   getCurrentUser,
   logout,
   activateUser,
-  updateUserRole
+  updateUserRole,
+  bindSocialAccount,
+  getSocialBindingStatus
 } from "./auth";
 import { 
   createTransferImportTemplate, 
@@ -175,6 +177,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // 登出接口
   apiRouter.post("/auth/logout", verifySession, logout);
+  
+  // 社交账号绑定相关接口
+  apiRouter.post("/auth/bind-social", verifySession, bindSocialAccount);
+  apiRouter.get("/auth/social-binding-status", verifySession, getSocialBindingStatus);
   
   // WeChat 登录
   apiRouter.get('/auth/wechat', passport.authenticate('wechat'));
