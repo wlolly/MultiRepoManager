@@ -611,31 +611,13 @@ export default function WarehouseTransfers() {
         </div>
       )}
       
-      {/* 功能解释说明及Excel操作按钮 */}
+      {/* 功能解释说明 */}
       <div className="bg-accent/20 p-4 rounded-lg mb-6 flex flex-wrap gap-4 items-center">
         <div className="flex-1">
           <h3 className="text-lg font-medium mb-1">{t("warehouseTransfer.excel_operations")}</h3>
           <p className="text-sm text-muted-foreground">{t("warehouseTransfer.excel_description")}</p>
         </div>
-        <div className="flex gap-2">
-          {/* 使用ExcelButtons组件 */}
-          <ExcelButtons size="sm" 
-            onDownloadTemplate={handleDownloadTemplate}
-            onImport={() => setImportDialogOpen(true)}
-            onExport={() => {
-              if (filteredTransfers.length > 0) {
-                exportAllTransfersToExcel();
-              } else {
-                toast.error(t("warehouseTransfer.no_data_to_export"));
-              }
-            }}
-            tooltips={{
-              template: t("warehouseTransfer.download_template_tooltip"),
-              import: t("warehouseTransfer.import_tooltip"),
-              export: t("warehouseTransfer.export_tooltip")
-            }}
-          />
-        </div>
+        {/* Excel操作按钮已移至页面顶部 */}
       </div>
 
       {/* 筛选器 */}
