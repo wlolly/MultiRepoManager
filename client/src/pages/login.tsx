@@ -97,11 +97,24 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         });
       }
       
-      // 将用户数据存储在sessionStorage中
+      // 将用户数据和会话ID存储在本地
       if (data.user) {
         try {
+          // 保存用户数据到会话存储和本地存储
           sessionStorage.setItem('currentUser', JSON.stringify(data.user));
-          console.log('用户数据已保存到会话存储');
+          localStorage.setItem('currentUser', JSON.stringify(data.user));
+          console.log('用户数据已保存到会话存储和本地存储');
+          
+          // 如果服务器返回了会话ID，保存在多个位置以增强持久性
+          if (data.sessionId) {
+            console.log('保存会话ID:', data.sessionId);
+            // 同时保存到sessionStorage和localStorage
+            sessionStorage.setItem('sessionId', data.sessionId);
+            localStorage.setItem('sessionId', data.sessionId);
+            
+            // 设置一个cookie，增加会话持久性（作为备用方案）
+            document.cookie = `sessionId=${data.sessionId}; path=/; max-age=2592000`; // 30天
+          }
         } catch (storageError) {
           console.error('保存用户数据失败:', storageError);
         }
@@ -126,8 +139,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         // 延迟1秒后跳转到设置页面进行社交账号绑定
         setTimeout(() => {
           console.log('正在跳转到设置页面进行社交账号绑定');
-          // 保存会话ID到sessionStorage以增强会话持久性
-          sessionStorage.setItem('sessionId', data.sessionId);
           // 使用React Router导航代替直接修改location
           navigate('/settings?needBind=true');
         }, 1000);
@@ -135,8 +146,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         // 直接跳转到主页
         setTimeout(() => {
           console.log('正在跳转到主页');
-          // 保存会话ID到sessionStorage以增强会话持久性
-          sessionStorage.setItem('sessionId', data.sessionId);
           // 使用React Router导航代替直接修改location
           navigate('/');
         }, 100);
