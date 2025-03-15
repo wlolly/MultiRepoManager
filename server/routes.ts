@@ -1,6 +1,7 @@
 import express, { type Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { getUserPagePermissions, getUserWarehousePermissions } from "./middleware/permission-middleware";
 import { 
   insertUserSchema, 
   insertRepositorySchema, 
