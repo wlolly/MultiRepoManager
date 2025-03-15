@@ -420,22 +420,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.setHeader('X-Original-Session-ID', req.sessionID || '');
         res.setHeader('X-Session-Authenticated', 'true');
         
-        // 返回JSON响应（用于API调用）
-        return res.json({
-          message: '登录成功',
-          success: true,
-          fallbackMode: useFallbackStorage,
-          needSocialBinding: needSocialBinding, // 通知前端需要绑定社交账号
-          sessionId: req.sessionID, // 返回会话ID，方便客户端恢复
-          authenticated: true,
-          user: {
-            id: user.id,
-            username: user.username,
-            fullName: user.fullName,
-            role: user.role,
-            avatarUrl: user.avatarUrl,
-            userSource: user.userSource
+        // 确保会话已经保存
+        req.session.save(err => {
+          if (err) {
+            console.error('保存会话出错:', err);
+            return res.status(500).json({
+              message: '登录成功但会话保存失败，请重试',
+              success: false
+            });
           }
+
+          // 设置会话cookie
+          res.cookie('sessionId', req.sessionID, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: 30 * 24 * 60 * 60 * 1000, // 30天
+            path: '/'
+          });
+
+          // 返回JSON响应（用于API调用）
+          return res.json({
+            message: '登录成功',
+            success: true,
+            fallbackMode: useFallbackStorage,
+            needSocialBinding: needSocialBinding, // 通知前端需要绑定社交账号
+            sessionId: req.sessionID, // 返回会话ID，方便客户端恢复
+            authenticated: true,
+            user: {
+              id: user.id,
+              username: user.username,
+              fullName: user.fullName,
+              role: user.role,
+              avatarUrl: user.avatarUrl,
+              userSource: user.userSource
+            }
+          });
         });
       });
     })(req, res, next);
