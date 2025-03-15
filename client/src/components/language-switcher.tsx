@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 export function LanguageSwitcher() {
   const { t, i18n } = useTranslation();
   const [currentLanguage, setCurrentLanguage] = useState(i18n.language);
-  const { toast } = useToast();
+  const toastContext = useToast();
 
   // 监听语言变化
   useEffect(() => {
@@ -46,10 +46,11 @@ export function LanguageSwitcher() {
         };
         
         // 显示成功提示，使用用户选择的语言
-        toast({
-          title: successMessages[lng as keyof typeof successMessages].title,
-          description: successMessages[lng as keyof typeof successMessages].description,
-          duration: 2000
+        const message = successMessages[lng as keyof typeof successMessages];
+        toastContext.addToast({
+          title: message.title,
+          description: message.description,
+          type: "success"
         });
       } catch (error: any) {
         console.error("语言切换失败:", error);
@@ -63,11 +64,11 @@ export function LanguageSwitcher() {
           uz: { title: "Tilni o'zgartirish xatosi", description: "Tarjima resurslarini yuklab bo'lmadi" }
         };
         
-        toast({
-          title: errorMessages[lng as keyof typeof errorMessages].title,
-          description: error.message || errorMessages[lng as keyof typeof errorMessages].description,
-          variant: "destructive",
-          duration: 3000
+        const errorMessage = errorMessages[lng as keyof typeof errorMessages];
+        toastContext.addToast({
+          title: errorMessage.title,
+          description: error.message || errorMessage.description,
+          type: "error"
         });
       }
     });
