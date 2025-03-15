@@ -13,7 +13,21 @@ async function throwIfResNotOk(res: Response) {
  * 优先处理响应头中的会话ID信息
  */
 function handleSessionInfo(res: Response, data?: any): void {
-  // 1. 首先尝试从响应头获取会话ID (服务器通过X-Original-Session-ID设置)
+  // 获取当前URL路径用于日志
+  const url = res.url || '未知URL';
+  const logPrefix = `[QueryClient] ${url} |`;
+
+  // 优先处理认证相关响应
+  if (data && data.hasOwnProperty('authenticated')) {
+    // 先检查响应中的会话ID
+    if (data.sessionId) {
+      console.log(`${logPrefix} 认证响应中包含会话ID: ${data.sessionId}，保存它以确保会话一致性`);
+      saveSessionId(data.sessionId);
+      return; // 认证请求已经处理了会话ID，不需要继续处理
+    }
+  }
+
+  // 1. 尝试从响应头获取会话ID (服务器通过X-Original-Session-ID设置)
   const sessionIdFromHeaders = processResponseHeaders(res.headers);
   
   // 2. 如果响应头中没有会话ID，但响应体中有会话ID
@@ -21,25 +35,28 @@ function handleSessionInfo(res: Response, data?: any): void {
     // 检查它是否与当前保存的会话ID不同
     const currentId = getSessionId();
     
+    // 如果当前没有会话ID或者服务器返回了不同的会话ID
     if (!currentId || currentId !== data.sessionId) {
-      console.log(`从API响应体中保存新会话ID: ${data.sessionId} (当前ID: ${currentId || '无'})`);
+      console.log(`${logPrefix} 从API响应体中保存新会话ID: ${data.sessionId} (当前ID: ${currentId || '无'})`);
       saveSessionId(data.sessionId);
+    } else {
+      console.log(`${logPrefix} 确认会话ID: ${currentId}`);
     }
   }
   
-  // 3. 如果是认证响应，始终接受该会话ID
-  if (data && data.hasOwnProperty('authenticated')) {
-    if (data.sessionId) {
-      console.log(`认证响应中包含会话ID: ${data.sessionId}，保存它以确保会话一致性`);
+  // 3. 处理401错误，但不是会话过期
+  if (res.status === 401) {
+    const isTimeout = data && data.errorCode === 'SESSION_TIMEOUT';
+    
+    if (isTimeout) {
+      console.log(`${logPrefix} 会话已过期，清除本地会话状态`);
+      // 触发会话过期的全局事件
+      window.dispatchEvent(new Event('session_expired'));
+    } else if (data && data.sessionId) {
+      // 401但有新会话ID - 可能是需要重新登录，保存新会话ID
+      console.log(`${logPrefix} 未认证响应，但包含新会话ID: ${data.sessionId}`);
       saveSessionId(data.sessionId);
     }
-  }
-  
-  // 4. 如果发现会话过期错误，清除本地会话状态
-  if (res.status === 401 && data && data.errorCode === 'SESSION_TIMEOUT') {
-    console.log('会话已过期，清除本地会话状态');
-    // 可以在这里触发会话过期的全局事件
-    window.dispatchEvent(new Event('session_expired'));
   }
 }
 
@@ -48,28 +65,74 @@ export async function apiRequest<T = any>(
   options?: {
     method?: string;
     body?: any;
+    preferExistingSession?: boolean; // 新增参数：是否优先使用现有会话
   },
 ): Promise<T> {
-  console.log(`API Request to ${url}`, {
-    method: options?.method || 'GET',
-    body: options?.body
+  const method = options?.method || 'GET';
+  const preferExistingSession = options?.preferExistingSession ?? true; // 默认优先使用现有会话
+  
+  // 获取简短URL用于日志
+  const urlObj = new URL(url, window.location.origin);
+  const shortUrl = urlObj.pathname;
+  
+  console.log(`[API] ${method} ${shortUrl}`, {
+    bodySize: options?.body ? JSON.stringify(options.body).length : 0,
+    preferExistingSession
   });
   
   // 初始化请求头
   const headers: Record<string, string> = options?.body ? { "Content-Type": "application/json" } : {};
   
+  // 添加特定请求头，记录请求来源和方法
+  headers['X-HTTP-Method'] = method;
+  headers['X-Source-URL'] = shortUrl;
+  headers['X-Request-Time'] = new Date().toISOString();
+  
+  // 添加是否优先使用现有会话的标志
+  headers['X-Prefer-Existing-Session'] = preferExistingSession ? 'true' : 'false';
+  
   // 使用会话管理器附加会话ID到请求
   const { url: enhancedUrl, headers: enhancedHeaders } = attachSessionToRequest(url, headers);
   
+  // 记录当前使用的会话ID
+  const sessionId = enhancedHeaders['X-Session-ID'] || '未知';
+  console.log(`[API] 使用会话ID: ${sessionId.substring(0, 8)}...`);
+  
   try {
+    // 增加请求超时设置
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30秒超时
+    
     const res = await fetch(enhancedUrl, {
-      method: options?.method || 'GET',
+      method,
       headers: enhancedHeaders,
       body: typeof options?.body === 'string' ? options.body : options?.body ? JSON.stringify(options.body) : undefined,
-      credentials: "include", // 这确保cookies会随请求发送
+      credentials: "include", // 确保cookies会随请求发送
+      signal: controller.signal
     });
+    
+    // 清除超时
+    clearTimeout(timeoutId);
 
-    console.log(`API Response status: ${res.status}`);
+    // 记录关键HTTP头信息
+    const logHeaders: Record<string, string> = {};
+    res.headers.forEach((value, key) => {
+      if (key.toLowerCase().includes('session') || 
+          key.toLowerCase().includes('cookie') || 
+          key.toLowerCase().includes('auth')) {
+        logHeaders[key] = value;
+      }
+    });
+    
+    console.log(`[API] ${method} ${shortUrl} 响应: ${res.status}`, { 
+      headers: Object.keys(logHeaders).length > 0 ? logHeaders : '无关键头信息' 
+    });
+    
+    // 检查响应是否包含新的会话ID
+    const resSessionId = res.headers.get('X-Original-Session-ID') || res.headers.get('X-Session-ID');
+    if (resSessionId && resSessionId !== sessionId && resSessionId !== 'none') {
+      console.log(`[API] 服务器返回了新的会话ID: ${resSessionId.substring(0, 8)}...`);
+    }
     
     if (!res.ok) {
       const errorText = await res.text();
@@ -80,24 +143,69 @@ export async function apiRequest<T = any>(
         errorData = JSON.parse(errorText);
         // 处理响应中的会话信息（即使是错误响应）
         handleSessionInfo(res, errorData);
+        
+        // 更详细的错误日志
+        console.error(`[API] ${method} ${shortUrl} 错误 (${res.status}):`, {
+          message: errorData.message || res.statusText,
+          errorCode: errorData.errorCode || 'UNKNOWN',
+          sessionId: errorData.sessionId || '无',
+          details: errorData.errors || errorData.details || '无详细信息'
+        });
       } catch (e) {
         // 如果不是JSON，使用原始文本
         errorData = { message: errorText || res.statusText };
+        console.error(`[API] ${method} ${shortUrl} 错误 (${res.status}): ${errorText || res.statusText}`);
       }
       
-      console.error(`API Error (${res.status}):`, errorData);
-      throw new Error(errorData.message || `${res.status}: ${res.statusText}`);
+      const error = new Error(errorData.message || `${res.status}: ${res.statusText}`);
+      (error as any).status = res.status;
+      (error as any).errorCode = errorData.errorCode;
+      (error as any).sessionId = errorData.sessionId;
+      throw error;
     }
     
-    // 如果是成功响应
-    const data = await res.json();
+    // 先处理响应头中的会话信息，确保会话ID得到更新
+    processResponseHeaders(res.headers);
     
-    // 处理响应中的会话信息
-    handleSessionInfo(res, data);
+    // 解析响应体
+    let data: T;
+    const contentType = res.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      data = await res.json();
+      
+      // 处理响应中的会话信息
+      handleSessionInfo(res, data);
+      
+      // 记录成功响应
+      if (url.includes('/auth/')) {
+        console.log(`[API] ${method} ${shortUrl} 成功响应:`, {
+          authenticated: (data as any).authenticated || false,
+          sessionId: (data as any).sessionId ? ((data as any).sessionId as string).substring(0, 8) + '...' : '无',
+          requiresBinding: (data as any).requiresBinding || false
+        });
+      }
+    } else {
+      // 非JSON响应
+      const text = await res.text();
+      console.log(`[API] ${method} ${shortUrl} 非JSON响应: ${text.substring(0, 100)}...`);
+      data = text as unknown as T;
+    }
     
     return data;
   } catch (error) {
-    console.error("API Request failed:", error);
+    // 区分网络错误和业务逻辑错误
+    if ((error as any).name === 'AbortError') {
+      console.error(`[API] ${method} ${shortUrl} 请求超时`);
+      throw new Error(`请求超时: ${shortUrl}`);
+    }
+    
+    if (!(error as any).status) {
+      // 网络错误，而不是服务器返回的错误状态
+      console.error(`[API] ${method} ${shortUrl} 网络错误:`, error);
+      throw new Error(`网络连接错误: ${(error as Error).message}`);
+    }
+    
+    // 继续抛出原始错误
     throw error;
   }
 }
