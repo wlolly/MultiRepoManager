@@ -76,10 +76,8 @@ function SocialBindingSection() {
       const data = await response.json();
       
       if (response.ok) {
-        toast({
-          title: t('settings.security.bindSuccess', '绑定成功'),
-          description: t('settings.security.bindSuccessDescription', '您已成功绑定社交账号'),
-          variant: 'default'
+        toast.success(t('settings.security.bindSuccessDescription', '您已成功绑定社交账号'), {
+          title: t('settings.security.bindSuccess', '绑定成功')
         });
         
         // 更新状态
@@ -89,10 +87,8 @@ function SocialBindingSection() {
       }
     } catch (error) {
       console.error('绑定社交账号错误:', error);
-      toast({
-        title: t('settings.security.bindFailed', '绑定失败'),
-        description: (error instanceof Error) ? error.message : '请稍后再试',
-        variant: 'destructive'
+      toast.error((error instanceof Error) ? error.message : '请稍后再试', {
+        title: t('settings.security.bindFailed', '绑定失败')
       });
     } finally {
       setIsLoading(false);
@@ -187,31 +183,27 @@ export default function Settings() {
   
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Profile updated",
-      description: "Your profile information has been saved.",
+    toast.success("Your profile information has been saved.", {
+      title: "Profile updated"
     });
   };
   
   const handleChangePassword = (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Password updated",
-      description: "Your password has been changed successfully.",
+    toast.success("Your password has been changed successfully.", {
+      title: "Password updated"
     });
   };
   
   const handleSaveNotifications = () => {
-    toast({
-      title: "Notification settings saved",
-      description: "Your notification preferences have been updated.",
+    toast.success("Your notification preferences have been updated.", {
+      title: "Notification settings saved"
     });
   };
   
   const handleSaveAppearance = () => {
-    toast({
-      title: "Appearance settings saved",
-      description: "Your appearance preferences have been updated.",
+    toast.success("Your appearance preferences have been updated.", {
+      title: "Appearance settings saved"
     });
   };
   
