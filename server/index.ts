@@ -137,13 +137,53 @@ app.use((req, res, next) => {
     req.headers['session-id'];
   
   // 如果发现有效的客户端会话ID，且与当前会话ID不同，尝试同步它
-  if (headerSessionId && typeof headerSessionId === 'string' && 
-      headerSessionId.length >= 16 && req.sessionID !== headerSessionId) {
-    
-    console.log(`在中间件中发现客户端会话ID: ${headerSessionId}，当前会话ID: ${req.sessionID}`);
-    
-    // 添加到响应头，让客户端知道我们收到了它的会话ID
-    res.setHeader('X-Client-Session-ID', headerSessionId);
+  if (headerSessionId && typeof headerSessionId === 'string') {
+    // 处理可能的重复会话ID (如果包含逗号，取第一个)
+    const cleanHeaderId = headerSessionId.includes(',') 
+      ? headerSessionId.split(',')[0].trim() 
+      : headerSessionId;
+      
+    if (cleanHeaderId.length >= 16 && req.sessionID !== cleanHeaderId) {
+      console.log(`在中间件中发现客户端会话ID: ${cleanHeaderId}，当前会话ID: ${req.sessionID}`);
+      
+      // 添加到响应头，让客户端知道我们收到了它的会话ID
+      res.setHeader('X-Client-Session-ID', cleanHeaderId);
+      
+      // 尝试从会话存储中获取与客户端会话ID关联的会话
+      if (req.sessionStore) {
+        (req.sessionStore as any).get(cleanHeaderId, (err: Error, clientSession: any) => {
+          if (err) {
+            console.error('获取客户端会话时出错:', err);
+            return;
+          }
+          
+          // 如果找到了有效的客户端会话，并且包含用户信息
+          if (clientSession && clientSession.userId) {
+            console.log(`找到有效的客户端会话，包含用户ID ${clientSession.userId}，正在恢复...`);
+            
+            // 合并会话数据
+            if (req.session) {
+              Object.assign(req.session, {
+                userId: clientSession.userId,
+                userRole: clientSession.userRole,
+                authenticated: true,
+                socialBound: clientSession.socialBound,
+                lastActivity: Date.now()
+              });
+              
+              // 保存会话
+              req.session.save((saveErr) => {
+                if (saveErr) {
+                  console.error('保存同步的会话时出错:', saveErr);
+                } else {
+                  console.log(`成功将客户端会话ID ${cleanHeaderId} 与服务器会话同步`);
+                }
+              });
+            }
+          }
+        });
+      }
+    }
   }
     
   // 更新会话活动时间
