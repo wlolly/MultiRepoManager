@@ -27,7 +27,6 @@ interface LoginPageProps {
 
 export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [loginSuccess, setLoginSuccess] = useState(false);
   const [_, navigate] = useLocation();
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -71,16 +70,14 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         saveSessionId(data.sessionId);
       }
       
-      // 登录成功
-      setLoginSuccess(true); // 设置登录成功状态，显示手动跳转按钮
-      
-      // 如果有回调函数则执行
+      // 登录成功，转到登录重定向页面
       if (onLoginSuccess) {
         onLoginSuccess();
-      } else {
-        // 添加日志调试信息
-        console.log('登录成功，显示手动跳转按钮');
       }
+      
+      // 使用重定向页面处理会话，而不是直接跳转到首页
+      console.log('登录成功，重定向到登录重定向页面');
+      window.location.href = '/login-redirect';
     })
     .catch(error => {
       console.error('登录请求错误:', error);
@@ -109,21 +106,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         <h1 className="text-2xl font-bold text-gray-800">ELEMENT-5 仓储管理系统</h1>
       </div>
       
-      {/* 登录成功后显示手动跳转按钮 */}
-      {loginSuccess && (
-        <div className="fixed top-0 left-0 w-full h-full flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white p-6 rounded-xl shadow-xl text-center">
-            <h2 className="text-xl font-bold mb-4">登录成功!</h2>
-            <p className="mb-4">会话已成功创建，但自动跳转失败</p>
-            <Button 
-              onClick={() => window.location.href = '/'} 
-              className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2"
-            >
-              点击此处手动前往首页
-            </Button>
-          </div>
-        </div>
-      )}
+      {/* 已经不需要手动跳转按钮 */}
       
       {/* 登录框 */}
       <Card className="w-[360px] shadow-xl border-0 rounded-xl overflow-hidden bg-white/95 backdrop-blur-sm">

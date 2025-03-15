@@ -27,6 +27,7 @@ import Users from "./pages/users";
 import ApiConfigurations from "./pages/api-configurations";
 import TeamPermissions from "./pages/team-permissions";
 import LoginPage from "./pages/login";
+import LoginRedirect from "./pages/login-redirect"; // 新增登录重定向页面
 import RegisterPage from "./pages/register";
 import AdminSocialAuthConfig from "./pages/admin-social-auth";
 
@@ -317,8 +318,8 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 export default function App() {
   const [authenticated, setAuthenticated] = useState(false);
   const [pathname] = useLocation();
-  // 无需布局的路径（登录和注册页面）
-  const noLayoutPaths = ['/login', '/register'];
+  // 无需布局的路径（登录、重定向和注册页面）
+  const noLayoutPaths = ['/login', '/login-redirect', '/register'];
   
   // 从本地存储加载用户首选语言
   useEffect(() => {
@@ -388,6 +389,9 @@ export default function App() {
           <Switch>
             <Route path="/login">
               <LoginPage onLoginSuccess={() => updateAuthState(true)} />
+            </Route>
+            <Route path="/login-redirect">
+              <LoginRedirect />
             </Route>
             <Route path="/register" component={RegisterPage} />
             <Route>
