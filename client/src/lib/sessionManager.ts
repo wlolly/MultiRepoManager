@@ -7,8 +7,23 @@
 // 存储当前使用的会话ID以便快速访问
 let currentSessionId: string | null = null;
 
+/**
+ * 生成随机会话ID
+ * 创建一个足够复杂的会话ID，与服务器生成的格式相匹配
+ */
+function generateSessionId(): string {
+  // 创建16字节随机值并转为十六进制字符串
+  // 这与服务器端生成的会话ID格式匹配
+  let result = '';
+  const characters = 'abcdef0123456789'; // 十六进制字符
+  for (let i = 0; i < 32; i++) {
+    result += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return result;
+}
+
 // 从各种可能的存储中获取会话ID
-export function getSessionId(): string | null {
+export function getSessionId(): string {
   // 如果已经有缓存的会话ID，直接返回
   if (currentSessionId) {
     return currentSessionId;
@@ -27,9 +42,19 @@ export function getSessionId(): string | null {
   });
   
   // 确定最终使用的会话ID
-  currentSessionId = sessionIdFromSession || sessionIdFromLocal || sessionIdFromCookie || null;
+  let sessionId = sessionIdFromSession || sessionIdFromLocal || sessionIdFromCookie;
   
-  return currentSessionId;
+  // 如果没有找到会话ID，生成一个新ID并保存起来
+  if (!sessionId) {
+    sessionId = generateSessionId();
+    console.log(`没有找到现有会话ID，生成新ID: ${sessionId}`);
+    saveSessionId(sessionId);
+  }
+  
+  // 无论是找到还是新生成，都保存一次以确保在所有存储层同步
+  currentSessionId = sessionId;
+  
+  return sessionId;
 }
 
 // 保存会话ID到所有可用存储中
@@ -264,9 +289,11 @@ export function attachSessionToRequest(url: string, headers: Record<string, stri
     
     console.log(`${logPrefix} 附加会话ID ${cleanSessionId} 到请求`);
     
-    // 添加到请求头（常用两种格式，增加兼容性）
+    // 添加到请求头 - 确保发送两种大小写格式以匹配服务器期望
+    // 注意：服务器会检查 req.headers['x-session-id'] 和 req.headers['X-Session-ID']
     headers['X-Session-ID'] = cleanSessionId;
     headers['x-session-id'] = cleanSessionId;
+    headers['sessionid'] = cleanSessionId;  // 增加一个小写形式以提高兼容性
     
     // 添加更详细的会话信息到请求头，帮助服务器侧调试
     const currentUserJson = sessionStorage.getItem('currentUser');
@@ -287,8 +314,12 @@ export function attachSessionToRequest(url: string, headers: Record<string, stri
     }
     
     // 同时通过URL参数传递（作为备用方案）
+    // 使用与服务器期望匹配的参数名称
     const separator = url.includes('?') ? '&' : '?';
     url = `${url}${separator}sessionId=${cleanSessionId}`;
+    
+    // 也添加到cookie中，进一步增强会话持久性
+    document.cookie = `sessionId=${cleanSessionId}; path=/; max-age=2592000; SameSite=Lax`;
     
     // 如果是认证相关请求，特别记录
     if (url.includes('/api/auth/')) {
