@@ -917,10 +917,10 @@ export async function handleSocialCallback(provider: 'wechat' | 'whatsapp', req:
   }
 }
 
-// 获取当前用户信息
-// 导入内部用户ID验证模块
-import { validateInternalUserID } from './database/userID';
+// 导入内部用户ID模块
+import { validateInternalUserID, createInternalUserID } from './database/userID';
 
+// 获取当前用户信息
 export async function getCurrentUser(req: Request, res: Response) {
   try {
     // 确保响应头包含原始会话ID，这对客户端很重要
@@ -1071,8 +1071,27 @@ export async function getCurrentUser(req: Request, res: Response) {
 export function logout(req: Request, res: Response) {
   const sessionId = req.sessionID;
   const username = (req.user as any)?.username || '未知用户';
+  const userId = (req.user as any)?.id;
   
-  console.log(`用户 ${username} 尝试登出，会话ID=${sessionId}`);
+  console.log(`用户 ${username} (ID=${userId}) 尝试登出，会话ID=${sessionId}`);
+  
+  // 清除内部用户ID (如果存在)
+  let internalUserIdRemoved = false;
+  if (userId) {
+    try {
+      // 异步移除用户的内部ID，不阻塞响应
+      import('./database/userID').then(({ removeUserIDs }) => {
+        removeUserIDs(userId).then(success => {
+          internalUserIdRemoved = success;
+          console.log(`内部用户ID移除${success ? '成功' : '失败'}: 用户ID=${userId}`);
+        });
+      }).catch(err => {
+        console.error(`移除内部用户ID时出错:`, err);
+      });
+    } catch (err) {
+      console.error(`导入userID模块时出错:`, err);
+    }
+  }
   
   // 清除Passport中的用户数据
   req.logout((err) => {
@@ -1098,19 +1117,26 @@ export function logout(req: Request, res: Response) {
         // 清除浏览器端的cookie
         res.clearCookie('token');
         res.clearCookie('connect.sid');
+        res.clearCookie('warehouse.sid');
+        res.clearCookie('sessionId');
         
-        console.log(`用户 ${username} 成功登出，会话已销毁`);
+        console.log(`用户 ${username} 成功登出，会话已销毁，内部ID移除: ${internalUserIdRemoved}`);
         res.json({ 
           message: '登出成功',
-          sessionDestroyed: true
+          sessionDestroyed: true,
+          internalIdRemoved: internalUserIdRemoved
         });
       });
     } else {
       // 如果没有会话，直接返回成功
       res.clearCookie('token');
+      res.clearCookie('connect.sid'); 
+      res.clearCookie('warehouse.sid');
+      res.clearCookie('sessionId');
       res.json({ 
         message: '登出成功',
-        sessionDestroyed: false
+        sessionDestroyed: false,
+        internalIdRemoved: internalUserIdRemoved
       });
     }
   });
