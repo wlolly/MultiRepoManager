@@ -31,7 +31,7 @@ app.use(session({
   },
   cookie: { 
     secure: false, // 开发环境不使用secure，避免cookie丢失
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 延长到7天，确保测试期间不会过期
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 延长到30天，确保测试期间不会过期
     httpOnly: true, // 阻止客户端JS访问cookie
     path: '/',
     sameSite: 'lax', // 防止CSRF攻击的同时允许从外部链接访问
@@ -41,10 +41,7 @@ app.use(session({
     checkPeriod: 86400000, // 每24小时清理过期会话
     ttl: 30 * 24 * 60 * 60 * 1000, // 30天的会话生命周期 (延长至30天)
     stale: false // 不使用过期会话
-  }),
-  cookie: {
-    maxAge: 30 * 24 * 60 * 60 * 1000 // 会话Cookie保持30天有效
-  }
+  })
 }));
 
 // 添加会话活动时间跟踪和会话ID恢复
