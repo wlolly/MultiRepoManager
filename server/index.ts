@@ -73,6 +73,22 @@ app.use(session({
       }
     }
     
+    // 检查所有可能的标准头名称（不区分大小写）
+    if (!clientSessionId) {
+      for (const header of headerVariations) {
+        // 获取实际头名（可能有大小写差异）
+        const headerValue = headers[header] || headers[header.toLowerCase()] || headers[header.toUpperCase()];
+        
+        if (headerValue) {
+          clientSessionId = extractCleanSessionId(headerValue);
+          if (clientSessionId) {
+            sourceType = `头部(${header})`;
+            break;
+          }
+        }
+      }
+    }
+    
     // 如果上面的特定头没有找到，尝试所有可能的头名称
     if (!clientSessionId) {
       for (const headerName of headerVariations) {
