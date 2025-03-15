@@ -16,13 +16,26 @@ function handleSessionInfo(res: Response, data?: any): void {
   // 1. 首先尝试从响应头获取会话ID (服务器通过X-Original-Session-ID设置)
   const sessionIdFromHeaders = processResponseHeaders(res.headers);
   
-  // 2. 如果响应头中没有会话ID，尝试从响应体获取
+  // 2. 如果响应头中没有会话ID，但响应体中有会话ID
   if (!sessionIdFromHeaders && data && data.sessionId) {
-    console.log(`从API响应体中保存会话ID: ${data.sessionId}`);
-    saveSessionId(data.sessionId);
+    // 检查它是否与当前保存的会话ID不同
+    const currentId = getSessionId();
+    
+    if (!currentId || currentId !== data.sessionId) {
+      console.log(`从API响应体中保存新会话ID: ${data.sessionId} (当前ID: ${currentId || '无'})`);
+      saveSessionId(data.sessionId);
+    }
   }
   
-  // 3. 如果发现会话过期错误，清除本地会话状态
+  // 3. 如果是认证响应，始终接受该会话ID
+  if (data && data.hasOwnProperty('authenticated')) {
+    if (data.sessionId) {
+      console.log(`认证响应中包含会话ID: ${data.sessionId}，保存它以确保会话一致性`);
+      saveSessionId(data.sessionId);
+    }
+  }
+  
+  // 4. 如果发现会话过期错误，清除本地会话状态
   if (res.status === 401 && data && data.errorCode === 'SESSION_TIMEOUT') {
     console.log('会话已过期，清除本地会话状态');
     // 可以在这里触发会话过期的全局事件

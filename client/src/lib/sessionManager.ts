@@ -85,6 +85,9 @@ export function processResponseHeaders(headers: Headers): string | null {
   
   // 优先使用服务器原始会话ID，这是服务器最认可的会话ID
   if (originalSessionId && originalSessionId !== 'none' && originalSessionId !== '') {
+    // 始终优先使用服务器提供的会话ID，这保证客户端和服务器的会话ID一致性
+    // 例外情况：如果当前客户端已经有登录的用户信息，且会话ID不同，这可能表示不同的登录会话
+    
     // 比较服务器会话ID和当前客户端会话ID
     if (currentId && originalSessionId === currentId) {
       // 会话ID已同步，无需更新
@@ -92,10 +95,18 @@ export function processResponseHeaders(headers: Headers): string | null {
       return currentId;
     }
     
-    // 如果当前客户端已有会话ID，并且会话中有用户数据，需要保持稳定
+    // 如果当前客户端已有会话ID，并且会话中有用户数据，需要评估是否保留
     if (currentId && sessionStorage.getItem('currentUser')) {
-      console.log(`保留已验证的会话ID: ${currentId} (忽略服务器新会话: ${originalSessionId})`);
-      return currentId;
+      // 检查该响应是否是认证请求的响应
+      if (headers.get('X-Session-Authenticated') === 'true') {
+        // 这是一个已认证响应，应该采用服务器的会话ID
+        console.log(`使用服务器提供的已认证会话ID: ${originalSessionId} (替换现有会话ID: ${currentId})`);
+        saveSessionId(originalSessionId);
+        return originalSessionId;
+      } else {
+        console.log(`保留已验证的会话ID: ${currentId} (忽略服务器新会话: ${originalSessionId})`);
+        return currentId;
+      }
     }
     
     console.log(`从响应头中提取到原始会话ID: ${originalSessionId}`);

@@ -362,6 +362,15 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
   res.setHeader('X-Session-Authenticated', req.session?.authenticated ? 'true' : 'false');
   res.setHeader('X-Session-User-Id', req.session?.userId?.toString() || '');
   res.setHeader('X-Session-Role', req.session?.userRole || '');
+  res.setHeader('X-Session-Social-Bound', req.session?.socialBound ? 'true' : 'false');
+  
+  // 添加用于调试的额外会话状态信息 
+  res.setHeader('X-Session-Tracking-Info', JSON.stringify({
+    id: req.sessionID,
+    clientProvided: clientSessionId ? 'true' : 'false',
+    clientSession: clientSessionId || 'none',
+    matchingId: clientSessionId === req.sessionID ? 'true' : 'false'
+  }));
   
   // 如果已经是已认证会话，或者会话ID匹配，直接继续处理
   if (req.session?.userId || clientSessionId === req.sessionID) {
