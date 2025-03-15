@@ -43,138 +43,87 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     },
   });
 
-  // 处理表单提交
+  // 处理表单提交 - 实现假阳性登录策略（无论验证是否成功都允许访问）
   const onSubmit = async (values: LoginFormValues) => {
     try {
       setIsLoading(true);
       
       console.log('开始登录请求，发送数据:', values);
-      const response = await fetch('/api/auth/login', {
+      
+      // 发送登录请求
+      fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(values),
         credentials: 'include' // 包含会话cookie
+      }).then(response => {
+        console.log('登录API响应状态:', response.status, response.statusText);
+        
+        // 安全解析JSON响应，但不等待结果，提高用户体验
+        response.text().then(responseText => {
+          try {
+            console.log('登录API响应数据(原始):', responseText);
+            const data = JSON.parse(responseText);
+            console.log('登录API响应数据(解析):', data);
+            
+            // 如果有返回用户数据，保存到本地存储
+            if (data.user) {
+              try {
+                // 保存用户数据到会话存储和本地存储
+                sessionStorage.setItem('currentUser', JSON.stringify(data.user));
+                localStorage.setItem('currentUser', JSON.stringify(data.user));
+                console.log('用户数据已保存到会话存储和本地存储');
+                
+                // 如果服务器返回了会话ID，保存在多个位置以增强持久性
+                if (data.sessionId) {
+                  console.log('保存会话ID:', data.sessionId);
+                  // 使用会话管理器统一处理会话ID保存
+                  saveSessionId(data.sessionId);
+                }
+              } catch (storageError) {
+                console.error('保存用户数据失败:', storageError);
+              }
+            }
+          } catch (parseError) {
+            console.error('解析登录响应失败:', parseError);
+          }
+        }).catch(err => {
+          console.error('获取响应文本失败:', err);
+        });
+      }).catch(err => {
+        console.error('发送登录请求失败:', err);
       });
       
-      console.log('登录API响应状态:', response.status, response.statusText);
-      
-      // 安全解析JSON响应
-      let data;
-      try {
-        const responseText = await response.text();
-        console.log('登录API响应数据(原始):', responseText);
-        data = JSON.parse(responseText);
-        console.log('登录API响应数据(解析):', data);
-      } catch (parseError) {
-        console.error('解析登录响应失败:', parseError);
-        throw new Error('服务器响应格式错误');
-      }
-      
-      // 在假阳性登录策略下，服务器可能返回成功，即使凭据不正确
-      // 我们只在系统错误时才抛出异常
-      if (!response.ok) {
-        // 在假阳性登录策略下，我们将统一处理所有错误
-        // 不再特别提示社交账号绑定情况，以保持安全性
-        if (data.socialBound) {
-          // 以通用的方式提示，不透露具体绑定信息
-          toast({
-            title: "登录方式不可用",
-            description: "请尝试其他登录方式或联系管理员",
-            variant: "destructive"
-          });
-          return;
-        }
-        
-        // 其他系统错误
-        throw new Error(data.message || '系统暂时无法响应，请稍后再试');
-      }
-      
-      // 会话已经在服务器端创建，无需在前端存储令牌
-      
-      // 设置身份验证状态
-      // 将用户数据和会话ID存储在本地
-      if (data.user) {
-        try {
-          // 添加需要绑定社交账号的标志
-          if (data.needSocialBinding) {
-            data.user.needSocialBinding = true;
-          }
-          
-          // 保存用户数据到会话存储和本地存储
-          sessionStorage.setItem('currentUser', JSON.stringify(data.user));
-          localStorage.setItem('currentUser', JSON.stringify(data.user));
-          console.log('用户数据已保存到会话存储和本地存储');
-          
-          // 如果服务器返回了会话ID，保存在多个位置以增强持久性
-          if (data.sessionId) {
-            console.log('保存会话ID:', data.sessionId);
-            // 使用会话管理器统一处理会话ID保存
-            saveSessionId(data.sessionId);
-          }
-        } catch (storageError) {
-          console.error('保存用户数据失败:', storageError);
-        }
-      }
-      
-      // 根据登录模式显示不同的提示
-      if (data.fallbackMode) {
-        toast({
-          title: "登录成功(内存模式)",
-          description: "警告: 系统运行在内存模式，数据在重启后将丢失",
-          variant: "warning"
-        });
-      } else {
-        toast({
-          title: "登录成功",
-          description: "欢迎回来！",
-          variant: "default"
-        });
-      }
+      // 无论登录是否成功，都直接显示登录成功提示并跳转
+      toast({
+        title: "登录中",
+        description: "正在验证您的身份，请稍候...",
+        variant: "default"
+      });
       
       // 如果提供了登录成功回调，则调用
       if (onLoginSuccess) {
         onLoginSuccess();
-        return; // 防止多次导航
-      }
-      
-      console.log('等待1秒钟进行页面跳转...');
-      
-      // 在假阳性登录策略下，可以减少等待时间，提高用户体验
-      // 从3秒减少到1秒，因为我们不需要等待实际的身份验证逻辑
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      console.log('准备跳转到主页...');
-      
-      // 如果需要完成额外的身份验证步骤
-      if (data.needSocialBinding) {
-        toast({
-          title: "需要完成账户验证",
-          description: "系统安全策略要求完成额外的验证步骤",
-          variant: "warning"
-        });
-        
-        // 立即跳转到设置页面进行社交账号绑定
-        // 但提示信息保持模糊，不明确指出是"社交账号绑定"
-        console.log('正在跳转到设置页面完成账户验证流程');
-        navigate('/settings?needBind=true');
       } else {
-        // 直接跳转到主页
-        console.log('正在跳转到主页');
+        // 不等待响应，直接跳转到主页
+        console.log('正在跳转到主页...');
         navigate('/');
       }
       
     } catch (error: any) {
-      console.error('登录错误:', error);
+      console.error('登录过程发生意外错误:', error);
       
-      // 在假阳性登录策略下，错误消息应该不透露身份验证的真实状态
-      // 避免提示"用户名或密码错误"这类特定信息，而是使用更通用的错误信息
+      // 即使出现意外错误，也显示通用提示并继续跳转到主页
       toast({
-        title: "登录失败",
-        description: error.message || "无法连接到服务器，请稍后再试",
-        variant: "destructive"
+        title: "登录状态未知",
+        description: "系统将尝试为您提供访问权限",
+        variant: "warning"
       });
+      
+      // 无论如何，都跳转到主页
+      navigate('/');
     } finally {
       setIsLoading(false);
     }
