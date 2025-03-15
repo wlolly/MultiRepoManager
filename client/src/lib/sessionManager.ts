@@ -175,9 +175,6 @@ export function saveSessionId(sessionId: string) {
     sessionStorage.setItem('sessionId', sessionId);
     localStorage.setItem('sessionId', sessionId);
     
-    // 设置会话cookie (30天有效期)
-    const maxAge = 30 * 24 * 60 * 60; // 30天过期，单位：秒
-    
     // 使用我们的统一Cookie设置函数
     setCookie('sessionId', sessionId, {
       path: '/',
@@ -583,8 +580,6 @@ export function attachSessionToRequest(url: string, headers: Record<string, stri
     url = `${url}${separator}sessionId=${cleanSessionId}`;
     
     // 也添加到cookie中，进一步增强会话持久性
-    const maxAge = 30 * 24 * 60 * 60; // 30天过期，单位：秒
-    
     // 使用我们的统一Cookie设置函数
     setCookie('sessionId', cleanSessionId, {
       path: '/',
@@ -627,8 +622,6 @@ export function attachSessionToRequest(url: string, headers: Record<string, stri
     url = `${url}${separator}sessionId=${newSessionId}`;
     
     // 也添加到cookie中
-    const maxAge = 30 * 24 * 60 * 60; // 30天过期，单位：秒
-    
     // 使用我们的统一Cookie设置函数
     setCookie('sessionId', newSessionId, {
       path: '/',
