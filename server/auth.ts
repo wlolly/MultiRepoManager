@@ -332,6 +332,40 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
   res.setHeader('X-Request-Path', req.path);
   res.setHeader('X-Request-Method', req.method);
   
+  // 设置当前会话ID，使客户端能够同步会话标识
+  res.setHeader('X-Original-Session-ID', req.sessionID || 'none');
+  res.setHeader('X-Session-ID', req.sessionID || 'none');
+  
+  // 为客户端设置标准cookie，确保cookie持久化
+  if (req.sessionID) {
+    res.cookie('sessionId', req.sessionID, {
+      httpOnly: true,
+      path: '/',
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30天
+      sameSite: 'lax'
+    });
+    
+    // 同时设置express-session标准名称cookie，确保会话ID同步
+    res.cookie('connect.sid', req.sessionID, {
+      httpOnly: true,
+      path: '/',
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30天
+      sameSite: 'lax'
+    });
+    
+    // 设置warehouse.sid，与会话配置中使用的名称保持一致
+    res.cookie('warehouse.sid', req.sessionID, {
+      httpOnly: true,
+      path: '/',
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30天
+      sameSite: 'lax'
+    });
+  }
+  
+  // 设置用户状态检查头，帮助客户端同步用户状态
+  res.setHeader('X-Auth-Status', req.session?.authenticated ? 'authenticated' : 'unauthenticated');
+  res.setHeader('X-User-ID', req.session?.userId || 'none');
+  
   // 记录会话信息（简化版）
   if (req.path.includes('/api/auth')) {
     console.log(`请求路径: ${req.path}, 会话ID: ${req.sessionID}, 已认证: ${!!req.session?.authenticated}`);

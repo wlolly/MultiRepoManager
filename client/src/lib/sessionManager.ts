@@ -184,9 +184,18 @@ export function saveSessionId(sessionId: string) {
     });
     
     // 同时设置与服务器匹配的会话cookie名称
+    // 注意：服务器使用connect.sid或warehouse.sid作为cookie名称
     setCookie('warehouse.sid', sessionId, {
       path: '/',
       maxAgeDays: 30, // 30天过期
+      sameSite: 'Lax',
+      secure: window.location.protocol === 'https:'
+    });
+    
+    // 确保同时设置connect.sid兼容旧版express session
+    setCookie('connect.sid', sessionId, {
+      path: '/',
+      maxAgeDays: 30,
       sameSite: 'Lax',
       secure: window.location.protocol === 'https:'
     });
