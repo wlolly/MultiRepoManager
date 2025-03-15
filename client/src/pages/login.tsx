@@ -47,12 +47,15 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     // 显示登录中提示
     toast.success("登录成功，正在跳转...");
     
-    // 立即跳转，不等待API响应
-    if (onLoginSuccess) {
-      onLoginSuccess();
-    } else {
-      window.location.href = '/';
-    }
+    // 设置一个特别短的超时，让toast消息显示出来
+    setTimeout(() => {
+      // 立即跳转，不等待API响应
+      if (onLoginSuccess) {
+        onLoginSuccess();
+      } else {
+        window.location.replace('/');
+      }
+    }, 100);
     
     // 异步发送登录请求（不影响用户体验）
     const xhr = new XMLHttpRequest();
