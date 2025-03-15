@@ -3,6 +3,8 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { memStorage, useFallbackStorage } from "./db";
 import { getUserPagePermissions, getUserWarehousePermissions } from "./middleware/permission-middleware";
+import socialAuthConfig from './social-auth-config';
+import * as warehouseMatcher from './utils/warehouse-matcher';
 import { 
   insertUserSchema, 
   insertRepositorySchema, 
@@ -474,23 +476,171 @@ export async function registerRoutes(app: Express): Promise<Server> {
   apiRouter.post("/auth/bind-social", verifySession, bindSocialAccount);
   apiRouter.get("/auth/social-binding-status", verifySession, getSocialBindingStatus);
   
-  // WeChat 登录
-  apiRouter.get('/auth/wechat', passport.authenticate('wechat'));
+  // 社交认证配置管理路由 (仅管理员)
+  apiRouter.get('/admin/social-auth-config', isAdmin, (req, res) => {
+    try {
+      const configs = socialAuthConfig.getAllConfigs();
+      res.json({
+        success: true,
+        configs
+      });
+    } catch (err) {
+      console.error('获取社交认证配置失败:', err);
+      res.status(500).json({
+        success: false,
+        message: '获取社交认证配置失败'
+      });
+    }
+  });
   
-  // WeChat 回调
+  // 更新微信认证配置
+  apiRouter.post('/admin/social-auth-config/wechat', isAdmin, (req, res) => {
+    try {
+      const { enabled, appId, appSecret, callbackUrl } = req.body;
+      
+      // 更新配置
+      const result = socialAuthConfig.updateWechatConfig(
+        !!enabled,
+        appId,
+        appSecret,
+        callbackUrl
+      );
+      
+      if (result) {
+        res.json({
+          success: true,
+          message: '微信认证配置已更新',
+          config: socialAuthConfig.getWechatConfig()
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: '更新微信认证配置失败'
+        });
+      }
+    } catch (err) {
+      console.error('更新微信认证配置失败:', err);
+      res.status(500).json({
+        success: false,
+        message: '更新微信认证配置失败',
+        error: err.message
+      });
+    }
+  });
+  
+  // 更新WhatsApp认证配置
+  apiRouter.post('/admin/social-auth-config/whatsapp', isAdmin, (req, res) => {
+    try {
+      const { enabled, appId, appSecret, callbackUrl } = req.body;
+      
+      // 更新配置
+      const result = socialAuthConfig.updateWhatsappConfig(
+        !!enabled,
+        appId,
+        appSecret,
+        callbackUrl
+      );
+      
+      if (result) {
+        res.json({
+          success: true,
+          message: 'WhatsApp认证配置已更新',
+          config: socialAuthConfig.getWhatsappConfig()
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: '更新WhatsApp认证配置失败'
+        });
+      }
+    } catch (err) {
+      console.error('更新WhatsApp认证配置失败:', err);
+      res.status(500).json({
+        success: false,
+        message: '更新WhatsApp认证配置失败',
+        error: err.message
+      });
+    }
+  });
+  
+  // 检查社交认证配置状态
+  apiRouter.get('/auth/social-config-status', (req, res) => {
+    try {
+      res.json({
+        success: true,
+        wechatEnabled: socialAuthConfig.isWechatConfigValid(),
+        whatsappEnabled: socialAuthConfig.isWhatsappConfigValid()
+      });
+    } catch (err) {
+      console.error('获取社交认证状态失败:', err);
+      res.status(500).json({
+        success: false,
+        message: '获取社交认证状态失败'
+      });
+    }
+  });
+  
+  // 微信登录 - 只有配置有效时才启用
+  apiRouter.get('/auth/wechat', (req, res, next) => {
+    // 检查微信认证配置是否有效
+    if (!socialAuthConfig.isWechatConfigValid()) {
+      console.log('微信认证未配置或配置无效，重定向到登录页');
+      return res.redirect('/login?error=wechat_not_configured');
+    }
+    
+    // 微信认证配置有效，继续认证流程
+    passport.authenticate('wechat')(req, res, next);
+  });
+  
+  // 微信回调
   apiRouter.get('/auth/wechat/callback', 
-    passport.authenticate('wechat', { session: false, failureRedirect: '/login?error=wechat_login_failed' }),
+    (req, res, next) => {
+      // 检查微信认证配置是否有效
+      if (!socialAuthConfig.isWechatConfigValid()) {
+        console.log('微信认证未配置或配置无效，重定向到登录页');
+        return res.redirect('/login?error=wechat_not_configured');
+      }
+      
+      // 微信认证配置有效，继续认证流程
+      passport.authenticate('wechat', { 
+        session: false, 
+        failureRedirect: '/login?error=wechat_login_failed' 
+      })(req, res, next);
+    },
     (req, res) => handleSocialCallback('wechat', req, res)
   );
-
-  // WhatsApp 登录
-  apiRouter.get('/auth/whatsapp', passport.authenticate('whatsapp'));
   
-  // WhatsApp 回调
+  // WhatsApp登录 - 只有配置有效时才启用
+  apiRouter.get('/auth/whatsapp', (req, res, next) => {
+    // 检查WhatsApp认证配置是否有效
+    if (!socialAuthConfig.isWhatsappConfigValid()) {
+      console.log('WhatsApp认证未配置或配置无效，重定向到登录页');
+      return res.redirect('/login?error=whatsapp_not_configured');
+    }
+    
+    // WhatsApp认证配置有效，继续认证流程
+    passport.authenticate('whatsapp')(req, res, next);
+  });
+  
+  // WhatsApp回调
   apiRouter.get('/auth/whatsapp/callback', 
-    passport.authenticate('whatsapp', { session: false, failureRedirect: '/login?error=whatsapp_login_failed' }),
+    (req, res, next) => {
+      // 检查WhatsApp认证配置是否有效
+      if (!socialAuthConfig.isWhatsappConfigValid()) {
+        console.log('WhatsApp认证未配置或配置无效，重定向到登录页');
+        return res.redirect('/login?error=whatsapp_not_configured');
+      }
+      
+      // WhatsApp认证配置有效，继续认证流程
+      passport.authenticate('whatsapp', { 
+        session: false, 
+        failureRedirect: '/login?error=whatsapp_login_failed' 
+      })(req, res, next);
+    },
     (req, res) => handleSocialCallback('whatsapp', req, res)
   );
+
+
 
   // 管理员接口 - 激活用户
   apiRouter.post('/auth/users/:id/activate', verifySession, isAdmin, activateUser);

@@ -2,44 +2,22 @@
  * 社交媒体认证配置管理
  * 用于管理微信、WhatsApp等社交媒体认证所需的API密钥和配置
  */
-
 import fs from 'fs';
 import path from 'path';
 import { z } from 'zod';
 
-// 配置文件路径
-const CONFIG_DIR = path.join(process.cwd(), 'config');
-const CONFIG_FILE = path.join(CONFIG_DIR, 'social-auth-config.json');
+// 定义配置文件的架构
+const SocialAuthPlatformSchema = z.object({
+  enabled: z.boolean().default(false),
+  appId: z.string().optional(),
+  appSecret: z.string().optional(),
+  callbackUrl: z.string().optional(),
+  lastUpdated: z.string().optional()
+});
 
-// 确保配置目录存在
-if (!fs.existsSync(CONFIG_DIR)) {
-  try {
-    fs.mkdirSync(CONFIG_DIR, { recursive: true });
-  } catch (err) {
-    console.error('创建配置目录失败:', err);
-  }
-}
-
-// 验证模式
 const SocialAuthConfigSchema = z.object({
-  wechat: z.object({
-    enabled: z.boolean().default(false),
-    appId: z.string().optional(),
-    appSecret: z.string().optional(),
-    callbackUrl: z.string().optional(),
-    lastUpdated: z.date().optional()
-  }).default({
-    enabled: false
-  }),
-  whatsapp: z.object({
-    enabled: z.boolean().default(false),
-    appId: z.string().optional(),
-    appSecret: z.string().optional(),
-    callbackUrl: z.string().optional(),
-    lastUpdated: z.date().optional()
-  }).default({
-    enabled: false
-  })
+  wechat: SocialAuthPlatformSchema,
+  whatsapp: SocialAuthPlatformSchema
 });
 
 type SocialAuthConfig = z.infer<typeof SocialAuthConfigSchema>;
@@ -47,60 +25,47 @@ type SocialAuthConfig = z.infer<typeof SocialAuthConfigSchema>;
 // 默认配置
 const defaultConfig: SocialAuthConfig = {
   wechat: {
-    enabled: false
+    enabled: false,
+    appId: '',
+    appSecret: '',
+    callbackUrl: ''
   },
   whatsapp: {
-    enabled: false
+    enabled: false,
+    appId: '',
+    appSecret: '',
+    callbackUrl: ''
   }
 };
+
+// 配置文件路径
+const configPath = path.join(process.cwd(), 'social-auth-config.json');
 
 // 读取配置
 function readConfig(): SocialAuthConfig {
   try {
-    if (!fs.existsSync(CONFIG_FILE)) {
-      // 如果配置文件不存在，返回默认配置并创建配置文件
-      saveConfig(defaultConfig);
-      return defaultConfig;
+    if (fs.existsSync(configPath)) {
+      const configData = fs.readFileSync(configPath, 'utf8');
+      const parsedConfig = JSON.parse(configData);
+      
+      // 验证配置是否符合架构
+      return SocialAuthConfigSchema.parse(parsedConfig);
     }
-
-    const configData = fs.readFileSync(CONFIG_FILE, 'utf-8');
-    const parsedConfig = JSON.parse(configData);
-    
-    // 验证和处理日期字段
-    if (parsedConfig.wechat?.lastUpdated) {
-      parsedConfig.wechat.lastUpdated = new Date(parsedConfig.wechat.lastUpdated);
-    }
-    if (parsedConfig.whatsapp?.lastUpdated) {
-      parsedConfig.whatsapp.lastUpdated = new Date(parsedConfig.whatsapp.lastUpdated);
-    }
-    
-    // 使用Zod验证配置格式
-    const validatedConfig = SocialAuthConfigSchema.parse(parsedConfig);
-    return validatedConfig;
-  } catch (err) {
-    console.error('读取社交认证配置失败:', err);
-    // 返回默认配置
-    return defaultConfig;
+  } catch (error) {
+    console.error('读取社交认证配置失败:', error);
   }
+  
+  // 如果读取失败或文件不存在，返回默认配置
+  return defaultConfig;
 }
 
 // 保存配置
 function saveConfig(config: SocialAuthConfig): boolean {
   try {
-    // 确保配置格式正确
-    const validatedConfig = SocialAuthConfigSchema.parse(config);
-    
-    // 将配置写入文件
-    fs.writeFileSync(
-      CONFIG_FILE, 
-      JSON.stringify(validatedConfig, null, 2), 
-      'utf-8'
-    );
-    
-    console.log('社交认证配置已保存');
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8');
     return true;
-  } catch (err) {
-    console.error('保存社交认证配置失败:', err);
+  } catch (error) {
+    console.error('保存社交认证配置失败:', error);
     return false;
   }
 }
@@ -112,23 +77,18 @@ function updateWechatConfig(
   appSecret?: string,
   callbackUrl?: string
 ): boolean {
-  try {
-    const config = readConfig();
-    
-    config.wechat = {
-      ...config.wechat,
-      enabled,
-      appId: appId || config.wechat.appId,
-      appSecret: appSecret || config.wechat.appSecret,
-      callbackUrl: callbackUrl || config.wechat.callbackUrl,
-      lastUpdated: new Date()
-    };
-    
-    return saveConfig(config);
-  } catch (err) {
-    console.error('更新微信配置失败:', err);
-    return false;
-  }
+  const config = readConfig();
+  const oldConfig = { ...config.wechat };
+  
+  config.wechat = {
+    enabled,
+    appId: appId || oldConfig.appId,
+    appSecret: appSecret || oldConfig.appSecret,
+    callbackUrl: callbackUrl || oldConfig.callbackUrl,
+    lastUpdated: new Date().toISOString()
+  };
+  
+  return saveConfig(config);
 }
 
 // 更新WhatsApp配置
@@ -138,47 +98,48 @@ function updateWhatsappConfig(
   appSecret?: string,
   callbackUrl?: string
 ): boolean {
-  try {
-    const config = readConfig();
-    
-    config.whatsapp = {
-      ...config.whatsapp,
-      enabled,
-      appId: appId || config.whatsapp.appId,
-      appSecret: appSecret || config.whatsapp.appSecret,
-      callbackUrl: callbackUrl || config.whatsapp.callbackUrl,
-      lastUpdated: new Date()
-    };
-    
-    return saveConfig(config);
-  } catch (err) {
-    console.error('更新WhatsApp配置失败:', err);
-    return false;
-  }
+  const config = readConfig();
+  const oldConfig = { ...config.whatsapp };
+  
+  config.whatsapp = {
+    enabled,
+    appId: appId || oldConfig.appId,
+    appSecret: appSecret || oldConfig.appSecret,
+    callbackUrl: callbackUrl || oldConfig.callbackUrl,
+    lastUpdated: new Date().toISOString()
+  };
+  
+  return saveConfig(config);
 }
 
-// 检查微信配置是否完整有效
+// 验证微信配置是否有效
 function isWechatConfigValid(): boolean {
   const config = readConfig();
-  return config.wechat.enabled && 
-         !!config.wechat.appId && 
-         !!config.wechat.appSecret;
+  return (
+    config.wechat.enabled &&
+    !!config.wechat.appId &&
+    !!config.wechat.appSecret &&
+    !!config.wechat.callbackUrl
+  );
 }
 
-// 检查WhatsApp配置是否完整有效
+// 验证WhatsApp配置是否有效
 function isWhatsappConfigValid(): boolean {
   const config = readConfig();
-  return config.whatsapp.enabled && 
-         !!config.whatsapp.appId && 
-         !!config.whatsapp.appSecret;
+  return (
+    config.whatsapp.enabled &&
+    !!config.whatsapp.appId &&
+    !!config.whatsapp.appSecret &&
+    !!config.whatsapp.callbackUrl
+  );
 }
 
-// 获取微信配置 (隐藏敏感信息)
+// 获取微信配置（隐藏敏感信息）
 function getWechatConfig(): any {
   const config = readConfig();
   return {
     enabled: config.wechat.enabled,
-    appId: config.wechat.appId ? maskString(config.wechat.appId) : undefined,
+    appId: config.wechat.appId,
     hasAppSecret: !!config.wechat.appSecret,
     callbackUrl: config.wechat.callbackUrl,
     lastUpdated: config.wechat.lastUpdated,
@@ -186,12 +147,12 @@ function getWechatConfig(): any {
   };
 }
 
-// 获取WhatsApp配置 (隐藏敏感信息)
+// 获取WhatsApp配置（隐藏敏感信息）
 function getWhatsappConfig(): any {
   const config = readConfig();
   return {
     enabled: config.whatsapp.enabled,
-    appId: config.whatsapp.appId ? maskString(config.whatsapp.appId) : undefined,
+    appId: config.whatsapp.appId,
     hasAppSecret: !!config.whatsapp.appSecret,
     callbackUrl: config.whatsapp.callbackUrl,
     lastUpdated: config.whatsapp.lastUpdated,
@@ -199,24 +160,25 @@ function getWhatsappConfig(): any {
   };
 }
 
-// 掩码字符串 (用于在接口返回时保护敏感信息)
+// 隐藏敏感字符串，例如API密钥
 function maskString(str: string): string {
-  if (!str || str.length < 8) return '********';
-  const visibleChars = 4;
-  return str.substring(0, visibleChars) + '*'.repeat(str.length - visibleChars);
+  if (!str || str.length < 6) return '••••••';
+  
+  return str.substring(0, 3) + '••••••' + str.substring(str.length - 3);
 }
 
-// 获取所有社交认证配置 (隐藏敏感信息)
+// 获取所有配置（用于管理界面）
 function getAllConfigs(): any {
   return {
-    wechat: getWechatConfig(),
-    whatsapp: getWhatsappConfig()
+    configs: {
+      wechat: getWechatConfig(),
+      whatsapp: getWhatsappConfig()
+    }
   };
 }
 
 export default {
   readConfig,
-  saveConfig,
   updateWechatConfig,
   updateWhatsappConfig,
   isWechatConfigValid,
