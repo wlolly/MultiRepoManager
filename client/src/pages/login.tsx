@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'wouter';
+import { useLocation } from 'wouter';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -21,9 +21,13 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
-export default function LoginPage() {
+interface LoginPageProps {
+  onLoginSuccess?: () => void;
+}
+
+export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [_, navigate] = useNavigate();
+  const [_, navigate] = useLocation();
   const { toast } = useToast();
   const { t } = useTranslation();
 
@@ -64,6 +68,11 @@ export default function LoginPage() {
         title: "登录成功",
         description: "欢迎回来！",
       });
+      
+      // 如果提供了登录成功回调，则调用
+      if (onLoginSuccess) {
+        onLoginSuccess();
+      }
       
       // 跳转到主页
       navigate('/');

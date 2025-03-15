@@ -26,6 +26,8 @@ import Settings from "./pages/settings";
 import Users from "./pages/users";
 import ApiConfigurations from "./pages/api-configurations";
 import TeamPermissions from "./pages/team-permissions";
+import LoginPage from "./pages/login";
+import RegisterPage from "./pages/register";
 
 // 仓库系统页面
 import WarehouseProducts from "./pages/warehouse-products";
@@ -312,6 +314,11 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  const [authenticated, setAuthenticated] = useState(false);
+  const [pathname] = useLocation();
+  // 无需布局的路径（登录和注册页面）
+  const noLayoutPaths = ['/login', '/register'];
+  
   // 从本地存储加载用户首选语言
   useEffect(() => {
     console.log("App组件已加载");
@@ -329,62 +336,83 @@ export default function App() {
         console.log('未找到保存的语言，默认使用中文');
       }
     });
+    
+    // 检查用户是否已认证（存在token）
+    const token = localStorage.getItem('token');
+    setAuthenticated(!!token);
   }, []);
+  
+  // 用于权限检查组件的认证状态更新
+  const updateAuthState = (state: boolean) => {
+    setAuthenticated(state);
+  };
 
   return (
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
-        <AppLayout>
+        {noLayoutPaths.includes(pathname) ? (
           <Switch>
-            {/* 测试页面 */}
-            <Route path="/test-toast" component={TestToast} />
-            
-            {/* 主页与通用页面 */}
-            <ProtectedRoute path="/" component={Dashboard} pageName="dashboard" />
-            <Route path="/search" component={Search} />
-            <ProtectedRoute path="/settings" component={Settings} pageName="settings" />
-            <ProtectedRoute path="/users" component={Users} pageName="users_teams" />
-            
-            {/* 代码仓库相关页面 */}
-            <Route path="/my-repositories" component={MyRepositories} />
-            <Route path="/team-repositories" component={TeamRepositories} />
-            <Route path="/new-repository" component={NewRepository} />
-            <Route path="/repository-view/:id" component={RepositoryView} />
-            <Route path="/repository/:id" component={Repository} />
-            
-            {/* 仓库管理系统页面 */}
-            <ProtectedRoute path="/warehouses" component={Warehouses} pageName="warehouses" />
-            <ProtectedRoute path="/warehouse-products" component={WarehouseProducts} pageName="warehouse_products" />
-            <ProtectedRoute path="/warehouse-products/new" component={NewWarehouseProduct} pageName="warehouse_products" />
-            <ProtectedRoute path="/products" component={ProductsPage} pageName="products" />
-            <ProtectedRoute path="/products/product-detail/:id" component={ProductDetail} pageName="products" />
-            <Route path="/product-search" component={ProductSearch} />
-            
-            {/* 入库单页面 */}
-            <ProtectedRoute path="/inbound-orders" component={InboundOrders} pageName="inbound_orders" />
-            <ProtectedRoute path="/inbound-order/:id" component={InboundOrder} pageName="inbound_orders" />
-            <ProtectedRoute path="/inbound-orders/new-multi" component={NewMultiInboundOrder} pageName="inbound_orders" />
-            
-            {/* 出库单页面 */}
-            <ProtectedRoute path="/outbound-orders" component={OutboundOrders} pageName="outbound_orders" />
-            <ProtectedRoute path="/outbound-order/:id" component={OutboundOrder} pageName="outbound_orders" />
-            <ProtectedRoute path="/outbound-orders/advanced" component={AdvancedOutboundOrder} pageName="outbound_orders" />
-            
-            {/* 仓库调拨单页面 */}
-            <ProtectedRoute path="/warehouse-transfers" component={WarehouseTransfers} pageName="warehouse_transfers" />
-            <ProtectedRoute path="/warehouse-transfers/new" component={NewWarehouseTransfer} pageName="warehouse_transfers" />
-            <ProtectedRoute path="/warehouse-transfers/import" component={WarehouseTransferImport} pageName="warehouse_transfers" />
-            
-            {/* API配置页面 */}
-            <ProtectedRoute path="/api-configurations" component={ApiConfigurations} pageName="api_configurations" />
-            
-            {/* 团队权限管理页面 */}
-            <ProtectedRoute path="/team-permissions" component={TeamPermissions} pageName="team_permissions" />
-            
-            {/* 404页面必须放在最后 */}
-            <Route component={NotFound} />
+            <Route path="/login">
+              <LoginPage onLoginSuccess={() => updateAuthState(true)} />
+            </Route>
+            <Route path="/register" component={RegisterPage} />
+            <Route>
+              <NotFound />
+            </Route>
           </Switch>
-        </AppLayout>
+        ) : (
+          <AppLayout>
+            <Switch>
+              {/* 测试页面 */}
+              <Route path="/test-toast" component={TestToast} />
+              
+              {/* 主页与通用页面 */}
+              <ProtectedRoute path="/" component={Dashboard} pageName="dashboard" />
+              <Route path="/search" component={Search} />
+              <ProtectedRoute path="/settings" component={Settings} pageName="settings" />
+              <ProtectedRoute path="/users" component={Users} pageName="users_teams" />
+              
+              {/* 代码仓库相关页面 */}
+              <Route path="/my-repositories" component={MyRepositories} />
+              <Route path="/team-repositories" component={TeamRepositories} />
+              <Route path="/new-repository" component={NewRepository} />
+              <Route path="/repository-view/:id" component={RepositoryView} />
+              <Route path="/repository/:id" component={Repository} />
+              
+              {/* 仓库管理系统页面 */}
+              <ProtectedRoute path="/warehouses" component={Warehouses} pageName="warehouses" />
+              <ProtectedRoute path="/warehouse-products" component={WarehouseProducts} pageName="warehouse_products" />
+              <ProtectedRoute path="/warehouse-products/new" component={NewWarehouseProduct} pageName="warehouse_products" />
+              <ProtectedRoute path="/products" component={ProductsPage} pageName="products" />
+              <ProtectedRoute path="/products/product-detail/:id" component={ProductDetail} pageName="products" />
+              <Route path="/product-search" component={ProductSearch} />
+              
+              {/* 入库单页面 */}
+              <ProtectedRoute path="/inbound-orders" component={InboundOrders} pageName="inbound_orders" />
+              <ProtectedRoute path="/inbound-order/:id" component={InboundOrder} pageName="inbound_orders" />
+              <ProtectedRoute path="/inbound-orders/new-multi" component={NewMultiInboundOrder} pageName="inbound_orders" />
+              
+              {/* 出库单页面 */}
+              <ProtectedRoute path="/outbound-orders" component={OutboundOrders} pageName="outbound_orders" />
+              <ProtectedRoute path="/outbound-order/:id" component={OutboundOrder} pageName="outbound_orders" />
+              <ProtectedRoute path="/outbound-orders/advanced" component={AdvancedOutboundOrder} pageName="outbound_orders" />
+              
+              {/* 仓库调拨单页面 */}
+              <ProtectedRoute path="/warehouse-transfers" component={WarehouseTransfers} pageName="warehouse_transfers" />
+              <ProtectedRoute path="/warehouse-transfers/new" component={NewWarehouseTransfer} pageName="warehouse_transfers" />
+              <ProtectedRoute path="/warehouse-transfers/import" component={WarehouseTransferImport} pageName="warehouse_transfers" />
+              
+              {/* API配置页面 */}
+              <ProtectedRoute path="/api-configurations" component={ApiConfigurations} pageName="api_configurations" />
+              
+              {/* 团队权限管理页面 */}
+              <ProtectedRoute path="/team-permissions" component={TeamPermissions} pageName="team_permissions" />
+              
+              {/* 404页面必须放在最后 */}
+              <Route component={NotFound} />
+            </Switch>
+          </AppLayout>
+        )}
         <Toaster />
       </ToastProvider>
     </QueryClientProvider>

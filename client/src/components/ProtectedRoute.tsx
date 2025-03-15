@@ -1,61 +1,85 @@
-import React from 'react';
-import { Redirect } from 'wouter';
-import { usePermissions } from '../hooks/use-permissions';
-import { useTranslation } from 'react-i18next';
+import { ReactNode, FC } from 'react';
+import { Route, useLocation } from 'wouter';
+import { usePermissions } from '@/hooks/use-permissions';
 
 interface ProtectedRouteProps {
-  component: React.ComponentType<any>;
-  pageName: string;
-  path?: string; // 可选，仅用于调试
+  component: FC<any>;
+  path: string;
+  pageName?: string;  // 页面名称用于权限检查
+  warehouseId?: number;  // 仓库ID用于仓库权限检查
+  requireManageWarehouse?: boolean;  // 是否需要仓库管理权限
+  children?: ReactNode;
+  exact?: boolean;
 }
 
 /**
- * 受保护的路由组件
- * 用于根据用户权限控制页面访问
+ * 带权限检查的路由组件
+ * 根据用户权限决定是否渲染路由内容
  */
-export function ProtectedRoute({ component: Component, pageName, ...rest }: ProtectedRouteProps) {
-  const { t } = useTranslation();
-  const { hasPagePermission, isLoading } = usePermissions();
-  
-  // 如果权限数据正在加载，显示加载状态
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full">
-          <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-center text-gray-600">{t('loading_permissions')}</p>
-        </div>
-      </div>
-    );
-  }
-  
+export const ProtectedRoute: FC<ProtectedRouteProps> = ({
+  component: Component,
+  path,
+  pageName,
+  warehouseId,
+  requireManageWarehouse = false,
+  children,
+  exact,
+  ...rest
+}) => {
+  const { isAuthenticated, loading, hasPagePermission, canViewWarehouse, canManageWarehouse } = usePermissions();
+  const [, navigate] = useLocation();
+
   // 检查权限
-  const hasPermission = hasPagePermission(pageName);
-  
-  // 如果没有权限，根据默认设置显示拒绝访问页面或重定向
-  if (!hasPermission) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full">
-          <div className="text-red-500 text-center mb-4">
-            <i className="ri-error-warning-line text-5xl"></i>
-          </div>
-          <h2 className="text-2xl font-bold text-gray-800 text-center mb-4">
-            {t('access_denied')}
-          </h2>
-          <p className="text-gray-600 text-center mb-6">
-            {t('no_permission_message')}
-          </p>
-          <div className="flex justify-center">
-            <Redirect to="/" />
-          </div>
-        </div>
-      </div>
-    );
-  }
-  
-  // 有权限，渲染组件
-  return <Component {...rest} />;
-}
+  const checkPermission = () => {
+    // 如果未认证，重定向到登录页面
+    if (!isAuthenticated && !loading) {
+      navigate('/login');
+      return false;
+    }
+    
+    // 如果需要页面权限检查
+    if (pageName && !hasPagePermission(pageName)) {
+      navigate('/');  // 无权限跳转到首页
+      return false;
+    }
+    
+    // 如果需要仓库权限检查
+    if (warehouseId !== undefined) {
+      if (requireManageWarehouse) {
+        // 需要管理权限
+        if (!canManageWarehouse(warehouseId)) {
+          navigate('/warehouses');  // 无权限跳转到仓库列表
+          return false;
+        }
+      } else {
+        // 只需要查看权限
+        if (!canViewWarehouse(warehouseId)) {
+          navigate('/warehouses');  // 无权限跳转到仓库列表
+          return false;
+        }
+      }
+    }
+    
+    return true;
+  };
+
+  return (
+    <Route
+      path={path}
+      exact={exact}
+      {...rest}
+    >
+      {(params) => {
+        // 权限检查
+        if (loading) {
+          // 权限加载中显示加载状态
+          return <div className="flex items-center justify-center p-8">正在加载...</div>;
+        }
+        
+        return checkPermission() ? <Component {...params} /> : null;
+      }}
+    </Route>
+  );
+};
 
 export default ProtectedRoute;
