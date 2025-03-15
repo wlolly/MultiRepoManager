@@ -24,7 +24,7 @@ import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMe
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import toast from "../../lib/toast";
-import { SimpleExcelButtons } from "@/components/ExcelButtons";
+import { ExcelButtons } from "@/components/ExcelButtons";
 import { formatDate } from "@/lib/utils";
 
 // 调拨单接口定义
