@@ -3455,10 +3455,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = 1; // 默认为演示用户
       
       console.log("获取用户仓库权限", userId);
-      const permissions = await getUserWarehousePermissions(userId);
-      console.log("仓库权限结果", permissions);
       
-      res.json(permissions);
+      // 从数据库获取权限
+      const dbPermissions = await getUserWarehousePermissions(userId);
+      
+      // 限制用户只能访问特定仓库 (这里我们限制只能访问ID为1和2的仓库)
+      const restrictedPermissions: {[key: number]: {canView: boolean, canManage: boolean}} = {};
+      
+      // 只保留ID为1和2的仓库权限
+      if (dbPermissions[1]) {
+        restrictedPermissions[1] = dbPermissions[1];
+      }
+      
+      if (dbPermissions[2]) {
+        restrictedPermissions[2] = dbPermissions[2];
+      }
+      
+      console.log("仓库权限结果 (限制后)", restrictedPermissions);
+      
+      res.json(restrictedPermissions);
     } catch (err) {
       console.error("获取仓库权限错误:", err);
       res.status(500).json({ error: "获取权限时发生错误", details: String(err) });
@@ -3500,8 +3515,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "请提供有效的仓库ID" });
       }
       
-      const permissions = await getUserWarehousePermissions(userId);
-      const warehousePermission = permissions[warehouseId] || { canView: false, canManage: false };
+      // 从数据库获取权限
+      const dbPermissions = await getUserWarehousePermissions(userId);
+      
+      // 限制用户只能访问ID为1和2的仓库
+      const allowedWarehouseIds = [1, 2];
+      const hasWarehousePermission = allowedWarehouseIds.includes(warehouseId);
+      
+      let warehousePermission = { canView: false, canManage: false };
+      
+      // 如果在允许的仓库列表中，使用数据库的权限信息
+      if (hasWarehousePermission && dbPermissions[warehouseId]) {
+        warehousePermission = dbPermissions[warehouseId];
+      }
       
       const hasPermission = checkManage ? warehousePermission.canManage : warehousePermission.canView;
       
