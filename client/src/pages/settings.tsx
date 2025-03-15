@@ -114,9 +114,9 @@ function SocialBindingSection() {
       {showBindAlert && (
         <Alert variant="destructive" className="mb-6">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>{t('settings.security.bindingRequired', '需要绑定社交账号')}</AlertTitle>
+          <AlertTitle>{t('settings.security.bindingRequired', '需要完成账户验证')}</AlertTitle>
           <AlertDescription>
-            {t('settings.security.bindingRequiredDescription', '根据系统安全策略，您必须绑定微信或WhatsApp账号才能继续使用系统。绑定后，您将只能通过社交媒体账号登录。')}
+            {t('settings.security.bindingRequiredDescription', '根据系统安全策略，您必须完成额外的验证步骤才能继续使用系统。完成后，将使用更安全的认证方式登录。')}
           </AlertDescription>
         </Alert>
       )}
@@ -124,9 +124,9 @@ function SocialBindingSection() {
       {showBindPrompt && !showBindAlert && (
         <Alert className="mb-6 bg-yellow-50 border-yellow-200 text-yellow-800">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>{t('settings.security.bindingRecommended', '建议绑定社交账号')}</AlertTitle>
+          <AlertTitle>{t('settings.security.bindingRecommended', '建议完成安全验证')}</AlertTitle>
           <AlertDescription>
-            {t('settings.security.bindingRecommendedDescription', '为了提高账号安全性，建议您绑定微信或WhatsApp账号。绑定后，您将只能通过社交媒体账号登录。')}
+            {t('settings.security.bindingRecommendedDescription', '为了提高账户安全性，建议您完成额外的安全验证步骤。验证完成后，您将使用更安全的方式登录系统。')}
           </AlertDescription>
         </Alert>
       )}
@@ -184,9 +184,9 @@ function SocialBindingSection() {
       {bindStatus.bound && (
         <Alert className="mt-4 bg-blue-50 text-blue-700 border-blue-200">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>{t('settings.security.socialBindingNotice', '社交账号已绑定')}</AlertTitle>
+          <AlertTitle>{t('settings.security.socialBindingNotice', '安全验证已完成')}</AlertTitle>
           <AlertDescription>
-            {t('settings.security.socialBindingNoticeDescription', '您的账号已绑定社交媒体，下次请使用社交媒体直接登录，将无法使用用户名密码登录。')}
+            {t('settings.security.socialBindingNoticeDescription', '您的账号已完成安全验证，下次请使用验证过的方式登录系统，将使用更高级别的安全措施。')}
           </AlertDescription>
         </Alert>
       )}
@@ -435,19 +435,19 @@ export default function Settings() {
                 </form>
                 
                 <div className="mt-8 pt-6 border-t border-gray-200">
-                  <h3 className="text-lg font-medium mb-4">{t('settings.security.socialBinding', '社交账号绑定')}</h3>
+                  <h3 className="text-lg font-medium mb-4">{t('settings.security.socialBinding', '安全验证选项')}</h3>
                   <p className="text-gray-500 mb-4">
-                    {t('settings.security.socialBindingDescription', '绑定社交账号以便更安全地登录系统')}
+                    {t('settings.security.socialBindingDescription', '选择一种额外的验证方式，增强您的账户安全性')}
                   </p>
                   <SocialBindingSection />
                 </div>
                 
                 <div className="mt-8 pt-6 border-t border-gray-200">
-                  <h3 className="text-lg font-medium mb-4">{t('settings.security.twoFactorAuth', '双因素认证')}</h3>
+                  <h3 className="text-lg font-medium mb-4">{t('settings.security.twoFactorAuth', '多重验证')}</h3>
                   <p className="text-gray-500 mb-4">
-                    {t('settings.security.twoFactorDescription', '启用双因素认证为您的账户添加额外的安全层级')}
+                    {t('settings.security.twoFactorDescription', '启用多重验证机制，进一步增强账户安全防护')}
                   </p>
-                  <Button variant="outline">{t('settings.security.enableTwoFactorButton', '启用双因素认证')}</Button>
+                  <Button variant="outline">{t('settings.security.enableTwoFactorButton', '配置安全验证')}</Button>
                 </div>
               </CardContent>
             </Card>
