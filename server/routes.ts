@@ -177,17 +177,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         console.log(`用户 ${user.username} 会话创建成功`);
         
+        // 检查用户是否有社交绑定
+        const hasSocialBound = user.socialId && user.socialId !== '';
+        
+        // 如果是通过用户名/密码登录的本地用户
+        const needSocialBinding = user.userSource === 'local' && !hasSocialBound;
+        
+        // 如果会话需要存储用户ID，可以通过req.session.userId实现
+        if (req.session) {
+          req.session.userId = user.id;
+          
+          // 可选：记录是否有社交绑定
+          req.session.socialBound = hasSocialBound;
+        }
+        
         // 返回成功响应
         return res.json({
           message: '登录成功',
           success: true,
           fallbackMode: useFallbackStorage,
+          needSocialBinding: needSocialBinding, // 通知前端需要绑定社交账号
           user: {
             id: user.id,
             username: user.username,
             fullName: user.fullName,
             role: user.role,
-            avatarUrl: user.avatarUrl
+            avatarUrl: user.avatarUrl,
+            userSource: user.userSource
           }
         });
       });
