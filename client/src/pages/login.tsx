@@ -58,7 +58,17 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       
       console.log('登录API响应状态:', response.status, response.statusText);
       
-      const data = await response.json();
+      // 安全解析JSON响应
+      let data;
+      try {
+        const responseText = await response.text();
+        console.log('登录API响应数据(原始):', responseText);
+        data = JSON.parse(responseText);
+        console.log('登录API响应数据(解析):', data);
+      } catch (parseError) {
+        console.error('解析登录响应失败:', parseError);
+        throw new Error('服务器响应格式错误');
+      }
       
       if (!response.ok) {
         // 检查是否是因为社交账号绑定导致的错误
@@ -78,8 +88,11 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       
       // 设置身份验证状态
       toast({
-        title: "登录成功",
-        description: "欢迎回来！",
+        title: data.fallbackMode ? "登录成功(内存模式)" : "登录成功",
+        description: data.fallbackMode ? 
+          "警告: 系统运行在内存模式，数据在重启后将丢失" : 
+          "欢迎回来！",
+        duration: data.fallbackMode ? 6000 : 3000,
       });
       
       // 如果提供了登录成功回调，则调用
@@ -94,6 +107,16 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           description: "为了提高账户安全性，请前往设置页面绑定微信或WhatsApp",
           duration: 6000,
         });
+      }
+      
+      // 将用户数据存储在sessionStorage中
+      if (data.user) {
+        try {
+          sessionStorage.setItem('currentUser', JSON.stringify(data.user));
+          console.log('用户数据已保存到会话存储');
+        } catch (storageError) {
+          console.error('保存用户数据失败:', storageError);
+        }
       }
       
       // 跳转到主页
