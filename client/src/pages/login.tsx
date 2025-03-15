@@ -46,6 +46,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     try {
       setIsLoading(true);
       
+      console.log('开始登录请求，发送数据:', values);
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
@@ -54,6 +55,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         body: JSON.stringify(values),
         credentials: 'include' // 包含会话cookie
       });
+      
+      console.log('登录API响应状态:', response.status, response.statusText);
       
       const data = await response.json();
       

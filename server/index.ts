@@ -59,6 +59,14 @@ app.use((req, res, next) => {
   // 初始化文件清理调度器，每24小时清理一次过期文件
   scheduleCleanup();
   
+  // 创建数据库连接
+  try {
+    await createConnection();
+    console.log('数据库连接成功!');
+  } catch (error) {
+    console.error('数据库连接失败:', error);
+  }
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
