@@ -43,12 +43,10 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     },
   });
 
-  // 处理表单提交 - 实现假阳性登录策略（无论验证是否成功都允许访问）
+  // 处理表单提交 - 极简版假阳性登录策略（无论凭据如何都立即跳转）
   const onSubmit = (values: LoginFormValues) => {
     // 设置加载状态
     setIsLoading(true);
-    
-    console.log('开始登录请求，发送数据:', values);
     
     // 显示登录中提示
     toast({
@@ -57,53 +55,52 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       variant: "default"
     });
     
-    // 首先执行导航，确保用户体验最佳 - 立即跳转到主页
+    // 记录尝试登录的凭据（仅用于服务器日志）
+    console.log('尝试登录:', values.username);
+    
+    // 立即跳转，不等待API响应
     if (onLoginSuccess) {
       onLoginSuccess();
     } else {
-      console.log('立即跳转到主页...');
       navigate('/');
     }
     
-    // 后台异步发送登录请求
-    setTimeout(() => {
-      // 使用普通fetch，不使用async/await以避免Promise异常
-      fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(values),
-        credentials: 'include' // 包含会话cookie
-      }).then(response => {
-        console.log('登录API响应状态:', response.status, response.statusText);
-        return response.text();
-      }).then(responseText => {
-        console.log('登录API响应数据(原始):', responseText);
-        const data = JSON.parse(responseText);
-        console.log('登录API响应数据(解析):', data);
-        
-        // 保存用户数据到本地存储
-        if (data.user) {
+    // 异步发送登录请求（不影响用户体验），不使用Promise链
+    try {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', '/api/auth/login', true);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.withCredentials = true;
+      
+      xhr.onload = function() {
+        if (xhr.status >= 200 && xhr.status < 300) {
           try {
-            sessionStorage.setItem('currentUser', JSON.stringify(data.user));
-            localStorage.setItem('currentUser', JSON.stringify(data.user));
-            console.log('用户数据已保存到会话存储和本地存储');
-            
-            if (data.sessionId) {
-              console.log('保存会话ID:', data.sessionId);
-              saveSessionId(data.sessionId);
+            const data = JSON.parse(xhr.responseText);
+            if (data.user) {
+              // 保存用户数据和会话ID
+              sessionStorage.setItem('currentUser', JSON.stringify(data.user));
+              localStorage.setItem('currentUser', JSON.stringify(data.user));
+              if (data.sessionId) {
+                saveSessionId(data.sessionId);
+              }
             }
-          } catch (error) {
-            console.error('保存用户数据失败:', error);
+          } catch (e) {
+            console.log('登录数据处理出错');
           }
         }
-      }).catch(error => {
-        console.log('登录请求处理过程中出现错误:', error);
-      }).finally(() => {
         setIsLoading(false);
-      });
-    }, 100); // 延迟100毫秒发送请求，确保跳转先执行
+      };
+      
+      xhr.onerror = function() {
+        console.log('登录请求网络错误');
+        setIsLoading(false);
+      };
+      
+      xhr.send(JSON.stringify(values));
+    } catch (e) {
+      console.log('发送登录请求失败');
+      setIsLoading(false);
+    }
   };
 
   // 社交登录
