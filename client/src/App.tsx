@@ -30,7 +30,7 @@ import NewWarehouseProduct from "./pages/warehouse-products/new";
 import Warehouses from "./pages/warehouses";
 import InboundOrders from "./pages/inbound-orders";
 import OutboundOrders from "./pages/outbound-orders";
-import WarehouseTransfers from "./pages/warehouse-transfers";
+import WarehouseTransfers from "./pages/warehouse-transfers/index";
 import NewWarehouseTransfer from "./pages/warehouse-transfers/new";
 import WarehouseTransferImport from "./pages/warehouse-transfers/import";
 import OutboundOrder from "./pages/outbound-order/[id]";
