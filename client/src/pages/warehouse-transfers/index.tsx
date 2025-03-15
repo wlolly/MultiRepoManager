@@ -540,7 +540,44 @@ export default function WarehouseTransfers() {
           <p className="text-muted-foreground">{t("warehouseTransfer.subtitle")}</p>
         </div>
         <div className="flex gap-2">
-          {/* 使用SimpleExcelButtons组件代替单独的按钮 */}
+          {/* 使用独立按钮，临时代替SimpleExcelButtons */}
+          <Button
+            variant="outline"
+            size="default"
+            onClick={handleDownloadTemplate}
+            className="flex items-center"
+            title={t("warehouseTransfer.download_template_tooltip")}
+          >
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            {t("download_template")}
+          </Button>
+          <Button
+            variant="outline"
+            size="default"
+            onClick={() => setImportDialogOpen(true)}
+            className="flex items-center"
+            title={t("warehouseTransfer.import_tooltip")}
+          >
+            <FileUp className="mr-2 h-4 w-4" />
+            {t("import_excel")}
+          </Button>
+          <Button
+            variant="outline"
+            size="default"
+            onClick={() => {
+              if (filteredTransfers.length > 0) {
+                exportAllTransfersToExcel();
+              } else {
+                toast.error(t("warehouseTransfer.no_data_to_export"));
+              }
+            }}
+            className="flex items-center"
+            title={t("warehouseTransfer.export_tooltip")}
+          >
+            <FileDown className="mr-2 h-4 w-4" />
+            {t("export_excel")}
+          </Button>
+          {/* 已注释的SimpleExcelButtons组件
           <SimpleExcelButtons
             size="default"
             onDownloadTemplate={handleDownloadTemplate}
@@ -558,6 +595,7 @@ export default function WarehouseTransfers() {
               export: t("warehouseTransfer.export_tooltip")
             }}
           />
+          */}
           {/* 创建调拨单按钮 */}
           <Button onClick={handleCreateTransfer}>
             <Plus className="mr-2 h-4 w-4" />
@@ -625,6 +663,44 @@ export default function WarehouseTransfers() {
           <p className="text-sm text-muted-foreground">{t("warehouseTransfer.excel_description")}</p>
         </div>
         <div className="flex gap-2">
+          {/* 使用独立按钮，临时代替SimpleExcelButtons */}
+          <Button
+            variant="outline"
+            size="default"
+            onClick={handleDownloadTemplate}
+            className="flex items-center"
+            title={t("warehouseTransfer.download_template_tooltip")}
+          >
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            {t("download_template")}
+          </Button>
+          <Button
+            variant="outline"
+            size="default"
+            onClick={() => setImportDialogOpen(true)}
+            className="flex items-center"
+            title={t("warehouseTransfer.import_tooltip")}
+          >
+            <FileUp className="mr-2 h-4 w-4" />
+            {t("import_excel")}
+          </Button>
+          <Button
+            variant="outline"
+            size="default"
+            onClick={() => {
+              if (filteredTransfers.length > 0) {
+                exportAllTransfersToExcel();
+              } else {
+                toast.error(t("warehouseTransfer.no_data_to_export"));
+              }
+            }}
+            className="flex items-center"
+            title={t("warehouseTransfer.export_tooltip")}
+          >
+            <FileDown className="mr-2 h-4 w-4" />
+            {t("export_excel")}
+          </Button>
+          {/* 已注释的SimpleExcelButtons组件
           <SimpleExcelButtons
             size="default"
             onDownloadTemplate={handleDownloadTemplate}
@@ -642,6 +718,7 @@ export default function WarehouseTransfers() {
               export: t("warehouseTransfer.export_tooltip")
             }}
           />
+          */}
         </div>
       </div>
 
