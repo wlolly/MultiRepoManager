@@ -1,5 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
-import { getSessionId, attachSessionToRequest, processResponseHeaders } from "./sessionManager";
+import { getSessionId, saveSessionId, attachSessionToRequest, processResponseHeaders } from "./sessionManager";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
