@@ -224,8 +224,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // 权限管理接口 - 获取仓库权限
-  apiRouter.get('/permissions/warehouses', verifySession, async (req, res) => {
+  apiRouter.get('/permissions/warehouses', async (req, res) => {
     try {
+      // 检查是否已登录
+      if (!req.user) {
+        return res.status(401).json({ message: '未登录' });
+      }
+      
       const userId = (req.user as any).id;
       const permissions = await getUserWarehousePermissions(userId);
       res.json(permissions);
@@ -3554,57 +3559,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // 权限管理相关路由
-  // 获取当前用户的页面权限
-  apiRouter.get("/permissions/pages", async (req, res) => {
-    try {
-      // 临时解决方案：使用默认用户ID 1 (演示用户)
-      // 实际生产环境应该从 req.session.userId 获取
-      const userId = 1; // 默认为演示用户
-      
-      console.log("获取用户页面权限", userId);
-      const permissions = await getUserPagePermissions(userId);
-      console.log("页面权限结果", permissions);
-      
-      res.json(permissions);
-    } catch (err) {
-      console.error("获取页面权限错误:", err);
-      res.status(500).json({ error: "获取权限时发生错误", details: String(err) });
-    }
-  });
-  
-  // 获取当前用户的仓库权限
-  apiRouter.get("/permissions/warehouses", async (req, res) => {
-    try {
-      // 临时解决方案：使用默认用户ID 1 (演示用户)
-      // 实际生产环境应该从 req.session.userId 获取
-      const userId = 1; // 默认为演示用户
-      
-      console.log("获取用户仓库权限", userId);
-      
-      // 从数据库获取权限
-      const dbPermissions = await getUserWarehousePermissions(userId);
-      
-      // 限制用户只能访问特定仓库 (这里我们限制只能访问ID为1和2的仓库)
-      const restrictedPermissions: {[key: number]: {canView: boolean, canManage: boolean}} = {};
-      
-      // 只保留ID为1和2的仓库权限
-      if (dbPermissions[1]) {
-        restrictedPermissions[1] = dbPermissions[1];
-      }
-      
-      if (dbPermissions[2]) {
-        restrictedPermissions[2] = dbPermissions[2];
-      }
-      
-      console.log("仓库权限结果 (限制后)", restrictedPermissions);
-      
-      res.json(restrictedPermissions);
-    } catch (err) {
-      console.error("获取仓库权限错误:", err);
-      res.status(500).json({ error: "获取权限时发生错误", details: String(err) });
-    }
-  });
+  // 唯一码跟踪逻辑继续
   
   // 检查用户是否有特定页面权限
   apiRouter.get("/permissions/check-page/:pageName", async (req, res) => {
