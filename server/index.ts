@@ -23,12 +23,6 @@ app.use(session({
   name: 'warehouse.sid', // 自定义会话ID cookie名称 (更简单的名称避免解析问题)
   rolling: true, // 每次响应都重设cookie过期时间
   proxy: true, // 信任反向代理，解决在Replit环境下cookie问题
-  genid: function(req) {
-    // 总是生成一个新的独特会话ID
-    const sessionId = crypto.randomBytes(16).toString('hex');
-    console.log(`创建会话ID: ${sessionId}`);
-    return sessionId;
-  },
   cookie: { 
     secure: false, // 开发环境不使用secure，避免cookie丢失
     maxAge: 30 * 24 * 60 * 60 * 1000, // 延长到30天，确保测试期间不会过期
@@ -46,31 +40,79 @@ app.use(session({
 
 // 添加会话活动时间跟踪和会话ID恢复
 app.use((req, res, next) => {
-  // 检查客户端提供的sessionId作为恢复机制
-  const clientSessionId = req.headers['x-session-id'] || req.query.sessionId;
-  if (clientSessionId && typeof clientSessionId === 'string' && req.sessionID !== clientSessionId) {
-    console.log(`客户端提供了不同的会话ID: ${clientSessionId}, 当前会话ID: ${req.sessionID || '无'}`);
+  // 获取各种可能的客户端会话ID来源
+  const clientSessionId = 
+    req.headers['x-session-id'] as string || 
+    req.headers['X-Session-ID'] as string || 
+    req.query.sessionId as string;
+  
+  // 将会话信息记录到响应头，帮助调试
+  res.setHeader('X-Original-Session-ID', req.sessionID || 'none');
+  res.setHeader('X-Client-Session-ID', clientSessionId || 'none');
+  
+  // 如果客户端提供了会话ID，并且与当前会话ID不同，尝试恢复客户端会话
+  if (clientSessionId && typeof clientSessionId === 'string' && 
+      req.sessionID !== clientSessionId && req.sessionStore) {
+      
+    console.log(`客户端提供了会话ID: ${clientSessionId}, 当前会话ID: ${req.sessionID}`);
     
-    // 将此信息记录到响应头，帮助调试
-    res.setHeader('X-Original-Session-ID', req.sessionID || 'none');
-    res.setHeader('X-Client-Session-ID', clientSessionId);
+    // 使用客户端提供的会话ID查找会话
+    (req.sessionStore as any).get(clientSessionId, (err: Error, clientSession: any) => {
+      if (err) {
+        console.error(`通过客户端会话ID加载会话错误:`, err);
+        continueWithSession();
+        return;
+      }
+      
+      if (clientSession && clientSession.userId) {
+        console.log(`找到客户端会话 ${clientSessionId}: userId=${clientSession.userId}, 认证=${clientSession.authenticated}`);
+        
+        // 记录一下当前会话ID
+        const currentSessionId = req.sessionID;
+        
+        // 强制使用客户端会话ID
+        (req as any).sessionID = clientSessionId;
+        
+        // 合并到当前会话
+        req.session.userId = clientSession.userId;
+        req.session.authenticated = clientSession.authenticated;
+        req.session.userRole = clientSession.userRole;
+        req.session.socialBound = clientSession.socialBound;
+        req.session.lastActivity = Date.now();
+        
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            console.error('保存恢复的会话出错:', saveErr);
+          }
+          continueWithSession();
+        });
+      } else {
+        console.log(`未找到有效的客户端会话或会话不包含userId`);
+        continueWithSession();
+      }
+    });
+  } else {
+    continueWithSession();
   }
   
-  if (req.session) {
-    req.session.lastActivity = Date.now();
-    
-    // 会话调试日志
-    if (process.env.DEBUG === 'session' || process.env.NODE_ENV !== 'production') {
-      const sessionInfo = {
-        id: req.sessionID,
-        userId: req.session.userId,
-        socialBound: req.session.socialBound,
-        isAuthenticated: !!req.session.userId
-      };
-      console.log(`[会话调试] 路径: ${req.path}, 会话信息:`, sessionInfo);
+  // 继续处理会话信息
+  function continueWithSession() {
+    if (req.session) {
+      req.session.lastActivity = Date.now();
+      
+      // 会话调试日志
+      if (process.env.DEBUG === 'session' || process.env.NODE_ENV !== 'production') {
+        const sessionInfo = {
+          id: req.sessionID,
+          userId: req.session.userId,
+          socialBound: req.session.socialBound,
+          isAuthenticated: !!req.session.userId
+        };
+        console.log(`[会话调试] 路径: ${req.path}, 会话信息:`, sessionInfo);
+      }
     }
+    next();
   }
-  next();
 });
 
 // API响应捕获和日志记录中间件
