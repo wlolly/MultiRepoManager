@@ -380,6 +380,33 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
   
   // 检查用户认证状态的函数
   function continueAuthCheck() {
+    // 检查会话活跃度 - 最大空闲时间设为30天（2592000000毫秒）
+    const MAX_IDLE_TIME = 30 * 24 * 60 * 60 * 1000; // 30天的会话空闲时间
+    const now = Date.now();
+    const lastActivity = req.session?.lastActivity || 0;
+    const idleTime = now - lastActivity;
+    
+    // 如果会话超时，强制重新登录
+    if (lastActivity && idleTime > MAX_IDLE_TIME) {
+      console.log(`会话已超时: 空闲时间 ${Math.floor(idleTime / (1000 * 60 * 60))} 小时，超过了最大空闲时间 ${MAX_IDLE_TIME / (1000 * 60 * 60)} 小时`);
+      
+      // 重置会话
+      req.session.authenticated = false;
+      delete req.session.userId;
+      delete req.session.userRole;
+      
+      req.session.save(err => {
+        if (err) console.error('重置超时会话状态时出错:', err);
+        
+        return res.status(401).json({ 
+          message: '会话已过期，请重新登录',
+          errorCode: 'SESSION_TIMEOUT'
+        });
+      });
+      
+      return;
+    }
+    
     // 检查是否已登录
     if (!req.user) {
       // 如果会话中标记为authenticated但没有user对象，可能是序列化问题
@@ -407,12 +434,12 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
       return res.status(401).json({ message: '未登录' });
     }
     
-    // 会话有效，确保会话信息同步
+    // 会话有效，确保会话信息同步并更新最后活跃时间
     if (req.session) {
       req.session.authenticated = true;
       req.session.userId = (req.user as any).id;
       req.session.userRole = (req.user as any).role;
-      req.session.lastActivity = Date.now();
+      req.session.lastActivity = now; // 更新最后活跃时间
     }
     
     // 继续
