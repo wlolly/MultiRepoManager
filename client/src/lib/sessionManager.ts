@@ -134,7 +134,12 @@ export function saveSessionId(sessionId: string) {
     localStorage.setItem('sessionId', sessionId);
     
     // 设置为cookie (30天有效期)
-    document.cookie = `sessionId=${sessionId}; path=/; max-age=2592000; SameSite=Lax`;
+    const secure = window.location.protocol === 'https:';
+    const maxAge = 30 * 24 * 60 * 60; // 30天过期，单位：秒
+    document.cookie = `sessionId=${encodeURIComponent(sessionId)}; path=/; max-age=${maxAge}; SameSite=Lax${secure ? '; secure' : ''}`; 
+    
+    // 同时设置与服务器匹配的会话cookie名称
+    document.cookie = `warehouse.sid=${encodeURIComponent(sessionId)}; path=/; max-age=${maxAge}; SameSite=Lax${secure ? '; secure' : ''}`;
     
     // 触发会话ID更新事件，使其他组件可以响应会话变化
     window.dispatchEvent(new CustomEvent('sessionIdChanged', { detail: { sessionId } }));
@@ -525,7 +530,10 @@ export function attachSessionToRequest(url: string, headers: Record<string, stri
     url = `${url}${separator}sessionId=${cleanSessionId}`;
     
     // 也添加到cookie中，进一步增强会话持久性
-    document.cookie = `sessionId=${cleanSessionId}; path=/; max-age=2592000; SameSite=Lax`;
+    const secure = window.location.protocol === 'https:';
+    const maxAge = 30 * 24 * 60 * 60; // 30天过期，单位：秒
+    document.cookie = `sessionId=${encodeURIComponent(cleanSessionId)}; path=/; max-age=${maxAge}; SameSite=Lax${secure ? '; secure' : ''}`;
+    document.cookie = `warehouse.sid=${encodeURIComponent(cleanSessionId)}; path=/; max-age=${maxAge}; SameSite=Lax${secure ? '; secure' : ''}`;
     
     // 如果是认证相关请求，特别记录
     if (isImportantRequest) {
@@ -567,13 +575,28 @@ export function attachSessionToRequest(url: string, headers: Record<string, stri
   return { url, headers };
 }
 
-// 从cookie中获取值的辅助函数
+// 从cookie中获取值的辅助函数（增强版）
 function getCookieValue(name: string): string | null {
   const cookies = document.cookie.split(';');
+  const encodedName = encodeURIComponent(name);
+  
   for (let cookie of cookies) {
-    const [cookieName, cookieValue] = cookie.trim().split('=');
-    if (cookieName === name) {
-      return cookieValue;
+    // 按第一个等号分隔，因为cookie值中可能含有等号
+    const cookie_parts = cookie.trim().split('=');
+    const cookieName = cookie_parts.shift()?.trim() || '';
+    // 剩余部分作为值，处理值中可能含有等号的情况
+    const cookieValue = cookie_parts.join('=');
+    
+    // 匹配名称（既检查原始名称也检查编码后的名称）
+    if (cookieName === name || cookieName === encodedName) {
+      try {
+        // 尝试解码
+        return decodeURIComponent(cookieValue);
+      } catch (e) {
+        // 如果解码失败，返回原始值
+        console.error(`无法解码cookie值: ${cookieValue}`, e);
+        return cookieValue;
+      }
     }
   }
   return null;
@@ -600,7 +623,12 @@ export function clearSession() {
   currentSessionId = null;
   sessionStorage.removeItem('sessionId');
   localStorage.removeItem('sessionId');
+  
+  // 清除多种可能的会话cookie
   document.cookie = 'sessionId=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+  document.cookie = 'warehouse.sid=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+  document.cookie = 'connect.sid=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+  document.cookie = 'express.sid=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
   
   // 保留会话历史，便于可能的调试
   const sessionHistory = JSON.parse(localStorage.getItem('sessionIdHistory') || '[]');
@@ -619,11 +647,6 @@ export function clearSession() {
   
   // 清除会话状态信息
   localStorage.removeItem('sessionState');
-  
-  // 清除其他可能的认证相关cookie
-  document.cookie = 'warehouse.sid=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-  document.cookie = 'connect.sid=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-  document.cookie = 'express.sid=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
   
   // 更新会话状态记录（仅用于历史记录）
   const sessionState = {
