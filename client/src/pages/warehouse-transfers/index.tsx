@@ -205,6 +205,65 @@ export default function WarehouseTransfers() {
   };
   
   // 导出单个调拨单到Excel
+  // 批量导出选中的调拨单
+  const exportSelectedTransfers = async () => {
+    if (selectedTransfers.length === 0) {
+      toast({
+        title: t("common.warning"),
+        description: t("warehouseTransfer.no_transfers_selected"),
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      // 显示加载提示
+      toast({
+        title: t("warehouseTransfer.exporting"),
+        description: t("warehouseTransfer.preparing_export_file"),
+      });
+      
+      // 发送多选导出请求
+      const response = await axios.post('/api/warehouse-transfers/export-selected', 
+        { transferIds: selectedTransfers },
+        { responseType: 'blob' }
+      );
+      
+      // 创建下载链接
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // 从响应头获取文件名或使用默认文件名
+      const contentDisposition = response.headers['content-disposition'];
+      let filename = 'transfers_export.xlsx';
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+        if (filenameMatch && filenameMatch.length === 2) filename = filenameMatch[1];
+      }
+      
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // 成功提示
+      toast({
+        title: t("common.success"),
+        description: t("warehouseTransfer.export_success"),
+      });
+      
+    } catch (error) {
+      console.error('Export error:', error);
+      toast({
+        title: t("common.error"),
+        description: t("warehouseTransfer.export_failed"),
+        variant: "destructive"
+      });
+    }
+  };
+
+  // 导出单个调拨单
   const exportTransferToExcel = async (transferId: number) => {
     try {
       const response = await axios.get(`/api/warehouse-transfers/${transferId}/export`, {
@@ -659,11 +718,19 @@ export default function WarehouseTransfers() {
       
       {/* 调拨单列表 */}
       <Card>
-        <CardHeader>
-          <CardTitle>{t("warehouseTransfer.warehouse_transfers_list")}</CardTitle>
-          <CardDescription>
-            {t("warehouseTransfer.found_count_items", { count: displayedTransfers.length })}
-          </CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>{t("warehouseTransfer.warehouse_transfers_list")}</CardTitle>
+            <CardDescription>
+              {t("warehouseTransfer.found_count_items", { count: displayedTransfers.length })}
+            </CardDescription>
+          </div>
+          {selectedTransfers.length > 0 && (
+            <Button variant="outline" size="sm" onClick={exportSelectedTransfers}>
+              <FileDown className="mr-2 h-4 w-4" />
+              {t("warehouseTransfer.export_selected", { count: selectedTransfers.length })}
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           {isLoadingTransfers ? (
