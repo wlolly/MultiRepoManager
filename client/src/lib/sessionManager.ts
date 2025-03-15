@@ -536,13 +536,28 @@ export function attachSessionToRequest(url: string, headers: Record<string, stri
     
     // 添加到请求头 - 使用多种格式，提高与服务器匹配的成功率
     // ===== 重要：匹配服务器端genid函数中检查的所有可能标头名称 =====
-    // 只使用最重要的一两个头，避免重复设置多个可能导致的混乱
+    // 使用所有服务器端可能检查的头名称，确保会话ID能被正确识别
     headers['X-Client-Session-ID'] = cleanSessionId;
     headers['X-Session-ID'] = cleanSessionId;
+    headers['sessionid'] = cleanSessionId;
+    headers['session-id'] = cleanSessionId;
+    headers['client-session-id'] = cleanSessionId;
+    
+    // 设置Cookie方式的会话ID，增加一种传递机制
+    try {
+      setCookie('sessionId', cleanSessionId, {
+        path: '/',
+        maxAgeDays: 30,
+        sameSite: 'Lax'
+      });
+    } catch (e) {
+      console.error(`${logPrefix} 设置会话Cookie失败:`, e);
+    }
     
     // 不仅设置会话ID头，也同时添加到查询参数中，提高传递成功率
     const urlObj = new URL(url, window.location.origin);
     urlObj.searchParams.set('sessionId', cleanSessionId);
+    urlObj.searchParams.set('sid', cleanSessionId); // 添加另一种常见的查询参数名
     
     // 如果是关键API路径，输出更详细的调试信息
     if (isImportantRequest) {
