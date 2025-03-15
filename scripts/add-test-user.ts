@@ -4,6 +4,7 @@
  */
 import { db } from '../server/db';
 import { users } from '../shared/schema';
+import { eq } from 'drizzle-orm';
 import crypto from 'crypto';
 
 // 密码哈希函数 - 使用与auth.ts中相同的逻辑
@@ -19,7 +20,7 @@ async function addTestUser() {
     console.log('开始创建测试用户...');
     
     // 首先检查用户是否已存在
-    const existingUser = await db.select().from(users).where(users.username.equals('222'));
+    const existingUser = await db.select().from(users).where(eq(users.username, '222'));
     
     if (existingUser.length > 0) {
       console.log('测试用户已存在，无需重新创建');
