@@ -31,7 +31,9 @@ export interface IStorage {
   // User methods
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUserBySocialId(socialId: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, user: Partial<User>): Promise<User | undefined>;
   getUsers(): Promise<User[]>;
   
   // Repository methods
@@ -449,6 +451,12 @@ export class MemStorage implements IStorage {
       (user) => user.username === username,
     );
   }
+  
+  async getUserBySocialId(socialId: string): Promise<User | undefined> {
+    return Array.from(this.usersMap.values()).find(
+      (user) => user.socialId === socialId,
+    );
+  }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userIdCounter++;
@@ -456,6 +464,20 @@ export class MemStorage implements IStorage {
     const user: User = { ...insertUser, id, createdAt };
     this.usersMap.set(id, user);
     return user;
+  }
+  
+  async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
+    const existingUser = this.usersMap.get(id);
+    if (!existingUser) return undefined;
+    
+    const updatedUser = { 
+      ...existingUser, 
+      ...userData,
+      updatedAt: new Date()
+    };
+    
+    this.usersMap.set(id, updatedUser);
+    return updatedUser;
   }
 
   async getUsers(): Promise<User[]> {
