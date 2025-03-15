@@ -2035,5 +2035,616 @@
     "ru": "Поставщик",
     "kk": "Жеткізуші",
     "uz": "Ta'minotchi"
+  },
+  "warehouseTransfer": {
+    "title": {
+      "zh": "仓库调拨管理",
+      "en": "Warehouse Transfers Management",
+      "ru": "Управление складскими перемещениями",
+      "kk": "Қойма аударымдарын басқару",
+      "uz": "Ombor transferlarini boshqarish"
+    },
+    "subtitle": {
+      "zh": "管理仓库之间的商品调拨，创建和跟踪调拨单",
+      "en": "Manage product transfers between warehouses, create and track transfer orders",
+      "ru": "Управление перемещениями товаров между складами, создание и отслеживание заказов на перемещение",
+      "kk": "Қоймалар арасындағы тауарлардың аударымын басқару, аударым тапсырыстарын жасау және бақылау",
+      "uz": "Omborlar o'rtasida mahsulot transferlarini boshqarish, transfer buyurtmalarini yaratish va kuzatish"
+    },
+    "filter_title": {
+      "zh": "筛选调拨单",
+      "en": "Filter Transfers",
+      "ru": "Фильтр перемещений",
+      "kk": "Аударымдарды сүзгілеу",
+      "uz": "Transferlarni filtrlash"
+    },
+    "filter_description": {
+      "zh": "使用以下选项筛选仓库调拨单",
+      "en": "Use the options below to filter warehouse transfers",
+      "ru": "Используйте параметры ниже для фильтрации складских перемещений",
+      "kk": "Қойма аударымдарын сүзгілеу үшін төмендегі опцияларды пайдаланыңыз",
+      "uz": "Ombor transferlarini filtrlash uchun quyidagi parametrlardan foydalaning"
+    },
+    "filter_warehouse": {
+      "zh": "仓库",
+      "en": "Warehouse",
+      "ru": "Склад",
+      "kk": "Қойма",
+      "uz": "Ombor"
+    },
+    "filter_status": {
+      "zh": "状态",
+      "en": "Status",
+      "ru": "Статус",
+      "kk": "Күй",
+      "uz": "Holat"
+    },
+    "filter_date": {
+      "zh": "日期",
+      "en": "Date",
+      "ru": "Дата",
+      "kk": "Күні",
+      "uz": "Sana"
+    },
+    "all_warehouses": {
+      "zh": "所有仓库",
+      "en": "All Warehouses",
+      "ru": "Все склады",
+      "kk": "Барлық қоймалар",
+      "uz": "Barcha omborlar"
+    },
+    "all_statuses": {
+      "zh": "所有状态",
+      "en": "All Statuses",
+      "ru": "Все статусы",
+      "kk": "Барлық күйлер",
+      "uz": "Barcha holatlar"
+    },
+    "all_dates": {
+      "zh": "所有日期",
+      "en": "All Dates",
+      "ru": "Все даты",
+      "kk": "Барлық күндер",
+      "uz": "Barcha sanalar"
+    },
+    "status_pending": {
+      "zh": "待处理",
+      "en": "Pending",
+      "ru": "В ожидании",
+      "kk": "Күтуде",
+      "uz": "Kutilmoqda"
+    },
+    "status_processing": {
+      "zh": "处理中",
+      "en": "Processing",
+      "ru": "Обработка",
+      "kk": "Өңделуде",
+      "uz": "Ishlov berilmoqda"
+    },
+    "status_completed": {
+      "zh": "已完成",
+      "en": "Completed",
+      "ru": "Завершено",
+      "kk": "Аяқталды",
+      "uz": "Bajarildi"
+    },
+    "status_cancelled": {
+      "zh": "已取消",
+      "en": "Cancelled",
+      "ru": "Отменено",
+      "kk": "Бас тартылды",
+      "uz": "Bekor qilindi"
+    },
+    "today": {
+      "zh": "今天",
+      "en": "Today",
+      "ru": "Сегодня",
+      "kk": "Бүгін",
+      "uz": "Bugun"
+    },
+    "yesterday": {
+      "zh": "昨天",
+      "en": "Yesterday",
+      "ru": "Вчера",
+      "kk": "Кеше",
+      "uz": "Kecha"
+    },
+    "this_week": {
+      "zh": "本周",
+      "en": "This Week",
+      "ru": "Эта неделя",
+      "kk": "Осы апта",
+      "uz": "Shu hafta"
+    },
+    "reset_filters": {
+      "zh": "重置筛选",
+      "en": "Reset Filters",
+      "ru": "Сбросить фильтры",
+      "kk": "Сүзгілерді қалпына келтіру",
+      "uz": "Filtrlarni qayta o'rnatish"
+    },
+    "all_records": {
+      "zh": "所有记录",
+      "en": "All Records",
+      "ru": "Все записи",
+      "kk": "Барлық жазбалар",
+      "uz": "Barcha yozuvlar"
+    },
+    "recent_records": {
+      "zh": "最近记录",
+      "en": "Recent Records",
+      "ru": "Недавние записи",
+      "kk": "Соңғы жазбалар",
+      "uz": "So'nggi yozuvlar"
+    },
+    "excel_operations": {
+      "zh": "Excel操作",
+      "en": "Excel Operations",
+      "ru": "Операции с Excel",
+      "kk": "Excel операциялары",
+      "uz": "Excel amallari"
+    },
+    "excel_description": {
+      "zh": "您可以使用Excel导入导出调拨单数据，提升工作效率",
+      "en": "You can use Excel to import and export transfer data, improving work efficiency",
+      "ru": "Вы можете использовать Excel для импорта и экспорта данных о перемещениях, повышая эффективность работы",
+      "kk": "Жұмыс тиімділігін арттыру үшін аударым деректерін импорттау және экспорттау үшін Excel-ді пайдалана аласыз",
+      "uz": "Ish samaradorligini oshirish uchun Excel-dan foydalanib transfer ma'lumotlarini import va eksport qilishingiz mumkin"
+    },
+    "search": {
+      "zh": "搜索",
+      "en": "Search",
+      "ru": "Поиск",
+      "kk": "Іздеу",
+      "uz": "Qidirish"
+    },
+    "search_placeholder": {
+      "zh": "搜索调拨单号、仓库或状态...",
+      "en": "Search transfer number, warehouse or status...",
+      "ru": "Поиск номера перемещения, склада или статуса...",
+      "kk": "Аударым нөмірін, қойманы немесе күйді іздеу...",
+      "uz": "Transfer raqami, ombor yoki holatni qidirish..."
+    },
+    "reference": {
+      "zh": "调拨单号",
+      "en": "Reference",
+      "ru": "Номер",
+      "kk": "Нөмірі",
+      "uz": "Raqami"
+    },
+    "source_warehouse": {
+      "zh": "源仓库",
+      "en": "Source Warehouse",
+      "ru": "Исходный склад",
+      "kk": "Бастапқы қойма",
+      "uz": "Boshlang'ich ombor"
+    },
+    "target_warehouse": {
+      "zh": "目标仓库",
+      "en": "Target Warehouse",
+      "ru": "Целевой склад",
+      "kk": "Мақсатты қойма",
+      "uz": "Maqsad ombor"
+    },
+    "created_at": {
+      "zh": "创建时间",
+      "en": "Created At",
+      "ru": "Создано",
+      "kk": "Жасалған уақыты",
+      "uz": "Yaratilgan vaqt"
+    },
+    "items": {
+      "zh": "商品数量",
+      "en": "Items",
+      "ru": "Товары",
+      "kk": "Тауарлар",
+      "uz": "Mahsulotlar"
+    },
+    "weight": {
+      "zh": "重量",
+      "en": "Weight",
+      "ru": "Вес",
+      "kk": "Салмақ",
+      "uz": "Og'irlik"
+    },
+    "volume": {
+      "zh": "体积",
+      "en": "Volume",
+      "ru": "Объем",
+      "kk": "Көлем",
+      "uz": "Hajm"
+    },
+    "status": {
+      "zh": "状态",
+      "en": "Status",
+      "ru": "Статус",
+      "kk": "Күй",
+      "uz": "Holat"
+    },
+    "actions": {
+      "zh": "操作",
+      "en": "Actions",
+      "ru": "Действия",
+      "kk": "Әрекеттер",
+      "uz": "Harakatlar"
+    },
+    "open_menu": {
+      "zh": "打开菜单",
+      "en": "Open Menu",
+      "ru": "Открыть меню",
+      "kk": "Мәзірді ашу",
+      "uz": "Menyuni ochish"
+    },
+    "view_details": {
+      "zh": "查看详情",
+      "en": "View Details",
+      "ru": "Просмотр деталей",
+      "kk": "Мәліметтерді қарау",
+      "uz": "Tafsilotlarni ko'rish"
+    },
+    "export_to_excel": {
+      "zh": "导出到Excel",
+      "en": "Export to Excel",
+      "ru": "Экспорт в Excel",
+      "kk": "Excel-ге экспорттау",
+      "uz": "Excel-ga eksport qilish"
+    },
+    "mark_as_completed": {
+      "zh": "标记为已完成",
+      "en": "Mark as Completed",
+      "ru": "Отметить как завершенное",
+      "kk": "Аяқталған деп белгілеу",
+      "uz": "Bajarilgan deb belgilash"
+    },
+    "cancel_transfer": {
+      "zh": "取消调拨",
+      "en": "Cancel Transfer",
+      "ru": "Отменить перемещение",
+      "kk": "Аударымды болдырмау",
+      "uz": "Transferni bekor qilish"
+    },
+    "new_warehouse_transfer": {
+      "zh": "创建调拨单",
+      "en": "Create Transfer",
+      "ru": "Создать перемещение",
+      "kk": "Аударым жасау",
+      "uz": "Transfer yaratish"
+    },
+    "selected": {
+      "zh": "已选择",
+      "en": "Selected",
+      "ru": "Выбрано",
+      "kk": "Таңдалған",
+      "uz": "Tanlangan"
+    },
+    "total": {
+      "zh": "总计",
+      "en": "Total",
+      "ru": "Всего",
+      "kk": "Барлығы",
+      "uz": "Jami"
+    },
+    "deselect_all": {
+      "zh": "取消全选",
+      "en": "Deselect All",
+      "ru": "Отменить все",
+      "kk": "Барлығынан бас тарту",
+      "uz": "Barchasini bekor qilish"
+    },
+    "export_selected": {
+      "zh": "导出选中项",
+      "en": "Export Selected",
+      "ru": "Экспорт выбранных",
+      "kk": "Таңдалғандарды экспорттау",
+      "uz": "Tanlanganlarni eksport qilish"
+    },
+    "total_transfers": {
+      "zh": "总调拨单数",
+      "en": "Total Transfers",
+      "ru": "Всего перемещений",
+      "kk": "Барлық аударымдар",
+      "uz": "Jami transferlar"
+    },
+    "pending_transfers": {
+      "zh": "待处理调拨单",
+      "en": "Pending Transfers",
+      "ru": "Ожидающие перемещения",
+      "kk": "Күтудегі аударымдар",
+      "uz": "Kutilayotgan transferlar"
+    },
+    "total_weight": {
+      "zh": "总重量",
+      "en": "Total Weight",
+      "ru": "Общий вес",
+      "kk": "Жалпы салмақ",
+      "uz": "Umumiy og'irlik"
+    },
+    "total_volume": {
+      "zh": "总体积",
+      "en": "Total Volume",
+      "ru": "Общий объем",
+      "kk": "Жалпы көлем",
+      "uz": "Umumiy hajm"
+    },
+    "no_data_to_export": {
+      "zh": "没有数据可导出",
+      "en": "No data to export",
+      "ru": "Нет данных для экспорта",
+      "kk": "Экспорттауға деректер жоқ",
+      "uz": "Eksport qilish uchun ma'lumotlar yo'q"
+    },
+    "loading": {
+      "zh": "加载中...",
+      "en": "Loading...",
+      "ru": "Загрузка...",
+      "kk": "Жүктелуде...",
+      "uz": "Yuklanmoqda..."
+    },
+    "no_results": {
+      "zh": "没有匹配的调拨单",
+      "en": "No matching transfers",
+      "ru": "Нет соответствующих перемещений",
+      "kk": "Сәйкес аударымдар жоқ",
+      "uz": "Mos keladigan transferlar yo'q"
+    },
+    "showing": {
+      "zh": "显示",
+      "en": "Showing",
+      "ru": "Показано",
+      "kk": "Көрсетілген",
+      "uz": "Ko'rsatilyapti"
+    },
+    "of": {
+      "zh": "共",
+      "en": "of",
+      "ru": "из",
+      "kk": "барлығынан",
+      "uz": "jami"
+    },
+    "transfers": {
+      "zh": "个调拨单",
+      "en": "transfers",
+      "ru": "перемещений",
+      "kk": "аударымдар",
+      "uz": "transferlar"
+    },
+    "download_template": {
+      "zh": "下载模板",
+      "en": "Download Template",
+      "ru": "Скачать шаблон",
+      "kk": "Үлгіні жүктеу",
+      "uz": "Shablonni yuklash"
+    },
+    "download_template_tooltip": {
+      "zh": "下载调拨单导入模板",
+      "en": "Download transfer import template",
+      "ru": "Скачать шаблон импорта перемещений",
+      "kk": "Аударым импорт үлгісін жүктеу",
+      "uz": "Transfer import shablonini yuklash"
+    },
+    "import_excel": {
+      "zh": "导入Excel",
+      "en": "Import Excel",
+      "ru": "Импорт Excel",
+      "kk": "Excel импорты",
+      "uz": "Excel import"
+    },
+    "import_tooltip": {
+      "zh": "从Excel导入调拨单",
+      "en": "Import transfers from Excel",
+      "ru": "Импорт перемещений из Excel",
+      "kk": "Excel-ден аударымдарды импорттау",
+      "uz": "Excel-dan transferlarni import qilish"
+    },
+    "export_excel": {
+      "zh": "导出Excel",
+      "en": "Export Excel",
+      "ru": "Экспорт Excel",
+      "kk": "Excel экспорты",
+      "uz": "Excel eksport"
+    },
+    "export_tooltip": {
+      "zh": "导出调拨单到Excel",
+      "en": "Export transfers to Excel",
+      "ru": "Экспорт перемещений в Excel",
+      "kk": "Аударымдарды Excel-ге экспорттау",
+      "uz": "Transferlarni Excel-ga eksport qilish"
+    },
+    "template_download_success": {
+      "zh": "模板下载成功",
+      "en": "Template downloaded successfully",
+      "ru": "Шаблон успешно скачан",
+      "kk": "Үлгі сәтті жүктелді",
+      "uz": "Shablon muvaffaqiyatli yuklandi"
+    },
+    "template_download_error": {
+      "zh": "模板下载失败",
+      "en": "Failed to download template",
+      "ru": "Не удалось скачать шаблон",
+      "kk": "Үлгіні жүктеу сәтсіз аяқталды",
+      "uz": "Shablonni yuklashda xatolik yuz berdi"
+    },
+    "no_transfers_selected": {
+      "zh": "请选择至少一个调拨单",
+      "en": "Please select at least one transfer",
+      "ru": "Выберите хотя бы одно перемещение",
+      "kk": "Кем дегенде бір аударымды таңдаңыз",
+      "uz": "Kamida bitta transferni tanlang"
+    },
+    "exporting": {
+      "zh": "导出中",
+      "en": "Exporting",
+      "ru": "Экспорт",
+      "kk": "Экспорттау",
+      "uz": "Eksport qilinmoqda"
+    },
+    "processing": {
+      "zh": "处理中",
+      "en": "Processing",
+      "ru": "Обработка",
+      "kk": "Өңделуде",
+      "uz": "Ishlov berilmoqda"
+    },
+    "preparing_export_file": {
+      "zh": "正在准备导出文件",
+      "en": "Preparing export file",
+      "ru": "Подготовка файла экспорта",
+      "kk": "Экспорт файлы дайындалуда",
+      "uz": "Eksport fayli tayyorlanmoqda"
+    },
+    "export_success": {
+      "zh": "导出成功",
+      "en": "Export successful",
+      "ru": "Экспорт успешен",
+      "kk": "Экспорт сәтті",
+      "uz": "Eksport muvaffaqiyatli"
+    },
+    "export_failed": {
+      "zh": "导出失败",
+      "en": "Export failed",
+      "ru": "Сбой экспорта",
+      "kk": "Экспорт сәтсіз аяқталды",
+      "uz": "Eksport muvaffaqiyatsiz"
+    },
+    "transfer_export_success": {
+      "zh": "调拨单导出成功",
+      "en": "Transfer exported successfully",
+      "ru": "Перемещение успешно экспортировано",
+      "kk": "Аударым сәтті экспортталды",
+      "uz": "Transfer muvaffaqiyatli eksport qilindi"
+    },
+    "transfer_export_error": {
+      "zh": "调拨单导出失败",
+      "en": "Failed to export transfer",
+      "ru": "Не удалось экспортировать перемещение",
+      "kk": "Аударымды экспорттау сәтсіз аяқталды",
+      "uz": "Transferni eksport qilishda xatolik yuz berdi"
+    },
+    "preparing_export": {
+      "zh": "正在准备导出",
+      "en": "Preparing export",
+      "ru": "Подготовка экспорта",
+      "kk": "Экспорт дайындалуда",
+      "uz": "Eksport tayyorlanmoqda"
+    },
+    "transfers_export": {
+      "zh": "调拨单导出",
+      "en": "Transfers Export",
+      "ru": "Экспорт перемещений",
+      "kk": "Аударымдар экспорты",
+      "uz": "Transferlar eksporti"
+    },
+    "export_all_success": {
+      "zh": "所有调拨单导出成功",
+      "en": "All transfers exported successfully",
+      "ru": "Все перемещения успешно экспортированы",
+      "kk": "Барлық аударымдар сәтті экспортталды",
+      "uz": "Barcha transferlar muvaffaqiyatli eksport qilindi"
+    },
+    "export_all_error": {
+      "zh": "导出所有调拨单失败",
+      "en": "Failed to export all transfers",
+      "ru": "Не удалось экспортировать все перемещения",
+      "kk": "Барлық аударымдарды экспорттау сәтсіз аяқталды",
+      "uz": "Barcha transferlarni eksport qilishda xatolik yuz berdi"
+    },
+    "file_processing_error": {
+      "zh": "文件处理错误",
+      "en": "File processing error",
+      "ru": "Ошибка обработки файла",
+      "kk": "Файлды өңдеу қатесі",
+      "uz": "Faylni ishlashda xatolik"
+    },
+    "no_file_selected": {
+      "zh": "请选择文件导入",
+      "en": "Please select a file to import",
+      "ru": "Выберите файл для импорта",
+      "kk": "Импорттау үшін файлды таңдаңыз",
+      "uz": "Import uchun faylni tanlang"
+    },
+    "no_source_warehouse": {
+      "zh": "请选择源仓库",
+      "en": "Please select source warehouse",
+      "ru": "Выберите исходный склад",
+      "kk": "Бастапқы қойманы таңдаңыз",
+      "uz": "Boshlang'ich omborni tanlang"
+    },
+    "no_target_warehouse": {
+      "zh": "请选择目标仓库",
+      "en": "Please select target warehouse",
+      "ru": "Выберите целевой склад",
+      "kk": "Мақсатты қойманы таңдаңыз",
+      "uz": "Maqsad omborni tanlang"
+    },
+    "same_warehouse_error": {
+      "zh": "源仓库和目标仓库不能相同",
+      "en": "Source and target warehouses cannot be the same",
+      "ru": "Исходный и целевой склады не могут быть одинаковыми",
+      "kk": "Бастапқы және мақсатты қоймалар бірдей болмауы керек",
+      "uz": "Boshlang'ich va maqsad omborlar bir xil bo'lishi mumkin emas"
+    },
+    "transfer_created": {
+      "zh": "调拨单 {{ref}} 创建成功",
+      "en": "Transfer {{ref}} created successfully",
+      "ru": "Перемещение {{ref}} успешно создано",
+      "kk": "{{ref}} аударымы сәтті жасалды",
+      "uz": "{{ref}} transferi muvaffaqiyatli yaratildi"
+    },
+    "confirm_export_title": {
+      "zh": "确认导出",
+      "en": "Confirm Export",
+      "ru": "Подтвердите экспорт",
+      "kk": "Экспортты растаңыз",
+      "uz": "Eksportni tasdiqlang"
+    },
+    "confirm_view_title": {
+      "zh": "查看调拨单详情",
+      "en": "View Transfer Details",
+      "ru": "Просмотр сведений о перемещении",
+      "kk": "Аударым мәліметтерін қарау",
+      "uz": "Transfer tafsilotlarini ko'rish"
+    },
+    "confirm_cancel_title": {
+      "zh": "确认取消调拨单",
+      "en": "Confirm Cancel Transfer",
+      "ru": "Подтвердите отмену перемещения",
+      "kk": "Аударымды болдырмауды растаңыз",
+      "uz": "Transferni bekor qilishni tasdiqlang"
+    },
+    "confirm_complete_title": {
+      "zh": "确认完成调拨单",
+      "en": "Confirm Complete Transfer",
+      "ru": "Подтвердите завершение перемещения",
+      "kk": "Аударымды аяқтауды растаңыз",
+      "uz": "Transferni bajarilganligini tasdiqlang"
+    },
+    "export_selected_transfers": {
+      "zh": "导出选中的调拨单",
+      "en": "Export Selected Transfers",
+      "ru": "Экспорт выбранных перемещений",
+      "kk": "Таңдалған аударымдарды экспорттау",
+      "uz": "Tanlangan transferlarni eksport qilish"
+    },
+    "export_selected_description": {
+      "zh": "已选择 {{count}} 个调拨单，确认导出？",
+      "en": "You have selected {{count}} transfers. Confirm export?",
+      "ru": "Вы выбрали {{count}} перемещений. Подтвердить экспорт?",
+      "kk": "Сіз {{count}} аударымды таңдадыңыз. Экспортты растаңыз?",
+      "uz": "Siz {{count}} transferni tanladingiz. Eksportni tasdiqlaysizmi?"
+    },
+    "export_selected_details": {
+      "zh": "系统将生成包含所选调拨单详细信息的Excel文件。此过程可能需要几秒钟时间完成。",
+      "en": "The system will generate an Excel file containing details of the selected transfers. This process may take a few seconds to complete.",
+      "ru": "Система создаст файл Excel, содержащий сведения о выбранных перемещениях. Этот процесс может занять несколько секунд.",
+      "kk": "Жүйе таңдалған аударымдардың мәліметтерін қамтитын Excel файлын жасайды. Бұл процесс аяқталу үшін бірнеше секунд қажет болуы мүмкін.",
+      "uz": "Tizim tanlangan transferlar tafsilotlarini o'z ichiga olgan Excel faylini yaratadi. Bu jarayon tugashi uchun bir necha soniya vaqt ketishi mumkin."
+    },
+    "confirm_export": {
+      "zh": "确认导出",
+      "en": "Confirm Export",
+      "ru": "Подтвердить экспорт",
+      "kk": "Экспортты растау",
+      "uz": "Eksportni tasdiqlash"
+    }
   }
 }
