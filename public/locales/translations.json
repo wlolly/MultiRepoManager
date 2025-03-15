@@ -2267,6 +2267,90 @@
     "kk": "Тіркелу",
     "uz": "Ro'yxatdan o'tish"
   },
+  "dashboard_welcome_public": {
+    "zh": "欢迎访问仓库管理系统公开页面",
+    "en": "Welcome to the Warehouse Management System public page",
+    "ru": "Добро пожаловать на публичную страницу Системы управления складом",
+    "kk": "Қойма басқару жүйесінің ашық бетіне қош келдіңіз",
+    "uz": "Ombor boshqaruv tizimining ommaviy sahifasiga xush kelibsiz"
+  },
+  "welcome_to_system": {
+    "zh": "欢迎使用Element-5仓库管理系统",
+    "en": "Welcome to Element-5 Warehouse Management System",
+    "ru": "Добро пожаловать в систему управления складом Element-5",
+    "kk": "Element-5 қойма басқару жүйесіне қош келдіңіз",
+    "uz": "Element-5 ombor boshqaruv tizimiga xush kelibsiz"
+  },
+  "system_description": {
+    "zh": "我们的系统提供全面的仓库管理解决方案，包括库存跟踪、调拨管理和数据分析。",
+    "en": "Our system provides comprehensive warehouse management solutions, including inventory tracking, transfer management, and data analysis.",
+    "ru": "Наша система предоставляет комплексные решения для управления складом, включая отслеживание запасов, управление перемещениями и анализ данных.",
+    "kk": "Біздің жүйе қойманы басқарудың жан-жақты шешімдерін ұсынады, соның ішінде қорларды бақылау, аударымдарды басқару және деректерді талдау.",
+    "uz": "Bizning tizimimiz inventarizatsiyani kuzatish, o'tkazma boshqaruvi va ma'lumotlarni tahlil qilishni o'z ichiga olgan keng qamrovli ombor boshqaruv yechimlarini taqdim etadi."
+  },
+  "warehouse_management": {
+    "zh": "仓库管理",
+    "en": "Warehouse Management",
+    "ru": "Управление складом",
+    "kk": "Қойманы басқару",
+    "uz": "Ombor boshqaruvi"
+  },
+  "warehouse_management_desc": {
+    "zh": "高效管理多个仓库地点和库存水平",
+    "en": "Efficiently manage multiple warehouse locations and inventory levels",
+    "ru": "Эффективно управляйте несколькими складскими помещениями и уровнями запасов",
+    "kk": "Бірнеше қойма орындары мен қор деңгейлерін тиімді басқарыңыз",
+    "uz": "Bir nechta ombor joylari va inventar darajalarini samarali boshqarish"
+  },
+  "inventory_tracking": {
+    "zh": "库存追踪",
+    "en": "Inventory Tracking",
+    "ru": "Отслеживание запасов",
+    "kk": "Қорларды бақылау",
+    "uz": "Inventarizatsiyani kuzatish"
+  },
+  "inventory_tracking_desc": {
+    "zh": "实时监控产品移动和库存变化",
+    "en": "Monitor product movements and stock changes in real-time",
+    "ru": "Отслеживайте перемещения товаров и изменения запасов в режиме реального времени",
+    "kk": "Өнім қозғалыстары мен қор өзгерістерін нақты уақытта бақылаңыз",
+    "uz": "Mahsulot harakatlarini va zaxiradagi o'zgarishlarni real vaqtda kuzating"
+  },
+  "data_analysis": {
+    "zh": "数据分析",
+    "en": "Data Analysis",
+    "ru": "Анализ данных",
+    "kk": "Деректерді талдау",
+    "uz": "Ma'lumotlarni tahlil qilish"
+  },
+  "data_analysis_desc": {
+    "zh": "生成详细报告并获取业务洞察",
+    "en": "Generate detailed reports and gain business insights",
+    "ru": "Создавайте подробные отчеты и получайте бизнес-аналитику",
+    "kk": "Егжей-тегжейлі есептер жасаңыз және бизнес туралы білім алыңыз",
+    "uz": "Batafsil hisobotlar yarating va biznes ma'lumotlariga ega bo'ling"
+  },
+  "login_prompt": {
+    "zh": "登录以访问完整功能",
+    "en": "Log in to access full functionality",
+    "ru": "Войдите, чтобы получить доступ к полному функционалу",
+    "kk": "Толық функционалдылыққа қол жеткізу үшін жүйеге кіріңіз",
+    "uz": "To'liq funksionallikdan foydalanish uchun tizimga kiring"
+  },
+  "login_now": {
+    "zh": "立即登录",
+    "en": "Login Now",
+    "ru": "Войти сейчас",
+    "kk": "Қазір кіру",
+    "uz": "Hozir kirish"
+  },
+  "login_btn": {
+    "zh": "登录",
+    "en": "Login",
+    "ru": "Войти",
+    "kk": "Кіру",
+    "uz": "Kirish"
+  },
   "warehouseTransfer": {
     "title": {
       "zh": "仓库调拨管理",
