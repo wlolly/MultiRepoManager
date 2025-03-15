@@ -40,7 +40,7 @@ export const operationTypeEnum = mysqlEnum("operation_type", ["inbound", "outbou
 export const userSourceEnum = mysqlEnum("user_source", ["local", "wechat", "whatsapp"]);
 
 // 用户角色枚举
-export const userRoleEnum = mysqlEnum("user_role", ["user", "admin", "super_admin"]);
+export const userRoleEnum = mysqlEnum("role", ["user", "admin", "super_admin"]);
 
 // Users table
 export const users = mysqlTable("users", {
