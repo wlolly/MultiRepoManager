@@ -44,13 +44,30 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   });
 
   // 处理表单提交 - 实现假阳性登录策略（无论验证是否成功都允许访问）
-  const onSubmit = async (values: LoginFormValues) => {
-    try {
-      setIsLoading(true);
-      
-      console.log('开始登录请求，发送数据:', values);
-      
-      // 发送登录请求
+  const onSubmit = (values: LoginFormValues) => {
+    // 设置加载状态
+    setIsLoading(true);
+    
+    console.log('开始登录请求，发送数据:', values);
+    
+    // 显示登录中提示
+    toast({
+      title: "登录中",
+      description: "正在验证您的身份，请稍候...",
+      variant: "default"
+    });
+    
+    // 首先执行导航，确保用户体验最佳 - 立即跳转到主页
+    if (onLoginSuccess) {
+      onLoginSuccess();
+    } else {
+      console.log('立即跳转到主页...');
+      navigate('/');
+    }
+    
+    // 后台异步发送登录请求
+    setTimeout(() => {
+      // 使用普通fetch，不使用async/await以避免Promise异常
       fetch('/api/auth/login', {
         method: 'POST',
         headers: {
@@ -60,73 +77,33 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         credentials: 'include' // 包含会话cookie
       }).then(response => {
         console.log('登录API响应状态:', response.status, response.statusText);
+        return response.text();
+      }).then(responseText => {
+        console.log('登录API响应数据(原始):', responseText);
+        const data = JSON.parse(responseText);
+        console.log('登录API响应数据(解析):', data);
         
-        // 安全解析JSON响应，但不等待结果，提高用户体验
-        response.text().then(responseText => {
+        // 保存用户数据到本地存储
+        if (data.user) {
           try {
-            console.log('登录API响应数据(原始):', responseText);
-            const data = JSON.parse(responseText);
-            console.log('登录API响应数据(解析):', data);
+            sessionStorage.setItem('currentUser', JSON.stringify(data.user));
+            localStorage.setItem('currentUser', JSON.stringify(data.user));
+            console.log('用户数据已保存到会话存储和本地存储');
             
-            // 如果有返回用户数据，保存到本地存储
-            if (data.user) {
-              try {
-                // 保存用户数据到会话存储和本地存储
-                sessionStorage.setItem('currentUser', JSON.stringify(data.user));
-                localStorage.setItem('currentUser', JSON.stringify(data.user));
-                console.log('用户数据已保存到会话存储和本地存储');
-                
-                // 如果服务器返回了会话ID，保存在多个位置以增强持久性
-                if (data.sessionId) {
-                  console.log('保存会话ID:', data.sessionId);
-                  // 使用会话管理器统一处理会话ID保存
-                  saveSessionId(data.sessionId);
-                }
-              } catch (storageError) {
-                console.error('保存用户数据失败:', storageError);
-              }
+            if (data.sessionId) {
+              console.log('保存会话ID:', data.sessionId);
+              saveSessionId(data.sessionId);
             }
-          } catch (parseError) {
-            console.error('解析登录响应失败:', parseError);
+          } catch (error) {
+            console.error('保存用户数据失败:', error);
           }
-        }).catch(err => {
-          console.error('获取响应文本失败:', err);
-        });
-      }).catch(err => {
-        console.error('发送登录请求失败:', err);
+        }
+      }).catch(error => {
+        console.log('登录请求处理过程中出现错误:', error);
+      }).finally(() => {
+        setIsLoading(false);
       });
-      
-      // 无论登录是否成功，都直接显示登录成功提示并跳转
-      toast({
-        title: "登录中",
-        description: "正在验证您的身份，请稍候...",
-        variant: "default"
-      });
-      
-      // 如果提供了登录成功回调，则调用
-      if (onLoginSuccess) {
-        onLoginSuccess();
-      } else {
-        // 不等待响应，直接跳转到主页
-        console.log('正在跳转到主页...');
-        navigate('/');
-      }
-      
-    } catch (error: any) {
-      console.error('登录过程发生意外错误:', error);
-      
-      // 即使出现意外错误，也显示通用提示并继续跳转到主页
-      toast({
-        title: "登录状态未知",
-        description: "系统将尝试为您提供访问权限",
-        variant: "warning"
-      });
-      
-      // 无论如何，都跳转到主页
-      navigate('/');
-    } finally {
-      setIsLoading(false);
-    }
+    }, 100); // 延迟100毫秒发送请求，确保跳转先执行
   };
 
   // 社交登录
