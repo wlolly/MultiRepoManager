@@ -2,10 +2,28 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { scheduleCleanup } from "./utils/file-cleanup";
+import session from "express-session";
+import { createConnection } from "./database";
+import createMemoryStore from "memorystore";
 
+const MemoryStore = createMemoryStore(session);
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// 配置 express-session
+app.use(session({
+  secret: 'warehouse-management-secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { 
+    secure: process.env.NODE_ENV === 'production', 
+    maxAge: 24 * 60 * 60 * 1000 // 24小时
+  },
+  store: new MemoryStore({
+    checkPeriod: 86400000 // 每24小时清理过期会话
+  })
+}));
 
 app.use((req, res, next) => {
   const start = Date.now();
