@@ -2,6 +2,7 @@ import { drizzle } from 'drizzle-orm/mysql2';
 import mysql from 'mysql2/promise';
 import * as schema from "@shared/schema";
 import dotenv from 'dotenv';
+import { MemStorage } from './storage'; // 导入MemStorage实现
 
 // 加载环境变量
 dotenv.config();
@@ -13,6 +14,9 @@ const dbUrl = process.env.DATABASE_URL;
 if (!dbUrl) {
   console.warn('警告: DATABASE_URL环境变量未设置，将使用内存存储模式');
 }
+
+// 创建内存存储实例
+export const memStorage = new MemStorage();
 
 // 创建MySQL连接池 - 增强版配置，添加更多的容错机制
 let pool;
@@ -71,6 +75,9 @@ try {
         
         console.log('⚠️ 降级到内存存储模式 - 应用将使用内存存储而不是数据库');
         console.log('⚠️ 警告: 内存存储中的数据在应用重启后会丢失');
+        
+        // 初始化内存存储的一些测试数据
+        memStorage.initializeDemoData();
       });
   } else {
     // 标记使用内存存储
@@ -87,6 +94,9 @@ try {
         release: () => {}
       })
     };
+    
+    // 初始化内存存储的一些测试数据
+    memStorage.initializeDemoData();
   }
 } catch (error) {
   useFallbackStorage = true;
@@ -103,6 +113,9 @@ try {
       release: () => {}
     })
   };
+  
+  // 初始化内存存储的一些测试数据
+  memStorage.initializeDemoData();
 }
 
 // 导出数据库实例

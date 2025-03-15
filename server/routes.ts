@@ -1,6 +1,7 @@
 import express, { type Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { memStorage, useFallbackStorage } from "./db";
 import { getUserPagePermissions, getUserWarehousePermissions } from "./middleware/permission-middleware";
 import { 
   insertUserSchema, 
@@ -131,17 +132,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 认证路由
   // 登录接口
   apiRouter.post("/auth/login", (req, res, next) => {
+    console.log(`尝试登录: 用户名=${req.body.username}, 内存存储模式=${useFallbackStorage ? '开启' : '关闭'}`);
+    
     passport.authenticate('local', (err, user, info) => {
       if (err) {
-        return next(err);
+        console.error('登录认证错误:', err);
+        return res.status(500).json({
+          message: '登录过程中发生错误，请稍后再试',
+          success: false,
+          error: err.message
+        });
       }
       
       if (!user) {
+        console.log(`登录失败: ${info?.message || '认证失败'}`);
         return res.status(401).json({
           message: info?.message || '认证失败',
-          success: false
+          success: false,
+          socialBound: info?.socialBound || false
         });
       }
+      
+      console.log(`用户 ${user.username} 认证成功，准备创建会话`);
       
       // 使用req.login()登录会话
       req.login(user, (err) => {
@@ -149,14 +161,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error('会话登录错误:', err);
           return res.status(500).json({ 
             message: '会话创建失败', 
-            success: false 
+            success: false,
+            error: err.message
           });
         }
+        
+        console.log(`用户 ${user.username} 会话创建成功`);
         
         // 返回成功响应
         return res.json({
           message: '登录成功',
           success: true,
+          fallbackMode: useFallbackStorage,
           user: {
             id: user.id,
             username: user.username,
