@@ -88,6 +88,11 @@ export default function WarehouseTransfers() {
   const [selectedTransferId, setSelectedTransferId] = useState<number | null>(null);
   const [actionType, setActionType] = useState<"export" | "view" | "cancel" | "complete">("view");
   
+  // 多选功能相关状态
+  const [selectedTransfers, setSelectedTransfers] = useState<number[]>([]);
+  const [selectAll, setSelectAll] = useState(false);
+  const [multiExportDialogOpen, setMultiExportDialogOpen] = useState(false);
+  
   // 获取调拨单列表
   const { data: transfers = [], isLoading: isLoadingTransfers, refetch: refetchTransfers } = useQuery<WarehouseTransfer[]>({
     queryKey: ["/api/warehouse-transfers", { status: statusFilter, date: dateFilter, warehouse: warehouseFilter }],
@@ -678,6 +683,25 @@ export default function WarehouseTransfers() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12">
+                      <div className="flex items-center justify-center">
+                        <input
+                          type="checkbox"
+                          checked={selectAll}
+                          onChange={(e) => {
+                            setSelectAll(e.target.checked);
+                            if (e.target.checked) {
+                              // 选择所有显示的调拨单
+                              setSelectedTransfers(displayedTransfers.map(t => t.id));
+                            } else {
+                              // 取消所有选择
+                              setSelectedTransfers([]);
+                            }
+                          }}
+                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        />
+                      </div>
+                    </TableHead>
                     <TableHead>{t("warehouseTransfer.reference_number")}</TableHead>
                     <TableHead>{t("warehouseTransfer.source_warehouse")}</TableHead>
                     <TableHead>{t("warehouseTransfer.target_warehouse")}</TableHead>
@@ -692,21 +716,57 @@ export default function WarehouseTransfers() {
                   {displayedTransfers.map((transfer) => (
                     <TableRow 
                       key={transfer.id}
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => handleViewTransfer(transfer.id)}
+                      className="hover:bg-muted/50"
                     >
-                      <TableCell className="font-medium">{transfer.referenceNumber}</TableCell>
-                      <TableCell>{transfer.sourceWarehouse.name}</TableCell>
-                      <TableCell>{transfer.targetWarehouse.name}</TableCell>
-                      <TableCell>
+                      <TableCell className="w-12">
+                        <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={selectedTransfers.includes(transfer.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedTransfers([...selectedTransfers, transfer.id]);
+                              } else {
+                                setSelectedTransfers(selectedTransfers.filter(id => id !== transfer.id));
+                              }
+                              // 同步全选状态
+                              if (!e.target.checked && selectAll) {
+                                setSelectAll(false);
+                              } else if (e.target.checked && selectedTransfers.length + 1 === displayedTransfers.length) {
+                                setSelectAll(true);
+                              }
+                            }}
+                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                          />
+                        </div>
+                      </TableCell>
+                      <TableCell 
+                        className="font-medium cursor-pointer"
+                        onClick={() => handleViewTransfer(transfer.id)}
+                      >{transfer.referenceNumber}</TableCell>
+                      <TableCell className="cursor-pointer" onClick={() => handleViewTransfer(transfer.id)}>
+                        {transfer.sourceWarehouse.name}
+                      </TableCell>
+                      <TableCell className="cursor-pointer" onClick={() => handleViewTransfer(transfer.id)}>
+                        {transfer.targetWarehouse.name}
+                      </TableCell>
+                      <TableCell className="cursor-pointer" onClick={() => handleViewTransfer(transfer.id)}>
                         <Badge variant={getStatusBadgeVariant(transfer.status)}>
                           {t(`warehouseTransfer.status.${transfer.status}`)}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right">{transfer.totalItems}</TableCell>
-                      <TableCell className="text-right">{transfer.totalWeight.toFixed(2)} kg</TableCell>
-                      <TableCell className="text-right">{transfer.totalVolume.toFixed(3)} m³</TableCell>
-                      <TableCell>{formatDate(transfer.createdAt)}</TableCell>
+                      <TableCell className="text-right cursor-pointer" onClick={() => handleViewTransfer(transfer.id)}>
+                        {transfer.totalItems}
+                      </TableCell>
+                      <TableCell className="text-right cursor-pointer" onClick={() => handleViewTransfer(transfer.id)}>
+                        {transfer.totalWeight.toFixed(2)} kg
+                      </TableCell>
+                      <TableCell className="text-right cursor-pointer" onClick={() => handleViewTransfer(transfer.id)}>
+                        {transfer.totalVolume.toFixed(3)} m³
+                      </TableCell>
+                      <TableCell className="cursor-pointer" onClick={() => handleViewTransfer(transfer.id)}>
+                        {formatDate(transfer.createdAt)}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
