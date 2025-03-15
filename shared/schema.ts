@@ -36,14 +36,30 @@ export const operationTypeEnum = mysqlEnum("operation_type", ["inbound", "outbou
 
 // 出库单目的地类型: 客户、零售商、批发商、调拨仓库、供应商（退货）
 
+// 用户来源类型枚举
+export const userSourceEnum = mysqlEnum("user_source", ["local", "wechat", "whatsapp"]);
+
+// 用户角色枚举
+export const userRoleEnum = mysqlEnum("user_role", ["user", "admin", "super_admin"]);
+
 // Users table
 export const users = mysqlTable("users", {
   id: int("id").primaryKey().autoincrement(),
   username: varchar("username", { length: 255 }).notNull().unique(),
-  password: varchar("password", { length: 255 }).notNull(),
+  password: varchar("password", { length: 255 }),
   fullName: varchar("full_name", { length: 255 }).notNull(),
   avatarUrl: varchar("avatar_url", { length: 255 }),
+  email: varchar("email", { length: 255 }),
+  phoneNumber: varchar("phone_number", { length: 50 }),
+  role: userRoleEnum.default("user").notNull(),
+  userSource: userSourceEnum.default("local").notNull(),
+  // 社交媒体登录相关字段
+  socialId: varchar("social_id", { length: 255 }), // 微信或WhatsApp的唯一ID
+  socialData: text("social_data"), // 存储从社交平台获取的JSON数据
+  lastLoginAt: timestamp("last_login_at"),
+  isActive: boolean("is_active").default(true), // 用户是否激活
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -51,6 +67,13 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
   fullName: true,
   avatarUrl: true,
+  email: true,
+  phoneNumber: true,
+  role: true,
+  userSource: true,
+  socialId: true,
+  socialData: true,
+  isActive: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
