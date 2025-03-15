@@ -637,33 +637,72 @@ export async function handleSocialCallback(provider: 'wechat' | 'whatsapp', req:
 // 获取当前用户信息
 export async function getCurrentUser(req: Request, res: Response) {
   try {
-    const user = req.user as any;
+    // 尝试从req.user和req.session.userId获取用户ID
+    let userId: number | undefined;
     
-    if (!user) {
-      console.log('getCurrentUser: 没有用户会话');
-      return res.status(401).json({ message: '未认证' });
+    if (req.user && (req.user as any).id) {
+      userId = (req.user as any).id;
+      console.log(`getCurrentUser: 从req.user获取用户ID=${userId}`);
+    } else if (req.session?.userId) {
+      userId = req.session.userId;
+      console.log(`getCurrentUser: 从会话中获取用户ID=${userId}`);
     }
     
-    // 获取最新的用户信息，确保数据是最新的
+    // 如果没有用户ID，返回未认证
+    if (!userId) {
+      console.log('getCurrentUser: 没有找到有效的用户ID，返回未认证状态');
+      return res.status(401).json({ 
+        message: '未认证',
+        sessionId: req.sessionID // 返回会话ID便于调试
+      });
+    }
+    
+    // 使用用户ID获取最新的用户信息
     try {
       // 使用当前活动的存储
       const currentStorage = useFallbackStorage ? memStorage : storage;
-      const updatedUser = await currentStorage.getUser(user.id);
+      const updatedUser = await currentStorage.getUser(userId);
       
-      if (updatedUser) {
-        // 排除敏感信息
-        const { password, ...safeUser } = updatedUser;
-        console.log(`getCurrentUser: 成功获取用户 ${updatedUser.username} 的信息`);
-        return res.json(safeUser);
+      // 如果找不到用户，可能是用户已被删除
+      if (!updatedUser) {
+        console.log(`getCurrentUser: 用户ID=${userId}不存在或已被删除`);
+        
+        // 清除无效的会话数据
+        if (req.session.userId === userId) {
+          delete req.session.userId;
+          delete req.session.authenticated;
+          req.session.save();
+        }
+        
+        return res.status(401).json({ 
+          message: '用户不存在，请重新登录', 
+          errorCode: 'USER_NOT_FOUND' 
+        });
       }
+      
+      // 确保会话数据与用户数据同步
+      if (req.session && !req.session.userId) {
+        console.log(`getCurrentUser: 同步用户ID=${userId}到会话`);
+        req.session.userId = userId;
+        req.session.authenticated = true;
+        req.session.userRole = updatedUser.role;
+        req.session.socialBound = hasSocialAccountBound(updatedUser);
+        req.session.lastActivity = Date.now();
+        req.session.save();
+      }
+      
+      // 排除敏感信息
+      const { password, ...safeUser } = updatedUser;
+      console.log(`getCurrentUser: 成功获取用户 ${updatedUser.username} 的信息`);
+      return res.json(safeUser);
     } catch (err) {
       console.error('获取最新用户信息失败，使用会话中用户信息:', err);
+      
+      // 如果无法获取更新的用户信息，则使用会话中的信息
+      const { password, ...safeUser } = user;
+      console.log(`getCurrentUser: 使用会话中的用户 ${user.username} 信息`);
+      res.json(safeUser);
     }
-    
-    // 如果无法获取更新的用户信息，则使用会话中的信息
-    const { password, ...safeUser } = user;
-    console.log(`getCurrentUser: 使用会话中的用户 ${user.username} 信息`);
-    res.json(safeUser);
   } catch (error) {
     console.error('获取当前用户信息错误:', error);
     res.status(500).json({ message: '获取用户信息失败' });
