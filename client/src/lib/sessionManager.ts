@@ -85,7 +85,14 @@ export function processResponseHeaders(headers: Headers): string | null {
   
   // 优先使用服务器原始会话ID，这是服务器最认可的会话ID
   if (originalSessionId && originalSessionId !== 'none' && originalSessionId !== '') {
-    // 如果当前会话已经登录，需要保持稳定而不是频繁更新
+    // 比较服务器会话ID和当前客户端会话ID
+    if (currentId && originalSessionId === currentId) {
+      // 会话ID已同步，无需更新
+      console.log(`会话ID已同步: ${originalSessionId}`);
+      return currentId;
+    }
+    
+    // 如果当前客户端已有会话ID，并且会话中有用户数据，需要保持稳定
     if (currentId && sessionStorage.getItem('currentUser')) {
       console.log(`保留已验证的会话ID: ${currentId} (忽略服务器新会话: ${originalSessionId})`);
       return currentId;
