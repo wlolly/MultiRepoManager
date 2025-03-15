@@ -191,17 +191,10 @@ export default function TeamPermissions() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/teams/page-permissions', selectedTeamId] });
-      toast({
-        title: '权限已更新',
-        description: '页面权限设置已成功更新',
-      });
+      toast.success('页面权限设置已成功更新');
     },
     onError: (error) => {
-      toast({
-        variant: "destructive",
-        title: '更新失败',
-        description: `无法更新页面权限: ${error instanceof Error ? error.message : '未知错误'}`,
-      });
+      toast.error(`无法更新页面权限: ${error instanceof Error ? error.message : '未知错误'}`);
     }
   });
 
