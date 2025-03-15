@@ -271,21 +271,74 @@ export function generateSessionId(): string {
 
 // 验证会话中间件
 export function verifySession(req: Request, res: Response, next: NextFunction) {
+  // 检查请求头中是否有客户端提供的会话ID
+  const clientSessionId = req.headers['x-session-id'] as string;
+  
   // 添加详细的会话调试信息
   console.log(`验证会话: 
     路径=${req.path},
     会话ID=${req.sessionID || '无'}, 
+    客户端会话ID=${clientSessionId || '无'},
     isAuthenticated=${req.isAuthenticated()}, 
     用户=${req.user ? (req.user as any).username : '无'},
     session.userId=${req.session?.userId || '无'}, 
     session.authenticated=${req.session?.authenticated || false}
   `);
   
-  // 尝试通过会话中的userId直接验证
-  if (req.session?.userId && !req.user) {
-    console.log(`通过会话中的userId=${req.session.userId}尝试恢复用户`);
+  // 将原始会话ID和客户端会话ID添加到响应头中，方便调试
+  res.setHeader('X-Original-Session-ID', req.sessionID || 'none');
+  res.setHeader('X-Client-Session-ID', clientSessionId || 'none');
+  
+  // 如果客户端提供了会话ID，并且与当前会话ID不同，尝试恢复客户端会话
+  if (clientSessionId && clientSessionId !== req.sessionID && req.sessionStore) {
+    console.log(`尝试使用客户端提供的会话ID: ${clientSessionId}`);
     
-    // 尝试从存储中加载用户
+    // 使用客户端提供的会话ID查找会话
+    (req.sessionStore as any).get(clientSessionId, (err: Error, clientSession: any) => {
+      if (err) {
+        console.error(`通过客户端会话ID加载会话错误:`, err);
+        proceedWithCurrentSession();
+        return;
+      }
+      
+      if (clientSession && clientSession.userId) {
+        console.log(`找到客户端会话: userId=${clientSession.userId}, authenticated=${clientSession.authenticated}`);
+        
+        // 合并到当前会话
+        req.session.userId = clientSession.userId;
+        req.session.authenticated = clientSession.authenticated;
+        req.session.userRole = clientSession.userRole;
+        req.session.socialBound = clientSession.socialBound;
+        req.session.lastActivity = Date.now();
+        
+        // 保存会话并继续验证
+        req.session.save((err) => {
+          if (err) console.error('保存合并会话出错:', err);
+          restoreUserFromSession();
+        });
+      } else {
+        console.log(`未找到有效的客户端会话或会话不包含userId`);
+        proceedWithCurrentSession();
+      }
+    });
+  } else {
+    proceedWithCurrentSession();
+  }
+  
+  // 使用当前会话进行处理
+  function proceedWithCurrentSession() {
+    // 尝试通过会话中的userId直接验证
+    if (req.session?.userId && !req.user) {
+      console.log(`通过会话中的userId=${req.session.userId}尝试恢复用户`);
+      restoreUserFromSession();
+    } else {
+      // 直接进行认证检查
+      continueAuthCheck();
+    }
+  }
+  
+  // 从会话中恢复用户
+  function restoreUserFromSession() {
     (async () => {
       try {
         // 使用当前活动的存储
@@ -313,6 +366,8 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
             next();
           });
           return; // 不要继续执行
+        } else {
+          console.log(`无法恢复用户: ID=${req.session.userId}的用户不存在`);
         }
       } catch (error) {
         console.error('恢复用户会话出错:', error);
@@ -321,9 +376,6 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
       // 如果恢复失败，继续检查req.user
       continueAuthCheck();
     })();
-  } else {
-    // 直接进行认证检查
-    continueAuthCheck();
   }
   
   // 检查用户认证状态的函数
