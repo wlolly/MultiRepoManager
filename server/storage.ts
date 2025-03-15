@@ -24,7 +24,7 @@ import {
 } from "@shared/schema";
 import { processProductCode } from "./utils/product-code-matcher";
 // 去除直接导入db，改为在需要时动态获取
-import { eq, and, or, gte, lte, gt, lt, count, desc, SQL, is, asc } from 'drizzle-orm';
+import { eq, and, or, gte, lte, gt, lt, count, desc, SQL, is, asc, like } from 'drizzle-orm';
 
 export interface IStorage {
   // User methods
@@ -3004,7 +3004,7 @@ export class DatabaseStorage implements IStorage {
   
   async findProductsByMatchedCode(matchedCode: string): Promise<Product[]> {
     return await this.db.select().from(products)
-      .where(eq(products.barcode, matchedCode));
+      .where(like(products.barcode, `%${matchedCode}%`));
   }
   
   async matchPlatformProducts(platformSource: string): Promise<{
