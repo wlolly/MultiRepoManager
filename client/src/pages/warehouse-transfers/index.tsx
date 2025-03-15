@@ -92,6 +92,7 @@ export default function WarehouseTransfers() {
   const [selectedTransfers, setSelectedTransfers] = useState<number[]>([]);
   const [selectAll, setSelectAll] = useState(false);
   const [multiExportDialogOpen, setMultiExportDialogOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   
   // 获取调拨单列表
   const { data: transfers = [], isLoading: isLoadingTransfers, refetch: refetchTransfers } = useQuery<WarehouseTransfer[]>({
@@ -217,6 +218,9 @@ export default function WarehouseTransfers() {
     }
     
     try {
+      // 设置导出中状态
+      setIsExporting(true);
+      
       // 显示加载提示
       toast({
         title: t("warehouseTransfer.exporting"),
@@ -266,6 +270,9 @@ export default function WarehouseTransfers() {
   // 导出单个调拨单
   const exportTransferToExcel = async (transferId: number) => {
     try {
+      // 设置导出中状态
+      setIsExporting(true);
+      
       const response = await axios.get(`/api/warehouse-transfers/${transferId}/export`, {
         responseType: 'blob'
       });
@@ -295,6 +302,9 @@ export default function WarehouseTransfers() {
     } catch (error) {
       console.error('Export error:', error);
       toast.error(t("warehouseTransfer.transfer_export_error"));
+    } finally {
+      // 重置导出状态
+      setIsExporting(false);
     }
   };
   
@@ -308,6 +318,9 @@ export default function WarehouseTransfers() {
     }
     
     try {
+      // 设置导出中状态
+      setIsExporting(true);
+      
       console.log("Starting export process...");
       toast.success(t("warehouseTransfer.preparing_export"));
       
@@ -342,6 +355,9 @@ export default function WarehouseTransfers() {
     } catch (error) {
       console.error('Bulk export error:', error);
       toast.error(t("warehouseTransfer.export_all_error"));
+    } finally {
+      // 重置导出状态
+      setIsExporting(false);
     }
   };
   
