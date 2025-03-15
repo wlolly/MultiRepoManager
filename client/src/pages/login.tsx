@@ -113,33 +113,33 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         return; // 防止多次导航
       }
       
-      // 检查是否需要绑定社交账号
-      if (data.needSocialBinding) {
-        toast.warning("系统安全策略要求您必须绑定社交账号才能继续使用", {
-          title: "需要绑定社交账号",
-          duration: 6000,
-        });
+      // 无论如何先跳转到主页面
+      setTimeout(() => {
+        try {
+          navigate('/');
+          console.log('成功导航到主页');
+        } catch (navError) {
+          console.error('导航失败:', navError);
+        }
         
-        // 如果需要绑定社交账号，则跳转到设置页面
-        setTimeout(() => {
-          try {
-            navigate('/settings?needBind=true');
-            console.log('正在跳转到设置页面进行社交账号绑定');
-          } catch (navError) {
-            console.error('导航失败:', navError);
-          }
-        }, 1000);
-      } else {
-        // 正常跳转到主页
-        setTimeout(() => {
-          try {
-            navigate('/');
-            console.log('成功导航到主页');
-          } catch (navError) {
-            console.error('导航失败:', navError);
-          }
-        }, 100);
-      }
+        // 如果需要绑定社交账号，显示提示并在短暂延迟后跳转到设置页面
+        if (data.needSocialBinding) {
+          toast.warning("系统安全策略要求您必须绑定社交账号才能继续使用", {
+            title: "需要绑定社交账号",
+            duration: 6000,
+          });
+          
+          // 延迟2秒后跳转到设置页面进行社交账号绑定
+          setTimeout(() => {
+            try {
+              navigate('/settings?needBind=true');
+              console.log('正在跳转到设置页面进行社交账号绑定');
+            } catch (navError) {
+              console.error('导航失败:', navError);
+            }
+          }, 2000);
+        }
+      }, 100);
       
     } catch (error: any) {
       console.error('登录错误:', error);
