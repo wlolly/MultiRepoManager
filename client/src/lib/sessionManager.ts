@@ -181,7 +181,7 @@ export function saveSessionId(sessionId: string) {
     // 使用我们的统一Cookie设置函数
     setCookie('sessionId', sessionId, {
       path: '/',
-      maxAge,
+      maxAgeDays: 30, // 30天过期
       sameSite: 'Lax',
       secure: window.location.protocol === 'https:'
     });
@@ -189,7 +189,7 @@ export function saveSessionId(sessionId: string) {
     // 同时设置与服务器匹配的会话cookie名称
     setCookie('warehouse.sid', sessionId, {
       path: '/',
-      maxAge,
+      maxAgeDays: 30, // 30天过期
       sameSite: 'Lax',
       secure: window.location.protocol === 'https:'
     });
@@ -588,7 +588,7 @@ export function attachSessionToRequest(url: string, headers: Record<string, stri
     // 使用我们的统一Cookie设置函数
     setCookie('sessionId', cleanSessionId, {
       path: '/',
-      maxAge,
+      maxAgeDays: 30, // 30天过期
       sameSite: 'Lax',
       secure: window.location.protocol === 'https:'
     });
@@ -596,7 +596,7 @@ export function attachSessionToRequest(url: string, headers: Record<string, stri
     // 同时设置与服务器匹配的会话cookie名称
     setCookie('warehouse.sid', cleanSessionId, {
       path: '/',
-      maxAge,
+      maxAgeDays: 30, // 30天过期
       sameSite: 'Lax',
       secure: window.location.protocol === 'https:'
     });
@@ -632,7 +632,7 @@ export function attachSessionToRequest(url: string, headers: Record<string, stri
     // 使用我们的统一Cookie设置函数
     setCookie('sessionId', newSessionId, {
       path: '/',
-      maxAge,
+      maxAgeDays: 30, // 30天过期
       sameSite: 'Lax',
       secure: window.location.protocol === 'https:'
     });
@@ -640,7 +640,7 @@ export function attachSessionToRequest(url: string, headers: Record<string, stri
     // 同时设置与服务器匹配的会话cookie名称
     setCookie('warehouse.sid', newSessionId, {
       path: '/',
-      maxAge,
+      maxAgeDays: 30, // 30天过期
       sameSite: 'Lax',
       secure: window.location.protocol === 'https:'
     });
