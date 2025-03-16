@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import toast from "../../lib/toast";
 import { ArrowLeft, Edit, Trash, BarChart, PackageOpen, Box, Truck, Clipboard } from "lucide-react";
+import { useAuthStatus } from "../../hooks/use-auth-status";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -18,6 +19,9 @@ export default function ProductDetail() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const queryClient = useQueryClient();
+  
+  // 获取用户认证状态，用于判断是否显示编辑和删除按钮
+  const { isAuthenticated, realAuthenticated } = useAuthStatus();
 
   // 获取产品数据
   const { data: product, isLoading, error } = useQuery({
@@ -126,16 +130,19 @@ export default function ProductDetail() {
             库存: {product.stock}
           </Badge>
         </div>
-        <div className="flex space-x-2">
-          <Button variant="outline" onClick={() => setIsEditDialogOpen(true)}>
-            <Edit className="mr-2 h-4 w-4" />
-            编辑
-          </Button>
-          <Button variant="destructive" onClick={() => setIsDeleteDialogOpen(true)}>
-            <Trash className="mr-2 h-4 w-4" />
-            删除
-          </Button>
-        </div>
+        {/* 仅对真实登录用户显示编辑和删除按钮 */}
+        {realAuthenticated ? (
+          <div className="flex space-x-2">
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(true)}>
+              <Edit className="mr-2 h-4 w-4" />
+              编辑
+            </Button>
+            <Button variant="destructive" onClick={() => setIsDeleteDialogOpen(true)}>
+              <Trash className="mr-2 h-4 w-4" />
+              删除
+            </Button>
+          </div>
+        ) : null}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">

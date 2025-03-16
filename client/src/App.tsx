@@ -62,7 +62,7 @@ const navItems = [
   { icon: "ri-cloud-line", keyName: "api_configurations", href: "/api-configurations" },
   { icon: "ri-group-line", keyName: "users_teams", href: "/users" },
   { icon: "ri-shield-keyhole-line", keyName: "team_permissions", href: "/team-permissions" },
-  { icon: "ri-settings-line", keyName: "settings", href: "/settings" },
+  // 移除系统设置菜单项
 ];
 
 // 侧边栏组件
