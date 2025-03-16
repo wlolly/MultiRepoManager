@@ -1,221 +1,205 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { useAuthStatus } from '@/hooks/use-auth-status';
-import { useTeamPermissions } from '@/hooks/use-team-permissions';
+import { usePermissions } from '@/hooks/use-permissions';
+import { queryClient } from '@/lib/query-client';
+import { apiRequest } from '@/lib/query-client';
 
-/**
- * 仓库权限钩子接口
- */
-interface WarehousePermissionsHook {
-  loading: boolean;
-  // 仓库相关
-  warehouses: Warehouse[];
-  accessibleWarehouses: Warehouse[];
-  managableWarehouses: Warehouse[];
-  // 权限检查函数
-  canViewWarehouse: (warehouseId: number) => boolean;
-  canManageWarehouse: (warehouseId: number) => boolean;
-  // 筛选函数
-  getWarehousesByTeam: (teamId: number) => Warehouse[];
-  // 刷新数据
-  refreshWarehouseData: () => void;
-}
-
-/**
- * 仓库信息接口
- */
-interface Warehouse {
-  id: number;
-  name: string;
-  location: string;
-  capacity: number;
-  createdAt: string;
-  // 权限信息 (运行时添加)
-  canView?: boolean;
-  canManage?: boolean;
-  teamId?: number; // 拥有这个仓库的团队ID，如果属于多个团队则不设置
-}
-
-/**
- * 仓库权限接口
- */
+// 仓库权限类型
 interface WarehousePermission {
   warehouseId: number;
+  teamId: number;
   canView: boolean;
   canManage: boolean;
-  teamId: number;
+  id?: number;
+  warehouse?: {
+    id: number;
+    name: string;
+    location: string;
+  };
 }
 
 /**
- * 仓库权限钩子
- * 用于管理仓库相关的权限和数据
+ * 仓库权限管理hook
+ * 用于管理团队的仓库权限
+ * @param teamId 团队ID
  */
-export function useWarehousePermissions(): WarehousePermissionsHook {
+export function useWarehousePermissions(teamId: number) {
+  const [permissions, setPermissions] = useState<WarehousePermission[]>([]);
   const [loading, setLoading] = useState(true);
-  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
-  const [warehousePermissions, setWarehousePermissions] = useState<WarehousePermission[]>([]);
-  const [accessibleWarehouses, setAccessibleWarehouses] = useState<Warehouse[]>([]);
-  const [managableWarehouses, setManagableWarehouses] = useState<Warehouse[]>([]);
-  
+  const [error, setError] = useState<string | null>(null);
+  const { refreshPermissions } = usePermissions();
   const { toast } = useToast();
-  const { realAuthenticated, user } = useAuthStatus();
-  const { activeTeamId } = useTeamPermissions();
-  
-  // 获取仓库和权限数据
-  const fetchWarehouseData = async () => {
+
+  // 获取团队的仓库权限
+  const fetchWarehousePermissions = async () => {
+    if (!teamId) return;
+    
     try {
       setLoading(true);
+      setError(null);
       
-      // 获取所有仓库列表
-      const warehousesResponse = await fetch('/api/warehouses', {
-        credentials: 'include'
-      });
+      const response = await fetch(`/api/teams/${teamId}/warehouse-permissions`);
       
-      let warehousesData: Warehouse[] = [];
-      if (warehousesResponse.ok) {
-        warehousesData = await warehousesResponse.json();
-        setWarehouses(warehousesData);
-      } else {
-        console.error('获取仓库列表失败:', await warehousesResponse.text());
-        setWarehouses([]);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || '获取仓库权限失败');
       }
       
-      // 未登录用户不获取权限数据
-      if (!realAuthenticated) {
-        setAccessibleWarehouses([]);
-        setManagableWarehouses([]);
-        setWarehousePermissions([]);
-        setLoading(false);
-        return;
-      }
-      
-      // 获取仓库权限
-      const permissionsResponse = await fetch('/api/permissions/warehouses', {
-        credentials: 'include'
-      });
-      
-      let permissions: Record<string, { canView: boolean, canManage: boolean }> = {};
-      if (permissionsResponse.ok) {
-        permissions = await permissionsResponse.json();
-        
-        // 转换权限格式并关联团队ID
-        const permissionsArray: WarehousePermission[] = [];
-        
-        // 如果有活动团队，获取团队的仓库权限
-        if (activeTeamId) {
-          const teamWarehousesResponse = await fetch(`/api/teams/${activeTeamId}/warehouses`, {
-            credentials: 'include'
-          });
-          
-          if (teamWarehousesResponse.ok) {
-            const teamWarehouseData = await teamWarehousesResponse.json();
-            teamWarehouseData.forEach((item: any) => {
-              permissionsArray.push({
-                warehouseId: item.warehouseId,
-                canView: true,
-                canManage: item.canManage,
-                teamId: activeTeamId
-              });
-            });
-          }
-        }
-        
-        // 合并API返回的通用权限
-        Object.entries(permissions).forEach(([warehouseIdStr, permission]) => {
-          const warehouseId = parseInt(warehouseIdStr);
-          // 如果不存在该仓库的团队权限记录，添加一个通用记录
-          if (!permissionsArray.some(p => p.warehouseId === warehouseId)) {
-            permissionsArray.push({
-              warehouseId,
-              canView: permission.canView,
-              canManage: permission.canManage,
-              teamId: 0 // 0表示通用权限
-            });
-          }
-        });
-        
-        setWarehousePermissions(permissionsArray);
-        
-        // 处理可访问和可管理的仓库列表
-        const accessible = warehousesData.filter(wh => 
-          permissionsArray.some(p => p.warehouseId === wh.id && p.canView)
-        ).map(wh => {
-          const permission = permissionsArray.find(p => p.warehouseId === wh.id);
-          return {
-            ...wh,
-            canView: true,
-            canManage: permission?.canManage || false,
-            teamId: permission?.teamId
-          };
-        });
-        
-        setAccessibleWarehouses(accessible);
-        
-        const managable = accessible.filter(wh => wh.canManage);
-        setManagableWarehouses(managable);
-      } else {
-        console.error('获取仓库权限失败:', await permissionsResponse.text());
-        setWarehousePermissions([]);
-        setAccessibleWarehouses([]);
-        setManagableWarehouses([]);
-      }
-    } catch (error) {
-      console.error('获取仓库数据时出错:', error);
+      const data = await response.json();
+      setPermissions(data);
+    } catch (err) {
+      console.error('获取仓库权限出错:', err);
+      setError((err as Error).message || '获取仓库权限时出错');
       toast({
-        title: "错误",
-        description: "获取仓库数据失败，请重试",
-        variant: "destructive",
+        title: '获取权限失败',
+        description: (err as Error).message || '无法获取团队仓库权限',
+        variant: 'destructive'
       });
     } finally {
       setLoading(false);
     }
   };
-  
-  // 组件初始化时获取仓库数据
+
+  // 添加仓库权限
+  const addWarehousePermission = async (warehouseId: number, canView: boolean, canManage: boolean) => {
+    if (!teamId) return null;
+    
+    try {
+      const response = await apiRequest({
+        url: `/api/teams/${teamId}/warehouse-permissions`,
+        method: 'POST',
+        data: {
+          warehouseId,
+          canView,
+          canManage
+        }
+      });
+      
+      // 刷新权限列表
+      await fetchWarehousePermissions();
+      
+      // 刷新全局权限
+      refreshPermissions();
+      
+      toast({
+        title: '添加成功',
+        description: '已成功添加仓库权限',
+        variant: 'default'
+      });
+      
+      // 刷新API查询缓存
+      queryClient.invalidateQueries({ queryKey: ['/api/permissions/warehouses'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/teams/${teamId}/warehouse-permissions`] });
+      
+      return response;
+    } catch (err) {
+      console.error('添加仓库权限出错:', err);
+      toast({
+        title: '添加失败',
+        description: (err as Error).message || '无法添加仓库权限',
+        variant: 'destructive'
+      });
+      return null;
+    }
+  };
+
+  // 更新仓库权限
+  const updateWarehousePermission = async (permissionId: number, canView: boolean, canManage: boolean) => {
+    if (!teamId) return null;
+    
+    try {
+      const response = await apiRequest({
+        url: `/api/teams/${teamId}/warehouse-permissions/${permissionId}`,
+        method: 'PATCH',
+        data: {
+          canView,
+          canManage
+        }
+      });
+      
+      // 刷新权限列表
+      await fetchWarehousePermissions();
+      
+      // 刷新全局权限
+      refreshPermissions();
+      
+      toast({
+        title: '更新成功',
+        description: '已成功更新仓库权限',
+        variant: 'default'
+      });
+      
+      // 刷新API查询缓存
+      queryClient.invalidateQueries({ queryKey: ['/api/permissions/warehouses'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/teams/${teamId}/warehouse-permissions`] });
+      
+      return response;
+    } catch (err) {
+      console.error('更新仓库权限出错:', err);
+      toast({
+        title: '更新失败',
+        description: (err as Error).message || '无法更新仓库权限',
+        variant: 'destructive'
+      });
+      return null;
+    }
+  };
+
+  // 删除仓库权限
+  const removeWarehousePermission = async (permissionId: number) => {
+    if (!teamId) return false;
+    
+    try {
+      await apiRequest({
+        url: `/api/teams/${teamId}/warehouse-permissions/${permissionId}`,
+        method: 'DELETE'
+      });
+      
+      // 刷新权限列表
+      await fetchWarehousePermissions();
+      
+      // 刷新全局权限
+      refreshPermissions();
+      
+      toast({
+        title: '删除成功',
+        description: '已成功删除仓库权限',
+        variant: 'default'
+      });
+      
+      // 刷新API查询缓存
+      queryClient.invalidateQueries({ queryKey: ['/api/permissions/warehouses'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/teams/${teamId}/warehouse-permissions`] });
+      
+      return true;
+    } catch (err) {
+      console.error('删除仓库权限出错:', err);
+      toast({
+        title: '删除失败',
+        description: (err as Error).message || '无法删除仓库权限',
+        variant: 'destructive'
+      });
+      return false;
+    }
+  };
+
+  // 组件挂载或teamId变化时获取权限
   useEffect(() => {
-    fetchWarehouseData();
-  }, [realAuthenticated, activeTeamId]);
-  
-  // 检查是否可以查看仓库
-  const canViewWarehouse = (warehouseId: number): boolean => {
-    // 管理员可以查看所有仓库
-    if (user?.role === 'admin' || user?.role === 'super_admin') {
-      return true;
+    if (teamId) {
+      fetchWarehousePermissions();
+    } else {
+      setPermissions([]);
+      setLoading(false);
     }
-    
-    // 检查权限
-    return warehousePermissions.some(p => p.warehouseId === warehouseId && p.canView);
-  };
-  
-  // 检查是否可以管理仓库
-  const canManageWarehouse = (warehouseId: number): boolean => {
-    // 管理员可以管理所有仓库
-    if (user?.role === 'admin' || user?.role === 'super_admin') {
-      return true;
-    }
-    
-    // 检查权限
-    return warehousePermissions.some(p => p.warehouseId === warehouseId && p.canManage);
-  };
-  
-  // 获取特定团队的仓库
-  const getWarehousesByTeam = (teamId: number): Warehouse[] => {
-    return accessibleWarehouses.filter(wh => wh.teamId === teamId);
-  };
-  
-  // 刷新仓库数据
-  const refreshWarehouseData = () => {
-    fetchWarehouseData();
-  };
-  
+  }, [teamId]);
+
   return {
+    permissions,
     loading,
-    warehouses,
-    accessibleWarehouses,
-    managableWarehouses,
-    canViewWarehouse,
-    canManageWarehouse,
-    getWarehousesByTeam,
-    refreshWarehouseData
+    error,
+    addWarehousePermission,
+    updateWarehousePermission,
+    removeWarehousePermission,
+    refreshWarehousePermissions: fetchWarehousePermissions
   };
 }
