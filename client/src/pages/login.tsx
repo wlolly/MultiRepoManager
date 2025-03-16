@@ -273,22 +273,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                   {t('auth.guest_login')}
                 </Button>
                 
-                {/* 测试账号一键登录 - 临时开发用，可以在生产中删除 */}
-                <Button 
-                  type="button" 
-                  variant="secondary" 
-                  className="w-full h-9 text-sm mt-2 bg-amber-100 hover:bg-amber-200 text-amber-800" 
-                  onClick={() => {
-                    // 自动填充登录表单
-                    form.setValue("username", "222");
-                    form.setValue("password", "222");
-                    
-                    // 手动提交表单
-                    form.handleSubmit(onSubmit)();
-                  }}
-                >
-                  {t('auth.test_account_login')}
-                </Button>
+                {/* 测试账号登录按钮已移除 */}
               </div>
             </form>
           </Form>

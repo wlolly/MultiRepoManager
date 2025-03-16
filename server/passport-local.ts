@@ -9,12 +9,24 @@ import { eq, sql } from 'drizzle-orm';
 import crypto from 'crypto';
 import { users } from '../shared/schema';
 
-// 密码验证函数 - 用于PBKDF2格式的密码
+// 密码验证函数 - 用于PBKDF2格式的密码或简单测试账号
 function verifyPassword(storedPassword: string, suppliedPassword: string): boolean {
+  // 特殊处理测试账号"222"，直接相等比较
+  if (suppliedPassword === "222" && storedPassword === "222") {
+    console.log('[Passport] 测试账号密码验证成功');
+    return true;
+  }
+  
+  console.log('[Passport] 存储密码格式:', storedPassword);
+  
   // 格式应为: salt:hash
   const parts = storedPassword.split(':');
   if (parts.length !== 2) {
-    return false;
+    console.log('[Passport] 密码格式不符合要求：', storedPassword);
+    // 尝试直接比较密码
+    const directMatch = storedPassword === suppliedPassword;
+    console.log('[Passport] 直接比较密码结果:', directMatch);
+    return directMatch;
   }
   
   const salt = parts[0];
@@ -24,7 +36,9 @@ function verifyPassword(storedPassword: string, suppliedPassword: string): boole
   const hash = crypto.pbkdf2Sync(suppliedPassword, salt, 1000, 64, 'sha512').toString('hex');
   
   // 比较计算得到的哈希值和存储的哈希值
-  return storedHash === hash;
+  const result = storedHash === hash;
+  console.log('[Passport] PBKDF2密码验证结果:', result);
+  return result;
 }
 
 // 配置本地验证策略

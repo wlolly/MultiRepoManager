@@ -78,7 +78,7 @@ export const users = pgTable("users", {
   email: varchar("email", { length: 255 }),
   phonenumber: varchar("phonenumber", { length: 50 }),
   role: userRoleEnum("role").notNull().default("user"),
-  userSource: userSourceEnum("user_source").notNull().default("local"),
+  usersource: userSourceEnum("user_source").notNull().default("local"),
   // 团队关联字段
   primaryTeamId: integer("primary_team_id"), // 用户的主要团队ID，管理员可以没有主要团队
   // 社交媒体登录相关字段
