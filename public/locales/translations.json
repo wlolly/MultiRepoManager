@@ -2274,6 +2274,62 @@
     "kk": "Кіру орындалуда...",
     "uz": "Kirilmoqda..."
   },
+  "please_wait": {
+    "zh": "请稍候...",
+    "en": "Please wait...",
+    "ru": "Пожалуйста, подождите...",
+    "kk": "Күте тұрыңыз...",
+    "uz": "Iltimos, kuting..."
+  },
+  "login_success": {
+    "zh": "登录成功",
+    "en": "Login successful",
+    "ru": "Вход выполнен успешно",
+    "kk": "Кіру сәтті",
+    "uz": "Kirish muvaffaqiyatli"
+  },
+  "redirecting": {
+    "zh": "正在跳转...",
+    "en": "Redirecting...",
+    "ru": "Перенаправление...",
+    "kk": "Қайта бағыттау...",
+    "uz": "Yo'naltirish..."
+  },
+  "limited_mode_login": {
+    "zh": "受限模式登录",
+    "en": "Limited mode login",
+    "ru": "Вход в ограниченном режиме",
+    "kk": "Шектеулі режимде кіру",
+    "uz": "Cheklangan rejimda kirish"
+  },
+  "error_try_again": {
+    "zh": "发生错误，请重试",
+    "en": "An error occurred, please try again",
+    "ru": "Произошла ошибка, попробуйте еще раз",
+    "kk": "Қате пайда болды, қайталап көріңіз",
+    "uz": "Xatolik yuz berdi, qayta urinib ko'ring"
+  },
+  "system_name": {
+    "zh": "Element-5仓库管理系统",
+    "en": "Element-5 Warehouse Management System",
+    "ru": "Element-5 Система Управления Складом",
+    "kk": "Element-5 Қойма Басқару Жүйесі",
+    "uz": "Element-5 Ombor Boshqaruv Tizimi"
+  },
+  "copyright_text": {
+    "zh": "版权所有 © 2025 Element-5",
+    "en": "Copyright © 2025 Element-5",
+    "ru": "Авторское право © 2025 Element-5",
+    "kk": "Авторлық құқық © 2025 Element-5",
+    "uz": "Mualliflik huquqi © 2025 Element-5"
+  },
+  "version": {
+    "zh": "版本",
+    "en": "Version",
+    "ru": "Версия",
+    "kk": "Нұсқасы",
+    "uz": "Versiya"
+  },
   "guest_login": {
     "zh": "以访客身份访问",
     "en": "Access as Guest",
