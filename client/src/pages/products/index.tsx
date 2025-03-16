@@ -101,18 +101,49 @@ export default function ProductsPage() {
   // 检查当前用户状态
   const [isRealAuthenticated, setIsRealAuthenticated] = useState(false);
   
-  // 在组件挂载时检查用户是否为真实登录用户
+  // 使用会话存储而不是本地存储来处理用户状态
+  // 在组件挂载和每次渲染时检查用户是否为真实登录用户
   useEffect(() => {
     const currentUserStr = localStorage.getItem('currentUser');
-    const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
+    console.log('ProductsPage - 尝试从localStorage获取用户信息');
     
-    // 检查是否是假阳性登录用户
-    if (currentUser && !currentUser.fakePositive && currentUser.id !== -1) {
-      setIsRealAuthenticated(true);
-    } else {
-      setIsRealAuthenticated(false);
+    // 尝试从localStorage获取
+    if (currentUserStr) {
+      const currentUser = JSON.parse(currentUserStr);
+      console.log('ProductsPage - 从localStorage获取的当前用户信息:', currentUser);
+      
+      // 检查是否是假阳性登录用户
+      if (!currentUser.fakePositive && currentUser.id !== -1) {
+        console.log('ProductsPage - 真实用户，显示管理按钮');
+        setIsRealAuthenticated(true);
+        return;
+      }
     }
-  }, [isAuthenticated]);
+    
+    // 如果localStorage没有或是访客用户，尝试从API重新获取
+    console.log('ProductsPage - 尝试从API获取最新用户信息');
+    
+    fetch('/api/auth/current-user', {
+      credentials: 'include'
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log('ProductsPage - API返回的用户信息:', data);
+      
+      // 检查API返回的用户是否为真实用户
+      if (data && !data.fakePositive && data.id !== -1) {
+        console.log('ProductsPage - API确认为真实用户');
+        setIsRealAuthenticated(true);
+      } else {
+        console.log('ProductsPage - API确认为访客用户，隐藏管理按钮');
+        setIsRealAuthenticated(false);
+      }
+    })
+    .catch(error => {
+      console.error('ProductsPage - 获取用户信息出错:', error);
+      setIsRealAuthenticated(false);
+    });
+  }, []);
   
   // 商品查询
   const { 
