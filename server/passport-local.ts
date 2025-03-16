@@ -77,8 +77,10 @@ passport.use(new LocalStrategy(
       console.log('[Passport] 用户验证成功:', username);
       
       // 返回用户对象，但不包含密码
-      const userWithoutPassword = { ...user };
-      delete userWithoutPassword.password;
+      const userWithoutPassword = { ...user } as Record<string, any>;
+      if ('password' in userWithoutPassword) {
+        delete userWithoutPassword.password;
+      }
       
       return done(null, userWithoutPassword);
     } catch (error) {

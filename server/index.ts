@@ -222,10 +222,12 @@ app.use(session({
     
     // 将新的会话ID存储在SessionStorage中，避免频繁生成
     if (typeof global.sessionStorage === 'undefined') {
-      // 使用Record<string, string>类型声明，满足TypeScript要求
+      // 使用自定义类型声明，避免与内置Storage类型冲突
       global.sessionStorage = Object.create(null) as Record<string, string>;
     }
-    global.sessionStorage[sessionStorageKey] = newSessionId;
+    if (sessionStorageKey && typeof sessionStorageKey === 'string') {
+      global.sessionStorage[sessionStorageKey] = newSessionId;
+    }
     
     // 同步到响应头
     if (req.res) {
