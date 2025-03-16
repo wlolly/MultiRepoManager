@@ -295,31 +295,15 @@ export function saveSessionId(sessionId: string) {
       localStorage.setItem('sessionIdHistory', JSON.stringify(sessionHistory));
     }
     
-    // Update storage
+    // 更新本地存储
     sessionStorage.setItem('sessionId', sessionId);
     localStorage.setItem('sessionId', sessionId);
     
-    // Use our unified Cookie setting function
+    // 仅设置单一sessionId cookie，让服务器处理其他cookie
+    // 避免客户端和服务器同时设置cookie导致的多重登录问题
     setCookie('sessionId', sessionId, {
       path: '/',
-      maxAgeDays: 30, // Expires in 30 days
-      sameSite: 'Lax',
-      secure: window.location.protocol === 'https:'
-    });
-    
-    // Also set cookie names that match the server
-    // Note: Server uses connect.sid or warehouse.sid as cookie name
-    setCookie('warehouse.sid', sessionId, {
-      path: '/',
-      maxAgeDays: 30, // Expires in 30 days
-      sameSite: 'Lax',
-      secure: window.location.protocol === 'https:'
-    });
-    
-    // Ensure connect.sid is also set for compatibility with older express sessions
-    setCookie('connect.sid', sessionId, {
-      path: '/',
-      maxAgeDays: 30,
+      maxAgeDays: 30, // 30天过期
       sameSite: 'Lax',
       secure: window.location.protocol === 'https:'
     });
@@ -721,17 +705,9 @@ export function attachSessionToRequest(url: string, headers: Record<string, stri
       }
     }
     
-    // 也添加到cookie中，进一步增强会话持久性
-    // 使用我们的统一Cookie设置函数
+    // 仅设置单一sessionId cookie，其他cookie由服务器响应设置
+    // 避免多重cookie设置导致的会话问题
     setCookie('sessionId', cleanSessionId, {
-      path: '/',
-      maxAgeDays: 30, // 30天过期
-      sameSite: 'Lax',
-      secure: window.location.protocol === 'https:'
-    });
-    
-    // 同时设置与服务器匹配的会话cookie名称
-    setCookie('warehouse.sid', cleanSessionId, {
       path: '/',
       maxAgeDays: 30, // 30天过期
       sameSite: 'Lax',
@@ -764,17 +740,9 @@ export function attachSessionToRequest(url: string, headers: Record<string, stri
     const separator = url.includes('?') ? '&' : '?';
     url = `${url}${separator}sessionId=${newSessionId}`;
     
-    // 也添加到cookie中
-    // 使用我们的统一Cookie设置函数
+    // 仅设置单一sessionId cookie，其他cookie由服务器响应设置
+    // 避免多重cookie设置导致的会话问题
     setCookie('sessionId', newSessionId, {
-      path: '/',
-      maxAgeDays: 30, // 30天过期
-      sameSite: 'Lax',
-      secure: window.location.protocol === 'https:'
-    });
-    
-    // 同时设置与服务器匹配的会话cookie名称
-    setCookie('warehouse.sid', newSessionId, {
       path: '/',
       maxAgeDays: 30, // 30天过期
       sameSite: 'Lax',

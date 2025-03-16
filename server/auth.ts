@@ -337,19 +337,9 @@ export async function loginUser(req: Request, res: Response) {
       });
     });
 
-    // 6. 设置统一的cookie，与会话同步中间件格式一致
-    const cookieOptions = {
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30天
-      httpOnly: false,  // 允许客户端JavaScript访问
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax' as 'lax',
-      path: '/'
-    };
-
-    // 设置cookie的顺序也很重要，确保一致性
-    res.cookie('sessionId', sessionId, cookieOptions);
-    res.cookie('warehouse.sid', sessionId, {...cookieOptions, httpOnly: true});
-    res.cookie('connect.sid', sessionId, {...cookieOptions, httpOnly: true});
+    // 不再手动设置cookie，让会话同步中间件统一处理
+    // 避免登录函数与会话同步中间件重复设置cookie，导致多重登录问题
+    // 只设置必要的会话响应头，cookie将由会话同步中间件设置
 
     // 7. 设置会话响应头，与会话同步中间件一致
     res.setHeader('X-Session-ID', sessionId);
