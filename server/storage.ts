@@ -4,6 +4,9 @@ import {
   teams, type Team, type InsertTeam,
   teamMembers, type TeamMember, type InsertTeamMember,
   teamRepositories, type TeamRepository, type InsertTeamRepository,
+  teamPagePermissions, type TeamPagePermission, type InsertTeamPagePermission,
+  teamWarehousePermissions, type TeamWarehousePermission, type InsertTeamWarehousePermission,
+  translations, type Translation, type InsertTranslation,
   activities, type Activity, type InsertActivity,
   // 仓库管理系统相关导入
   products, type Product, type InsertProduct,
@@ -312,6 +315,9 @@ export class MemStorage implements IStorage {
   private teamRepositoriesMap: Map<number, TeamRepository>;
   private activitiesMap: Map<number, Activity>;
   
+  // 翻译相关存储
+  private translationsMap: Map<number, Translation>;
+  
   // 仓库管理系统相关存储
   private productsMap: Map<number, Product>;
   private warehousesMap: Map<number, Warehouse>;
@@ -400,6 +406,9 @@ export class MemStorage implements IStorage {
     // 初始化用户会话相关存储
     this.userSessionsMap = new Map();
 
+    // 初始化翻译相关存储
+    this.translationsMap = new Map();
+    
     // 初始化ID计数器
     this.userIdCounter = 1;
     this.repositoryIdCounter = 1;
@@ -3716,6 +3725,77 @@ export class DatabaseStorage implements IStorage {
         } : null
       };
     }));
+  }
+  // 翻译相关方法
+  async getTranslations(): Promise<Translation[]> {
+    return Array.from(this.translationsMap.values());
+  }
+
+  async getTranslationByKeyAndLanguage(key: string, language: string): Promise<Translation | undefined> {
+    return Array.from(this.translationsMap.values()).find(
+      t => t.key === key && t.language === language
+    );
+  }
+
+  async createTranslation(translation: InsertTranslation): Promise<Translation> {
+    const id = this.translationsMap.size + 1;
+    const createdAt = new Date();
+    const updatedAt = new Date();
+    
+    const newTranslation: Translation = { 
+      ...translation, 
+      id, 
+      createdAt,
+      updatedAt
+    };
+    
+    this.translationsMap.set(id, newTranslation);
+    return newTranslation;
+  }
+
+  async createTranslationsBatch(translations: InsertTranslation[]): Promise<Translation[]> {
+    const results: Translation[] = [];
+    
+    for (const translation of translations) {
+      const result = await this.createTranslation(translation);
+      results.push(result);
+    }
+    
+    return results;
+  }
+
+  async updateTranslation(id: number, translation: Partial<Translation>): Promise<Translation | undefined> {
+    const existingTranslation = this.translationsMap.get(id);
+    if (!existingTranslation) return undefined;
+    
+    const updatedTranslation: Translation = {
+      ...existingTranslation,
+      ...translation,
+      updatedAt: new Date()
+    };
+    
+    this.translationsMap.set(id, updatedTranslation);
+    return updatedTranslation;
+  }
+
+  async deleteTranslationByKeyAndLanguage(key: string, language: string): Promise<void> {
+    const translation = Array.from(this.translationsMap.values()).find(
+      t => t.key === key && t.language === language
+    );
+    
+    if (translation) {
+      this.translationsMap.delete(translation.id);
+    }
+  }
+
+  async deleteTranslationByKey(key: string): Promise<void> {
+    const translations = Array.from(this.translationsMap.values()).filter(
+      t => t.key === key
+    );
+    
+    for (const translation of translations) {
+      this.translationsMap.delete(translation.id);
+    }
   }
 }
 
