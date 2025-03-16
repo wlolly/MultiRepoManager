@@ -1583,6 +1583,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 产品搜索路由 - 必须放在产品id路由之前
   apiRouter.get("/products/search", async (req, res) => {
     try {
+      // 确保使用当前活动的存储实现
+      const currentStorage = useFallbackStorage ? memStorage : storage;
+      console.log(`搜索产品使用${useFallbackStorage ? '内存存储' : '数据库存储'}模式`);
+      
       const query = req.query.q as string;
       
       if (!query || query.trim() === '') {
@@ -1590,7 +1594,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // 获取所有产品
-      const products = await storage.getProducts();
+      const products = await currentStorage.getProducts();
       
       // 在内存中过滤符合搜索条件的产品
       const searchQuery = query.toLowerCase();
@@ -1619,6 +1623,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   apiRouter.get("/products", async (req, res) => {
     try {
+      // 确保使用当前活动的存储实现
+      const currentStorage = useFallbackStorage ? memStorage : storage;
+      console.log(`获取产品列表使用${useFallbackStorage ? '内存存储' : '数据库存储'}模式`);
+      
       // Build filter object based on query parameters
       const filter: { warehouseId?: number, category?: string, query?: string } = {};
       
@@ -1638,7 +1646,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Get products with applied filters
-      const products = await storage.getProducts(Object.keys(filter).length > 0 ? filter : undefined);
+      const products = await currentStorage.getProducts(Object.keys(filter).length > 0 ? filter : undefined);
       
       // If search query is provided, filter results in memory for partial matches
       let filteredProducts = products;
@@ -1667,8 +1675,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   apiRouter.get("/products/:id", async (req, res) => {
     try {
+      // 确保使用当前活动的存储实现
+      const currentStorage = useFallbackStorage ? memStorage : storage;
+      console.log(`获取单个产品使用${useFallbackStorage ? '内存存储' : '数据库存储'}模式`);
+      
       const id = parseInt(req.params.id);
-      const product = await storage.getProduct(id);
+      const product = await currentStorage.getProduct(id);
       
       if (!product) {
         return res.status(404).json({ error: "Product not found" });
@@ -1728,6 +1740,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 导出产品数据到Excel
   apiRouter.get("/products/excel/export", async (req, res) => {
     try {
+      // 确保使用当前活动的存储实现
+      const currentStorage = useFallbackStorage ? memStorage : storage;
+      console.log(`导出产品数据使用${useFallbackStorage ? '内存存储' : '数据库存储'}模式`);
+      
       // 获取过滤条件
       const filter: { warehouseId?: number, category?: string } = {};
       
@@ -1740,10 +1756,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // 获取产品数据
-      const products = await storage.getProducts(Object.keys(filter).length > 0 ? filter : undefined);
+      const products = await currentStorage.getProducts(Object.keys(filter).length > 0 ? filter : undefined);
       
       // 获取所有仓库，用于在Excel中显示仓库名称
-      const warehouses = await storage.getWarehouses();
+      const warehouses = await currentStorage.getWarehouses();
       const warehouseMap: Record<number, string> = {};
       
       warehouses.forEach(warehouse => {
@@ -1772,6 +1788,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 导入产品数据（从Excel）
   apiRouter.post("/products/excel/import", upload.single('file'), async (req, res) => {
     try {
+      // 确保使用当前活动的存储实现
+      const currentStorage = useFallbackStorage ? memStorage : storage;
+      console.log(`导入产品数据使用${useFallbackStorage ? '内存存储' : '数据库存储'}模式`);
+      
       // 检查是否上传了文件
       if (!req.file) {
         return res.status(400).json({ error: "未上传文件" });
@@ -1801,7 +1821,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const productData of parsedData.products) {
         try {
           // 检查是否存在相同条形码的产品
-          const existingProduct = await storage.getProductByBarcode(productData.barcode);
+          const existingProduct = await currentStorage.getProductByBarcode(productData.barcode);
           
           if (existingProduct) {
             // 更新现有产品
@@ -1820,7 +1840,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               bulkWeightKg: productData.bulkWeightKg ? String(productData.bulkWeightKg) : undefined
             };
             
-            const updated = await storage.updateProduct(existingProduct.id, updateData);
+            const updated = await currentStorage.updateProduct(existingProduct.id, updateData);
             if (updated) {
               importResults.updated++;
               importResults.products.push(updated);
@@ -1844,7 +1864,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               bulkWeightKg: productData.bulkWeightKg ? String(productData.bulkWeightKg) : undefined
             };
             
-            const created = await storage.createProduct(createData);
+            const created = await currentStorage.createProduct(createData);
             importResults.created++;
             importResults.products.push(created);
           }
