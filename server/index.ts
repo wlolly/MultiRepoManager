@@ -378,12 +378,22 @@ import { initializeUserIDTable } from './database/userID';
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = 5000;
-  server.listen({
-    port,
-    host: "0.0.0.0", 
-    reusePort: true,
-    cors: true
-  }, () => {
-    log(`serving on port ${port}`);
-  });
+  
+  // 使用简化的监听方式，避免 ENOTSUP 错误
+  try {
+    server.listen(port, () => {
+      log(`服务器启动成功，监听端口 ${port}`);
+    });
+  } catch (error) {
+    console.error('服务器启动失败:', error);
+    
+    // 尝试备用启动方式
+    try {
+      server.listen(port, '127.0.0.1', () => {
+        log(`服务器启动成功 (备用模式)，监听端口 ${port}`);
+      });
+    } catch (fallbackError) {
+      console.error('备用服务器启动也失败:', fallbackError);
+    }
+  }
 })();

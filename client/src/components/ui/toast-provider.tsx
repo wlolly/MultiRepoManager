@@ -6,6 +6,7 @@ export type Toast = {
   title?: string;
   description?: string;
   type?: "default" | "success" | "error" | "warning";
+  variant?: "default" | "destructive";
 };
 
 // 定义状态类型
@@ -88,6 +89,20 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// 定义Toast函数类型
+export interface ToastFunction {
+  (props: {
+    title?: string;
+    description?: string;
+    variant?: "default" | "destructive";
+    type?: "default" | "success" | "error" | "warning";
+  }): void;
+  success: (message: string) => void;
+  error: (message: string) => void;
+  warning: (message: string) => void;
+  info: (message: string) => void;
+}
+
 // 创建Hook
 export function useToast() {
   const context = useContext(ToastContext);
@@ -95,14 +110,50 @@ export function useToast() {
     throw new Error("useToast must be used within a ToastProvider");
   }
   
-  // 添加toast方法，使其与全局window.toast兼容
+  // 创建主toast函数
+  const toast = ((props: {
+    title?: string;
+    description?: string;
+    variant?: "default" | "destructive";
+    type?: "default" | "success" | "error" | "warning";
+  }) => {
+    context.addToast({ 
+      title: props.title, 
+      description: props.description, 
+      type: props.type || "default",
+      variant: props.variant || "default" 
+    });
+  }) as ToastFunction;
+  
+  // 添加快捷方法
+  toast.success = (message: string) => context.addToast({ 
+    title: "成功", 
+    description: message, 
+    type: "success" 
+  });
+  
+  toast.error = (message: string) => context.addToast({ 
+    title: "错误", 
+    description: message, 
+    type: "error",
+    variant: "destructive" 
+  });
+  
+  toast.warning = (message: string) => context.addToast({ 
+    title: "警告", 
+    description: message, 
+    type: "warning" 
+  });
+  
+  toast.info = (message: string) => context.addToast({ 
+    title: "提示", 
+    description: message, 
+    type: "default" 
+  });
+  
+  // 返回完整的context加toast方法
   return {
     ...context,
-    toast: {
-      success: (message: string) => context.addToast({ title: "成功", description: message, type: "success" }),
-      error: (message: string) => context.addToast({ title: "错误", description: message, type: "error" }),
-      warning: (message: string) => context.addToast({ title: "警告", description: message, type: "warning" }),
-      info: (message: string) => context.addToast({ title: "提示", description: message, type: "default" })
-    }
+    toast
   };
 }

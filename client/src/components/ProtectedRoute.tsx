@@ -169,10 +169,10 @@ export const ProtectedRoute: FC<ProtectedRouteProps> = ({
     return <ErrorHandler error={permissionError} />;
   }
 
+  // wouter 路由不支持 exact 属性，通过路径匹配逻辑来处理
   return (
     <Route
       path={path}
-      exact={exact}
       {...rest}
     >
       {(params) => hasPermission ? <Component {...params} /> : null}
