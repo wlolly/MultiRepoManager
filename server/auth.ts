@@ -556,6 +556,8 @@ export async function getCurrentUser(req: Request, res: Response) {
         console.log(`getCurrentUser: 同步会话信息与已有用户`);
         req.session.userId = userId;
         req.session.authenticated = true;
+        // 设置真实认证标记 - 从req.user中获取
+        req.session.realAuthenticated = (req.user as any).realAuthenticated === true;
         req.session.userRole = (req.user as any).role;
         req.session.socialBound = hasSocialAccountBound(req.user as any);
         req.session.lastActivity = Date.now();
@@ -589,6 +591,9 @@ export async function getCurrentUser(req: Request, res: Response) {
           
           // 确保会话数据是最新的
           req.session.authenticated = true;
+          // 根据用户角色和是否是测试用户设置realAuthenticated
+          const isTestUser = sessionUser.username === '222' || sessionUser.username === 'testadmin';
+          req.session.realAuthenticated = isTestUser || (sessionUser.id > 0 && sessionUser.isActive);
           req.session.userRole = sessionUser.role;
           req.session.socialBound = hasSocialAccountBound(sessionUser);
           req.session.lastActivity = Date.now();
@@ -641,6 +646,9 @@ export async function getCurrentUser(req: Request, res: Response) {
             // 更新会话信息
             req.session.userId = validatedUserId;
             req.session.authenticated = true;
+            // 根据用户角色和是否是测试用户设置realAuthenticated
+            const isTestUser = internalUser.username === '222' || internalUser.username === 'testadmin';
+            req.session.realAuthenticated = isTestUser || (internalUser.id > 0 && internalUser.isActive);
             req.session.userRole = internalUser.role;
             req.session.socialBound = hasSocialAccountBound(internalUser);
             req.session.lastActivity = Date.now();
@@ -689,6 +697,7 @@ export async function getCurrentUser(req: Request, res: Response) {
       isActive: true,
       authenticated: false,
       fakePositive: true,
+      realAuthenticated: false, // 明确标记为非真实认证
       accessLevel: 'limited',
       permissions: {
         pages: ['dashboard', 'products'],
@@ -700,6 +709,7 @@ export async function getCurrentUser(req: Request, res: Response) {
     req.session.userId = -1;
     req.session.userRole = 'anonymous';
     req.session.authenticated = false;
+    req.session.realAuthenticated = false; // 明确标记为非真实认证
     req.session.fakePositive = true;
     req.session.lastActivity = Date.now();
     
