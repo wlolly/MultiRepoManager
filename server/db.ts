@@ -10,17 +10,18 @@ dotenv.config();
 // 获取数据库连接URL
 const dbUrl = process.env.DATABASE_URL;
 
-// 检查数据库URL是否设置，但不抛出错误
-if (!dbUrl) {
-  console.warn('警告: DATABASE_URL环境变量未设置，将使用内存存储模式');
-}
-
 // 创建内存存储实例
 export const memStorage = new MemStorage();
 
 // 创建MySQL连接池 - 增强版配置，添加更多的容错机制
 let pool;
-export let useFallbackStorage = true; // 默认启用内存存储模式，避免数据库连接问题
+// 根据环境变量决定是否使用内存存储
+export let useFallbackStorage = !dbUrl; 
+
+// 检查数据库URL是否设置，但不抛出错误
+if (!dbUrl) {
+  console.warn('警告: DATABASE_URL环境变量未设置，将使用内存存储模式');
+}
 
 try {
   if (dbUrl && !useFallbackStorage) { // 只有在没有启用内存存储模式的情况下才尝试连接数据库
@@ -43,9 +44,9 @@ try {
       password,
       database,
       waitForConnections: true,
-      connectionLimit: 5, // 减少连接数以节省资源
+      connectionLimit: 3, // 减少连接数以节省资源
       queueLimit: 0,
-      connectTimeout: 5000, // 进一步减少超时时间，加快失败检测
+      connectTimeout: 15000, // 增加超时时间，确保有足够时间连接到数据库
       keepAliveInitialDelay: 10000,
       enableKeepAlive: true,
       multipleStatements: true, // 允许多语句查询
@@ -57,22 +58,24 @@ try {
       .then(conn => {
         console.log('数据库连接成功!');
         conn.release();
-        // 即使连接成功，我们也仍然使用内存存储模式，因为这是用户的选择
-        console.log('⚠️ 但根据配置，将继续使用内存存储模式运行');
+        // 使用数据库存储，而非内存存储
+        console.log('✅ 正在使用数据库存储模式运行');
+        useFallbackStorage = false;
       })
       .catch(err => {
         console.error('数据库连接失败:', err);
         
         // 创建一个模拟的池对象，在查询时返回空结果
+        // 注意: 应确保类型与mysql2的Pool兼容
         pool = {
-          execute: async () => [[], []],
-          query: async () => [[], []],
-          getConnection: async () => ({
-            execute: async () => [[], []],
-            query: async () => [[], []],
+          execute: () => Promise.resolve([[], []]),
+          query: () => Promise.resolve([[], []]),
+          getConnection: () => Promise.resolve({
+            execute: () => Promise.resolve([[], []]),
+            query: () => Promise.resolve([[], []]),
             release: () => {}
           })
-        };
+        } as any;
         
         console.log('⚠️ 降级到内存存储模式 - 应用将使用内存存储而不是数据库');
         console.log('⚠️ 警告: 内存存储中的数据在应用重启后会丢失');
@@ -83,15 +86,16 @@ try {
     console.log('环境变量不可用，将使用内存存储模式运行');
     
     // 创建一个模拟的池对象，在查询时返回空结果
+    // 注意: 应确保类型与mysql2的Pool兼容
     pool = {
-      execute: async () => [[], []],
-      query: async () => [[], []],
-      getConnection: async () => ({
-        execute: async () => [[], []],
-        query: async () => [[], []],
+      execute: () => Promise.resolve([[], []]),
+      query: () => Promise.resolve([[], []]),
+      getConnection: () => Promise.resolve({
+        execute: () => Promise.resolve([[], []]),
+        query: () => Promise.resolve([[], []]),
         release: () => {}
       })
-    };
+    } as any;
     
     // 初始化内存存储的一些测试数据
     memStorage.initializeDemoData();
@@ -102,15 +106,16 @@ try {
   console.log('将使用内存存储模式运行');
   
   // 创建一个模拟的池对象，在查询时返回空结果
+  // 注意: 应确保类型与mysql2的Pool兼容
   pool = {
-    execute: async () => [[], []],
-    query: async () => [[], []],
-    getConnection: async () => ({
-      execute: async () => [[], []],
-      query: async () => [[], []],
+    execute: () => Promise.resolve([[], []]),
+    query: () => Promise.resolve([[], []]),
+    getConnection: () => Promise.resolve({
+      execute: () => Promise.resolve([[], []]),
+      query: () => Promise.resolve([[], []]),
       release: () => {}
     })
-  };
+  } as any;
   
   // 初始化内存存储的一些测试数据
   memStorage.initializeDemoData();
