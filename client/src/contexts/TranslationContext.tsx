@@ -32,11 +32,16 @@ export const TranslationProvider = ({ children }: { children: ReactNode }) => {
   const [translationMap, setTranslationMap] = useState<Record<string, Record<string, string>>>({});
   const [missingTranslationsCount, setMissingTranslationsCount] = useState(0);
 
-  // 加载翻译数据
+  // 加载翻译数据 - 从数据库API加载
   useEffect(() => {
     const loadTranslations = async () => {
       try {
-        const response = await fetch('/locales/translations.json');
+        // 从数据库API加载翻译数据
+        const response = await fetch('/api/translations');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
         const data = await response.json();
         setTranslationMap(data);
         
@@ -44,7 +49,17 @@ export const TranslationProvider = ({ children }: { children: ReactNode }) => {
         const missingCount = getMissingTranslationsCount(currentLanguage);
         setMissingTranslationsCount(missingCount);
       } catch (error) {
-        console.error('无法加载翻译文件:', error);
+        console.error('无法从数据库加载翻译数据:', error);
+        
+        // 出错时尝试从文件加载作为备份方案
+        try {
+          const backupResponse = await fetch('/locales/translations.json');
+          const backupData = await backupResponse.json();
+          console.log('使用备份文件加载翻译数据');
+          setTranslationMap(backupData);
+        } catch (backupError) {
+          console.error('备份翻译数据也无法加载:', backupError);
+        }
       }
     };
     

@@ -1,8 +1,10 @@
 import express, { type Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { memStorage, useFallbackStorage } from "./db";
+import { memStorage, useFallbackStorage, db } from "./db";
 import { getUserPagePermissions, getUserWarehousePermissions } from "./middleware/permission-middleware";
+import { translations } from "@shared/schema";
+import { eq, sql } from "drizzle-orm";
 import socialAuthConfig from './social-auth-config';
 import * as warehouseMatcher from './utils/warehouse-matcher';
 import { createInternalUserID } from './database/userID';
@@ -5037,6 +5039,114 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 添加库存管理系统路由
   const inventoryRoutes = createInventoryRoutes();
   apiRouter.use('/inventory', inventoryRoutes);
+
+  // 翻译API路由 - 数据库版本
+  apiRouter.get('/translations', async (req, res) => {
+    try {
+      // 获取请求的语言参数，如果未指定则返回所有语言
+      const language = req.query.language as string;
+      
+      // 使用当前存储实现（数据库或内存）
+      const currentStorage = useFallbackStorage ? memStorage : storage;
+      
+      // 使用Drizzle ORM查询
+      let query = db.select().from(translations);
+      
+      if (language) {
+        query = query.where(eq(translations.language, language));
+      }
+      
+      // 执行数据库查询
+      const results = await query;
+      
+      // 将数据组织成更易于前端使用的格式
+      // 格式：{ key1: { zh: "值1", en: "Value1" }, key2: { zh: "值2", en: "Value2" } }
+      const formattedTranslations: Record<string, Record<string, string>> = {};
+      
+      for (const trans of results) {
+        if (!formattedTranslations[trans.key]) {
+          formattedTranslations[trans.key] = {};
+        }
+        formattedTranslations[trans.key][trans.language] = trans.value;
+      }
+      
+      return res.json(formattedTranslations);
+    } catch (error) {
+      console.error('获取翻译数据时出错:', error);
+      return res.status(500).json({ message: '获取翻译数据失败' });
+    }
+  });
+  
+  // 添加翻译
+  apiRouter.post('/translations', async (req, res) => {
+    try {
+      // 验证请求数据
+      const validatedData = insertTranslationSchema.safeParse(req.body);
+      
+      if (!validatedData.success) {
+        return res.status(400).json({ 
+          message: '无效的翻译数据',
+          errors: validatedData.error
+        });
+      }
+      
+      // 插入数据
+      const result = await db.insert(translations).values(validatedData.data).returning();
+      
+      return res.status(201).json(result[0]);
+    } catch (error) {
+      console.error('添加翻译数据时出错:', error);
+      return res.status(500).json({ message: '添加翻译数据失败' });
+    }
+  });
+  
+  // 批量添加翻译
+  apiRouter.post('/translations/batch', async (req, res) => {
+    try {
+      const translationsData = req.body;
+      
+      if (!Array.isArray(translationsData)) {
+        return res.status(400).json({ message: '请提供翻译数据数组' });
+      }
+      
+      // 验证所有数据
+      const validData = [];
+      const errors = [];
+      
+      for (let i = 0; i < translationsData.length; i++) {
+        const validatedData = insertTranslationSchema.safeParse(translationsData[i]);
+        if (validatedData.success) {
+          validData.push(validatedData.data);
+        } else {
+          errors.push({
+            index: i,
+            data: translationsData[i],
+            errors: validatedData.error
+          });
+        }
+      }
+      
+      if (validData.length === 0) {
+        return res.status(400).json({ 
+          message: '所有翻译数据都无效',
+          errors
+        });
+      }
+      
+      // 批量插入有效数据
+      await db.insert(translations).values(validData).onConflictDoNothing().returning();
+      
+      return res.status(201).json({
+        success: true,
+        inserted: validData.length,
+        total: translationsData.length,
+        errors: errors.length > 0 ? errors : undefined
+      });
+    } catch (error) {
+      console.error('批量添加翻译数据时出错:', error);
+      return res.status(500).json({ message: '批量添加翻译数据失败' });
+    }
+  });
 
   // Mount the API router
   app.use("/api", apiRouter);
