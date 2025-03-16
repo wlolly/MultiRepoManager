@@ -219,7 +219,7 @@ export async function loginUser(req: Request, res: Response) {
         maxAge: 30 * 24 * 60 * 60 * 1000,
         httpOnly: false,  // 允许客户端JavaScript访问
         secure: false,    // 开发环境不使用secure
-        sameSite: 'lax'
+        sameSite: 'lax' as 'lax'  // 显式类型转换解决TypeScript错误
       };
 
       // 设置多个会话cookie确保兼容性
