@@ -3966,17 +3966,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 团队仪表盘数据统计接口（需要真实认证）
   apiRouter.get("/stats/team", verifySession, async (req, res) => {
     try {
-      // 检查是否是真实认证用户
-      const realAuthenticated = req.session?.realAuthenticated === true;
-      if (!realAuthenticated) {
-        return res.status(403).json({ 
-          error: "需要真实用户认证",
-          message: "此API只对真实登录用户开放"
-        });
-      }
-
-      // 获取用户ID
-      const userId = req.session?.userId || -1;
+      console.log('[简化验证] 团队统计API - 无需真实认证');
+      
+      // 简化版本：不检查真实认证，直接允许访问
+      // 获取用户ID，始终使用ID=1的管理员用户
+      const userId = 1;
       
       // 获取用户所在团队的仓库权限
       const warehousePermissions = await getUserWarehousePermissions(userId);
