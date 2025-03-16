@@ -24,25 +24,39 @@ languageCodes.forEach(langCode => {
 
 // 处理翻译对象
 function processTranslations() {
+  // 记录处理的翻译键数量
+  let processedKeys = 0;
+  let processedLangEntries = 0;
+
   // 遍历所有翻译键
   Object.entries(translations).forEach(([key, value]) => {
     // 确保value是一个对象
     if (value && typeof value === 'object') {
+      processedKeys++;
+      
       // 为每种语言提取对应的翻译值
       languageCodes.forEach(langCode => {
         // 检查该语言的翻译是否存在
         if (langCode in value && typeof value[langCode] === 'string') {
+          // 将翻译值添加到资源对象中
           resources[langCode].translation[key] = value[langCode];
+          processedLangEntries++;
         }
       });
     }
   });
+  
+  console.log(`处理了 ${processedKeys} 个翻译键，共 ${processedLangEntries} 条翻译条目`);
 }
 
 // 执行翻译处理
 try {
   processTranslations();
   console.log('翻译资源处理完成，可用语言：', Object.keys(resources));
+  
+  // 打印前10个键的示例，便于调试
+  const sampleKeys = Object.keys(resources.zh.translation).slice(0, 10);
+  console.log('示例翻译键（中文）:', sampleKeys.map(key => `${key}: ${resources.zh.translation[key]}`));
 } catch (error) {
   console.error('处理翻译资源时出错：', error);
 }
