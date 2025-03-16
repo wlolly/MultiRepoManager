@@ -3,12 +3,27 @@ import mysql from 'mysql2/promise';
 import * as schema from "@shared/schema";
 import dotenv from 'dotenv';
 import { MemStorage } from './storage'; // 导入MemStorage实现
+import fs from 'fs';
+import path from 'path';
 
 // 加载环境变量
 dotenv.config();
 
-// 获取数据库连接URL或直接配置
-const dbUrl = process.env.DATABASE_URL;
+// 检查.env文件是否存在，并尝试读取内容进行诊断
+try {
+  const envPath = path.resolve(process.cwd(), '.env');
+  console.log(`[配置检查] 尝试读取.env文件 (${envPath})`);
+  if (fs.existsSync(envPath)) {
+    const envContent = fs.readFileSync(envPath, 'utf8');
+    console.log('[配置检查] .env文件存在，内容长度:', envContent.length);
+    console.log('[配置检查] .env文件前50个字符:', envContent.substring(0, 50));
+  } else {
+    console.log('[配置检查] .env文件不存在');
+  }
+} catch (err) {
+  console.error('[配置检查] 读取.env文件时出错:', err);
+}
+
 // 直接获取数据库配置 - 更加可靠，避免URL解析问题
 const DB_HOST = process.env.DB_HOST || "77.243.80.129";
 const DB_PORT = parseInt(process.env.DB_PORT || "3307");
@@ -30,17 +45,13 @@ process.on('unhandledRejection', (reason, promise) => {
   // 不终止进程，允许应用继续运行
 });
 
-// 根据环境变量决定是否使用内存存储
 // 禁用内存存储，强制使用数据库连接
-export let useFallbackStorage = false; 
+// 这个标志始终为false，确保系统只使用数据库存储，没有降级选项
+export let useFallbackStorage = false;
 
-// 检查数据库URL是否设置，但不抛出错误
-if (!dbUrl) {
-  console.warn('警告: DATABASE_URL环境变量未设置，将保持使用内存存储模式');
-} else {
-  console.log('数据库URL已设置，初始默认使用内存存储，系统将尝试连接数据库...');
-  console.log('即使数据库连接失败，应用程序也将继续工作');
-}
+// 初始化数据库连接 - 不再依赖URL，直接使用配置
+console.log('[数据库] 正在使用直接配置连接数据库');
+console.log('[数据库] 系统需要数据库连接才能正常工作，不再提供内存存储降级选项');
 
 // 创建优化后的MySQL连接池 - 增强版配置，添加更多的容错机制
 let pool;
@@ -54,11 +65,11 @@ async function createPoolWithRetry(retryCount = 0, maxRetries = 10) {
   try {
     // 使用直接配置而不是解析URL
     // 这样可以避免URL解析问题，特别是当密码中有特殊字符时
-    const host = DB_HOST;
-    const port = DB_PORT;
-    const user = DB_USER;
-    const password = DB_PASSWORD;
-    const database = DB_NAME;
+    const host = process.env.DB_HOST || 'localhost';
+    const port = parseInt(process.env.DB_PORT || '3306', 10);
+    const user = process.env.DB_USER || 'root';
+    const password = process.env.DB_PASSWORD || '';
+    const database = process.env.DB_NAME || 'warehouse_db';
     
     console.log(`[数据库] 连接到 ${host}:${port}/${database} (尝试 ${retryCount+1}/${maxRetries+1})`);
     console.log(`[数据库] 用户名: ${user}`);
@@ -156,22 +167,12 @@ async function createPoolWithRetry(retryCount = 0, maxRetries = 10) {
         }, delay);
       });
     } else {
-      // 如果重试次数已用完或是其他错误，切换到内存存储
-      useFallbackStorage = true;
-      console.log('⚠️ 降级到内存存储模式 - 应用将使用内存存储而不是数据库');
-      console.log('⚠️ 警告: 内存存储中的数据在应用重启后会丢失');
+      // 如果重试次数已用完或是其他错误，不再切换到内存存储，而是直接抛出错误
+      console.error('[数据库] 错误: 数据库连接失败，系统需要数据库连接才能正常工作');
+      console.error('[数据库] 请检查数据库连接配置和网络连接');
       
-      // 创建一个模拟的池对象，在查询时返回空结果
-      return {
-        execute: () => Promise.resolve([[], []]),
-        query: () => Promise.resolve([[], []]),
-        getConnection: () => Promise.resolve({
-          execute: () => Promise.resolve([[], []]),
-          query: () => Promise.resolve([[], []]),
-          release: () => {}
-        }),
-        on: () => {} // 添加on方法以匹配Pool接口
-      } as any;
+      // 抛出错误，终止应用程序
+      throw new Error('数据库连接失败，无法启动应用程序');
     }
   }
 }
@@ -179,7 +180,10 @@ async function createPoolWithRetry(retryCount = 0, maxRetries = 10) {
 // 立即尝试创建连接池
 try {
   // 直接使用配置而不是URL
-  console.log(`[数据库] 尝试连接到数据库 ${DB_HOST}:${DB_PORT}/${DB_NAME}`);
+  const dbHost = process.env.DB_HOST || 'localhost';
+  const dbPort = parseInt(process.env.DB_PORT || '3306', 10);
+  const dbName = process.env.DB_NAME || 'warehouse_db';
+  console.log(`[数据库] 尝试连接到数据库 ${dbHost}:${dbPort}/${dbName}`);
   
   // 尝试连接数据库，最多重试10次，给更多的缓冲时间
   createPoolWithRetry(0, 10)
@@ -193,27 +197,11 @@ try {
     })
     .catch(err => {
       console.error('[数据库] 创建连接池失败:', err);
-      console.log('[数据库] 切换到内存存储模式，但会继续尝试连接数据库');
-      setupFallbackPool();
+      console.error('[数据库] 错误: 数据库连接失败，系统需要数据库连接才能正常工作');
+      console.error('[数据库] 请检查数据库连接配置和网络连接');
       
-      // 失败后每60秒继续尝试连接一次数据库
-      const retryInterval = setInterval(() => {
-        console.log('[数据库] 定期尝试重新连接数据库...');
-        createPoolWithRetry(0, 3)
-          .then(newPool => {
-            if (newPool) {
-              pool = newPool;
-              useFallbackStorage = false;
-              // 更新drizzle实例
-              updateDbInstance(newPool);
-              console.log('[数据库] 重新连接成功，切换回数据库存储模式');
-              clearInterval(retryInterval);
-            }
-          })
-          .catch(() => {
-            console.log('[数据库] 重新连接仍然失败，将在60秒后重试');
-          });
-      }, 60000);
+      // 不再提供内存存储降级，而是直接抛出错误
+      throw new Error('数据库连接失败，无法启动应用程序');
     });
 } catch (err) {
   console.error('[数据库] 初始化错误:', err);
