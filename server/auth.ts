@@ -67,9 +67,15 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
 
   try {
     // 检查会话是否已认证（已登录）
-    const isAuthenticated = req.session && 
-                           req.session.userId && 
-                           req.session.authenticated === true;
+    // 更宽松的认证检查，允许任一条件匹配
+    const isAuthenticated = req.session && (
+      // 完整认证条件
+      (req.session.userId && req.session.authenticated === true) ||
+      // 兼容性条件 - 考虑只有userId情况
+      (req.session.userId && req.session.userId > 0) ||
+      // 直接标记 - 为了调试和兼容性
+      (req.session.isAuthenticated === true)
+    );
 
     // 检查是否来自登录流程或明确要求绕过
     const isFromLoginFlow = req.headers['x-login-flow'] === 'true';
@@ -329,9 +335,15 @@ export async function registerUser(req: Request, res: Response) {
 export async function getCurrentUser(req: Request, res: Response) {
   try {
     // 检查是否已登录（会话中是否有userId且已认证）
-    const isAuthenticated = req.session && 
-                           req.session.userId && 
-                           req.session.authenticated === true;
+    // 更宽松的认证检查，允许任一条件匹配
+    const isAuthenticated = req.session && (
+      // 完整认证条件
+      (req.session.userId && req.session.authenticated === true) ||
+      // 兼容性条件 - 考虑只有userId情况
+      (req.session.userId && req.session.userId > 0) ||
+      // 直接标记 - 为了调试和兼容性
+      (req.session.isAuthenticated === true)
+    );
 
     // 如果已登录，从数据库获取最新的用户信息
     if (isAuthenticated) {

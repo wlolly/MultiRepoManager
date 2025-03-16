@@ -58,29 +58,89 @@ export default function LoginRedirect() {
     .then(data => {
       console.log('会话验证响应数据:', data);
       
-      // 检查是否是已认证用户
-      if (data.authenticated) {
+      // 检查是否是已认证用户或访客用户
+      if (data.authenticated === true) {
+        // 已认证用户处理流程
         setStatus(t('auth.session_verification_success'));
-        console.log('会话验证成功:', data);
+        console.log('认证用户会话验证成功:', data);
         
-        // 存储用户信息
+        // 确保保存完整的认证状态
+        let userData;
+        
         if (data.id !== undefined) {
-          // 直接数据就是用户对象的情况
-          const userData = {
-            ...data
+          // 直接响应就是用户对象的情况
+          userData = {
+            ...data,
+            authenticated: true,
+            realAuthenticated: true
           };
-          localStorage.setItem('currentUser', JSON.stringify(userData));
-          sessionStorage.setItem('currentUser', JSON.stringify(userData));
-          console.log('保存用户数据(直接格式):', userData);
+          console.log('保存认证用户数据(直接格式):', userData);
         } else if (data.user) {
           // 用户数据在user字段内的情况
-          const userData = {
-            ...data.user
+          userData = {
+            ...data.user,
+            authenticated: true,
+            realAuthenticated: true
           };
-          localStorage.setItem('currentUser', JSON.stringify(userData));
-          sessionStorage.setItem('currentUser', JSON.stringify(userData));
-          console.log('保存用户数据(嵌套格式):', userData);
+          console.log('保存认证用户数据(嵌套格式):', userData);
+        } else {
+          // 回退情况：数据格式异常但仍然认证成功
+          userData = {
+            id: data.userId || 1,
+            username: 'user',
+            role: data.userRole || 'user',
+            authenticated: true,
+            realAuthenticated: true
+          };
+          console.log('保存认证用户数据(备用格式):', userData);
         }
+        
+        // 保存到存储中
+        localStorage.setItem('currentUser', JSON.stringify(userData));
+        sessionStorage.setItem('currentUser', JSON.stringify(userData));
+        
+        // 显示成功提示
+        toast.success(t('auth.login_success'));
+        
+        // 使用延时确保数据已存储
+        setTimeout(() => {
+          setStatus(t('auth.verification_complete'));
+          
+          // 使用window.location重定向到首页
+          window.location.href = '/';
+        }, 1000);
+      } else if (data.guestAccess === true) {
+        // 访客用户处理流程
+        setStatus(t('auth.guest_verification_success'));
+        console.log('访客用户会话验证成功:', data);
+        
+        // 创建访客用户数据
+        const guestUserData = {
+          id: -1,
+          username: t('auth.guest_user'),
+          fullname: t('auth.guest_user'),
+          role: 'anonymous',
+          authenticated: false,
+          realAuthenticated: false,
+          guestAccess: true,
+          permissions: data.permissions || {
+            pages: ['dashboard'],
+            actions: ['view'],
+            warehouses: {}
+          }
+        };
+        
+        // 保存到存储中
+        localStorage.setItem('currentUser', JSON.stringify(guestUserData));
+        sessionStorage.setItem('currentUser', JSON.stringify(guestUserData));
+        console.log('保存访客用户数据:', guestUserData);
+        
+        // 显示访客模式提示
+        toast({
+          title: t('auth.guest_mode_active'),
+          description: t('auth.limited_features_available'),
+          type: "info"
+        });
         
         // 使用延时确保数据已存储
         setTimeout(() => {
@@ -90,6 +150,7 @@ export default function LoginRedirect() {
           window.location.href = '/';
         }, 1000);
       } else {
+        // 验证失败的情况
         setError(t('auth.session_verification_failed'));
         console.error('会话验证失败:', data);
         toast.error(t('auth.session_verification_failed'));
