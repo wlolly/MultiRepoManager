@@ -158,6 +158,15 @@ export function usePermissions(): PermissionsHook {
   useEffect(() => {
     // 尝试获取当前会话信息，检查认证状态
     fetchPermissions();
+    
+    // 每30秒自动刷新权限，确保权限状态保持最新
+    const intervalId = setInterval(() => {
+      console.log('执行权限自动刷新...');
+      fetchPermissions();
+    }, 30000);
+    
+    // 清理定时器
+    return () => clearInterval(intervalId);
   }, []);
 
   // 检查页面权限

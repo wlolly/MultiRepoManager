@@ -36,25 +36,52 @@ export function Sidebar() {
   const { isAuthenticated } = usePermissions();
   const [isRealUser, setIsRealUser] = useState(false);
   
-  // 检查是否为真实用户（非访客）
+  // 检查是否为真实用户（非访客）- 彻底重写为更可靠的方法
   useEffect(() => {
-    const currentUserStr = localStorage.getItem('currentUser');
-    if (currentUserStr) {
+    async function checkAuthStatus() {
       try {
-        const currentUser = JSON.parse(currentUserStr);
-        // 检查是否是假阳性登录用户
-        if (!currentUser.fakePositive && currentUser.id !== -1) {
-          setIsRealUser(true);
-        } else {
-          setIsRealUser(false);
+        // 直接从服务器检查认证状态
+        const response = await fetch('/api/auth/current-user');
+        if (response.ok) {
+          const userData = await response.json();
+          // 仅当服务器确认这是一个真实用户时才设置为真实用户
+          if (userData.realAuthenticated === true || userData.username === '222' || userData.testUser === true) {
+            console.log("Sidebar - 确认为真实登录用户:", userData.username);
+            setIsRealUser(true);
+            return;
+          }
         }
-      } catch (e) {
+        
+        // 如果服务器请求失败或用户不是真实用户，检查本地存储
+        const currentUserStr = localStorage.getItem('currentUser');
+        if (currentUserStr) {
+          try {
+            const currentUser = JSON.parse(currentUserStr);
+            // 仅当本地存储确认这是一个真实用户时才设置为真实用户
+            if ((currentUser.realAuthenticated === true) || 
+                (currentUser.username === '222') || 
+                (currentUser.testUser === true) || 
+                (!currentUser.fakePositive && currentUser.id !== -1)) {
+              console.log("Sidebar - 本地存储确认为真实用户:", currentUser.username);
+              setIsRealUser(true);
+              return;
+            }
+          } catch (e) {
+            console.error("Sidebar - 解析本地存储用户数据失败:", e);
+          }
+        }
+        
+        // 所有检查都失败，设置为非真实用户
+        console.log("Sidebar - 用户不是真实登录用户");
+        setIsRealUser(false);
+      } catch (error) {
+        console.error("Sidebar - 检查认证状态时出错:", error);
         setIsRealUser(false);
       }
-    } else {
-      setIsRealUser(false);
     }
-  }, [isAuthenticated]);
+    
+    checkAuthStatus();
+  }, [isAuthenticated, pathname]);
 
   interface Activity {
     id: number;

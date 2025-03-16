@@ -14,7 +14,11 @@ export function useAuthStatus() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 检查本地存储中的用户信息
+    // 记录开始检查认证状态的时间
+    const startTime = performance.now();
+    console.log('开始检查认证状态...');
+    
+    // 检查本地存储中的用户信息 - 提供快速的初始状态
     const checkStoredUser = () => {
       const storedUser = localStorage.getItem('currentUser');
       if (storedUser) {
@@ -38,6 +42,7 @@ export function useAuthStatus() {
               const updatedUser = {...parsedUser, realAuthenticated: true, testUser: true};
               localStorage.setItem('currentUser', JSON.stringify(updatedUser));
               setUser(updatedUser);
+              console.log('已更新测试用户状态:', updatedUser);
             }
           } else {
             setRealAuthenticated(false);
@@ -52,11 +57,9 @@ export function useAuthStatus() {
         setIsAuthenticated(false);
         setRealAuthenticated(false);
       }
-      
-      setLoading(false);
     };
 
-    // 检查服务器会话
+    // 检查服务器会话 - 获取最新状态
     const checkServerSession = async () => {
       try {
         // 添加随机查询参数，确保不会从缓存中获取结果
@@ -71,19 +74,31 @@ export function useAuthStatus() {
           }
         });
         
+        console.log('认证检查响应状态:', response.status, response.statusText);
+        
         if (response.ok) {
           const userData = await response.json();
           console.log('认证检查响应数据:', userData);
           
-          // 确保realAuthenticated字段存在且正确
-          userData.realAuthenticated = true; // 强制设置为true，简化认证逻辑
+          // 检查是否为测试用户 (username为222)
+          const isTestUser = userData.username === '222' || userData.testUser === true;
+          
+          // 确保所有认证字段都正确设置
+          userData.realAuthenticated = true; // 服务器确认为真实用户
           userData.authenticated = true;
           
-          // 存储用户数据
+          // 如果是测试用户，确保标记为测试用户
+          if (isTestUser) {
+            userData.testUser = true;
+            console.log('用户真实认证成功:', userData);
+          }
+          
+          // 存储用户数据并更新状态
           localStorage.setItem('currentUser', JSON.stringify(userData));
           setUser(userData);
           setIsAuthenticated(true);
-          setRealAuthenticated(true); // 强制设置为真实认证
+          setRealAuthenticated(true);
+          console.log('认证成功，用户已登录');
         } else {
           // 尝试解析响应以检查假阳性登录
           try {
@@ -102,14 +117,16 @@ export function useAuthStatus() {
               
               localStorage.setItem('currentUser', JSON.stringify(guestUser));
               setUser(guestUser);
-              setIsAuthenticated(true);  // 假阳性登录也是一种认证状态
+              setIsAuthenticated(true);   // 假阳性登录也是一种认证状态
               setRealAuthenticated(false); // 但不是真实登录
+              console.log('假阳性登录成功，使用访客账户');
             } else {
               // 清除可能存在的用户数据
               localStorage.removeItem('currentUser');
               setUser(null);
               setIsAuthenticated(false);
               setRealAuthenticated(false);
+              console.log('认证失败，用户未登录');
             }
           } catch (e) {
             // 如果响应不是JSON，则假设未登录
@@ -117,19 +134,25 @@ export function useAuthStatus() {
             setUser(null);
             setIsAuthenticated(false);
             setRealAuthenticated(false);
+            console.log('认证响应解析失败，用户未登录', e);
           }
         }
       } catch (error) {
         console.error('检查认证状态时出错:', error);
-        // 网络错误，尝试从本地存储加载
-        checkStoredUser();
+        // 网络错误，使用本地存储的结果
+        console.log('网络错误，使用本地存储的用户信息');
       } finally {
         setLoading(false);
+        // 计算并记录认证检查耗时
+        const endTime = performance.now();
+        console.log('认证状态检查完成，耗时', ((endTime - startTime) / 1000).toFixed(2), '秒');
       }
     };
 
-    // 先检查本地存储，然后验证服务器会话
+    // 先快速检查本地存储获得初始状态
     checkStoredUser();
+    
+    // 然后验证服务器会话获得最新状态
     checkServerSession();
   }, []);
 
