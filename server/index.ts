@@ -123,8 +123,19 @@ app.use(session({
                               req.path.includes('current-user') || 
                               req.path.includes('/permissions/');
     
+    // 记录所有会话ID来源（仅在重要请求中）
     if (possibleSources.length > 0 && isImportantRequest) {
       console.log(`会话ID来源 (${req.path}):`, possibleSources.map(s => `${s.name}: ${s.value}`).join(', '));
+    }
+    
+    // 检查是否有现有会话ID
+    const existingSessionID = req.sessionID;
+    if (existingSessionID && existingSessionID.length >= 10) {
+      // 如果已经有会话ID且符合格式要求，优先使用它
+      if (isImportantRequest) {
+        console.log(`维持现有会话ID: ${existingSessionID}`);
+      }
+      return existingSessionID;
     }
     
     // 使用优先级最高的有效会话ID
@@ -141,18 +152,46 @@ app.use(session({
           req.res.setHeader('X-Session-ID', sessionId);
           req.res.setHeader('X-Original-Session-ID', sessionId);
           req.res.setHeader('X-Session-Source', source.name);
+          
+          // 设置会话cookie，确保客户端端浏览器保留它
+          req.res.cookie('sessionId', sessionId, { 
+            path: '/',
+            maxAge: 30 * 24 * 60 * 60 * 1000, // 30天
+            httpOnly: false // 允许客户端JS读取
+          });
+          
+          req.res.cookie('warehouse.sid', sessionId, {
+            path: '/',
+            maxAge: 30 * 24 * 60 * 60 * 1000, // 30天
+            httpOnly: true
+          });
         }
         
         return sessionId;
       }
     }
     
-    // 如果没有找到有效会话ID，生成新的会话ID
+    // 如果没有找到有效会话ID，返回会话中间件分配的ID（如果有）
+    // 这样可以避免每次都生成新ID
+    if (req.sessionID && req.sessionID.length >= 10) {
+      if (isImportantRequest) {
+        console.log(`使用会话中间件分配的ID: ${req.sessionID}`);
+      }
+      
+      if (req.res) {
+        req.res.setHeader('X-Session-ID', req.sessionID);
+        req.res.setHeader('X-Original-Session-ID', req.sessionID);
+      }
+      
+      return req.sessionID;
+    }
+    
+    // 最后才生成新的会话ID（通常应该不会走到这一步）
     const newSessionId = crypto.randomBytes(16).toString('hex');
     
     // 如果是重要请求，记录详细信息
     if (isImportantRequest) {
-      console.log(`为路径 ${req.path} 创建新会话ID: ${newSessionId}，未找到有效会话ID`);
+      console.log(`为路径 ${req.path} 创建新会话ID: ${newSessionId}，未找到任何有效会话ID`);
     }
     
     // 同步到响应头
