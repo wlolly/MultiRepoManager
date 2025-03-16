@@ -494,18 +494,49 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
     // 设置访客用户角色为anonymous（与全局权限检查保持一致）
     req.session.userRole = 'anonymous';
     
-    // 创建访客用户对象直接放入req.user
+    // 创建访客用户对象直接放入req.user，扩展权限信息
     (req as any).user = {
       id: -1,
       username: 'guest',
       role: 'anonymous',
       fullName: '访客用户',
-      isActive: true
+      isActive: true,
+      authenticated: false,
+      fakePositive: true,
+      realAuthenticated: false,
+      accessLevel: 'limited',
+      permissions: {
+        pages: ['dashboard', 'products'],
+        actions: ['view']
+      }
     };
+    
+    // 确保响应中设置会话ID cookie
+    if (req.sessionID && res.cookie) {
+      res.cookie('warehouse.sid', req.sessionID, {
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30天
+        httpOnly: true,
+        path: '/'
+      });
+      
+      // 添加客户端可读的会话ID
+      res.cookie('sessionId', req.sessionID, {
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30天
+        httpOnly: false, // 允许JavaScript读取
+        path: '/'
+      });
+      
+      // 在响应头中添加会话ID
+      res.setHeader('X-Session-ID', req.sessionID);
+      res.setHeader('X-Original-Session-ID', req.sessionID);
+    }
     
     // 保存会话以确保变更持久化
     req.session.save(err => {
       if (err) console.error('保存访客会话出错:', err);
+      
+      // 日志记录当前使用的会话ID
+      console.log(`访客模式使用会话ID: ${req.sessionID}`);
       
       // 其他路径继续处理，让各自的处理器决定如何响应
       next();
@@ -853,7 +884,7 @@ export async function getCurrentUser(req: Request, res: Response) {
     res.setHeader('X-Session-Authenticated', 'false');
     res.setHeader('X-Fake-Positive-Login', 'true');
     
-    // 创建访客用户
+    // 创建访客用户（增强版本）
     const guestUser = {
       id: -1,
       username: 'guest',
@@ -867,10 +898,32 @@ export async function getCurrentUser(req: Request, res: Response) {
       realAuthenticated: false, // 明确标记为非真实认证
       accessLevel: 'limited',
       permissions: {
-        pages: ['dashboard', 'products'],
-        actions: ['view']
+        pages: ['dashboard', 'products', 'warehouses'],
+        actions: ['view'],
+        warehouses: {}
       }
     };
+    
+    // 设置Cookie确保下次请求复用同一会话
+    if (req.sessionID && res.cookie) {
+      res.cookie('warehouse.sid', req.sessionID, {
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30天
+        httpOnly: true,
+        path: '/'
+      });
+      
+      // 添加客户端可读的会话ID
+      res.cookie('sessionId', req.sessionID, {
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30天
+        httpOnly: false, // 允许JavaScript读取
+        path: '/'
+      });
+      
+      // 在响应头中添加会话ID便于调试
+      res.setHeader('X-Session-ID', req.sessionID);
+      res.setHeader('X-Original-Session-ID', req.sessionID);
+      console.log(`访客用户响应设置会话ID: ${req.sessionID}`);
+    }
     
     // 在会话中保存访客用户信息
     req.session.userId = -1;

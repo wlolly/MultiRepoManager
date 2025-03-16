@@ -19,7 +19,7 @@ console.log("初始化Express应用中间件...");
 app.use(session({
   secret: process.env.SESSION_SECRET || 'warehouse-management-secret-2025-03-15',
   resave: false, // 只在会话被修改时保存
-  saveUninitialized: false, // 只保存已初始化的会话，减少无用会话创建
+  saveUninitialized: true, // 修改为true，确保即使未初始化的会话也被保存，解决会话持久性问题
   name: 'warehouse.sid', // 自定义会话ID cookie名称 (更简单的名称避免解析问题)
   rolling: true, // 每次响应都重设cookie过期时间
   proxy: true, // 信任反向代理，解决在Replit环境下cookie问题
@@ -32,8 +32,27 @@ app.use(session({
     domain: undefined // 不指定域名，使用当前域名
   },
   genid: function(req) {
-    // 已经有会话ID的情况下，保持该ID不变（避免生成新的ID）
+    // 当请求头中包含客户端已知的会话ID时，优先使用该ID
+    const clientSessionId = req.headers['x-client-session-id'];
+    if (clientSessionId && typeof clientSessionId === 'string' && 
+        /^[a-zA-Z0-9\-_]{20,}$/.test(clientSessionId)) {
+      console.log(`使用客户端提供的会话ID: ${clientSessionId}`);
+      
+      // 同步到响应头
+      if (req.res) {
+        req.res.setHeader('X-Session-ID', clientSessionId);
+        req.res.setHeader('X-Original-Session-ID', clientSessionId);
+      }
+      
+      return clientSessionId;
+    }
+    
+    // 已经有会话ID的情况下，保持该ID不变
     if (req.sessionID && /^[a-zA-Z0-9\-_]{20,}$/.test(req.sessionID)) {
+      if (req.res) {
+        req.res.setHeader('X-Session-ID', req.sessionID);
+        req.res.setHeader('X-Original-Session-ID', req.sessionID);
+      }
       return req.sessionID;
     }
     
@@ -54,17 +73,18 @@ app.use(session({
       if (/^[a-zA-Z0-9\-_]{20,}$/.test(cookieId)) {
         console.log(`从cookie中恢复会话ID: ${cookieId}`);
         
-        // 同步到响应头，确保客户端可以获取
+        // 同步到响应头
         if (req.res) {
           req.res.setHeader('X-Session-ID', cookieId);
+          req.res.setHeader('X-Original-Session-ID', cookieId);
         }
         
         return cookieId;
       }
     }
     
-    // 从请求头中寻找会话ID
-    const headerNames = ['x-session-id', 'x-client-session-id'];
+    // 从其他请求头中寻找会话ID
+    const headerNames = ['x-session-id', 'x-original-session-id'];
     for (const name of headerNames) {
       const headerValue = req.headers[name];
       if (headerValue && typeof headerValue === 'string' && 
@@ -74,6 +94,7 @@ app.use(session({
         // 同步到响应头
         if (req.res) {
           req.res.setHeader('X-Session-ID', headerValue);
+          req.res.setHeader('X-Original-Session-ID', headerValue);
         }
         
         return headerValue;
@@ -92,6 +113,8 @@ app.use(session({
     // 同步到响应头
     if (req.res) {
       req.res.setHeader('X-Session-ID', newSessionId);
+      req.res.setHeader('X-Original-Session-ID', newSessionId);
+      req.res.setHeader('X-New-Session-ID', newSessionId);  // 标记这是新创建的会话ID
     }
     
     return newSessionId;
