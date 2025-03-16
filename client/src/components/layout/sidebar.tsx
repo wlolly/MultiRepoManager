@@ -24,7 +24,7 @@ const navItems: NavItem[] = [
   // 订单管理相关导航
   { icon: "ri-arrow-down-circle-line", keyName: "inbound_orders", href: "/inbound-orders", public: false },
   { icon: "ri-arrow-up-circle-line", keyName: "outbound_orders", href: "/outbound-orders", public: false },
-  { icon: "ri-exchange-fill", keyName: "warehouse_transfers", href: "/warehouse-transfers", public: true },
+  { icon: "ri-exchange-fill", keyName: "warehouse_transfers", href: "/warehouse-transfers", public: false },
   { icon: "ri-cloud-line", keyName: "api_configurations", href: "/api-configurations", public: false },
   { icon: "ri-group-line", keyName: "users_teams", href: "/users", public: false },
   { icon: "ri-settings-line", keyName: "settings", href: "/settings", public: true },
