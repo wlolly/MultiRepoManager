@@ -190,6 +190,21 @@ export const sessionSyncMiddleware = (req: Request, res: Response, next: NextFun
     // 改为使用固定值，避免传递可能包含括号或其他特殊字符的原始来源
     res.setHeader('X-Session-Source', 'client_provided');
     res.setHeader('X-Session-Restored', 'true');
+    
+    // 设置会话安全信息 - 增强会话跟踪能力
+    if (req.session) {
+      (req.session as any).sessionCreatedAt = Date.now();
+      (req.session as any).sessionExpiration = Date.now() + (30 * 24 * 60 * 60 * 1000);
+      (req.session as any).validatedAt = Date.now();
+      (req.session as any).validatedSource = 'client_provided';
+      (req.session as any).securityLevel = 'high';
+      
+      // 记录用户IP和User-Agent，有助于后续的会话安全分析
+      const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
+      const userAgent = req.headers['user-agent'] || '';
+      (req.session as any).sessionIPAddress = typeof ip === 'string' ? ip : Array.isArray(ip) ? ip[0] : '';
+      (req.session as any).sessionUserAgent = userAgent;
+    }
   } 
   // 如果一致，记录一致性
   else if (topClientSessionId && req.sessionID && topClientSessionId.id === req.sessionID) {
