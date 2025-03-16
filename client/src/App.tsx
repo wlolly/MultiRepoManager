@@ -204,7 +204,8 @@ function Sidebar() {
         ) : (
           // 根据权限渲染菜单项
           navItems.map((item) => {
-            const pageName = pagePermissionMap[item.href];
+            // 安全获取页面名称，如果不存在则返回undefined
+            const pageName = pagePermissionMap[item.href as keyof typeof pagePermissionMap];
             const needsAuth = requiresAuth(item.href);
             
             // 三种情况下显示菜单项：
