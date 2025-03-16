@@ -113,8 +113,8 @@ export function TeamDashboard() {
         <div className="bg-white shadow rounded-lg p-6">
           <h2 className="text-xl font-bold mb-4">{t("team_dashboard_no_access_title")}</h2>
           <p className="mb-4">{t("team_dashboard_no_access_description")}</p>
-          <Link href="/settings">
-            <a className="text-blue-500 hover:underline">{t("go_to_settings")}</a>
+          <Link href="/settings" className="text-blue-500 hover:underline">
+            {t("go_to_settings")}
           </Link>
         </div>
       </div>
@@ -255,10 +255,8 @@ export function TeamDashboard() {
                 </div>
                 <p className="text-sm text-gray-500 mb-2">{warehouse.location}</p>
                 <div className="mt-auto">
-                  <Link href={`/warehouses/${warehouse.id}`}>
-                    <a className="text-sm text-blue-500 hover:underline">
-                      {t("view_warehouse")}
-                    </a>
+                  <Link href={`/warehouses/${warehouse.id}`} className="text-sm text-blue-500 hover:underline">
+                    {t("view_warehouse")}
                   </Link>
                 </div>
               </div>
