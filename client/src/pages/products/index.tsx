@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useTranslation } from "react-i18next";
@@ -97,6 +97,22 @@ export default function ProductsPage() {
   
   // 使用权限钩子判断用户是否已登录以及是否有管理权限
   const { isAuthenticated } = usePermissions();
+  
+  // 检查当前用户状态
+  const [isRealAuthenticated, setIsRealAuthenticated] = useState(false);
+  
+  // 在组件挂载时检查用户是否为真实登录用户
+  useEffect(() => {
+    const currentUserStr = localStorage.getItem('currentUser');
+    const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
+    
+    // 检查是否是假阳性登录用户
+    if (currentUser && !currentUser.fakePositive && currentUser.id !== -1) {
+      setIsRealAuthenticated(true);
+    } else {
+      setIsRealAuthenticated(false);
+    }
+  }, [isAuthenticated]);
   
   // 商品查询
   const { 
@@ -198,8 +214,8 @@ export default function ProductsPage() {
           <h1 className="text-2xl font-bold text-gray-900">{t('products')}</h1>
           <p className="mt-1 text-gray-500 text-sm">{t('products_page_description')}</p>
         </div>
-        {/* 仅对已登录用户显示操作按钮 */}
-        {isAuthenticated && (
+        {/* 仅对真实登录用户（非访客）显示操作按钮 */}
+        {isRealAuthenticated && (
           <div className="flex items-center space-x-3">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
