@@ -20,8 +20,21 @@ export default function Dashboard() {
     console.log("Dashboard组件 - 当前用户:", user);
     console.log("Dashboard组件 - 真实认证状态:", realAuthenticated);
     
-    // 判断是否为真实登录用户
-    const isRealUser = realAuthenticated && user && user.id !== -1 && user.role === 'admin';
+    if (loading) {
+      console.log("Dashboard组件 - 加载中，暂不切换仪表盘类型");
+      return; // 在加载状态下不更改仪表盘类型
+    }
+    
+    // 判断是否为真实登录用户 - 必须满足所有条件：
+    // 1. 真实认证状态为true
+    // 2. 用户对象存在
+    // 3. 用户ID不为-1（不是游客）
+    // 4. 用户角色为admin
+    const isRealUser = realAuthenticated === true && 
+                       user !== null && 
+                       user !== undefined && 
+                       user.id !== -1 && 
+                       user.role === 'admin';
     
     if (isRealUser) {
       console.log("Dashboard组件 - 决定显示团队仪表盘");

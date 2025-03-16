@@ -49,7 +49,15 @@ export function TeamDashboard() {
     
     // 在用户加载完成且认证状态为真实登录时，尝试获取数据
     if (!loading) {
-      setShouldTryFetchingData(realAuthenticated);
+      // 验证用户是真实认证用户并且具有admin角色
+      const isRealAdmin = realAuthenticated && user && user.id !== -1 && user.role === 'admin';
+      console.log("TeamDashboard - 是真实管理员:", isRealAdmin);
+      setShouldTryFetchingData(isRealAdmin);
+      
+      // 如果不是真实管理员但试图访问团队仪表盘，记录警告
+      if (!isRealAdmin) {
+        console.warn("TeamDashboard - 用户没有访问权限，应显示公共仪表盘");
+      }
     }
   }, [realAuthenticated, user, loading]);
   
@@ -87,9 +95,9 @@ export function TeamDashboard() {
   // 数据获取逻辑已经修改，我们直接尝试获取数据
   // 不再需要这部分条件判断
   
-  // 处理API访问被拒绝的情况（403错误）
-  if (statsError) {
-    console.error("TeamDashboard - API错误:", statsError);
+  // 用户权限验证失败或者非认证用户尝试访问时，显示错误并回退到公共仪表盘
+  if (!realAuthenticated || !shouldTryFetchingData || statsError) {
+    console.error("TeamDashboard - 访问错误:", statsError || "用户没有权限访问团队仪表盘");
     return (
       <div className="container mx-auto py-8">
         <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
