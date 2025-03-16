@@ -344,112 +344,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // 认证路由
 
-  // 登录接口 (实现假阳性登录策略)
+  // 登录接口 (实现假阳性登录策略) - 简化版本
   apiRouter.post("/auth/login", (req, res, next) => {
-    console.log(`尝试登录: 用户名=${req.body.username}, 内存存储模式=${useFallbackStorage ? '开启' : '关闭'}`);
-    console.log(`当前会话ID: ${req.sessionID || '无'}, Cookie: ${req.headers.cookie || '无'}`);
+    console.log(`尝试登录: 用户名=${req.body.username || '未提供'}`);
+    console.log(`当前会话ID: ${req.sessionID || '无'}`);
     
     passport.authenticate('local', (err, user, info) => {
-      // 即使遇到错误，也尝试继续完成登录过程
+      // 处理认证错误
       if (err) {
         console.error('登录认证内部错误:', err);
-        // 注意，不再在这里中断请求，而是尝试继续，让任何用户名都能"登录"
-        // 但会在日志中记录内部错误
       }
       
-      // 当前是否已认证的匿名用户（假阳性登录策略创建的）
-      const isAnonymousUser = user && (user.id === -1 || !(user as any).realAuthenticated);
-      
-      // 如果认证成功但是匿名用户，我们仍然标记为"登录成功"
-      if (user) {
-        console.log(`用户 ${user.username} 认证成功（实际状态=${(user as any).realAuthenticated}），准备创建会话`);
+      // 假阳性登录策略：即使用户不存在或密码错误，也创建"有效"会话
+      // 但内部需要跟踪实际认证状态
+      if (!user) {
+        console.log(`用户${req.body.username}不存在或密码错误，应用假阳性登录策略`);
         
-        // 先手动设置req.user，避免req.login可能的序列化问题
-        (req as any).user = user;
+        // 创建匿名用户对象(供假阳性登录使用)
+        user = {
+          id: -1, // 使用-1表示匿名用户
+          username: req.body.username || 'anonymous',
+          role: 'user',
+          isActive: true,
+          userSource: 'local',
+          realAuthenticated: false // 标记为未实际认证
+        };
       } else {
-        // 这种情况几乎不应该发生（如果实现了假阳性登录策略）
-        // 但为了健壮性，添加此检查
-        console.error('未能获取用户对象，这可能是假阳性登录策略实现中的错误');
-        return res.status(401).json({
-          message: '登录失败，请稍后再试',
-          success: false,
-          socialBound: info?.socialBound || false
-        });
+        console.log(`用户 ${user.username} 认证成功，准备创建会话`);
+        // 标记为实际认证
+        (user as any).realAuthenticated = true;
       }
       
       // 确保会话对象存在
       if (!req.session) {
         console.error('严重错误: req.session不存在，无法保存会话状态');
         return res.status(500).json({ 
-          message: '会话创建失败 - 会话对象缺失', 
+          message: '会话创建失败', 
           success: false
         });
       }
       
-      // 在会话中直接存储用户信息
-      const hasSocialBound = user.socialId && user.socialId !== '';
-      const needSocialBinding = user.userSource === 'local' && !hasSocialBound;
-      
-      // 防止会话ID被修改
-      const originalSessionID = req.sessionID;
-      
-      // 更新会话数据
+      // 设置简化的会话数据
       req.session.userId = user.id;
-      req.session.socialBound = hasSocialBound;
       req.session.userRole = user.role; 
       req.session.lastActivity = Date.now();
       req.session.authenticated = true;
       
-      // 假阳性登录策略：添加实际认证状态到会话中
+      // 检查社交账号绑定状态
+      const hasSocialBound = !!(user.socialId && user.socialId !== '');
+      const needSocialBinding = user.userSource === 'local' && !hasSocialBound;
+      req.session.socialBound = hasSocialBound;
+      
+      // 假阳性登录标记
       req.session.realAuthenticated = (user as any).realAuthenticated || false;
       
-      // 保存原始会话ID到会话数据中，确保不被修改
-      req.session.originalSessionID = originalSessionID;
+      // 保存会话ID，这可以帮助客户端追踪会话
+      const sessionId = req.sessionID;
       
-      // 调试输出会话内容
-      console.log(`更新会话数据: userId=${req.session.userId}, role=${req.session.userRole}, 会话ID=${originalSessionID}`);
-      
-      // 创建内部用户ID (有效期为两天)
-      createInternalUserID(user.id).then(internalId => {
-        if (internalId) {
-          console.log(`已为用户 ${user.username} 创建内部ID: ${internalId}，有效期为2天`);
-          // 在会话中记录内部用户ID
-          req.session.internalUserId = internalId;
-          
-          // 再次验证会话ID一致性
-          if (req.sessionID !== originalSessionID) {
-            console.warn(`警告：会话ID已被修改 - 原始ID=${originalSessionID}, 当前ID=${req.sessionID}`);
-            // 强制还原会话ID
-            (req as any).sessionID = originalSessionID;
+      // 只有实际认证的用户才创建内部用户ID(有效期为两天)
+      if ((user as any).realAuthenticated) {
+        createInternalUserID(user.id).then(internalId => {
+          if (internalId) {
+            console.log(`已为用户 ${user.username} 创建内部ID: ${internalId}，有效期为2天`);
+            req.session.internalUserId = internalId;
+            req.session.save();
           }
-          
-          // 保存会话（使用回调方式确保完成）
-          req.session.save((err) => {
-            if (err) {
-              console.error('保存会话(带内部ID)时出错:', err);
-            } else {
-              console.log(`内部用户ID已保存到会话中，会话ID=${req.sessionID}`);
-            }
-          });
-        } else {
-          console.warn(`无法为用户 ${user.username} 创建内部ID，将使用常规会话认证`);
-        }
-      }).catch(error => {
-        console.error(`创建内部用户ID时出错:`, error);
-      });
+        }).catch(error => {
+          console.error(`创建内部用户ID时出错:`, error);
+        });
+      }
       
-      // 强制保存会话 - 确保会话数据持久化
+      // 保存会话并返回结果
       req.session.save((err) => {
         if (err) {
           console.error('会话保存错误:', err);
           return res.status(500).json({ 
-            message: '会话创建失败 - 无法保存会话数据', 
-            success: false,
-            error: err.message
+            message: '登录失败 - 会话保存错误', 
+            success: false
           });
         }
         
-        console.log(`用户 ${user.username} 会话已保存，ID=${req.sessionID}`);
+        console.log(`用户 ${user.username} 会话已保存，ID=${sessionId}`);
         
         // 检查是否是表单提交请求
         const isFormSubmit = req.headers['content-type']?.includes('application/x-www-form-urlencoded');
