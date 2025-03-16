@@ -45,7 +45,12 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     setIsLoading(true);
     
     // 显示登录中提示
-    toast.success("登录成功，正在跳转...");
+    toast.success("登录中，请稍候...");
+    
+    // 额外调试信息，特别是测试用户登录
+    if (values.username === '222') {
+      console.log('测试用户登录尝试：', values.username);
+    }
     
     // 使用fetch进行API请求，确保能正确处理cookie和会话
     fetch('/api/auth/login', {
@@ -56,9 +61,26 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       body: JSON.stringify(values),
       credentials: 'include' // 确保包含cookie
     })
-    .then(response => response.json())
+    .then(response => {
+      // 检查响应状态和头信息，帮助调试
+      console.log(`登录响应状态: ${response.status} ${response.statusText}`);
+      console.log('响应头:', {
+        'x-session-authenticated': response.headers.get('x-session-authenticated'),
+        'x-original-session-id': response.headers.get('x-original-session-id'),
+      });
+      return response.json();
+    })
     .then(data => {
-      console.log('登录响应:', data);
+      console.log('登录响应数据:', data);
+      
+      // 更明确地检查测试用户登录结果
+      if (values.username === '222') {
+        console.log('测试用户登录结果：', {
+          success: data.success,
+          realAuthenticated: data.realAuthenticated,
+          userInfo: data.user
+        });
+      }
       
       // 保存用户数据和会话ID（如果有）
       if (data.user) {
@@ -73,6 +95,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           };
           sessionStorage.setItem('currentUser', JSON.stringify(authUser));
           localStorage.setItem('currentUser', JSON.stringify(authUser));
+          toast.success("登录成功，正在跳转...");
         } else if (data.fallbackMode || data.authenticated === false) {
           // 假阳性登录或访客用户
           const guestUser = {
@@ -88,10 +111,16 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           console.log('创建假阳性登录用户:', guestUser);
           sessionStorage.setItem('currentUser', JSON.stringify(guestUser));
           localStorage.setItem('currentUser', JSON.stringify(guestUser));
+          toast.warning("以受限模式登录，部分功能可能不可用");
         } else {
           // 常规用户（确保包含realAuthenticated标志）
-          sessionStorage.setItem('currentUser', JSON.stringify(data.user));
-          localStorage.setItem('currentUser', JSON.stringify(data.user));
+          const normalUser = {
+            ...data.user,
+            realAuthenticated: data.realAuthenticated || false
+          };
+          sessionStorage.setItem('currentUser', JSON.stringify(normalUser));
+          localStorage.setItem('currentUser', JSON.stringify(normalUser));
+          toast.success("登录成功，正在跳转...");
         }
       }
       
