@@ -186,6 +186,25 @@ app.use(session({
       return req.sessionID;
     }
     
+    // 尝试从SessionStorage获取会话ID (存储在内存中，避免频繁生成)
+    // 通过这种方式为每个"已知"的请求重用会话ID
+    const sessionStorageKey = `req-session-${req.path}`;
+    const prevSessionId = global.sessionStorage?.[sessionStorageKey];
+    
+    if (prevSessionId && prevSessionId.length >= 10) {
+      if (isImportantRequest) {
+        console.log(`为路径 ${req.path} 重用之前的会话ID: ${prevSessionId}`);
+      }
+      
+      // 同步到响应头
+      if (req.res) {
+        req.res.setHeader('X-Session-ID', prevSessionId);
+        req.res.setHeader('X-Original-Session-ID', prevSessionId);
+      }
+      
+      return prevSessionId;
+    }
+    
     // 最后才生成新的会话ID（通常应该不会走到这一步）
     const newSessionId = crypto.randomBytes(16).toString('hex');
     
@@ -193,6 +212,12 @@ app.use(session({
     if (isImportantRequest) {
       console.log(`为路径 ${req.path} 创建新会话ID: ${newSessionId}，未找到任何有效会话ID`);
     }
+    
+    // 将新的会话ID存储在SessionStorage中，避免频繁生成
+    if (!global.sessionStorage) {
+      global.sessionStorage = {};
+    }
+    global.sessionStorage[sessionStorageKey] = newSessionId;
     
     // 同步到响应头
     if (req.res) {
