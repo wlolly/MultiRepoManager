@@ -11,29 +11,41 @@ export const supportedLanguages = [
   { code: 'uz', name: 'O\'zbek' }
 ];
 
-// 定义翻译文件的类型
-type TranslationsType = Record<string, Record<string, string>>;
-
-// 从translations.json生成各语言的资源对象 - 不再使用common.json文件
-const resources: Record<string, { translation: Record<string, string> }> = {};
-
 // 支持的语言代码
 const languageCodes = ['zh', 'en', 'ru', 'kk', 'uz'];
 
-// 为每种语言生成翻译资源
+// 创建各语言的翻译资源
+const resources: Record<string, { translation: Record<string, string> }> = {};
+
+// 初始化各语言的资源对象
 languageCodes.forEach(langCode => {
-  resources[langCode] = {
-    translation: {}
-  };
-  
-  // 遍历所有翻译键，为每种语言提取对应的翻译
-  Object.keys(translations).forEach(key => {
-    const translationObj = translations as TranslationsType;
-    if (translationObj[key] && translationObj[key][langCode]) {
-      resources[langCode].translation[key] = translationObj[key][langCode];
+  resources[langCode] = { translation: {} };
+});
+
+// 处理翻译对象
+function processTranslations() {
+  // 遍历所有翻译键
+  Object.entries(translations).forEach(([key, value]) => {
+    // 确保value是一个对象
+    if (value && typeof value === 'object') {
+      // 为每种语言提取对应的翻译值
+      languageCodes.forEach(langCode => {
+        // 检查该语言的翻译是否存在
+        if (langCode in value && typeof value[langCode] === 'string') {
+          resources[langCode].translation[key] = value[langCode];
+        }
+      });
     }
   });
-});
+}
+
+// 执行翻译处理
+try {
+  processTranslations();
+  console.log('翻译资源处理完成，可用语言：', Object.keys(resources));
+} catch (error) {
+  console.error('处理翻译资源时出错：', error);
+}
 
 // 初始化i18next
 i18n
