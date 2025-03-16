@@ -18,16 +18,16 @@ const publicPages = ['dashboard'];
 
 const navItems: NavItem[] = [
   { icon: "ri-dashboard-line", keyName: "dashboard", href: "/", public: true },
-  { icon: "ri-building-2-line", keyName: "warehouses", href: "/warehouses", public: false },
+  { icon: "ri-building-2-line", keyName: "warehouses", href: "/warehouses", public: true },
   { icon: "ri-shopping-bag-line", keyName: "my_products", href: "/products", public: false },
   { icon: "ri-store-line", keyName: "warehouse_products", href: "/warehouse-products", public: false },
   // 订单管理相关导航
   { icon: "ri-arrow-down-circle-line", keyName: "inbound_orders", href: "/inbound-orders", public: false },
   { icon: "ri-arrow-up-circle-line", keyName: "outbound_orders", href: "/outbound-orders", public: false },
-  { icon: "ri-exchange-fill", keyName: "warehouse_transfers", href: "/warehouse-transfers", public: false },
+  { icon: "ri-exchange-fill", keyName: "warehouse_transfers", href: "/warehouse-transfers", public: true },
   { icon: "ri-cloud-line", keyName: "api_configurations", href: "/api-configurations", public: false },
   { icon: "ri-group-line", keyName: "users_teams", href: "/users", public: false },
-  { icon: "ri-settings-line", keyName: "settings", href: "/settings", public: false },
+  { icon: "ri-settings-line", keyName: "settings", href: "/settings", public: true },
 ];
 
 export function Sidebar() {

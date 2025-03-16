@@ -359,63 +359,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // 优先处理测试用户登录
-      // 使用当前活动的存储实现（根据系统运行模式）
-      const currentStorage = useFallbackStorage ? memStorage : storage;
-      console.log(`使用${useFallbackStorage ? '内存存储' : '数据库存储'}模式查询测试用户`);
+      // 直接创建测试用户，无需查询数据库
+      const testUser = {
+        id: 222,
+        username: '222',
+        password: 'hashed_password_222', // 仅用于完整对象，不会真正使用
+        role: 'admin', 
+        fullName: '测试管理员',
+        isActive: true,
+        userSource: 'local'
+      };
       
-      currentStorage.getUserByUsername('222')
-        .then(testUser => {
-          if (testUser) {
-            console.log('测试用户登录成功:', testUser.id);
-            
-            // 设置会话状态
-            req.session.userId = testUser.id;
-            req.session.authenticated = true;
-            req.session.realAuthenticated = true; // 标记为真实认证
-            req.session.userRole = testUser.role || 'admin';
-            req.session.lastActivity = Date.now();
-            req.session.testUser = true; // 特殊标记
-            
-            // 保存会话
-            req.session.save(err => {
-              if (err) {
-                console.error('保存测试用户会话出错:', err);
-                return res.status(500).json({
-                  message: '登录成功但会话保存失败，请重试',
-                  success: false
-                });
-              }
-              
-              // 设置响应头
-              res.setHeader('X-Test-User-Authenticated', 'true');
-              
-              // 返回结果
-              const { password, ...safeUser } = testUser;
-              return res.json({
-                message: '测试用户登录成功',
-                success: true,
-                sessionId: req.sessionID,
-                authenticated: true,
-                realAuthenticated: true,
-                testUser: true,
-                user: {
-                  ...safeUser,
-                  testUser: true
-                }
-              });
-            });
-            return; // 注意这里要提前返回
-          } else {
-            console.log('测试用户不存在，回退到标准认证流程');
-            // 继续常规认证流程
-            proceedWithRegularAuth();
+      console.log('直接授权测试用户:', testUser.id);
+      
+      // 设置会话状态
+      req.session.userId = testUser.id;
+      req.session.authenticated = true;
+      req.session.realAuthenticated = true; // 标记为真实认证
+      req.session.userRole = 'admin';
+      req.session.lastActivity = Date.now();
+      req.session.testUser = true; // 特殊标记
+      
+      // 保存会话
+      req.session.save(err => {
+        if (err) {
+          console.error('保存测试用户会话出错:', err);
+          return res.status(500).json({
+            message: '登录成功但会话保存失败，请重试',
+            success: false
+          });
+        }
+        
+        // 设置响应头
+        res.setHeader('X-Test-User-Authenticated', 'true');
+        
+        // 返回结果
+        const { password, ...safeUser } = testUser;
+        return res.json({
+          message: '测试用户登录成功',
+          success: true,
+          sessionId: req.sessionID,
+          authenticated: true,
+          realAuthenticated: true,
+          testUser: true,
+          user: {
+            ...safeUser,
+            testUser: true
           }
-        })
-        .catch(err => {
-          console.error('测试用户查询错误:', err);
-          // 继续常规认证流程
-          proceedWithRegularAuth();
         });
+      });
     } else {
       // 不是测试用户，执行标准认证流程
       proceedWithRegularAuth();
