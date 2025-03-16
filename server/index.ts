@@ -6,6 +6,7 @@ import session from "express-session";
 import { db } from "./db"; // 直接导入db，不使用createConnection
 import createMemoryStore from "memorystore";
 import crypto from "crypto";
+import { sessionSyncMiddleware } from './middleware/session-sync';
 
 const MemoryStore = createMemoryStore(session);
 const app = express();
@@ -126,32 +127,15 @@ app.use(session({
   })
 }));
 
-// 添加简化的会话同步中间件
-// 减少复杂性，专注于保持会话ID一致性
+// 使用专用的会话同步中间件替代简化版本
+// 提供更完整的跨域支持和会话管理功能
+app.use(sessionSyncMiddleware);
+
+// 保留会话活动监控和调试日志
 app.use((req, res, next) => {
   // 更新会话活动时间，如果会话存在
   if (req.session) {
     req.session.lastActivity = Date.now();
-  }
-  
-  // 确保会话cookie与会话ID一致
-  if (req.sessionID) {
-    // 设置统一的会话cookie，确保客户端和服务器使用相同的会话ID
-    res.cookie('warehouse.sid', req.sessionID, {
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30天
-      httpOnly: true,
-      path: '/'
-    });
-    
-    // 同时设置一个sessionId cookie，用于客户端JavaScript读取
-    res.cookie('sessionId', req.sessionID, {
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30天
-      httpOnly: false, // 允许客户端JavaScript访问
-      path: '/'
-    });
-    
-    // 在响应头中添加会话ID，用于客户端可能的同步逻辑
-    res.setHeader('X-Session-ID', req.sessionID);
   }
   
   // 记录请求路径和会话ID，便于调试
