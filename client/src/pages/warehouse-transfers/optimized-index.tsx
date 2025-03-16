@@ -270,6 +270,7 @@ export default function OptimizedWarehouseTransfers() {
       queryKey: ["/api/warehouse-transfers/stats"],
     });
     
+    // 使用useToast钩子返回的toast函数
     toast({
       title: t("common.refreshing"),
       description: t("warehouseTransfer.refreshing_data"),
