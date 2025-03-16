@@ -2905,6 +2905,20 @@
       "kk": "Үлгіні жүктеу",
       "uz": "Shablonni yuklash"
     },
+    "export_products": {
+      "zh": "导出产品",
+      "en": "Export Products",
+      "ru": "Экспорт товаров",
+      "kk": "Өнімдерді экспорттау",
+      "uz": "Mahsulotlarni eksport qilish"
+    },
+    "import_products": {
+      "zh": "导入产品",
+      "en": "Import Products",
+      "ru": "Импорт товаров",
+      "kk": "Өнімдерді импорттау",
+      "uz": "Mahsulotlarni import qilish"
+    },
     "download_template_tooltip": {
       "zh": "下载调拨单导入模板",
       "en": "Download transfer import template",
