@@ -3,7 +3,7 @@
  * 用于检查用户是否有权限访问特定资源
  */
 import { Request, Response, NextFunction } from 'express';
-import { eq, and, or, inArray, sql, MySqlRawQueryResult } from 'drizzle-orm';
+import { eq, and, or, inArray, sql } from 'drizzle-orm';
 import { db } from '../db';
 import { teamMembers, teamPagePermissions, teamWarehousePermissions, users, warehouses } from '../../shared/schema';
 import { validateInternalUserID } from '../database/userID';
@@ -14,7 +14,7 @@ import { validateInternalUserID } from '../database/userID';
  * @param result SQL查询结果
  * @returns 处理后的数组结果
  */
-function processQueryResult(result: MySqlRawQueryResult): any[] {
+function processQueryResult(result: any): any[] {
   // 适配不同版本的drizzle-orm返回结果
   if (Array.isArray(result)) {
     return result;
@@ -36,20 +36,20 @@ function processQueryResult(result: MySqlRawQueryResult): any[] {
 /**
  * 需要页面权限的中间件
  * 检查用户是否有权限访问特定页面
- * 支持假阳性登录策略和访客用户
+ * 支持访客用户访问公共页面
  * 支持内部用户ID验证
  * @param pageName 页面名称
  */
 export function requirePagePermission(pageName: string) {
   return async (req: Request, res: Response, next: NextFunction) => {
     // 记录会话信息用于调试
-    console.log(`[会话调试] 路径: ${req.path}, 会话信息:`, req.session);
+    console.log(`[权限中间件] 路径: ${req.path}, 检查页面权限:`, pageName);
     
     // 检查特定页面的公共访问权限 - 这些页面无需登录即可访问
     const publicPages = ['dashboard']; // 可以自定义哪些页面允许访客访问
     
     if (publicPages.includes(pageName)) {
-      console.log(`${pageName} 是公共页面，允许访客访问`);
+      console.log(`[权限中间件] ${pageName} 是公共页面，允许访客访问`);
       return next();
     }
     
@@ -61,7 +61,7 @@ export function requirePagePermission(pageName: string) {
       try {
         const userId = await validateInternalUserID(internalUserId);
         if (userId && userId > 0) {
-          console.log(`通过内部用户ID验证成功: ${userId}，授权访问${pageName}`);
+          console.log(`[权限中间件] 通过内部用户ID验证成功: ${userId}，授权访问${pageName}`);
           // 设置会话以便后续请求
           req.session.userId = userId;
           req.session.authenticated = true;
@@ -82,15 +82,21 @@ export function requirePagePermission(pageName: string) {
           return checkTeamPermissions(userId, pageName, req, res, next);
         }
       } catch (error) {
-        console.error('内部用户ID验证错误:', error);
+        console.error('[权限中间件] 内部用户ID验证错误:', error);
       }
     }
     
     // 判断是否已经登录
-    if (!req.session?.userId && !req.user) {
-      // 实现假阳性登录策略 - 返回401但是带上guest权限信息
+    const isAuthenticated = req.session && 
+                           req.session.userId && 
+                           req.session.authenticated === true;
+                          
+    if (!isAuthenticated && !req.user) {
+      console.log(`[权限中间件] 用户未登录，尝试访问非公开页面: ${pageName}`);
+      // 返回401并提供可访问的公共页面信息
       return res.status(401).json({ 
-        message: '未登录',
+        authenticated: false,
+        message: '用户未登录',
         guestAccess: true,
         allowedPages: publicPages
       });
@@ -98,7 +104,7 @@ export function requirePagePermission(pageName: string) {
     
     // 检查测试用户特殊标记 (session.testUser = true)
     if (req.session?.testUser === true) {
-      console.log('检测到测试用户会话，授予完全权限');
+      console.log('[权限中间件] 检测到测试用户会话，授予完全权限');
       return next();
     }
     
@@ -109,10 +115,10 @@ export function requirePagePermission(pageName: string) {
     if (userId === -1) {
       // 访客用户只能访问公共页面
       if (publicPages.includes(pageName)) {
-        console.log(`访客用户允许访问${pageName}页面`);
+        console.log(`[权限中间件] 访客用户允许访问${pageName}页面`);
         return next();
       } else {
-        console.log(`访客用户尝试访问受限页面: ${pageName}`);
+        console.log(`[权限中间件] 访客用户尝试访问受限页面: ${pageName}`);
         return res.status(403).json({ 
           message: `访客用户无权访问"${pageName}"页面`,
           guestAccess: true,
@@ -192,14 +198,14 @@ export function requirePagePermission(pageName: string) {
 /**
  * 需要仓库访问权限的中间件
  * 检查当前用户是否有权限访问指定仓库
- * 支持假阳性登录策略和访客用户
+ * 支持访客用户查看权限
  * 支持内部用户ID验证
  * @param checkManage 是否需要管理权限 (true: 需要管理权限, false: 只需要查看权限)
  */
 export function requireWarehousePermission(checkManage: boolean = false) {
   return async (req: Request, res: Response, next: NextFunction) => {
     // 记录会话信息用于调试
-    console.log(`[会话调试] 路径: ${req.path}, 会话信息:`, req.session);
+    console.log(`[权限中间件] 路径: ${req.path}, 检查仓库权限，管理权限:`, checkManage);
     
     // 尝试从请求头获取内部用户ID
     const internalUserId = req.headers['x-internal-user-id'] as string;
@@ -209,7 +215,7 @@ export function requireWarehousePermission(checkManage: boolean = false) {
       try {
         const userId = await validateInternalUserID(internalUserId);
         if (userId && userId > 0) {
-          console.log(`通过内部用户ID验证成功: ${userId}，授权访问仓库`);
+          console.log(`[权限中间件] 通过内部用户ID验证成功: ${userId}，授权访问仓库`);
           // 设置会话以便后续请求
           req.session.userId = userId;
           req.session.authenticated = true;
@@ -227,24 +233,31 @@ export function requireWarehousePermission(checkManage: boolean = false) {
           }
         }
       } catch (error) {
-        console.error('内部用户ID验证错误:', error);
+        console.error('[权限中间件] 内部用户ID验证错误:', error);
       }
     }
     
     // 检查测试用户特殊标记 (session.testUser = true)
     if (req.session?.testUser === true) {
-      console.log('检测到测试用户会话，授予完全仓库权限');
+      console.log('[权限中间件] 检测到测试用户会话，授予完全仓库权限');
       return next();
     }
     
+    // 判断是否已经登录
+    const isAuthenticated = req.session && 
+                           req.session.userId && 
+                           req.session.authenticated === true;
+                          
     // 尝试获取用户ID - 可能来自会话或req.user
     const userId = req.session?.userId || (req.user as any)?.id;
     
     // 判断是否已经登录
-    if (!userId) {
-      // 实现假阳性登录策略 - 返回401但是带上guest权限信息
+    if (!isAuthenticated && !userId) {
+      console.log(`[权限中间件] 用户未登录，尝试访问仓库操作`);
+      // 返回401并提供访客权限信息
       return res.status(401).json({ 
-        message: '未登录',
+        authenticated: false,
+        message: '用户未登录',
         guestAccess: true,
         allowedAction: 'view' // 访客用户只能查看
       });
@@ -391,7 +404,7 @@ export async function getUserPagePermissions(userId: number): Promise<{[key: str
   
   // 访客用户 (ID为-1)只能访问公共页面
   if (userId === -1) {
-    console.log('为访客用户返回基本权限');
+    console.log('[权限中间件] 为访客用户返回基本页面权限');
     return permissions; // 只返回公共页面权限
   }
   
@@ -399,7 +412,7 @@ export async function getUserPagePermissions(userId: number): Promise<{[key: str
     // 获取用户信息
     const userResult = await db.select().from(users).where(eq(users.id, userId));
     if (!userResult || userResult.length === 0) {
-      console.log(`用户ID ${userId} 不存在，返回访客权限`);
+      console.log(`[权限中间件] 用户ID ${userId} 不存在，返回访客页面权限`);
       return permissions; // 只返回公共页面权限
     }
     
@@ -407,6 +420,7 @@ export async function getUserPagePermissions(userId: number): Promise<{[key: str
     
     // 管理员和超级管理员有所有权限
     if (user.role === 'admin' || user.role === 'super_admin') {
+      console.log(`[权限中间件] 用户 ${userId} 是管理员，授予所有页面权限`);
       // 设置所有页面权限为true
       const allPagePermissions = ['dashboard', 'products', 'warehouses', 'warehouse-products', 
                                  'inbound-orders', 'outbound-orders', 'warehouse-transfers', 
@@ -463,9 +477,15 @@ async function checkTeamPermissions(userId: number, pageName: string, req: Reque
     if (!userTeams || userTeams.length === 0) {
       // 如果用户没有加入任何团队，但请求的是公共页面，仍然允许访问
       if (publicPages.includes(pageName)) {
+        console.log(`[权限中间件] 用户 ${userId} 未加入任何团队，但允许访问公共页面 ${pageName}`);
         return next();
       }
-      return res.status(403).json({ message: '没有访问权限：未加入任何团队' });
+      console.log(`[权限中间件] 用户 ${userId} 未加入任何团队，拒绝访问非公共页面 ${pageName}`);
+      return res.status(403).json({ 
+        authenticated: true,
+        message: '没有访问权限：未加入任何团队',
+        permissionDenied: true
+      });
     }
     
     // 检查用户团队是否有权限访问页面
@@ -482,23 +502,33 @@ async function checkTeamPermissions(userId: number, pageName: string, req: Reque
     const teamPermissionsRows = processQueryResult(teamPermissions);
     
     if (teamPermissionsRows.length > 0) {
+      console.log(`[权限中间件] 用户 ${userId} 的团队有权访问页面 ${pageName}`);
       return next();
     }
     
     // 最后一次检查是否为公共页面
     if (publicPages.includes(pageName)) {
+      console.log(`[权限中间件] 允许用户 ${userId} 访问公共页面 ${pageName}`);
       return next();
     }
     
-    return res.status(403).json({ message: `没有访问"${pageName}"页面的权限` });
+    console.log(`[权限中间件] 拒绝用户 ${userId} 访问页面 ${pageName}，没有团队权限`);
+    return res.status(403).json({ 
+      authenticated: true,
+      message: `没有访问"${pageName}"页面的权限`,
+      permissionDenied: true
+    });
   } catch (err) {
-    console.error('团队权限检查错误:', err);
+    console.error('[权限中间件] 团队权限检查错误:', err);
     // 错误情况下，仍然允许访问公共页面
     if (publicPages.includes(pageName)) {
-      console.log(`发生错误，但仍允许访问公共页面 ${pageName}`);
+      console.log(`[权限中间件] 发生错误，但仍允许访问公共页面 ${pageName}`);
       return next();
     }
-    return res.status(500).json({ message: '服务器错误：团队权限检查失败' });
+    return res.status(500).json({ 
+      message: '服务器错误：团队权限检查失败',
+      error: true
+    });
   }
 }
 
@@ -514,7 +544,7 @@ export async function getUserWarehousePermissions(userId: number): Promise<{[key
   try {
     // 访客用户 (ID为-1) 处理 - 返回所有仓库的只读权限
     if (userId === -1) {
-      console.log('为访客用户返回基本仓库权限');
+      console.log('[权限中间件] 为访客用户返回基本仓库权限');
       
       // 获取所有仓库并赋予只读权限
       const warehousesResult = await db.select().from(warehouses);
@@ -530,7 +560,7 @@ export async function getUserWarehousePermissions(userId: number): Promise<{[key
     // 获取用户信息
     const userResult = await db.select().from(users).where(eq(users.id, userId));
     if (!userResult || userResult.length === 0) {
-      console.log(`用户ID ${userId} 不存在，返回访客权限`);
+      console.log(`[权限中间件] 用户ID ${userId} 不存在，返回访客仓库权限`);
       
       // 用户不存在，也返回所有仓库的只读权限
       const warehousesResult = await db.select().from(warehouses);
@@ -548,13 +578,22 @@ export async function getUserWarehousePermissions(userId: number): Promise<{[key
     // 获取用户所在的团队
     const userTeams = await db.select().from(teamMembers).where(eq(teamMembers.userId, user.id));
     if (!userTeams || userTeams.length === 0) {
-      console.log(`用户 ${userId} 未加入任何团队，只有基本权限`);
+      console.log(`[权限中间件] 用户 ${userId} 未加入任何团队，只有基本仓库权限`);
       return permissions;
     }
     
     // 如果是管理员或超级管理员，获取所有仓库并设置完全权限
     if (user.role === 'admin' || user.role === 'super_admin') {
-      // 查询所有仓库并赋予完全权限
+      console.log(`[权限中间件] 用户 ${userId} 是管理员，授予所有仓库管理权限`);
+      
+      // 获取所有仓库并赋予完全权限
+      const warehousesResult = await db.select().from(warehouses);
+      if (warehousesResult && warehousesResult.length > 0) {
+        warehousesResult.forEach(warehouse => {
+          permissions[warehouse.id] = { canView: true, canManage: true };
+        });
+      }
+      
       return permissions;
     }
     
@@ -569,6 +608,22 @@ export async function getUserWarehousePermissions(userId: number): Promise<{[key
     
     const result = await db.execute(query);
     const resultRows = processQueryResult(result);
+    
+    // 如果没有任何团队仓库权限记录，获取所有仓库并给予只读权限
+    if (resultRows.length === 0) {
+      console.log(`[权限中间件] 用户 ${userId} 的团队没有明确的仓库权限，给予基本查看权限`);
+      
+      const warehousesResult = await db.select().from(warehouses);
+      if (warehousesResult && warehousesResult.length > 0) {
+        warehousesResult.forEach(warehouse => {
+          permissions[warehouse.id] = { canView: true, canManage: false };
+        });
+      }
+      
+      return permissions;
+    }
+    
+    console.log(`[权限中间件] 用户 ${userId} 有 ${resultRows.length} 条团队仓库权限记录`);
     
     // 设置权限
     resultRows.forEach((permission: any) => {
@@ -586,7 +641,16 @@ export async function getUserWarehousePermissions(userId: number): Promise<{[key
     
     return permissions;
   } catch (error) {
-    console.error('获取用户仓库权限失败:', error);
+    console.error('[权限中间件] 获取用户仓库权限失败:', error);
+    
+    // 错误情况下提供基本权限 - 安全降级策略
+    const warehousesResult = await db.select().from(warehouses).catch(() => []);
+    if (warehousesResult && warehousesResult.length > 0) {
+      warehousesResult.forEach(warehouse => {
+        permissions[warehouse.id] = { canView: true, canManage: false };
+      });
+    }
+    
     return permissions;
   }
 }
