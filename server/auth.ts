@@ -337,18 +337,23 @@ export async function loginUser(req: Request, res: Response) {
       });
     });
 
-    // 不再手动设置cookie，让会话同步中间件统一处理
-    // 避免登录函数与会话同步中间件重复设置cookie，导致多重登录问题
-    // 只设置必要的会话响应头，cookie将由会话同步中间件设置
-
-    // 7. 设置会话响应头，与会话同步中间件一致
+    // 在登录时，我们将会话ID和认证状态添加到响应头，但不手动设置cookie
+    // 让express-session和会话同步中间件统一管理cookie设置，减少多重cookie问题
+    
+    // 设置关键会话头，用于客户端会话管理
     res.setHeader('X-Session-ID', sessionId);
-    res.setHeader('X-New-Session-ID', sessionId);
     res.setHeader('X-Original-Session-ID', sessionId);
     res.setHeader('X-Session-Authenticated', 'true');
-    res.setHeader('X-Real-Authenticated', 'true');
     res.setHeader('X-User-ID', user.id.toString());
     res.setHeader('X-Session-Source', 'server_login');
+    
+    // 添加会话调试信息
+    res.setHeader('X-Session-Debug', JSON.stringify({
+      id: sessionId,
+      userId: user.id,
+      isAuthenticated: true,
+      loginTime: new Date().toISOString()
+    }));
 
     // 计算社交账号是否需要绑定
     const needSocialBinding = user.usersource === 'local' && !user.socialid;

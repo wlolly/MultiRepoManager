@@ -327,21 +327,15 @@ export function saveSessionId(sessionId: string) {
 
 // 从响应头中提取会话ID并保存
 export function processResponseHeaders(headers: Headers): string | null {
-  // 尝试从各种响应头中获取会话ID (注意：服务器可能使用不同的头名称)
-  // 首先检查X-New-Session-ID，这是服务器新创建的会话ID
-  const newSessionId = headers.get('X-New-Session-ID');
-  // 然后检查原始会话ID和备用头名称
-  const originalSessionId = headers.get('X-Original-Session-ID') || headers.get('X-Session-ID');
-  const clientSessionId = headers.get('X-Client-Session-ID');
-  // 服务器会通过X-Session-Authenticated表明会话是否已认证
-  const isAuthenticated = headers.get('X-Session-Authenticated') === 'true';
-  const userId = headers.get('X-User-ID');
-  const sessionRestored = headers.get('X-Session-Restored') === 'true';
-  const sessionSource = headers.get('X-Session-Source');
+  // 获取当前保存的会话ID
+  const currentId = getSessionId();
   
   // 记录请求来源以帮助调试
   const sourceUrl = headers.get('X-Source-URL') || headers.get('X-Request-Path') || '未知URL';
   const requestMethod = headers.get('X-Request-Method') || '未知方法';
+  
+  // 日志前缀，统一标记日志来源
+  const logPrefix = `[SessionManager] ${requestMethod} ${sourceUrl} |`;
   
   // 收集所有会话相关的头信息，用于调试
   const headerInfo: Record<string, string> = {};
@@ -358,132 +352,98 @@ export function processResponseHeaders(headers: Headers): string | null {
     console.log(`响应头中的会话相关信息(${sourceUrl}|${requestMethod}):`, headerInfo);
   }
 
-  // 获取当前保存的会话ID
-  const currentId = getSessionId();
-  
-  // 日志前缀，统一标记日志来源
-  const logPrefix = `[SessionManager] ${requestMethod} ${sourceUrl} |`;
-  
   // 检查是否已经登录
   const currentUserJson = sessionStorage.getItem('currentUser');
   const isCurrentlyAuthenticated = !!currentUserJson;
   
-  // 检查是否是关键的认证API
+  // 检查是否是认证相关API
   const isAuthApi = sourceUrl.includes('/api/auth/');
   const isCurrentUserApi = sourceUrl.includes('/api/auth/current-user');
   
-  // 决策逻辑优先级：
-  // 1. 对于新创建的会话ID (X-New-Session-ID)，我们应该采用它，因为这表明服务器选择创建新会话
-  if (newSessionId && newSessionId !== 'none' && newSessionId.length >= 10) {
-    // 但如果我们已经有认证的会话，我们需要考虑是否要替换它
-    // 只有在认证相关API中，才会替换已认证的会话
-    if (isCurrentlyAuthenticated && !isAuthApi && !isCurrentUserApi) {
-      console.log(`${logPrefix} 保留已认证的会话ID: ${currentId} (忽略服务器新会话: ${newSessionId})`);
-      return currentId;
+  // 首先从各种头中提取会话ID，按优先级排序
+  const newSessionId = headers.get('X-New-Session-ID');
+  const originalSessionId = headers.get('X-Original-Session-ID') || headers.get('X-Session-ID');
+  const clientSessionId = headers.get('X-Client-Session-ID');
+  
+  // 检查是否是认证会话
+  const isAuthenticated = headers.get('X-Session-Authenticated') === 'true';
+  const userId = headers.get('X-User-ID');
+  
+  // 简化后的会话ID逻辑，减少不必要的会话ID切换:
+  
+  // 1. 如果是已认证用户，优先保持当前会话ID的稳定性
+  if (isCurrentlyAuthenticated && currentId && currentId.length >= 10 && !isAuthApi) {
+    console.log(`${logPrefix} 用户已认证，保持会话稳定性，保留当前会话ID: ${currentId}`);
+    return currentId;
+  }
+  
+  // 2. 对于认证相关API，优先使用服务器返回的会话ID
+  if (isAuthApi || isCurrentUserApi) {
+    // 对于认证相关API，服务器新创建的会话ID优先级最高
+    if (newSessionId && newSessionId !== 'none' && newSessionId.length >= 10) {
+      console.log(`${logPrefix} 认证API - 使用服务器新创建的会话ID: ${newSessionId}`);
+      saveSessionId(newSessionId);
+      return newSessionId;
     }
     
+    // 其次是原始会话ID
+    if (originalSessionId && originalSessionId !== 'none' && originalSessionId.length >= 10) {
+      console.log(`${logPrefix} 认证API - 使用服务器原始会话ID: ${originalSessionId}`);
+      saveSessionId(originalSessionId);
+      return originalSessionId;
+    }
+  }
+  
+  // 3. 如果是新创建的会话ID，且长度合理，则使用它
+  if (newSessionId && newSessionId !== 'none' && newSessionId.length >= 10) {
     console.log(`${logPrefix} 使用服务器新创建的会话ID: ${newSessionId}`);
     saveSessionId(newSessionId);
     return newSessionId;
   }
   
-  // 2. 如果服务器恢复了会话，使用服务器提供的会话ID
-  if (sessionRestored && originalSessionId && originalSessionId !== 'none' && originalSessionId.length >= 10) {
-    console.log(`${logPrefix} 服务器恢复了会话，使用原始会话ID: ${originalSessionId}`);
-    saveSessionId(originalSessionId);
-    return originalSessionId;
-  }
-  
-  // 3. 如果这是一个已认证的会话，并且提供了用户ID
-  if (isAuthenticated && userId && originalSessionId && originalSessionId !== 'none' && originalSessionId.length >= 10) {
-    console.log(`${logPrefix} 使用已认证会话的会话ID: ${originalSessionId} (用户ID: ${userId})`);
-    saveSessionId(originalSessionId);
-    return originalSessionId;
-  }
-  
-  // 4. 对于普通会话ID，检查是否与当前会话一致
+  // 4. 如果是原始会话ID，且长度合理，则使用它
   if (originalSessionId && originalSessionId !== 'none' && originalSessionId.length >= 10) {
-    // 如果与当前ID一致，无需更新
+    // 如果与当前ID一致，无需更新（减少不必要的状态更新）
     if (currentId === originalSessionId) {
       console.log(`${logPrefix} 会话ID保持一致: ${originalSessionId}`);
       return currentId;
     }
     
-    // 特殊情况：Current-User API应该始终使用服务器返回的会话ID
-    if (isCurrentUserApi) {
-      console.log(`${logPrefix} 使用current-user API返回的会话ID: ${originalSessionId}`);
-      saveSessionId(originalSessionId);
-      return originalSessionId;
-    }
-    
-    // 如果是认证API，优先使用服务器会话
-    if (isAuthApi) {
-      console.log(`${logPrefix} 使用认证API返回的会话ID: ${originalSessionId}`);
-      saveSessionId(originalSessionId);
-      return originalSessionId;
-    }
-    
-    // 如果已登录且不是认证相关请求，保留现有会话ID
-    if (isCurrentlyAuthenticated && !isAuthApi && !isCurrentUserApi) {
-      console.log(`${logPrefix} 保留已认证的会话ID: ${currentId || 'none'} (忽略服务器会话: ${originalSessionId})`);
-      return currentId;
-    }
-    
-    // 其他情况使用服务器提供的会话ID
-    console.log(`${logPrefix} 使用服务器提供的会话ID: ${originalSessionId}`);
+    console.log(`${logPrefix} 使用服务器提供的原始会话ID: ${originalSessionId}`);
     saveSessionId(originalSessionId);
     return originalSessionId;
   }
   
   // 5. 尝试客户端会话ID确认
   if (clientSessionId && clientSessionId !== 'none' && clientSessionId.length >= 10) {
-    if (isCurrentlyAuthenticated && !isAuthApi && !isCurrentUserApi) {
-      console.log(`${logPrefix} 保留已认证的会话ID: ${currentId || 'none'} (忽略客户端会话: ${clientSessionId})`);
-      return currentId;
-    }
-    
     console.log(`${logPrefix} 使用客户端确认的会话ID: ${clientSessionId}`);
     saveSessionId(clientSessionId);
     return clientSessionId;
   }
   
-  // 6. 尝试从Set-Cookie响应头中提取会话ID
+  // 6. 如果都没有找到新会话ID，保留现有会话ID（增强会话稳定性）
+  if (currentId && currentId.length >= 10) {
+    console.log(`${logPrefix} 保留现有会话ID: ${currentId}`);
+    return currentId;
+  }
+  
+  // 7. 最后尝试从Set-Cookie响应头提取（较低优先级，减少从这里提取的频率）
   const setCookieHeader = headers.get('Set-Cookie');
   if (setCookieHeader) {
-    // 尝试提取会话cookie
     const sidMatch = setCookieHeader.match(/(?:express|connect|warehouse)\.sid=([^;]+)/);
     if (sidMatch && sidMatch[1]) {
       let sessionId = decodeURIComponent(sidMatch[1]);
-      // 如果包含.符号，说明是签名cookie，只需第一部分
       if (sessionId.includes('.')) {
         sessionId = sessionId.split('.')[0];
       }
-      // 去除s%3A前缀（express签名cookie的特征）
       if (sessionId.startsWith('s%3A')) {
         sessionId = sessionId.substring(4);
-      }
-      
-      // 如果已登录且不是认证相关请求，保留现有会话ID
-      if (isCurrentlyAuthenticated && !isAuthApi && !isCurrentUserApi) {
-        console.log(`${logPrefix} 保留已认证的会话ID: ${currentId || 'none'} (忽略cookie会话: ${sessionId})`);
-        return currentId;
       }
       
       console.log(`${logPrefix} 使用Set-Cookie中的会话ID: ${sessionId}`);
       saveSessionId(sessionId);
       return sessionId;
     }
-  }
-  
-  // 7. 如果都没有找到新会话ID，保留现有会话ID
-  if (currentId && currentId.length >= 10) {
-    console.log(`${logPrefix} 保留现有会话ID: ${currentId}`);
-    return currentId;
-  }
-  
-  // 对于登录相关API，记录警告信息
-  if (isAuthApi) {
-    console.warn(`${logPrefix} 警告: 认证相关请求没有返回有效的会话ID`);
   }
   
   console.log(`${logPrefix} 没有找到任何可用的会话ID`);
