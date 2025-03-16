@@ -62,22 +62,34 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       
       // 保存用户数据和会话ID（如果有）
       if (data.user) {
-        // 检查是否是假阳性登录用户
-        if (data.fallbackMode || data.authenticated === false) {
+        // 检查是否是真实认证用户或假阳性登录用户
+        if (data.realAuthenticated === true) {
+          console.log('用户真实认证成功:', data.user);
+          // 真实认证用户，确保添加realAuthenticated标记
+          const authUser = {
+            ...data.user,
+            realAuthenticated: true,
+            fakePositive: false
+          };
+          sessionStorage.setItem('currentUser', JSON.stringify(authUser));
+          localStorage.setItem('currentUser', JSON.stringify(authUser));
+        } else if (data.fallbackMode || data.authenticated === false) {
+          // 假阳性登录或访客用户
           const guestUser = {
-            id: data.user.id || -1,
-            username: data.user.username || values.username || '访客用户',
-            fullName: data.user.fullName || values.username || '访客用户',
+            id: data.user?.id || -1,
+            username: data.user?.username || values.username || '访客用户',
+            fullName: data.user?.fullName || values.username || '访客用户',
             role: 'anonymous',
             userSource: 'local',
             fakePositive: true,
+            realAuthenticated: false,
             accessLevel: 'limited'
           };
           console.log('创建假阳性登录用户:', guestUser);
           sessionStorage.setItem('currentUser', JSON.stringify(guestUser));
           localStorage.setItem('currentUser', JSON.stringify(guestUser));
         } else {
-          // 常规用户
+          // 常规用户（确保包含realAuthenticated标志）
           sessionStorage.setItem('currentUser', JSON.stringify(data.user));
           localStorage.setItem('currentUser', JSON.stringify(data.user));
         }
@@ -195,6 +207,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                       role: 'anonymous',
                       userSource: 'local',
                       fakePositive: true,
+                      realAuthenticated: false,
                       accessLevel: 'limited'
                     };
                     
