@@ -365,19 +365,27 @@ import { initializeUserIDTable } from './database/userID';
     console.error('[Error]', err.stack || err);
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
+  // 检查是否是仅 API 模式，或者是正常模式
+  const apiOnlyMode = process.env.API_ONLY_MODE === 'true';
+  
+  if (apiOnlyMode) {
+    // 在仅 API 模式下，不启动 Vite 前端开发服务器
+    log('运行在仅 API 模式，不启动前端开发服务器', 'server');
+  } 
+  // 在非 API 模式下，正常设置 Vite
+  else if (app.get("env") === "development") {
+    // 在开发环境下设置 Vite
+    log('运行在开发模式，启动前端开发服务器', 'server');
     await setupVite(app, server);
   } else {
+    // 在生产环境下提供静态文件
+    log('运行在生产模式，提供静态文件', 'server');
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = 5000;
+  // 从环境变量读取端口，如果未设置，则默认使用 5000
+  // 这样前端和后端开发服务器可以使用不同的端口
+  const port = process.env.PORT ? parseInt(process.env.PORT) : 5000;
   
   // 使用简化的监听方式，避免 ENOTSUP 错误
   try {
