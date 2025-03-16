@@ -77,27 +77,47 @@ export function TeamDashboard() {
     enabled: shouldTryFetchingData, // 同样，只有在应该获取数据时才启用查询
   });
   
+  // 记录API调用状态
+  useEffect(() => {
+    console.log("TeamDashboard - API调用状态:", {
+      isStatsLoading,
+      hasStatsError: !!statsError,
+      hasTeamStats: !!teamStats,
+      teamStatsKeys: teamStats ? Object.keys(teamStats) : [],
+      warehousePermissions: teamStats?.warehousePermissions ? 'exists' : 'missing'
+    });
+    
+    // 如果有错误，记录详细信息
+    if (statsError) {
+      console.error("TeamDashboard - 获取团队统计数据出错:", statsError);
+    }
+  }, [isStatsLoading, statsError, teamStats]);
+
   // Process accessible warehouses based on permissions
   const accessibleWarehouses: AccessibleWarehouse[] = React.useMemo(() => {
-    if (!teamStats?.warehousePermissions || !allWarehouses) return [];
+    if (!teamStats || !teamStats.warehousePermissions || !allWarehouses) {
+      console.log("TeamDashboard - 无法处理仓库权限，数据不完整");
+      return [];
+    }
     
-    return (Array.isArray(allWarehouses) ? allWarehouses : [])
-      .filter((warehouse: any) => {
-        if (!warehouse || typeof warehouse !== 'object' || !warehouse.id) return false;
-        const permission = teamStats.warehousePermissions[warehouse.id];
-        return permission && permission.canView;
-      })
-      .map((warehouse: any) => ({
-        ...warehouse,
-        isManageable: teamStats.warehousePermissions[warehouse.id]?.canManage || false
-      }));
+    try {
+      return (Array.isArray(allWarehouses) ? allWarehouses : [])
+        .filter((warehouse: any) => {
+          if (!warehouse || typeof warehouse !== 'object' || !warehouse.id) return false;
+          const permission = teamStats.warehousePermissions[warehouse.id];
+          return permission && permission.canView;
+        })
+        .map((warehouse: any) => ({
+          ...warehouse,
+          isManageable: teamStats.warehousePermissions[warehouse.id]?.canManage || false
+        }));
+    } catch (error) {
+      console.error("TeamDashboard - 处理仓库权限时出错:", error);
+      return [];
+    }
   }, [teamStats, allWarehouses]);
   
-  // 数据获取逻辑已经修改，我们直接尝试获取数据
-  // 不再需要这部分条件判断
-  
-  // 不要在这里执行权限验证，让Dashboard组件完成这个判断
-  // 只在有API错误时才显示错误信息
+  // 错误处理 - 如果API返回错误
   if (statsError) {
     console.error("TeamDashboard - API错误:", statsError);
     return (
