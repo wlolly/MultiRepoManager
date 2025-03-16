@@ -73,10 +73,18 @@ export const ProtectedRoute: FC<ProtectedRouteProps> = ({
           console.log(`${path}页面遇到访客用户，允许访问公开内容`);
           permissionResult = true;
         } else if (requireAuth && !publicContent) {
-          console.log(`${path}页面需要真实登录，访客用户不允许访问，重定向到仪表盘`);
-          errorMessage = "此页面需要登录后才能访问";
-          navigate('/');
-          permissionResult = false;
+          // 特别严格检查产品页面
+          if (path === '/products' || path.startsWith('/products/')) {
+            console.log(`产品页面${path}需要真实登录，访客用户不允许访问，重定向到仪表盘`);
+            errorMessage = "产品管理页面需要登录后才能访问";
+            navigate('/');
+            permissionResult = false;
+          } else {
+            console.log(`${path}页面需要真实登录，访客用户不允许访问，重定向到仪表盘`);
+            errorMessage = "此页面需要登录后才能访问";
+            navigate('/');
+            permissionResult = false;
+          }
         }
       } 
       // 然后检查未认证用户

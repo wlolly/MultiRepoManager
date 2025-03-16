@@ -170,12 +170,21 @@ export function Sidebar() {
         <div className="px-4 py-2 text-gray-400 text-sm font-medium">{t('navigation')}</div>
         {navItems
           // 过滤导航项：
-          // 1. 公共页面总是显示
-          // 2. 非公共页面只有真实用户才能访问
+          // 1. 公共页面总是显示给所有用户
+          // 2. 非公共页面(特别是产品页面)只有真实用户才能访问
           .filter(item => {
             // 公共页面总是显示
-            if (item.public) return true;
+            if (item.public) {
+              return true;
+            }
+            
             // 非公共页面只对真实用户显示
+            // 确保商品页面("/products")严格按照真实用户要求过滤
+            if (item.href === "/products" && !isRealUser) {
+              console.log("隐藏产品页面 - 用户不是真实用户");
+              return false;
+            }
+            
             return isRealUser;
           })
           .map((item) => (

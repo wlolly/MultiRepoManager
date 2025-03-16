@@ -159,11 +159,14 @@ export function usePermissions(): PermissionsHook {
     // 尝试获取当前会话信息，检查认证状态
     fetchPermissions();
     
-    // 每30秒自动刷新权限，确保权限状态保持最新
+    // 每15秒自动刷新权限，确保权限状态保持最新
     const intervalId = setInterval(() => {
       console.log('执行权限自动刷新...');
+      // 清除权限缓存，确保重新从服务器获取
+      localStorage.removeItem('pagePermissionsCache');
+      localStorage.removeItem('warehousePermissionsCache');
       fetchPermissions();
-    }, 30000);
+    }, 15000);
     
     // 清理定时器
     return () => clearInterval(intervalId);
