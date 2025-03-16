@@ -316,7 +316,7 @@ export class MemStorage implements IStorage {
   private activitiesMap: Map<number, Activity>;
   
   // 翻译相关存储
-  private translationsMap: Map<number, Translation>;
+  private translationsMap: Map<number, Translation> = new Map<number, Translation>();
   
   // 仓库管理系统相关存储
   private productsMap: Map<number, Product>;
@@ -3728,29 +3728,82 @@ export class DatabaseStorage implements IStorage {
   }
   // 翻译相关方法
   async getTranslations(): Promise<Translation[]> {
-    return Array.from(this.translationsMap.values());
+    if (this instanceof MemStorage) {
+      return Array.from(this.translationsMap.values());
+    } else {
+      // DatabaseStorage
+      const { db } = await import('./db');
+      const result = await db.select().from(translations);
+      return result.map(t => ({
+        ...t,
+        createdAt: t.createdAt || new Date(),
+        updatedAt: t.updatedAt || new Date()
+      }));
+    }
   }
 
   async getTranslationByKeyAndLanguage(key: string, language: string): Promise<Translation | undefined> {
-    return Array.from(this.translationsMap.values()).find(
-      t => t.key === key && t.language === language
-    );
+    if (this instanceof MemStorage) {
+      return Array.from(this.translationsMap.values()).find(
+        t => t.key === key && t.language === language
+      );
+    } else {
+      // DatabaseStorage
+      const { db } = await import('./db');
+      const { and, eq } = await import('drizzle-orm');
+      
+      const result = await db.select().from(translations)
+        .where(and(
+          eq(translations.key, key),
+          eq(translations.language, language)
+        ));
+      
+      if (result.length > 0) {
+        return {
+          ...result[0],
+          createdAt: result[0].createdAt || new Date(),
+          updatedAt: result[0].updatedAt || new Date()
+        };
+      }
+      
+      return undefined;
+    }
   }
 
   async createTranslation(translation: InsertTranslation): Promise<Translation> {
-    const id = this.translationsMap.size + 1;
-    const createdAt = new Date();
-    const updatedAt = new Date();
-    
-    const newTranslation: Translation = { 
-      ...translation, 
-      id, 
-      createdAt,
-      updatedAt
-    };
-    
-    this.translationsMap.set(id, newTranslation);
-    return newTranslation;
+    if (this instanceof MemStorage) {
+      const id = this.translationsMap.size + 1;
+      const createdAt = new Date();
+      const updatedAt = new Date();
+      
+      const newTranslation: Translation = { 
+        ...translation, 
+        id, 
+        createdAt,
+        updatedAt
+      };
+      
+      this.translationsMap.set(id, newTranslation);
+      return newTranslation;
+    } else {
+      // DatabaseStorage
+      const { db } = await import('./db');
+      
+      const createdAt = new Date();
+      const updatedAt = new Date();
+      
+      const [result] = await db.insert(translations).values({
+        ...translation,
+        createdAt,
+        updatedAt
+      }).returning();
+      
+      return {
+        ...result,
+        createdAt: result.createdAt || createdAt,
+        updatedAt: result.updatedAt || updatedAt
+      };
+    }
   }
 
   async createTranslationsBatch(translations: InsertTranslation[]): Promise<Translation[]> {
