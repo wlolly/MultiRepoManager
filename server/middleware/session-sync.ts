@@ -144,9 +144,10 @@ export const sessionSyncMiddleware = (req: Request, res: Response, next: NextFun
         req.sessionID = topClientSessionId.id; // 替换为客户端ID
         
         // 添加会话状态标记，帮助调试
-        req.session.clientOrigin = true;
-        req.session.sessionSource = topClientSessionId.source;
-        req.session.lastSync = new Date().toISOString();
+        // 使用索引访问器方式添加自定义属性，避免类型错误
+        (req.session as any).clientOrigin = true;
+        (req.session as any).sessionSource = topClientSessionId.source;
+        (req.session as any).lastSync = new Date().toISOString();
         
         // 强制会话保存，确保更改被持久化
         req.session.save((err) => {
