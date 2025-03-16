@@ -43,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [pagePermissions, setPagePermissions] = useState<Record<string, boolean>>({});
   const [warehousePermissions, setWarehousePermissions] = useState<Record<number, { canView: boolean; canManage: boolean }>>({});
   const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
+  const { addToast } = useToast();
 
   // 计算派生状态
   const isAuthenticated = !!user?.authenticated;
@@ -94,10 +94,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error('AuthContext - 获取用户或权限数据失败:', error);
-      toast({
+      addToast({
         title: '权限数据加载失败',
         description: '无法获取用户权限信息，部分功能可能不可用',
-        variant: 'destructive'
+        type: 'error'
       });
     } finally {
       setIsLoading(false);
@@ -135,16 +135,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       setUser(null);
       localStorage.removeItem('currentUser');
-      toast({
+      addToast({
         title: '已退出登录',
-        description: '您已成功退出系统'
+        description: '您已成功退出系统',
+        type: 'success'
       });
     } catch (error) {
       console.error('退出登录失败:', error);
-      toast({
+      addToast({
         title: '退出失败',
         description: '退出登录操作失败，请重试',
-        variant: 'destructive'
+        type: 'error'
       });
     }
   };
