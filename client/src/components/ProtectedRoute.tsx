@@ -13,7 +13,7 @@ interface ProtectedRouteProps {
   requireAuth?: boolean;  // 是否强制要求认证，默认为true
   publicContent?: boolean; // 是否显示非登录用户的公开内容，默认为false
   children?: ReactNode;
-  exact?: boolean;
+  // wouter不支持exact属性，移除
 }
 
 /**
@@ -30,7 +30,7 @@ export const ProtectedRoute: FC<ProtectedRouteProps> = ({
   requireAuth = true,  // 默认要求认证
   publicContent = false, // 默认不显示公开内容
   children,
-  exact,
+  // wouter不支持exact属性，已移除
   ...rest
 }) => {
   console.log(`ProtectedRoute [${path}] 检查权限, requireAuth=${requireAuth}, publicContent=${publicContent}`);

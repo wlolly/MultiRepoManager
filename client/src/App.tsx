@@ -479,7 +479,7 @@ export default function App() {
               <Route path="/test-toast" component={TestToast} />
               
               {/* 主页与通用页面 */}
-              <ProtectedRoute exact path="/" component={Dashboard} pageName="dashboard" requireAuth={false} publicContent={true} />
+              <ProtectedRoute path="/" component={Dashboard} pageName="dashboard" requireAuth={false} publicContent={true} />
               <Route path="/search" component={Search} />
               <ProtectedRoute path="/settings" component={Settings} pageName="settings" />
               <ProtectedRoute path="/users" component={Users} pageName="users_teams" />
