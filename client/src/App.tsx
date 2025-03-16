@@ -11,7 +11,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useQuery } from "@tanstack/react-query";
 import TestToast from "./pages/test-toast";
 import { usePermissions } from "./hooks/use-permissions";
-import { useAuthStatus } from "./hooks/use-auth-status";
+import { useAuth } from "@/contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./contexts/AuthContext";
 
@@ -76,7 +76,7 @@ function Sidebar() {
   const [pathname] = useLocation();
   const { t } = useTranslation();
   const { hasPagePermission, isLoading: isLoadingPermissions } = usePermissions();
-  const { isAuthenticated, realAuthenticated, user } = useAuthStatus();
+  const { isAuthenticated, isRealUser, user } = useAuth();
 
   interface Activity {
     id: number;
@@ -220,7 +220,7 @@ function Sidebar() {
             // 1. 不需要认证的页面
             // 2. 需要认证的页面，且用户已真实认证
             // 3. 用户有该页面权限
-            if ((!needsAuth || realAuthenticated) && (!pageName || hasPagePermission(pageName))) {
+            if ((!needsAuth || isRealUser) && (!pageName || hasPagePermission(pageName))) {
               return (
                 <Link key={item.href} to={item.href} className={cn(
                   "flex items-center py-2 px-4 transition whitespace-nowrap overflow-hidden",
@@ -265,7 +265,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const { t } = useTranslation();
   const [_, navigate] = useLocation();
-  const { isAuthenticated, user, logout } = useAuthStatus();
+  const { isAuthenticated, user, logout } = useAuth();
   
   // 响应式布局处理
   const [isSmallScreen, setIsSmallScreen] = useState(false);

@@ -131,7 +131,7 @@ export default function ProductDetail() {
           </Badge>
         </div>
         {/* 仅对真实登录用户显示编辑和删除按钮 */}
-        {realAuthenticated ? (
+        {isRealUser ? (
           <div className="flex space-x-2">
             <Button variant="outline" onClick={() => setIsEditDialogOpen(true)}>
               <Edit className="mr-2 h-4 w-4" />
