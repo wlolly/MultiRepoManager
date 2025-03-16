@@ -14,7 +14,7 @@ import {
   CalendarDays
 } from "lucide-react";
 import axios from "axios";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,6 +49,7 @@ export function TransferDetailsView({
   onBack
 }: TransferDetailsViewProps) {
   const { t } = useTranslation();
+  const { toast } = useToast();
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [actionType, setActionType] = useState<"complete" | "cancel">("complete");
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
@@ -86,11 +87,19 @@ export function TransferDetailsView({
       if (actionType === "complete") {
         // 标记调拨单为已完成
         await axios.post(`/api/warehouse-transfers/${transferId}/execute`);
-        toast.success(t("warehouseTransfer.transfer_completed_success"));
+        toast({
+          title: t("common.success"),
+          description: t("warehouseTransfer.transfer_completed_success"),
+          variant: "success"
+        });
       } else {
         // 取消调拨单
         await axios.post(`/api/warehouse-transfers/${transferId}/cancel`);
-        toast.success(t("warehouseTransfer.transfer_cancelled_success"));
+        toast({
+          title: t("common.success"),
+          description: t("warehouseTransfer.transfer_cancelled_success"),
+          variant: "success"
+        });
       }
       
       // 刷新数据
@@ -105,11 +114,13 @@ export function TransferDetailsView({
     } catch (error) {
       console.error(`${actionType} error:`, error);
       
-      toast.error(
-        actionType === "complete" 
+      toast({
+        title: t("common.error"),
+        description: actionType === "complete" 
           ? t("warehouseTransfer.transfer_completed_error") 
-          : t("warehouseTransfer.transfer_cancelled_error")
-      );
+          : t("warehouseTransfer.transfer_cancelled_error"),
+        variant: "destructive"
+      });
     }
   };
   
