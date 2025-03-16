@@ -8,5 +8,8 @@ declare module 'express-session' {
     authenticated?: boolean;
     returnTo?: string;
     lastActivity?: number;
+    internalUserId?: string;
+    originalSessionID?: string;
+    realAuthenticated?: boolean;
   }
 }

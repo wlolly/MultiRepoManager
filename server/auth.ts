@@ -323,60 +323,39 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
     return next();
   }
   
-  // 2. 简化的请求记录，避免日志过多
-  if (process.env.NODE_ENV !== 'production' && !req.path.includes('/api/auth/current-user')) {
-    console.log(`请求: ${req.method} ${req.path}`);
+  // 记录会话信息（只记录认证相关请求）
+  if (req.path.includes('/api/auth')) {
+    console.log(`请求路径: ${req.path}, 会话ID: ${req.sessionID}, 已认证: ${!!req.session?.userId}`);
   }
   
-  // 3. 设置基本响应头，保持请求跟踪能力
-  res.setHeader('X-Request-Path', req.path);
-  res.setHeader('X-Request-Method', req.method);
+  // 设置会话ID相关响应头，确保客户端可以获取当前会话ID
+  res.setHeader('X-Session-ID', req.sessionID || '');
   
-  // 设置当前会话ID，使客户端能够同步会话标识
-  res.setHeader('X-Original-Session-ID', req.sessionID || 'none');
-  res.setHeader('X-Session-ID', req.sessionID || 'none');
-  
-  // 为客户端设置标准cookie，确保cookie持久化
+  // 设置会话cookie，确保会话ID在客户端保持一致
   if (req.sessionID) {
-    res.cookie('sessionId', req.sessionID, {
-      httpOnly: true,
-      path: '/',
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30天
-      sameSite: 'lax'
-    });
-    
-    // 同时设置express-session标准名称cookie，确保会话ID同步
-    res.cookie('connect.sid', req.sessionID, {
-      httpOnly: true,
-      path: '/',
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30天
-      sameSite: 'lax'
-    });
-    
-    // 设置warehouse.sid，与会话配置中使用的名称保持一致
+    // 主会话cookie (express-session使用)
     res.cookie('warehouse.sid', req.sessionID, {
       httpOnly: true,
       path: '/',
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30天
       sameSite: 'lax'
     });
+    
+    // 客户端可读会话cookie (供前端JavaScript使用)
+    res.cookie('sessionId', req.sessionID, {
+      httpOnly: false,
+      path: '/',
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30天
+      sameSite: 'lax'
+    });
   }
   
-  // 设置用户状态检查头，帮助客户端同步用户状态
-  res.setHeader('X-Auth-Status', req.session?.authenticated ? 'authenticated' : 'unauthenticated');
-  res.setHeader('X-User-ID', req.session?.userId || 'none');
-  
-  // 记录会话信息（简化版）
-  if (req.path.includes('/api/auth')) {
-    console.log(`请求路径: ${req.path}, 会话ID: ${req.sessionID}, 已认证: ${!!req.session?.authenticated}`);
-  }
-  
-  // 4. 如果会话已经包含有效的用户ID，可以直接继续
+  // 如果会话中已有用户ID，表示已认证，继续请求
   if (req.session?.userId) {
-    // 会话中含有用户ID，更新最后活动时间
+    // 更新会话活动时间
     req.session.lastActivity = Date.now();
     
-    // 确保认证状态正确
+    // 确保认证状态正确设置
     if (!req.session.authenticated) {
       req.session.authenticated = true;
     }
@@ -385,90 +364,46 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
     return;
   }
   
-  // 5. 尝试从请求头中检查客户端会话ID
-  const clientSessionId = req.headers['x-session-id'] || req.headers['x-client-session-id'];
-  
-  if (clientSessionId && typeof clientSessionId === 'string' && clientSessionId !== req.sessionID) {
-    console.log(`在中间件中发现客户端会话ID: ${clientSessionId}，当前会话ID: ${req.sessionID}`);
+  // 尝试从内部用户ID验证
+  const internalId = req.headers['x-internal-user-id'];
     
-    // 尝试从会话存储中获取这个会话
-    if (req.sessionStore) {
-      try {
-        (req.sessionStore as any).get(clientSessionId, (err: Error, clientSession: any) => {
-          if (err) {
-            console.error('获取客户端会话出错:', err);
-            checkInternalUserID();
-            return;
-          }
+  if (internalId && typeof internalId === 'string') {
+    // 尝试验证内部用户ID
+    validateInternalUserID(internalId)
+      .then(userId => {
+        if (userId) {
+          console.log(`使用内部用户ID验证成功: ${userId}`);
           
-          if (clientSession && clientSession.userId) {
-            console.log(`找到有效的客户端会话: 用户ID=${clientSession.userId}`);
-            
-            // 使用客户端会话
-            (req as any).session = clientSession;
-            (req as any).sessionID = clientSessionId;
-            
-            // 更新会话并继续
-            req.session.lastActivity = Date.now();
-            req.session.save(err => {
-              if (err) console.error('保存恢复的会话出错:', err);
-              next();
-            });
-            return;
-          } else {
-            console.log(`未找到客户端会话 ${clientSessionId} 或会话不包含用户信息`);
-            checkInternalUserID();
-          }
-        });
-        return;
-      } catch (error) {
-        console.error('处理客户端会话时出错:', error);
-      }
-    }
-  }
-  
-  // 6. 尝试从内部用户ID验证
-  checkInternalUserID();
-  
-  // 检查内部用户ID
-  function checkInternalUserID() {
-    const internalId = req.headers['x-internal-user-id'];
-    
-    if (internalId && typeof internalId === 'string') {
-      // 尝试验证内部用户ID
-      validateInternalUserID(internalId)
-        .then(userId => {
-          if (userId) {
-            console.log(`使用内部用户ID验证成功: ${userId}`);
-            
-            // 设置会话
-            req.session.userId = userId;
-            req.session.authenticated = true;
-            req.session.lastActivity = Date.now();
-            
-            // 保存会话并继续
-            req.session.save(err => {
-              if (err) console.error('保存通过内部ID验证的会话出错:', err);
-              next();
-            });
-          } else {
-            console.log(`内部用户ID验证失败: ${internalId}`);
-            continueUnauthenticated();
-          }
-        })
-        .catch(err => {
-          console.error('内部用户ID验证出错:', err);
+          // 设置会话
+          req.session.userId = userId;
+          req.session.authenticated = true;
+          req.session.lastActivity = Date.now();
+          
+          // 保存会话并继续
+          req.session.save(err => {
+            if (err) console.error('保存通过内部ID验证的会话出错:', err);
+            next();
+          });
+          return; // 重要：验证成功后直接返回，避免继续执行
+        } else {
+          console.log(`内部用户ID验证失败，继续处理未认证请求`);
           continueUnauthenticated();
-        });
-    } else {
-      continueUnauthenticated();
-    }
+        }
+      })
+      .catch(err => {
+        console.error('内部用户ID验证出错:', err);
+        continueUnauthenticated();
+      });
+  } else {
+    // 没有内部用户ID，继续未认证流程
+    continueUnauthenticated();
   }
   
   // 未认证情况下继续
   function continueUnauthenticated() {
-    if (req.path.includes('/api/auth/current-user')) {
-      console.log('getCurrentUser: 没有找到有效的用户信息，返回未认证状态');
+    // 只在认证相关路径记录日志，减少输出
+    if (req.path.includes('/api/auth/')) {
+      console.log(`未认证访问: ${req.path}`);
     }
     
     // 对需要认证的API路径，返回401错误
@@ -477,7 +412,8 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
         req.path.includes('/protected')) {
       return res.status(401).json({
         message: '未认证',
-        sessionId: req.sessionID
+        sessionId: req.sessionID || '',
+        error: 'UNAUTHORIZED'
       });
     }
     
@@ -485,114 +421,12 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
     next();
   }
   
-  // 从会话中恢复用户
-  function restoreUserFromSession() {
-    (async () => {
-      try {
-        // 使用当前活动的存储
-        const currentStorage = useFallbackStorage ? memStorage : storage;
-        const user = await currentStorage.getUser(req.session.userId);
-        
-        if (user) {
-          // 手动设置req.user而不是使用req.login，避免序列化问题
-          (req as any).user = user;
-          console.log(`成功恢复用户 ${user.username} 的会话`);
-          
-          // 确保会话中的信息是最新的
-          req.session.authenticated = true;
-          req.session.userId = user.id;
-          req.session.userRole = user.role;
-          req.session.socialBound = !!user.socialId && user.socialId !== '';
-          req.session.lastActivity = Date.now();
-          
-          // 保存会话以确保更改被持久化
-          req.session.save((err) => {
-            if (err) {
-              console.error('会话保存错误:', err);
-            }
-            // 即使保存失败，也继续流程
-            next();
-          });
-          return; // 不要继续执行
-        } else {
-          console.log(`无法恢复用户: ID=${req.session.userId}的用户不存在`);
-        }
-      } catch (error) {
-        console.error('恢复用户会话出错:', error);
-      }
-      
-      // 如果恢复失败，继续检查req.user
-      continueAuthCheck();
-    })();
-  }
-  
-  // 检查用户认证状态的函数
-  function continueAuthCheck() {
-    // 检查会话活跃度 - 最大空闲时间设为30天（2592000000毫秒）
-    const MAX_IDLE_TIME = 30 * 24 * 60 * 60 * 1000; // 30天的会话空闲时间
-    const now = Date.now();
-    const lastActivity = req.session?.lastActivity || 0;
-    const idleTime = now - lastActivity;
-    
-    // 如果会话超时，强制重新登录
-    if (lastActivity && idleTime > MAX_IDLE_TIME) {
-      console.log(`会话已超时: 空闲时间 ${Math.floor(idleTime / (1000 * 60 * 60))} 小时，超过了最大空闲时间 ${MAX_IDLE_TIME / (1000 * 60 * 60)} 小时`);
-      
-      // 重置会话
-      req.session.authenticated = false;
-      delete req.session.userId;
-      delete req.session.userRole;
-      
-      req.session.save(err => {
-        if (err) console.error('重置超时会话状态时出错:', err);
-        
-        return res.status(401).json({ 
-          message: '会话已过期，请重新登录',
-          errorCode: 'SESSION_TIMEOUT'
-        });
-      });
-      
-      return;
-    }
-    
-    // 检查是否已登录
-    if (!req.user) {
-      // 如果会话中标记为authenticated但没有user对象，可能是序列化问题
-      if (req.session?.authenticated === true) {
-        console.log('会话标记为已认证，但用户对象丢失，可能是序列化问题');
-        
-        // 尝试删除会话中的认证标记，避免循环错误
-        req.session.authenticated = false;
-        delete req.session.userId;
-        delete req.session.userRole;
-        
-        req.session.save(err => {
-          if (err) console.error('重置会话状态时出错:', err);
-          
-          return res.status(401).json({ 
-            message: '会话状态异常，请重新登录',
-            errorCode: 'SESSION_INVALID'
-          });
-        });
-        
-        return;
-      }
-      
-      console.log('会话验证失败：未找到用户信息');
-      return res.status(401).json({ message: '未登录' });
-    }
-    
-    // 会话有效，确保会话信息同步并更新最后活跃时间
-    if (req.session) {
-      req.session.authenticated = true;
-      req.session.userId = (req.user as any).id;
-      req.session.userRole = (req.user as any).role;
-      req.session.lastActivity = now; // 更新最后活跃时间
-    }
-    
-    // 继续
-    next();
-  }
+
+}
+
+// 检查用户是否绑定了社交账号
+function hasSocialAccountBound(user: any): boolean {
+  return user && user.socialId && user.socialId.trim() !== '';
 }
 
 // 检查是否为管理员中间件
