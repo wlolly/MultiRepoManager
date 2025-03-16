@@ -55,7 +55,9 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     fetch('/api/auth/login', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'X-Login-Flow': 'true', // 标记这是登录流程请求
+        'X-From-Login-Page': 'true' // 标记来源
       },
       body: JSON.stringify(values),
       credentials: 'include' // 确保包含cookie

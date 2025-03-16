@@ -384,11 +384,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
         
-        // 设置简化的会话数据
+        // 设置完整的会话数据
         req.session.userId = user.id;
         req.session.userRole = user.role; 
         req.session.lastActivity = Date.now();
         req.session.authenticated = true;
+        // @ts-ignore 添加兼容性字段，确保多处检查都能通过
+        req.session.isAuthenticated = true;
+        req.session.realAuthenticated = true;
+        
+        // 添加更多安全会话信息
+        req.session.securityLevel = 'high';
+        req.session.sessionCreatedAt = Date.now();
+        req.session.sessionIPAddress = req.ip;
+        req.session.sessionUserAgent = req.get('user-agent') || '';
+        
+        // 确保持久化存储包含此会话ID
+        if (global.sessionStorage) {
+          global.sessionStorage[req.ip] = req.sessionID;
+          console.log(`[会话存储] 已将用户${user.id}的会话ID ${req.sessionID} 存入持久化存储`);
+        }
         
         // 检查社交账号绑定状态
         const hasSocialBound = !!(user.socialId && user.socialId !== '');

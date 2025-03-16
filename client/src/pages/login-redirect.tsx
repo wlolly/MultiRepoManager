@@ -139,7 +139,7 @@ export default function LoginRedirect() {
         toast({
           title: t('auth.guest_mode_active'),
           description: t('auth.limited_features_available'),
-          type: "info"
+          type: "default" // 修正为有效的类型值
         });
         
         // 使用延时确保数据已存储
