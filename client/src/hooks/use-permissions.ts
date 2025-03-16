@@ -72,8 +72,13 @@ export function usePermissions(): PermissionsHook {
             accessLevel: userData.accessLevel || 'limited'
           };
           
+          console.log('Storing guest user in localStorage:', guestUser);
           localStorage.setItem('currentUser', JSON.stringify(guestUser));
           sessionStorage.setItem('currentUser', JSON.stringify(guestUser));
+          
+          // 确保用户信息已存储
+          const storedUser = localStorage.getItem('currentUser');
+          console.log('Verified currentUser in localStorage:', storedUser);
           
           // 设置为已认证状态，虽然是有限权限
           setIsAuthenticated(true);
