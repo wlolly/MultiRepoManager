@@ -6,13 +6,14 @@
 import { db } from '../server/db';
 import { users, userRoleEnum } from '../shared/schema';
 import { hashPassword } from '../server/auth';
+import { eq } from 'drizzle-orm';
 
 async function createAdminUser() {
   try {
     console.log('开始创建测试管理员用户...');
     
     // 检查用户是否已存在
-    const existingAdmin = await db.select().from(users).where(users.username, '=', 'admin').limit(1);
+    const existingAdmin = await db.select().from(users).where(eq(users.username, 'admin')).limit(1);
     
     if (existingAdmin.length > 0) {
       console.log('管理员用户已存在，无需创建');
@@ -25,13 +26,13 @@ async function createAdminUser() {
     const insertResult = await db.insert(users).values({
       username: 'admin',
       password: hashedPassword,
-      email: 'admin@example.com',
       role: 'super_admin',
       isActive: true,
-      fullName: '系统管理员', // 注意这里是fullName而不是fullname
+      fullname: '系统管理员',
       userSource: 'local',
-      createdAt: new Date(),
-      updatedAt: new Date()
+      // 不再包含email字段，因为数据库表中没有该字段
+      createdat: new Date(), // 注意：字段名全小写
+      updatedat: new Date()  // 注意：字段名全小写
     }).returning();
     
     console.log('管理员用户创建成功:', insertResult[0]);

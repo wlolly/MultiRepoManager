@@ -33,7 +33,7 @@ passport.use(new LocalStrategy(
     usernameField: 'username',
     passwordField: 'password'
   },
-  async (username, password, done) => {
+  async (username, suppliedPassword, done) => {
     try {
       console.log('[Passport] 尝试验证用户:', username);
       
