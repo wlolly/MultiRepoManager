@@ -43,6 +43,15 @@ export interface IStorage {
   updateUser(id: number, user: Partial<User>): Promise<User | undefined>;
   getUsers(): Promise<User[]>;
   
+  // 会话管理方法
+  createUserSession(sessionData: InsertUserSession): Promise<UserSession>;
+  getUserSessionById(sessionId: string): Promise<UserSession | undefined>;
+  getUserSessionsByUserId(userId: number): Promise<UserSession[]>;
+  updateUserSession(sessionId: string, updates: Partial<UserSession>): Promise<UserSession | undefined>;
+  invalidateUserSession(sessionId: string): Promise<boolean>;
+  invalidateAllUserSessions(userId: number): Promise<number>; // 返回失效的会话数量
+  cleanupExpiredSessions(): Promise<number>; // 返回清理的会话数量
+  
   // Repository methods
   getRepository(id: number): Promise<Repository | undefined>;
   getRepositoryByName(name: string): Promise<Repository | undefined>;
@@ -314,6 +323,9 @@ export class MemStorage implements IStorage {
   private uniqueCodeTrackingMap: Map<string, UniqueCodeTracking>;
   private uniqueCodeHistoryMap: Map<number, UniqueCodeHistory>;
   private uniqueCodeHistoryIdCounter: number;
+  
+  // 用户会话相关存储
+  private userSessionsMap: Map<string, UserSession>;
 
   private userIdCounter: number;
   private repositoryIdCounter: number;
@@ -375,6 +387,9 @@ export class MemStorage implements IStorage {
     // 初始化唯一码跟踪相关存储
     this.uniqueCodeTrackingMap = new Map();
     this.uniqueCodeHistoryMap = new Map();
+    
+    // 初始化用户会话相关存储
+    this.userSessionsMap = new Map();
 
     // 初始化ID计数器
     this.userIdCounter = 1;
@@ -604,6 +619,85 @@ export class MemStorage implements IStorage {
 
   async getUsers(): Promise<User[]> {
     return Array.from(this.usersMap.values());
+  }
+  
+  // 会话管理方法
+  async createUserSession(sessionData: InsertUserSession): Promise<UserSession> {
+    const createdAt = new Date();
+    const updatedAt = new Date();
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 默认30天有效期
+    
+    const userSession: UserSession = {
+      ...sessionData,
+      createdAt,
+      updatedAt,
+      expiresAt
+    };
+    
+    this.userSessionsMap.set(sessionData.sessionId, userSession);
+    return userSession;
+  }
+  
+  async getUserSessionById(sessionId: string): Promise<UserSession | undefined> {
+    const session = this.userSessionsMap.get(sessionId);
+    
+    // 检查会话是否过期
+    if (session && session.expiresAt && new Date() > new Date(session.expiresAt)) {
+      // 自动清理过期会话
+      this.userSessionsMap.delete(sessionId);
+      return undefined;
+    }
+    
+    return session;
+  }
+  
+  async getUserSessionsByUserId(userId: number): Promise<UserSession[]> {
+    const now = new Date();
+    return Array.from(this.userSessionsMap.values())
+      .filter(session => session.userId === userId && new Date(session.expiresAt) > now);
+  }
+  
+  async updateUserSession(sessionId: string, updates: Partial<UserSession>): Promise<UserSession | undefined> {
+    const session = this.userSessionsMap.get(sessionId);
+    if (!session) return undefined;
+    
+    const updatedSession = {
+      ...session,
+      ...updates,
+      updatedAt: new Date()
+    };
+    
+    this.userSessionsMap.set(sessionId, updatedSession);
+    return updatedSession;
+  }
+  
+  async invalidateUserSession(sessionId: string): Promise<boolean> {
+    const exists = this.userSessionsMap.has(sessionId);
+    this.userSessionsMap.delete(sessionId);
+    return exists;
+  }
+  
+  async invalidateAllUserSessions(userId: number): Promise<number> {
+    const userSessions = Array.from(this.userSessionsMap.values())
+      .filter(session => session.userId === userId);
+    
+    userSessions.forEach(session => {
+      this.userSessionsMap.delete(session.sessionId);
+    });
+    
+    return userSessions.length;
+  }
+  
+  async cleanupExpiredSessions(): Promise<number> {
+    const now = new Date();
+    const expiredSessions = Array.from(this.userSessionsMap.entries())
+      .filter(([_, session]) => new Date(session.expiresAt) <= now);
+    
+    expiredSessions.forEach(([sessionId, _]) => {
+      this.userSessionsMap.delete(sessionId);
+    });
+    
+    return expiredSessions.length;
   }
 
   // Repository methods

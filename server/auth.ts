@@ -245,13 +245,43 @@ export async function loginUser(req: Request, res: Response) {
     const sessionId = generateSessionId();
     console.log('[认证系统] 生成新会话ID:', sessionId);
     
-    // 存储会话ID到数据库
+    // 创建数据库会话记录
     try {
-      // 这里应该将sessionId与userId关联存储到数据库
-      // await db.storeSessionId(sessionId, user.id);
-      console.log('[认证系统] 会话ID已存储到数据库');
+      // 创建会话数据
+      const userSessionData = {
+        sessionId,
+        userId: user.id,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent') || '',
+        isActive: true,
+        lastActivity: new Date()
+      };
+      
+      // 使用新实现的会话方法存储会话到数据库
+      const sessionRecord = await db.createUserSession(userSessionData);
+      console.log('[认证系统] 会话记录已存储到数据库:', sessionRecord.id);
+      
+      // 检查用户的其他活跃会话并选择性失效
+      if (process.env.MAX_SESSIONS_PER_USER) {
+        const maxSessions = parseInt(process.env.MAX_SESSIONS_PER_USER);
+        if (!isNaN(maxSessions) && maxSessions > 0) {
+          const existingSessions = await db.getUserSessionsByUserId(user.id);
+          if (existingSessions.length > maxSessions) {
+            console.log(`[认证系统] 用户 ${user.id} 会话数量(${existingSessions.length})超过限制(${maxSessions})，清理旧会话`);
+            // 按最后活动时间排序，保留最新的会话
+            const sessionsToInvalidate = existingSessions
+              .sort((a, b) => new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime())
+              .slice(maxSessions - 1); // 保留最新的maxSessions-1个会话（已创建的新会话不在此列表中）
+              
+            for (const session of sessionsToInvalidate) {
+              await db.invalidateUserSession(session.sessionId);
+              console.log(`[认证系统] 失效旧会话: ${session.sessionId}`);
+            }
+          }
+        }
+      }
     } catch (dbError) {
-      console.error('[认证系统] 存储会话ID失败:', dbError);
+      console.error('[认证系统] 存储会话记录失败:', dbError);
       return res.status(500).json({
         success: false,
         message: '会话存储失败',
@@ -278,6 +308,9 @@ export async function loginUser(req: Request, res: Response) {
       req.session.lastActivity = Date.now();
       req.session.sessionCreatedAt = Date.now();
       
+      // 关联数据库中的会话ID
+      req.session.databaseSessionId = sessionId;
+      
       // 设置会话安全信息
       req.session.securityLevel = 'high';
       req.session.sessionIPAddress = req.ip;
@@ -303,23 +336,25 @@ export async function loginUser(req: Request, res: Response) {
       };
 
       // 设置多个会话cookie确保兼容性
-      res.cookie('sessionId', req.sessionID, cookieOptions);
-      res.cookie('warehouse.sid', req.sessionID, {...cookieOptions, httpOnly: true});
-      res.cookie('connect.sid', req.sessionID, {...cookieOptions, httpOnly: true});
+      // 使用数据库生成的会话ID而不是Express生成的会话ID
+      res.cookie('sessionId', sessionId, cookieOptions);
+      res.cookie('warehouse.sid', sessionId, {...cookieOptions, httpOnly: true});
+      res.cookie('connect.sid', sessionId, {...cookieOptions, httpOnly: true});
 
       // 设置会话响应头
-      res.setHeader('X-Session-ID', req.sessionID);
+      res.setHeader('X-Session-ID', sessionId);
       res.setHeader('X-Authenticated', 'true');
+      res.setHeader('X-Database-Session-ID', sessionId);
 
       // 计算社交账号是否需要绑定
       const needSocialBinding = user.usersource === 'local' && !user.socialid;
       
-      // 返回完整的用户信息
+      // 返回完整的用户信息，使用数据库生成的会话ID
       return res.json({
         success: true,
         message: '登录成功',
         authenticated: true,
-        sessionId: req.sessionID,
+        sessionId: sessionId,
         needSocialBinding: needSocialBinding,
         user: {
           id: user.id,
@@ -454,17 +489,49 @@ export async function getCurrentUser(req: Request, res: Response) {
 }
 
 // 退出登录
-export function logout(req: Request, res: Response) {
-  // 清理会话
-  console.log('[认证系统] 收到退出登录请求 - 清理会话');
-
-  req.session.destroy((err) => {
-    if (err) {
-      console.error('[认证系统] 销毁会话失败:', err);
-      return res.status(500).json({ message: '退出失败' });
+export async function logout(req: Request, res: Response) {
+  try {
+    // 清理会话
+    console.log('[认证系统] 收到退出登录请求 - 清理会话');
+    
+    // 从请求头或cookie获取会话ID
+    const sessionId = req.headers['x-session-id'] || 
+                      req.cookies?.sessionId || 
+                      req.sessionID;
+    
+    if (sessionId) {
+      console.log(`[认证系统] 尝试失效会话ID: ${sessionId}`);
+      
+      // 尝试从数据库中失效会话
+      try {
+        const db = req.app.locals.storage;
+        const result = await db.invalidateUserSession(sessionId as string);
+        console.log(`[认证系统] 会话数据库记录失效结果:`, result);
+      } catch (dbError) {
+        console.error('[认证系统] 数据库失效会话失败:', dbError);
+        // 继续处理Express会话，不要因为数据库错误中断
+      }
     }
-    res.json({ message: '退出成功' });
-  });
+  
+    // 清理Express会话
+    req.session.destroy((err) => {
+      if (err) {
+        console.error('[认证系统] 销毁Express会话失败:', err);
+        return res.status(500).json({ message: '退出失败' });
+      }
+      
+      // 清除浏览器cookie
+      res.clearCookie('sessionId');
+      res.clearCookie('warehouse.sid');
+      res.clearCookie('connect.sid');
+      
+      console.log('[认证系统] 会话清理成功');
+      res.json({ message: '退出成功' });
+    });
+  } catch (error) {
+    console.error('[认证系统] 退出登录处理错误:', error);
+    res.status(500).json({ message: '退出处理错误' });
+  }
 }
 
 // 激活用户
