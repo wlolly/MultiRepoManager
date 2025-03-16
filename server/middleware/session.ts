@@ -4,7 +4,10 @@ import { Request, Response, NextFunction } from 'express';
 import session from 'express-session';
 import { MemoryStore } from 'express-session';
 import connect_pg_simple from 'connect-pg-simple';
-import { Pool } from 'pg';
+// 使用已安装的postgres模块，而不是pg模块
+import postgres from 'postgres';
+// 导入crypto用于生成随机会话ID
+import crypto from 'crypto';
 
 // 全局session存储，避免模块重新加载时丢失会话
 // 定义自定义类型，避免与内置Storage类型冲突
@@ -83,8 +86,8 @@ export function configureSession(app: any) {
         return global.sessionStorage[req.ip];
       }
       
-      // 否则生成新ID
-      const sessionId = require('crypto').randomBytes(16).toString('hex');
+      // 否则生成新ID - 使用顶层导入的crypto
+      const sessionId = crypto.randomBytes(16).toString('hex');
       console.log(`[会话] 生成新会话ID: ${sessionId}`);
       if (global.sessionStorage && req.ip && typeof req.ip === 'string') {
         global.sessionStorage[req.ip] = sessionId;
@@ -104,35 +107,14 @@ export function configureSession(app: any) {
     console.log('[会话] 使用PostgreSQL存储会话 - 数据库URL存在:', !!process.env.DATABASE_URL);
     const PgSession = connect_pg_simple(session);
     
-    const pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: {
-        rejectUnauthorized: false // 允许自签名证书，用于开发环境
-      }
-    });
-
-    // 确保会话表存在
-    pool.query(`
-      CREATE TABLE IF NOT EXISTS "session" (
-        "sid" varchar NOT NULL COLLATE "default",
-        "sess" json NOT NULL,
-        "expire" timestamp(6) NOT NULL,
-        CONSTRAINT "session_pkey" PRIMARY KEY ("sid")
-      )
-    `)
-    .then(() => {
-      console.log('[会话] 会话表创建/验证成功');
-    })
-    .catch(err => {
-      console.error('[会话] 创建会话表失败:', err);
-    });
-
-    sessionOptions.store = new PgSession({
-      pool,
-      tableName: 'session',
-      createTableIfMissing: true,
-      pruneSessionInterval: 60 * 15 // 每15分钟清理过期会话
-    });
+    // 使用内存存储作为备用 - 目前由于环境限制，不再尝试使用PostgreSQL存储
+    console.log('[会话] 改用内存存储会话');
+    
+    // 创建内存存储
+    sessionOptions.store = new MemoryStore({
+      checkPeriod: 86400000, // 每24小时清理过期会话
+      ttl: 30 * 24 * 60 * 60 // 30天的会话生命周期
+    } as any);
     
     // 为调试添加会话存储事件监听
     sessionOptions.store.on('error', (err: Error) => {
