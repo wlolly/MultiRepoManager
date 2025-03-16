@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { isAuthenticated } from '../auth';
+// 不再需要从auth导入isAuthenticated，因为这个函数实际不存在
+// import { isAuthenticated } from '../auth';
 import session from 'express-session';
 import { MemoryStore } from 'express-session';
 import connect_pg_simple from 'connect-pg-simple';
@@ -30,8 +31,14 @@ export async function sessionMiddleware(req: Request, res: Response, next: NextF
       global.sessionStorage[req.ip] = req.sessionID;
     }
 
-    // 检查会话是否已认证
-    const authenticated = await isAuthenticated(req);
+    // 检查会话是否已认证 
+    // 直接从会话中获取认证状态
+    const authenticated = req.session && (
+      req.session.authenticated === true || 
+      req.session.isAuthenticated === true || 
+      (req.session.userId && req.session.userId > 0)
+    );
+    
     if (authenticated) {
       res.setHeader('X-Authenticated', 'true');
       res.setHeader('X-User-ID', req.session?.userId?.toString() || '');

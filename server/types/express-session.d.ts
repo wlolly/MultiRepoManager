@@ -6,6 +6,7 @@ declare module 'express-session' {
     socialBound?: boolean;
     userRole?: string;
     authenticated?: boolean;
+    isAuthenticated?: boolean; // 兼容性字段，与authenticated含义相同
     returnTo?: string;
     lastActivity?: number;
     internalUserId?: string;

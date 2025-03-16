@@ -8,7 +8,7 @@ export function sessionSyncMiddleware(req: Request, res: Response, next: NextFun
   const originalSessionID = req.sessionID;
   
   // 从全局存储中检查是否有持久化的会话ID
-  if (global.sessionStorage && global.sessionStorage[req.ip]) {
+  if (global.sessionStorage && req.ip && typeof req.ip === 'string' && global.sessionStorage[req.ip]) {
     const persistentSessionId = global.sessionStorage[req.ip];
     console.log(`[会话同步] 发现持久化会话ID: ${persistentSessionId}`);
     
