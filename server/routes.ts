@@ -1227,13 +1227,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   apiRouter.get("/teams/:id/members", async (req, res) => {
     try {
+      // 确保使用当前活动的存储实现
+      const currentStorage = useFallbackStorage ? memStorage : storage;
+      console.log(`团队成员数据获取使用${useFallbackStorage ? '内存存储' : '数据库存储'}模式`);
+      
       const teamId = parseInt(req.params.id);
-      const teamMembers = await storage.getTeamMembers(teamId);
+      const teamMembers = await currentStorage.getTeamMembers(teamId);
       
       // Get full user data for each member
       const membersWithUserData = await Promise.all(
         teamMembers.map(async (member) => {
-          const user = await storage.getUser(member.userId);
+          const user = await currentStorage.getUser(member.userId);
           return { ...member, user };
         })
       );
@@ -1246,13 +1250,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   apiRouter.post("/teams/:id/members", async (req, res) => {
     try {
+      // 确保使用当前活动的存储实现
+      const currentStorage = useFallbackStorage ? memStorage : storage;
+      console.log(`团队成员添加使用${useFallbackStorage ? '内存存储' : '数据库存储'}模式`);
+      
       const teamId = parseInt(req.params.id);
       const memberData = insertTeamMemberSchema.parse({
         ...req.body,
         teamId
       });
       
-      const teamMember = await storage.addTeamMember(memberData);
+      const teamMember = await currentStorage.addTeamMember(memberData);
       res.status(201).json(teamMember);
     } catch (err) {
       handleZodError(err, res);
@@ -1261,10 +1269,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   apiRouter.delete("/teams/:teamId/members/:userId", async (req, res) => {
     try {
+      // 确保使用当前活动的存储实现
+      const currentStorage = useFallbackStorage ? memStorage : storage;
+      console.log(`团队成员移除使用${useFallbackStorage ? '内存存储' : '数据库存储'}模式`);
+      
       const teamId = parseInt(req.params.teamId);
       const userId = parseInt(req.params.userId);
       
-      await storage.removeTeamMember(teamId, userId);
+      await currentStorage.removeTeamMember(teamId, userId);
       res.status(204).end();
     } catch (err) {
       handleZodError(err, res);
@@ -1273,13 +1285,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   apiRouter.get("/teams/:id/repositories", async (req, res) => {
     try {
+      // 确保使用当前活动的存储实现
+      const currentStorage = useFallbackStorage ? memStorage : storage;
+      console.log(`团队仓库获取使用${useFallbackStorage ? '内存存储' : '数据库存储'}模式`);
+      
       const teamId = parseInt(req.params.id);
-      const teamRepositories = await storage.getTeamRepositories(teamId);
+      const teamRepositories = await currentStorage.getTeamRepositories(teamId);
       
       // Get full repository data for each team repository
       const repositoriesWithData = await Promise.all(
         teamRepositories.map(async (tr) => {
-          const repository = await storage.getRepository(tr.repositoryId);
+          const repository = await currentStorage.getRepository(tr.repositoryId);
           return { ...tr, repository };
         })
       );
@@ -1292,13 +1308,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   apiRouter.post("/teams/:id/repositories", async (req, res) => {
     try {
+      // 确保使用当前活动的存储实现
+      const currentStorage = useFallbackStorage ? memStorage : storage;
+      console.log(`团队仓库添加使用${useFallbackStorage ? '内存存储' : '数据库存储'}模式`);
+      
       const teamId = parseInt(req.params.id);
       const repositoryData = insertTeamRepositorySchema.parse({
         ...req.body,
         teamId
       });
       
-      const teamRepository = await storage.addTeamRepository(repositoryData);
+      const teamRepository = await currentStorage.addTeamRepository(repositoryData);
       res.status(201).json(teamRepository);
     } catch (err) {
       handleZodError(err, res);
