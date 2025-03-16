@@ -55,8 +55,10 @@ export function TeamDashboard() {
   // Fetch team stats with error handling for unauthorized access
   const { data: teamStats, isLoading: isStatsLoading, error: statsError } = useQuery<TeamDashboardStats>({
     queryKey: ["/api/stats/team"],
-    retry: false, // 不重试访问被拒绝的API
+    retry: 2, // 允许重试，因为可能第一次请求时session还没完全建立
     enabled: shouldTryFetchingData, // 只有在应该获取数据时才启用查询
+    staleTime: 1000 * 60 * 5, // 5分钟内不重新获取数据
+    onError: (error) => console.error("TeamDashboard - 获取团队统计数据失败:", error),
   });
   
   // Fetch warehouses for warehouse permission display
