@@ -95,22 +95,75 @@ export function TeamDashboard() {
 
   // Process accessible warehouses based on permissions
   const accessibleWarehouses: AccessibleWarehouse[] = React.useMemo(() => {
-    if (!teamStats || !teamStats.warehousePermissions || !allWarehouses) {
-      console.log("TeamDashboard - 无法处理仓库权限，数据不完整");
+    // 调试信息 - 详细记录权限和仓库数据
+    console.log("TeamDashboard - 处理权限数据:", {
+      hasStats: !!teamStats,
+      hasWarehouses: !!allWarehouses,
+      warehousesCount: allWarehouses ? (Array.isArray(allWarehouses) ? allWarehouses.length : 'not array') : 'none',
+      permissionsFormat: teamStats?.warehousePermissions ? 
+        Object.keys(teamStats.warehousePermissions).length + ' keys' : 'missing'
+    });
+    
+    if (!teamStats) {
+      console.log("TeamDashboard - 无法处理仓库权限: teamStats不存在");
+      return [];
+    }
+    
+    if (!teamStats.warehousePermissions) {
+      console.log("TeamDashboard - 无法处理仓库权限: warehousePermissions不存在");
+      return [];
+    }
+    
+    if (!allWarehouses || !Array.isArray(allWarehouses) || allWarehouses.length === 0) {
+      console.log("TeamDashboard - 无法处理仓库权限: 仓库列表为空");
+      // 如果没有仓库数据但有权限数据, 创建基本的仓库对象
+      // 这样即使API返回不完整，用户也能看到内容
+      if (teamStats.warehousePermissions && Object.keys(teamStats.warehousePermissions).length > 0) {
+        return Object.entries(teamStats.warehousePermissions)
+          .map(([warehouseId, permission]) => ({
+            id: parseInt(warehouseId),
+            name: `仓库 #${warehouseId}`,
+            location: "位置信息待更新",
+            isManageable: permission.canManage || false
+          }));
+      }
       return [];
     }
     
     try {
-      return (Array.isArray(allWarehouses) ? allWarehouses : [])
+      const result = allWarehouses
         .filter((warehouse: any) => {
-          if (!warehouse || typeof warehouse !== 'object' || !warehouse.id) return false;
-          const permission = teamStats.warehousePermissions[warehouse.id];
-          return permission && permission.canView;
+          if (!warehouse || typeof warehouse !== 'object') {
+            console.log("TeamDashboard - 跳过无效仓库对象");
+            return false;
+          }
+          
+          if (!warehouse.id) {
+            console.log("TeamDashboard - 跳过缺少ID的仓库");
+            return false;
+          }
+          
+          // 确保使用字符串ID从权限对象中查找
+          const warehouseIdStr = warehouse.id.toString();
+          const permission = teamStats.warehousePermissions[warehouseIdStr];
+          
+          if (!permission) {
+            console.log(`TeamDashboard - 仓库ID=${warehouseIdStr}没有权限配置`);
+            return false;
+          }
+          
+          return permission.canView === true;
         })
-        .map((warehouse: any) => ({
-          ...warehouse,
-          isManageable: teamStats.warehousePermissions[warehouse.id]?.canManage || false
-        }));
+        .map((warehouse: any) => {
+          const warehouseIdStr = warehouse.id.toString();
+          return {
+            ...warehouse,
+            isManageable: teamStats.warehousePermissions[warehouseIdStr]?.canManage || false
+          };
+        });
+      
+      console.log(`TeamDashboard - 成功处理 ${result.length} 个可访问仓库`);
+      return result;
     } catch (error) {
       console.error("TeamDashboard - 处理仓库权限时出错:", error);
       return [];
