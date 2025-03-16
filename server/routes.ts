@@ -1340,6 +1340,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Activity routes
   apiRouter.get("/activities", async (req, res) => {
     try {
+      // 确保使用当前活动的存储实现
+      const currentStorage = useFallbackStorage ? memStorage : storage;
+      console.log(`活动数据获取使用${useFallbackStorage ? '内存存储' : '数据库存储'}模式`);
+      
       const repositoryId = req.query.repositoryId 
         ? parseInt(req.query.repositoryId as string) 
         : undefined;
@@ -1348,13 +1352,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ? parseInt(req.query.limit as string) 
         : undefined;
       
-      const activities = await storage.getActivities(repositoryId, limit);
+      const activities = await currentStorage.getActivities(repositoryId, limit);
       
       // Get user data for each activity
       const activitiesWithUserData = await Promise.all(
         activities.map(async (activity) => {
-          const user = await storage.getUser(activity.userId);
-          const repository = await storage.getRepository(activity.repositoryId);
+          const user = await currentStorage.getUser(activity.userId);
+          const repository = await currentStorage.getRepository(activity.repositoryId);
           return { 
             ...activity, 
             user,
@@ -1454,8 +1458,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   apiRouter.post("/activities", async (req, res) => {
     try {
+      // 确保使用当前活动的存储实现
+      const currentStorage = useFallbackStorage ? memStorage : storage;
+      console.log(`创建活动使用${useFallbackStorage ? '内存存储' : '数据库存储'}模式`);
+      
       const activityData = insertActivitySchema.parse(req.body);
-      const activity = await storage.createActivity(activityData);
+      const activity = await currentStorage.createActivity(activityData);
       res.status(201).json(activity);
     } catch (err) {
       handleZodError(err, res);
@@ -1465,7 +1473,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Warehouse routes
   apiRouter.get("/warehouses", async (req, res) => {
     try {
-      const warehouses = await storage.getWarehouses();
+      // 确保使用当前活动的存储实现
+      const currentStorage = useFallbackStorage ? memStorage : storage;
+      console.log(`获取仓库列表使用${useFallbackStorage ? '内存存储' : '数据库存储'}模式`);
+      
+      const warehouses = await currentStorage.getWarehouses();
       res.json(warehouses);
     } catch (err) {
       handleZodError(err, res);
@@ -1474,8 +1486,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   apiRouter.get("/warehouses/:id", async (req, res) => {
     try {
+      // 确保使用当前活动的存储实现
+      const currentStorage = useFallbackStorage ? memStorage : storage;
+      console.log(`获取单个仓库使用${useFallbackStorage ? '内存存储' : '数据库存储'}模式`);
+      
       const id = parseInt(req.params.id);
-      const warehouse = await storage.getWarehouse(id);
+      const warehouse = await currentStorage.getWarehouse(id);
       
       if (!warehouse) {
         return res.status(404).json({ error: "Warehouse not found" });
@@ -1489,8 +1505,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   apiRouter.post("/warehouses", async (req, res) => {
     try {
+      // 确保使用当前活动的存储实现
+      const currentStorage = useFallbackStorage ? memStorage : storage;
+      console.log(`创建仓库使用${useFallbackStorage ? '内存存储' : '数据库存储'}模式`);
+      
       const warehouseData = insertWarehouseSchema.parse(req.body);
-      const warehouse = await storage.createWarehouse(warehouseData);
+      const warehouse = await currentStorage.createWarehouse(warehouseData);
       res.status(201).json(warehouse);
     } catch (err) {
       handleZodError(err, res);
@@ -1499,10 +1519,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   apiRouter.patch("/warehouses/:id", async (req, res) => {
     try {
+      // 确保使用当前活动的存储实现
+      const currentStorage = useFallbackStorage ? memStorage : storage;
+      console.log(`更新仓库使用${useFallbackStorage ? '内存存储' : '数据库存储'}模式`);
+      
       const id = parseInt(req.params.id);
       const warehouseData = req.body;
       
-      const updatedWarehouse = await storage.updateWarehouse(id, warehouseData);
+      const updatedWarehouse = await currentStorage.updateWarehouse(id, warehouseData);
       
       if (!updatedWarehouse) {
         return res.status(404).json({ error: "Warehouse not found" });
@@ -1518,7 +1542,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 获取产品统计信息
   apiRouter.get("/products/stats", async (req, res) => {
     try {
-      const stats = await storage.getProductsStats();
+      // 确保使用当前活动的存储实现
+      const currentStorage = useFallbackStorage ? memStorage : storage;
+      console.log(`获取产品统计信息使用${useFallbackStorage ? '内存存储' : '数据库存储'}模式`);
+      
+      const stats = await currentStorage.getProductsStats();
       res.json(stats);
     } catch (err) {
       console.error("Error getting product stats:", err);
