@@ -671,23 +671,48 @@ export async function getCurrentUser(req: Request, res: Response) {
       }
     }
     
-    // 如果没有找到有效的用户信息，应用假阳性登录策略
-    console.log('getCurrentUser: 没有找到有效的用户信息，应用假阳性登录策略');
+    // 如果没有找到有效的用户信息，应用假阳性登录策略 - 创建访客用户
+    console.log('getCurrentUser: 没有找到有效的用户信息，应用假阳性登录策略，返回访客用户');
     
     // 增加标识假阳性登录策略的响应头
     res.setHeader('X-Session-Authenticated', 'false');
     res.setHeader('X-Fake-Positive-Login', 'true');
     
-    // 返回401，但提供会话信息便于客户端识别假阳性登录
-    return res.status(401).json({ 
-      message: '未认证',
-      sessionId: req.sessionID, // 返回会话ID便于客户端保存
+    // 创建访客用户
+    const guestUser = {
+      id: -1,
+      username: 'guest',
+      role: 'anonymous',
+      fullName: '访客用户',
+      email: null,
+      createdAt: new Date().toISOString(),
+      isActive: true,
       authenticated: false,
-      requiresBinding: false,
-      fakePositive: true, // 标记这是假阳性登录
-      fakeName: req.session.fakeName || '访客用户', // 返回假名称
-      accessLevel: 'limited' // 有限访问权限
+      fakePositive: true,
+      accessLevel: 'limited',
+      permissions: {
+        pages: ['dashboard', 'products'],
+        actions: ['view']
+      }
+    };
+    
+    // 在会话中保存访客用户信息
+    req.session.userId = -1;
+    req.session.userRole = 'anonymous';
+    req.session.authenticated = false;
+    req.session.fakePositive = true;
+    req.session.lastActivity = Date.now();
+    
+    // 异步保存会话
+    req.session.save(err => {
+      if (err) console.error('保存访客会话出错:', err);
     });
+    
+    // 在req.user中保存访客用户信息，以便后续请求使用
+    (req as any).user = guestUser;
+    
+    // 成功返回访客用户，但状态码为200，表示合法用户
+    return res.status(200).json(guestUser);
   } catch (error) {
     console.error('获取当前用户信息错误:', error);
     res.status(500).json({ message: '获取用户信息失败' });
