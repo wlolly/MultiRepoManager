@@ -65,7 +65,8 @@ export default function LoginRedirect() {
       credentials: 'include', // 确保包含cookie
       headers: {
         'X-Client-Session-ID': cookieSessionId || '', // 提供会话ID作为备用
-        'X-Test-Mode': isTestUser ? 'true' : 'false'
+        'X-Test-Mode': isTestUser ? 'true' : 'false',
+        'X-Test-User': isTestUser ? 'true' : 'false'
       }
     })
     .then(response => {

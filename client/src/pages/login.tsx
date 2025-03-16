@@ -52,11 +52,16 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       console.log('测试用户登录尝试：', values.username);
     }
     
+    // 检查是否为测试用户，添加特殊标记
+    const isTestUser = values.username === '222';
+    
     // 使用fetch进行API请求，确保能正确处理cookie和会话
     fetch('/api/auth/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'X-Test-User': isTestUser ? 'true' : 'false',
+        'X-Test-Mode': isTestUser ? 'true' : 'false'
       },
       body: JSON.stringify(values),
       credentials: 'include' // 确保包含cookie
