@@ -679,17 +679,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 权限管理接口 - 获取页面权限
   apiRouter.get('/permissions/pages', async (req, res) => {
     try {
-      // 检查是否已登录
-      if (!req.user) {
-        return res.status(401).json({ message: '未登录' });
+      // 检查用户状态 - 支持假阳性登录策略，访客用户ID为-1
+      let userId = -1; // 默认为访客用户ID
+      let isGuest = true;
+      
+      if (req.user) {
+        userId = (req.user as any).id;
+        isGuest = userId === -1;
+        console.log(`获取用户ID=${userId}的页面权限，是否访客: ${isGuest}`);
+      } else {
+        console.log('用户未登录，使用访客权限');
       }
       
-      const userId = (req.user as any).id;
+      // 获取用户权限（包括访客用户权限）
       const permissions = await getUserPagePermissions(userId);
+      
+      // 如果是访客用户，添加特殊标记
+      if (isGuest) {
+        res.setHeader('X-Guest-User', 'true');
+        res.setHeader('X-Limited-Access', 'true');
+      }
+      
       res.json(permissions);
     } catch (error) {
       console.error('获取页面权限错误:', error);
-      res.status(500).json({ message: '获取权限失败' });
+      
+      // 即使出错，也返回基本访客权限，确保系统可用性
+      const guestPermissions = {
+        'dashboard': true,
+        'products': true,
+        'login': true,
+        'register': true
+      };
+      
+      res.setHeader('X-Guest-User', 'true');
+      res.setHeader('X-Error-Fallback', 'true');
+      res.json(guestPermissions);
     }
   });
 
