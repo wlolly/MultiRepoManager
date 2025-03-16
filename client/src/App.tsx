@@ -183,13 +183,14 @@ function Sidebar() {
         <h1 className="text-xl font-semibold truncate">{t('app_name')}</h1>
       </div>
       
-      <div className="p-4">
-        {hasPagePermission('products') && realAuthenticated && (
+      {/* 只对真实登录用户显示添加商品按钮 */}
+      {realAuthenticated && hasPagePermission('products') && (
+        <div className="p-4">
           <Link to="/products/new" className="bg-blue-600 hover:bg-blue-700 w-full py-2 px-4 rounded-md flex items-center justify-center transition">
             <i className="ri-add-line mr-2"></i> {t('new_product')}
           </Link>
-        )}
-      </div>
+        </div>
+      )}
       
       <nav className="mt-2">
         <div className="px-4 py-2 text-gray-400 text-sm font-medium">{t('navigation')}</div>
