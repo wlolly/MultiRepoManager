@@ -22,19 +22,32 @@ export const loginSchema = z.object({
   password: z.string(),
 });
 
-// 密码加密函数
+// 密码加密函数 - 使用PBKDF2算法
 export function hashPassword(password: string): string {
-  const hash = crypto.createHash('sha256');
-  hash.update(password);
-  return hash.digest('hex');
+  // 生成一个随机的盐值
+  const salt = crypto.randomBytes(16).toString('hex');
+  // 使用PBKDF2算法生成哈希
+  const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
+  // 返回salt:hash格式
+  return salt + ':' + hash;
 }
 
-// 密码验证函数
+// 密码验证函数 - 用于PBKDF2格式的密码
 export function verifyPassword(storedPassword: string, suppliedPassword: string): boolean {
-  const hash = crypto.createHash('sha256');
-  hash.update(suppliedPassword);
-  const hashedSuppliedPassword = hash.digest('hex');
-  return storedPassword === hashedSuppliedPassword;
+  // 格式应为: salt:hash
+  const parts = storedPassword.split(':');
+  if (parts.length !== 2) {
+    return false;
+  }
+  
+  const salt = parts[0];
+  const storedHash = parts[1];
+  
+  // 使用相同的加密参数计算提供的密码的哈希值
+  const hash = crypto.pbkdf2Sync(suppliedPassword, salt, 1000, 64, 'sha512').toString('hex');
+  
+  // 比较计算得到的哈希值和存储的哈希值
+  return storedHash === hash;
 }
 
 // 生成会话ID

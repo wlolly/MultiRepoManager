@@ -5,7 +5,9 @@
 import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
 import { db } from './db';
+import { eq, sql } from 'drizzle-orm';
 import crypto from 'crypto';
+import { users } from '../shared/schema';
 
 // 密码验证函数 - 用于PBKDF2格式的密码
 function verifyPassword(storedPassword: string, suppliedPassword: string): boolean {
@@ -36,18 +38,15 @@ passport.use(new LocalStrategy(
       console.log('[Passport] 尝试验证用户:', username);
       
       // 从数据库查询用户
-      const result = await db.execute({
-        query: 'SELECT * FROM users WHERE username = $1', 
-        values: [username]
-      });
+      const result = await db.select().from(users).where(eq(users.username, username));
       
       // 处理查询结果
-      if (!result || !Array.isArray(result[0]) || result[0].length === 0) {
+      if (!result || result.length === 0) {
         console.log('[Passport] 用户不存在:', username);
         return done(null, false, { message: '用户名或密码错误' });
       }
       
-      const user = result[0][0];
+      const user = result[0];
       
       // 验证密码
       if (!verifyPassword(user.password, password)) {
@@ -87,17 +86,20 @@ passport.deserializeUser(async (id: number, done) => {
     console.log('[Passport] 反序列化用户ID:', id);
     
     // 从数据库获取用户信息
-    const result = await db.execute({
-      query: 'SELECT id, username, fullname, role, isactive FROM users WHERE id = $1', 
-      values: [id]
-    });
+    const result = await db.select({
+      id: users.id,
+      username: users.username,
+      fullname: users.fullname,
+      role: users.role,
+      isactive: users.isactive
+    }).from(users).where(eq(users.id, id));
     
-    if (!result || !Array.isArray(result[0]) || result[0].length === 0) {
+    if (!result || result.length === 0) {
       console.log('[Passport] 用户ID无效:', id);
       return done(null, false);
     }
     
-    const user = result[0][0];
+    const user = result[0];
     console.log('[Passport] 用户反序列化成功:', user.username);
     done(null, user);
   } catch (error) {
