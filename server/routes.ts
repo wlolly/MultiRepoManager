@@ -6,6 +6,7 @@ import { getUserPagePermissions, getUserWarehousePermissions } from "./middlewar
 import socialAuthConfig from './social-auth-config';
 import * as warehouseMatcher from './utils/warehouse-matcher';
 import { createInternalUserID } from './database/userID';
+import { createInventoryRoutes } from './routes/inventory-routes';
 import { 
   insertUserSchema, 
   insertRepositorySchema, 
@@ -5079,6 +5080,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: 'Failed to initialize test data', message: errorMessage });
     }
   });
+
+  // 添加库存管理系统路由
+  const inventoryRoutes = createInventoryRoutes();
+  apiRouter.use('/inventory', inventoryRoutes);
 
   // Mount the API router
   app.use("/api", apiRouter);
