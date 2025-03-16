@@ -235,7 +235,6 @@ export async function getCurrentUser(req: Request, res: Response) {
         fullName: '系统管理员',
         isActive: true,
         authenticated: true,
-        realAuthenticated: true,
         permissions: {
           pages: ['dashboard', 'products', 'warehouses', 'team', 'admin'],
           actions: ['view', 'create', 'edit', 'delete'],

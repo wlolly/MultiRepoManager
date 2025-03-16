@@ -357,25 +357,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error('登录认证内部错误:', err);
         }
         
-        // 假阳性登录策略：即使用户不存在或密码错误，也创建"有效"会话
-        // 但内部需要跟踪实际认证状态
+        // 标准认证流程 - 用户不存在或密码错误，返回401错误
         if (!user) {
-          console.log(`用户${req.body.username}不存在或密码错误，应用假阳性登录策略`);
-        
-          // 创建匿名用户对象(供假阳性登录使用)
-          user = {
-            id: -1, // 使用-1表示匿名用户
-            username: req.body.username || 'anonymous',
-            role: 'user',
-            isActive: true,
-            userSource: 'local',
-            realAuthenticated: false // 标记为未实际认证
-          };
-        } else {
-          console.log(`用户 ${user.username} 认证成功，准备创建会话`);
-          // 所有成功认证的用户都标记为真实认证
-          (user as any).realAuthenticated = true;
+          console.log(`用户${req.body.username}不存在或密码错误，拒绝登录`);
+          return res.status(401).json({ 
+            message: '用户名或密码错误', 
+            success: false
+          });
         }
+        
+        console.log(`用户 ${user.username} 认证成功，准备创建会话`);
         
         // 确保会话对象存在
         if (!req.session) {
@@ -396,9 +387,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const hasSocialBound = !!(user.socialId && user.socialId !== '');
         const needSocialBinding = user.userSource === 'local' && !hasSocialBound;
         req.session.socialBound = hasSocialBound;
-        
-        // 假阳性登录标记
-        req.session.realAuthenticated = (user as any).realAuthenticated || false;
         
         // 保存会话ID，这可以帮助客户端追踪会话
         const sessionId = req.sessionID;
@@ -478,15 +466,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
               needSocialBinding: needSocialBinding, // 通知前端需要绑定社交账号
               sessionId: req.sessionID, // 返回会话ID，方便客户端恢复
               authenticated: true,
-              realAuthenticated: req.session.realAuthenticated, // 添加实际认证状态标志
               user: {
                 id: user.id,
                 username: user.username,
                 fullName: user.fullName,
                 role: user.role,
                 avatarUrl: user.avatarUrl,
-                userSource: user.userSource,
-                realAuthenticated: req.session.realAuthenticated || false // 确保在用户对象中也包含此标志
+                userSource: user.userSource
               }
             });
           });

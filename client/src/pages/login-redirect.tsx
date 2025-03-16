@@ -11,8 +11,6 @@ export default function LoginRedirect() {
   const [status, setStatus] = useState<string>('正在载入会话...');
   const [error, setError] = useState<string | null>(null);
   
-  // 登录重定向处理
-  
   useEffect(() => {
     // 在加载页面时显示提示
     toast.success("登录成功，正在验证会话...");
@@ -58,17 +56,16 @@ export default function LoginRedirect() {
     .then(data => {
       console.log('会话验证响应数据:', data);
       
-      // 检查是否是已认证用户或假阳性登录(假阳性登录策略)
-      if (data.authenticated || data.realAuthenticated) {
+      // 检查是否是已认证用户
+      if (data.authenticated) {
         setStatus('会话验证成功，准备跳转...');
-        console.log('会话验证成功或符合登录策略:', data);
+        console.log('会话验证成功:', data);
         
         // 存储用户信息
         if (data.id !== undefined) {
           // 直接数据就是用户对象的情况
           const userData = {
-            ...data,
-            realAuthenticated: data.realAuthenticated
+            ...data
           };
           localStorage.setItem('currentUser', JSON.stringify(userData));
           sessionStorage.setItem('currentUser', JSON.stringify(userData));
@@ -76,35 +73,16 @@ export default function LoginRedirect() {
         } else if (data.user) {
           // 用户数据在user字段内的情况
           const userData = {
-            ...data.user,
-            realAuthenticated: data.realAuthenticated
+            ...data.user
           };
           localStorage.setItem('currentUser', JSON.stringify(userData));
           sessionStorage.setItem('currentUser', JSON.stringify(userData));
           console.log('保存用户数据(嵌套格式):', userData);
-        } else if (data.fakePositive) {
-          // 对于假阳性登录，创建一个访客用户对象
-          const guestUser = {
-            id: -1,
-            username: data.fakeName || '访客用户',
-            fullName: data.fakeName || '访客用户',
-            role: 'anonymous',
-            userSource: 'local',
-            fakePositive: true,
-            realAuthenticated: false,
-            accessLevel: data.accessLevel || 'limited'
-          };
-          
-          localStorage.setItem('currentUser', JSON.stringify(guestUser));
-          sessionStorage.setItem('currentUser', JSON.stringify(guestUser));
-          console.log('已创建假阳性登录访客用户:', guestUser);
         }
         
         // 使用延时确保数据已存储
         setTimeout(() => {
           setStatus('验证完成，正在跳转...');
-          
-          // 确保会话状态已保存
           
           // 使用window.location重定向到首页
           window.location.href = '/';
