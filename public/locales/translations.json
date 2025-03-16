@@ -20,35 +20,35 @@
     "kk": "Тауар",
     "uz": "Mahsulot"
   },
-  "just_now": {
+  "time.just_now": {
     "zh": "刚刚",
     "en": "just now",
     "ru": "только что",
     "kk": "дәл қазір",
     "uz": "hozirgina"
   },
-  "minutes_ago": {
+  "time.minutes_ago": {
     "zh": "{{value}}分钟前",
     "en": "{{value}} minutes ago",
     "ru": "{{value}} минут назад",
     "kk": "{{value}} минут бұрын",
     "uz": "{{value}} daqiqa oldin"
   },
-  "hours_ago": {
+  "time.hours_ago": {
     "zh": "{{value}}小时前",
     "en": "{{value}} hours ago",
     "ru": "{{value}} часов назад",
     "kk": "{{value}} сағат бұрын",
     "uz": "{{value}} soat oldin"
   },
-  "yesterday": {
+  "time.yesterday": {
     "zh": "昨天",
     "en": "yesterday",
     "ru": "вчера",
     "kk": "кеше",
     "uz": "kecha"
   },
-  "days_ago": {
+  "time.days_ago": {
     "zh": "{{value}}天前",
     "en": "{{value}} days ago",
     "ru": "{{value}} дней назад",
@@ -62,26 +62,89 @@
     "kk": "ішінде",
     "uz": "ichida"
   },
-  "navigation": {
+  "sidebar.navigation": {
     "zh": "导航",
     "en": "NAVIGATION",
     "ru": "НАВИГАЦИЯ",
     "kk": "НАВИГАЦИЯ",
     "uz": "NAVIGATSIYA"
   },
-  "recent_activity": {
+  "sidebar.recent_activity": {
     "zh": "最近活动",
     "en": "RECENT ACTIVITY",
     "ru": "ПОСЛЕДНЯЯ АКТИВНОСТЬ",
     "kk": "СОҢҒЫ БЕЛСЕНДІЛІК",
     "uz": "SO'NGGI FAOLLIK"
   },
-  "no_activity": {
+  "sidebar.no_activity": {
     "zh": "没有最近活动",
     "en": "No recent activity",
     "ru": "Нет последней активности",
     "kk": "Жақында белсенділік жоқ",
     "uz": "So'nggi faollik yo'q"
+  },
+  "sidebar.new_product": {
+    "zh": "添加新产品",
+    "en": "Add New Product",
+    "ru": "Добавить новый товар",
+    "kk": "Жаңа өнім қосу",
+    "uz": "Yangi mahsulot qo'shish"
+  },
+  "sidebar.dashboard": {
+    "zh": "仪表盘",
+    "en": "Dashboard",
+    "ru": "Панель управления",
+    "kk": "Басқару тақтасы",
+    "uz": "Boshqaruv paneli"
+  },
+  "sidebar.products": {
+    "zh": "产品管理",
+    "en": "Products",
+    "ru": "Товары",
+    "kk": "Өнімдер",
+    "uz": "Mahsulotlar"
+  },
+  "sidebar.inventory": {
+    "zh": "库存管理",
+    "en": "Inventory",
+    "ru": "Инвентарь",
+    "kk": "Қор",
+    "uz": "Inventar"
+  },
+  "sidebar.warehouses": {
+    "zh": "仓库管理",
+    "en": "Warehouses",
+    "ru": "Склады",
+    "kk": "Қоймалар",
+    "uz": "Omborlar"
+  },
+  "sidebar.reports": {
+    "zh": "报表中心",
+    "en": "Reports",
+    "ru": "Отчеты",
+    "kk": "Есептер",
+    "uz": "Hisobotlar"
+  },
+  "sidebar.transfers": {
+    "zh": "调拨管理",
+    "en": "Transfers",
+    "ru": "Перемещения",
+    "kk": "Аударымдар",
+    "uz": "O'tkazmalar"
+  },
+  "sidebar.settings": {
+    "zh": "系统设置",
+    "en": "Settings",
+    "ru": "Настройки",
+    "kk": "Параметрлер",
+    "uz": "Sozlamalar"
+  },
+  "sidebar.users": {
+    "zh": "用户管理",
+    "en": "Users",
+    "ru": "Пользователи",
+    "kk": "Пайдаланушылар",
+    "uz": "Foydalanuvchilar"
   },
   "dashboard": {
     "zh": "仪表盘",
@@ -89,6 +152,90 @@
     "ru": "Панель управления",
     "kk": "Басқару тақтасы",
     "uz": "Boshqaruv paneli"
+  },
+  "dashboard.public_dashboard_title": {
+    "zh": "仓库管理系统",
+    "en": "Warehouse Management System",
+    "ru": "Система управления складом",
+    "kk": "Қойма басқару жүйесі",
+    "uz": "Ombor boshqaruv tizimi"
+  },
+  "dashboard.public_dashboard_description": {
+    "zh": "多功能仓库和库存管理平台，为您的业务提供高效率解决方案",
+    "en": "Multi-functional warehouse and inventory management platform providing efficient solutions for your business",
+    "ru": "Многофункциональная платформа управления складом и инвентаризацией, обеспечивающая эффективные решения для вашего бизнеса",
+    "kk": "Бизнесіңіз үшін тиімді шешімдер ұсынатын көп функционалды қойма және қор басқару платформасы",
+    "uz": "Biznesingiz uchun samarali yechimlarni taqdim etuvchi ko'p funksiyali ombor va inventar boshqaruv platformasi"
+  },
+  "dashboard.total_products": {
+    "zh": "产品总数",
+    "en": "Total Products",
+    "ru": "Всего продуктов",
+    "kk": "Барлық өнімдер",
+    "uz": "Barcha mahsulotlar"
+  },
+  "dashboard.total_products_description": {
+    "zh": "系统中注册的所有产品数量",
+    "en": "Total number of products registered in the system",
+    "ru": "Общее количество продуктов, зарегистрированных в системе",
+    "kk": "Жүйеде тіркелген өнімдердің жалпы саны",
+    "uz": "Tizimda ro'yxatga olingan mahsulotlarning umumiy soni"
+  },
+  "dashboard.total_warehouses": {
+    "zh": "仓库总数",
+    "en": "Total Warehouses",
+    "ru": "Всего складов",
+    "kk": "Барлық қоймалар",
+    "uz": "Barcha omborlar"
+  },
+  "dashboard.total_warehouses_description": {
+    "zh": "您管理的仓库总数",
+    "en": "Total number of warehouses you manage",
+    "ru": "Общее количество складов, которыми вы управляете",
+    "kk": "Сіз басқаратын қоймалардың жалпы саны",
+    "uz": "Siz boshqaradigan omborlarning umumiy soni"
+  },
+  "dashboard.categories_count": {
+    "zh": "产品类别",
+    "en": "Product Categories",
+    "ru": "Категории продуктов",
+    "kk": "Өнім санаттары",
+    "uz": "Mahsulot toifalari"
+  },
+  "dashboard.categories_description": {
+    "zh": "产品分类数量",
+    "en": "Number of product categories",
+    "ru": "Количество категорий продуктов",
+    "kk": "Өнім санаттарының саны",
+    "uz": "Mahsulot toifalarining soni"
+  },
+  "dashboard.recent_operations": {
+    "zh": "最近操作",
+    "en": "Recent Operations",
+    "ru": "Недавние операции",
+    "kk": "Соңғы операциялар",
+    "uz": "So'nggi operatsiyalar"
+  },
+  "dashboard.recent_operations_description": {
+    "zh": "最近处理的库存操作数量",
+    "en": "Number of recently processed inventory operations",
+    "ru": "Количество недавно обработанных операций с инвентарем",
+    "kk": "Жақында өңделген қор операцияларының саны",
+    "uz": "So'nggi qayta ishlangan inventar operatsiyalari soni"
+  },
+  "dashboard.login_to_access_more": {
+    "zh": "登录以访问更多功能",
+    "en": "Login to Access More",
+    "ru": "Войдите, чтобы получить больше доступа",
+    "kk": "Көбірек қол жеткізу үшін кіріңіз",
+    "uz": "Ko'proq imkoniyatlarga ega bo'lish uchun tizimga kiring"
+  },
+  "dashboard.login_to_access_more_description": {
+    "zh": "登录您的账户以使用所有功能",
+    "en": "Sign in to your account to use all features",
+    "ru": "Войдите в свою учетную запись, чтобы использовать все функции",
+    "kk": "Барлық мүмкіндіктерді пайдалану үшін тіркелгіңізге кіріңіз",
+    "uz": "Barcha imkoniyatlardan foydalanish uchun hisobingizga kiring"
   },
   "my_products": {
     "zh": "我的商品",
