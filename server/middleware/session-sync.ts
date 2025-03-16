@@ -68,7 +68,7 @@ export function sessionSyncMiddleware(req: Request, res: Response, next: NextFun
           req.sessionID = clientSessionId;
           
           // 更新全局持久化存储
-          if (global.sessionStorage) {
+          if (global.sessionStorage && req.ip && typeof req.ip === 'string') {
             global.sessionStorage[req.ip] = clientSessionId;
           }
           
@@ -93,7 +93,7 @@ export function sessionSyncMiddleware(req: Request, res: Response, next: NextFun
   }
 
   // 确保全局持久化存储始终包含当前会话ID
-  if (global.sessionStorage) {
+  if (global.sessionStorage && req.ip && typeof req.ip === 'string') {
     global.sessionStorage[req.ip] = req.sessionID;
   }
 

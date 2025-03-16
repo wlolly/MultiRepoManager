@@ -7,13 +7,16 @@ import connect_pg_simple from 'connect-pg-simple';
 import { Pool } from 'pg';
 
 // 全局session存储，避免模块重新加载时丢失会话
+// 定义自定义类型，避免与内置Storage类型冲突
+type SessionStorageType = Record<string, string>;
+
 declare global {
-  var sessionStorage: any;
+  var sessionStorage: SessionStorageType | undefined;
 }
 
 // 初始化全局会话存储
 if (!global.sessionStorage) {
-  global.sessionStorage = {};
+  global.sessionStorage = {} as SessionStorageType;
 }
 
 export async function sessionMiddleware(req: Request, res: Response, next: NextFunction) {
@@ -22,13 +25,15 @@ export async function sessionMiddleware(req: Request, res: Response, next: NextF
     res.setHeader('X-Session-ID', req.sessionID);
 
     // 检查是否存在持久化的会话ID
-    if (global.sessionStorage[req.ip]) {
+    if (global.sessionStorage && req.ip && typeof req.ip === 'string' && global.sessionStorage[req.ip]) {
       console.log(`[会话中间件] 发现持久化会话ID: ${global.sessionStorage[req.ip]}`);
       req.sessionID = global.sessionStorage[req.ip];
       res.setHeader('X-Persistent-Session-ID', req.sessionID);
     } else {
       console.log(`[会话中间件] 未找到持久化会话ID, 当前会话ID: ${req.sessionID}`);
-      global.sessionStorage[req.ip] = req.sessionID;
+      if (global.sessionStorage && req.ip && typeof req.ip === 'string') {
+        global.sessionStorage[req.ip] = req.sessionID;
+      }
     }
 
     // 检查会话是否已认证 
@@ -72,7 +77,7 @@ export function configureSession(app: any) {
     saveUninitialized: false,
     genid: (req: any) => {
       // 如果已存在持久化会话ID，优先使用它
-      if (global.sessionStorage[req.ip]) {
+      if (global.sessionStorage && req.ip && typeof req.ip === 'string' && global.sessionStorage[req.ip]) {
         console.log(`[会话] 使用持久化会话ID: ${global.sessionStorage[req.ip]}`);
         return global.sessionStorage[req.ip];
       }
@@ -80,7 +85,9 @@ export function configureSession(app: any) {
       // 否则生成新ID
       const sessionId = require('crypto').randomBytes(16).toString('hex');
       console.log(`[会话] 生成新会话ID: ${sessionId}`);
-      global.sessionStorage[req.ip] = sessionId;
+      if (global.sessionStorage && req.ip && typeof req.ip === 'string') {
+        global.sessionStorage[req.ip] = sessionId;
+      }
       return sessionId;
     },
     cookie: {
@@ -118,9 +125,9 @@ export function configureSession(app: any) {
     });
   } else {
     console.log('[会话] 使用内存存储会话');
-    sessionOptions.store = new MemoryStore({
-      checkPeriod: 86400000 // 24 hours
-    });
+    // MemoryStore doesn't actually have a checkPeriod option in its type definition
+    // but the implementation accepts it, so we use a type assertion
+    sessionOptions.store = new MemoryStore({} as any);
   }
 
   // 应用会话中间件
@@ -137,7 +144,9 @@ export function configureSession(app: any) {
     };
     
     // 确保每次请求都将当前会话ID保存到持久存储中
-    global.sessionStorage[req.ip] = req.sessionID;
+    if (global.sessionStorage && req.ip && typeof req.ip === 'string') {
+      global.sessionStorage[req.ip] = req.sessionID;
+    }
     
     next();
   });
