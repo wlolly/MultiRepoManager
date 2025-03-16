@@ -183,10 +183,10 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       <Card className="w-[360px] shadow-xl border-0 rounded-xl overflow-hidden bg-white/95 backdrop-blur-sm">
         <CardHeader className="space-y-1 pb-4 pt-6">
           <CardTitle className="text-xl font-bold text-center">
-            {t('login')}
+            {t('auth.login')}
           </CardTitle>
           <CardDescription className="text-center text-xs">
-            {t('enter_credentials_to_login')}
+            {t('auth.enter_credentials_to_login')}
           </CardDescription>
         </CardHeader>
         <CardContent className="px-6 py-2">
@@ -198,10 +198,10 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                 name="username"
                 render={({ field }) => (
                   <FormItem className="space-y-1">
-                    <FormLabel className="text-xs font-medium">{t('username')}</FormLabel>
+                    <FormLabel className="text-xs font-medium">{t('auth.username')}</FormLabel>
                     <FormControl>
                       <Input 
-                        placeholder={t('enter_username')} 
+                        placeholder={t('auth.enter_username')} 
                         {...field} 
                         className="h-9 text-sm"
                       />
@@ -216,11 +216,11 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                 name="password"
                 render={({ field }) => (
                   <FormItem className="space-y-1">
-                    <FormLabel className="text-xs font-medium">{t('password')}</FormLabel>
+                    <FormLabel className="text-xs font-medium">{t('auth.password')}</FormLabel>
                     <FormControl>
                       <Input 
                         type="password" 
-                        placeholder={t('enter_password')} 
+                        placeholder={t('auth.enter_password')} 
                         {...field} 
                         className="h-9 text-sm"
                       />
@@ -232,7 +232,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
               
               <div className="flex flex-col space-y-2 mt-4">
                 <Button type="submit" className="w-full h-9" disabled={isLoading}>
-                  {isLoading ? t('logging_in') : t('login')}
+                  {isLoading ? t('auth.logging_in') : t('auth.login')}
                 </Button>
                 
                 {/* 访客登录按钮 */}
@@ -244,8 +244,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                     // 创建访客用户
                     const guestUser = {
                       id: -1,
-                      username: t('guest_user'),
-                      fullName: t('guest_user'),
+                      username: t('auth.guest_user'),
+                      fullName: t('auth.guest_user'),
                       role: 'anonymous',
                       userSource: 'local',
                       fakePositive: true,
@@ -259,8 +259,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                     
                     // 显示提示
                     toast({
-                      title: t('guest_login_success'),
-                      description: t('some_features_unavailable'),
+                      title: t('auth.guest_login_success'),
+                      description: t('auth.some_features_unavailable'),
                       type: "success"
                     });
                     
@@ -270,7 +270,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                     }, 500);
                   }}
                 >
-                  {t('guest_login')}
+                  {t('auth.guest_login')}
                 </Button>
                 
                 {/* 测试账号一键登录 - 临时开发用，可以在生产中删除 */}
@@ -287,7 +287,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                     form.handleSubmit(onSubmit)();
                   }}
                 >
-                  {t('test_account_login')}
+                  {t('auth.test_account_login')}
                 </Button>
               </div>
             </form>
@@ -299,7 +299,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
             </div>
             <div className="relative flex justify-center text-xs">
               <span className="bg-white px-2 text-gray-500">
-                {t('or_continue_with')}
+                {t('auth.or_continue_with')}
               </span>
             </div>
           </div>
@@ -317,7 +317,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                   <path d="M17 10.9c-1-.1-1.9-.9-1.9-2s.9-1.9 1.9-1.9c1.1 0 1.9.8 2 1.9 0 1.1-.9 2-2 2z"></path>
                 </svg>
               </div>
-              {t('wechat')}
+              {t('auth.wechat')}
             </Button>
             <Button 
               variant="outline" 
@@ -332,20 +332,20 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                   <path d="M8 13h0c0 1 .895 2 2 2h4c1.105 0 2-1 2-2"></path>
                 </svg>
               </div>
-              {t('whatsapp')}
+              {t('auth.whatsapp')}
             </Button>
           </div>
         </CardContent>
         <CardFooter className="flex justify-center py-4 px-6">
           <div className="text-xs text-center text-gray-500">
-            {t('no_account')} <Link href="/register" className="text-blue-600 hover:underline">{t('register')}</Link>
+            {t('auth.no_account')} <Link href="/register" className="text-blue-600 hover:underline">{t('auth.register')}</Link>
           </div>
         </CardFooter>
       </Card>
       
       {/* 页脚版权信息 */}
       <div className="absolute bottom-4 text-xs text-gray-400">
-        &copy; {new Date().getFullYear()} {t('copyright_text')} | {t('version')} 1.0.0
+        &copy; {new Date().getFullYear()} {t('auth.copyright_text')} | {t('auth.version')} 1.0.0
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from "lucide-react";
+import { useTranslation } from 'react-i18next';
 
 /**
  * 登录成功重定向页面
@@ -8,12 +9,13 @@ import { Loader2 } from "lucide-react";
  */
 export default function LoginRedirect() {
   const { toast } = useToast();
-  const [status, setStatus] = useState<string>('正在载入会话...');
+  const { t } = useTranslation();
+  const [status, setStatus] = useState<string>(t('auth.loading_session'));
   const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
     // 在加载页面时显示提示
-    toast.success("登录成功，正在验证会话...");
+    toast.success(t('auth.please_wait_verifying'));
     
     // 尝试从sessionStorage加载用户信息（从之前的登录页）
     const storedUserData = sessionStorage.getItem('currentUser');
@@ -35,7 +37,7 @@ export default function LoginRedirect() {
     console.log('当前Cookie中的会话ID:', cookieSessionId);
     
     // 设置状态更新
-    setStatus('正在验证会话状态...');
+    setStatus(t('auth.verifying_session'));
     
     // 获取当前用户信息，验证会话有效性
     fetch('/api/auth/current-user', {
@@ -49,7 +51,7 @@ export default function LoginRedirect() {
     .then(response => {
       console.log(`会话验证状态: ${response.status} ${response.statusText}`);
       if (!response.ok) {
-        setError(`服务器返回错误: ${response.status}`);
+        setError(`${t('auth.verification_error')}: ${response.status}`);
       }
       return response.json();
     })
@@ -58,7 +60,7 @@ export default function LoginRedirect() {
       
       // 检查是否是已认证用户
       if (data.authenticated) {
-        setStatus('会话验证成功，准备跳转...');
+        setStatus(t('auth.session_verification_success'));
         console.log('会话验证成功:', data);
         
         // 存储用户信息
@@ -82,15 +84,15 @@ export default function LoginRedirect() {
         
         // 使用延时确保数据已存储
         setTimeout(() => {
-          setStatus('验证完成，正在跳转...');
+          setStatus(t('auth.verification_complete'));
           
           // 使用window.location重定向到首页
           window.location.href = '/';
         }, 1000);
       } else {
-        setError('会话验证失败');
+        setError(t('auth.session_verification_failed'));
         console.error('会话验证失败:', data);
-        toast.error("登录会话验证失败，请重新登录");
+        toast.error(t('auth.session_verification_failed'));
         
         // 登录失败，留在此页面或重定向到登录页
         setTimeout(() => {
@@ -99,16 +101,16 @@ export default function LoginRedirect() {
       }
     })
     .catch(error => {
-      setError('验证过程出错');
+      setError(t('auth.verification_error'));
       console.error('会话验证请求错误:', error);
-      toast.error("验证过程中发生错误，请重试");
+      toast.error(t('auth.error_try_again'));
       
       // 出错时重定向到登录页
       setTimeout(() => {
         window.location.href = '/login';
       }, 2000);
     });
-  }, []);
+  }, [t, toast]);
   
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-blue-50 to-gray-100">
@@ -119,15 +121,15 @@ export default function LoginRedirect() {
           {error ? (
             <div className="mt-4 p-3 bg-red-50 text-red-700 border border-red-200 rounded">
               <p className="text-sm font-medium">{error}</p>
-              <p className="text-xs mt-1">正在重定向到登录页...</p>
+              <p className="text-xs mt-1">{t('auth.redirecting_to_login')}</p>
             </div>
           ) : (
-            <p className="text-gray-500">请稍候，正在验证登录并跳转</p>
+            <p className="text-gray-500">{t('auth.please_wait_verifying')}</p>
           )}
           
           {/* 登录处理提示 */}
           <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
-            正在处理登录请求...
+            {t('auth.processing_login')}
           </div>
         </div>
       </div>

@@ -4068,5 +4068,54 @@
     "ru": "Перенаправление на страницу входа...",
     "kk": "Кіру бетіне қайта бағытталуда...",
     "uz": "Kirish sahifasiga yo'naltirilmoqda..."
+  },
+  "auth.wechat": {
+    "zh": "微信",
+    "en": "WeChat",
+    "ru": "WeChat",
+    "kk": "WeChat",
+    "uz": "WeChat"
+  },
+  "auth.whatsapp": {
+    "zh": "WhatsApp",
+    "en": "WhatsApp",
+    "ru": "WhatsApp",
+    "kk": "WhatsApp",
+    "uz": "WhatsApp"
+  },
+  "auth.no_account": {
+    "zh": "还没有账号?",
+    "en": "Don't have an account?",
+    "ru": "Нет учетной записи?",
+    "kk": "Тіркелгіңіз жоқ па?",
+    "uz": "Hisobingiz yo'qmi?"
+  },
+  "auth.register": {
+    "zh": "注册",
+    "en": "Register",
+    "ru": "Регистрация",
+    "kk": "Тіркелу",
+    "uz": "Ro'yxatdan o'tish"
+  },
+  "auth.copyright_text": {
+    "zh": "某某科技有限公司",
+    "en": "ABC Technology Co., Ltd.",
+    "ru": "ABC Technology Co., Ltd.",
+    "kk": "ABC Technology Co., Ltd.",
+    "uz": "ABC Technology Co., Ltd."
+  },
+  "auth.version": {
+    "zh": "版本",
+    "en": "Version",
+    "ru": "Версия",
+    "kk": "Нұсқа",
+    "uz": "Versiya"
+  },
+  "auth.or_continue_with": {
+    "zh": "或继续使用",
+    "en": "Or continue with",
+    "ru": "Или продолжить с",
+    "kk": "Немесе жалғастыру",
+    "uz": "Yoki davom eting"
   }
 }
