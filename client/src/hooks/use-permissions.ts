@@ -56,11 +56,31 @@ export function usePermissions(): PermissionsHook {
         credentials: 'include' // 包含会话cookie
       });
       
-      // 无论状态码如何，都尝试解析响应
+      // 解析响应
       const userData = await currentUserResponse.json();
+      console.log('权限钩子获取用户数据:', userData);
       
-      if (currentUserResponse.status === 401) {
-        // 检查是否是假阳性登录
+      // 处理各种认证情况
+      if (currentUserResponse.status === 200) {
+        // 用户信息获取成功，保存到本地存储
+        localStorage.setItem('currentUser', JSON.stringify(userData));
+        
+        // 处理访客用户 vs 真实用户
+        if (userData.realAuthenticated === false || userData.id === -1) {
+          console.log('检测到访客用户，id=-1 或 realAuthenticated=false');
+          // 访客用户(假阳性登录) - 设置为未认证状态，但允许查看公开内容
+          setIsAuthenticated(false);
+        } else {
+          // 真实用户 - 设置为已认证状态
+          console.log('检测到真实登录用户');
+          setIsAuthenticated(true);
+        }
+      } else if (currentUserResponse.status === 401) {
+        // 服务器回复未认证，设置为未认证状态
+        console.log('服务器返回401未认证状态');
+        setIsAuthenticated(false);
+        
+        // 可以处理假阳性登录的特殊服务器响应
         if (userData.fakePositive) {
           console.log('检测到假阳性登录响应:', userData);
           // 创建一个访客用户对象并存储
@@ -71,27 +91,15 @@ export function usePermissions(): PermissionsHook {
             role: 'anonymous',
             userSource: 'local',
             fakePositive: true,
+            realAuthenticated: false,
             accessLevel: userData.accessLevel || 'limited'
           };
           
-          console.log('Storing guest user in localStorage:', guestUser);
           localStorage.setItem('currentUser', JSON.stringify(guestUser));
-          sessionStorage.setItem('currentUser', JSON.stringify(guestUser));
-          
-          // 确保用户信息已存储
-          const storedUser = localStorage.getItem('currentUser');
-          console.log('Verified currentUser in localStorage:', storedUser);
-          
-          // 设置为已认证状态，虽然是有限权限
-          setIsAuthenticated(true);
-          console.log('已创建假阳性登录访客用户');
-        } else {
-          // 常规未认证，但仍允许访问公开内容
-          setIsAuthenticated(false);
-          console.log('未登录，但允许访问公开内容');
-          setLoading(false);
-          return;
         }
+        
+        setLoading(false);
+        return;
       }
       
       // 获取页面权限
@@ -100,19 +108,19 @@ export function usePermissions(): PermissionsHook {
           credentials: 'include' // 包含会话cookie
         });
         
-        if (pageResponse.status === 401) {
-          // 认证失败，但不强制重定向(假阳性登录策略)
-          console.log('权限API返回401，但允许假阳性登录');
-          setIsAuthenticated(true); // 即使权限API返回401，也保持用户登录状态
-          setPagePermissions({}); // 使用空权限
-        } else {
+        if (pageResponse.ok) {
           // 成功获取权限
           const pageData = await pageResponse.json();
+          console.log('获取到页面权限:', pageData);
           setPagePermissions(pageData);
+        } else {
+          // 请求失败，使用空权限
+          console.log('页面权限请求失败，设置空权限');
+          setPagePermissions({});
         }
       } catch (error) {
         console.error('获取页面权限时出错:', error);
-        // 出错时使用空权限集合，但不影响认证状态
+        // 出错时使用空权限集合
         setPagePermissions({});
       }
       
@@ -122,40 +130,21 @@ export function usePermissions(): PermissionsHook {
           credentials: 'include' // 包含会话cookie
         });
         
-        if (warehouseResponse.status === 401) {
-          // 认证失败，但不强制重定向(假阳性登录策略)
-          console.log('仓库权限API返回401，但允许假阳性登录');
-          setWarehousePermissions({}); // 使用空权限
-        } else {
+        if (warehouseResponse.ok) {
           // 成功获取权限
           const warehouseData = await warehouseResponse.json();
+          console.log('获取到仓库权限:', warehouseData);
           setWarehousePermissions(warehouseData);
+        } else {
+          // 请求失败，使用空权限
+          console.log('仓库权限请求失败，设置空权限');
+          setWarehousePermissions({});
         }
       } catch (error) {
         console.error('获取仓库权限时出错:', error);
         // 出错时使用空权限集合
         setWarehousePermissions({});
       }
-      
-      // 检查是否有假阳性登录的用户数据
-      const currentUserStr = localStorage.getItem('currentUser');
-      const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
-      
-      if (currentUser) {
-        // 只有非假阳性登录用户才被视为已登录
-        if (currentUser.fakePositive || currentUser.id === -1) {
-          console.log('从本地存储检测到假阳性登录用户', currentUser);
-          // 假阳性登录用户（访客用户）置为未登录状态
-          setIsAuthenticated(false);
-        } else {
-          // 正常登录用户置为已登录状态
-          setIsAuthenticated(true);
-        }
-      } else {
-        // 没有用户信息视为未登录
-        setIsAuthenticated(false);
-      }
-      
     } catch (error) {
       console.error('获取权限失败:', error);
       // 使用console.log代替toast，避免出错
