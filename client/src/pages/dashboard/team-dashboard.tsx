@@ -81,8 +81,9 @@ export function TeamDashboard() {
   const accessibleWarehouses: AccessibleWarehouse[] = React.useMemo(() => {
     if (!teamStats?.warehousePermissions || !allWarehouses) return [];
     
-    return allWarehouses
+    return (Array.isArray(allWarehouses) ? allWarehouses : [])
       .filter((warehouse: any) => {
+        if (!warehouse || typeof warehouse !== 'object' || !warehouse.id) return false;
         const permission = teamStats.warehousePermissions[warehouse.id];
         return permission && permission.canView;
       })

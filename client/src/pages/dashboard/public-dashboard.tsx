@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,13 +18,44 @@ interface PublicDashboardStats {
 
 export function PublicDashboard() {
   const { t } = useTranslation();
+  const [showFallback, setShowFallback] = useState(false);
   
   // Fetch public stats
-  const { data: publicStats, isLoading } = useQuery<PublicDashboardStats>({
+  const { data: publicStats, isLoading, isError } = useQuery<PublicDashboardStats>({
     queryKey: ["/api/stats/public"],
+    retry: 2,
+    // 简化查询配置，使用标准的错误处理方式
+    staleTime: 60000 // 1分钟内不再重新请求
   });
+  
+  // 使用useEffect监听错误状态
+  useEffect(() => {
+    if (isError) {
+      setShowFallback(true);
+    }
+  }, [isError]);
 
-  if (isLoading) {
+  // 创建一个安全的访问对象，防止在数据不存在时出错
+  const safeStats = useMemo(() => {
+    return {
+      totalProducts: publicStats?.totalProducts || 0,
+      totalWarehouses: publicStats?.totalWarehouses || 0,
+      categoriesCount: publicStats?.categoriesCount || 0,
+      recentOperations: publicStats?.recentOperations || 0
+    } as PublicDashboardStats;
+  }, [publicStats]);
+
+  // 延迟300ms后才显示内容，防止页面闪烁
+  useEffect(() => {
+    if (!isLoading && !isError) {
+      const timer = setTimeout(() => {
+        setShowFallback(false);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, isError]);
+
+  if (isLoading || (isError && !showFallback)) {
     return (
       <div className="container mx-auto py-8">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -55,28 +86,28 @@ export function PublicDashboard() {
   const stats = [
     {
       title: t("total_products"),
-      value: publicStats?.totalProducts.toLocaleString() || "0",
+      value: safeStats.totalProducts.toLocaleString(),
       description: t("total_products_description"),
       icon: "package",
       color: "bg-blue-500"
     },
     {
       title: t("total_warehouses"),
-      value: publicStats?.totalWarehouses.toLocaleString() || "0",
+      value: safeStats.totalWarehouses.toLocaleString(),
       description: t("total_warehouses_description"),
       icon: "home",
       color: "bg-green-500"
     },
     {
       title: t("categories_count"),
-      value: publicStats?.categoriesCount.toLocaleString() || "0",
+      value: safeStats.categoriesCount.toLocaleString(),
       description: t("categories_description"),
       icon: "tag",
       color: "bg-purple-500"
     },
     {
       title: t("recent_operations"),
-      value: publicStats?.recentOperations.toLocaleString() || "0",
+      value: safeStats.recentOperations.toLocaleString(),
       description: t("recent_operations_description"),
       icon: "activity",
       color: "bg-yellow-500"
