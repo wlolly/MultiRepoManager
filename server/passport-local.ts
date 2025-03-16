@@ -54,8 +54,8 @@ passport.use(new LocalStrategy(
         return done(null, false, { message: '用户名或密码错误' });
       }
       
-      // 检查用户是否激活
-      if (user.isActive !== true) {
+      // 检查用户是否激活 (数据库中字段为小写isactive)
+      if (user.isactive !== true) {
         console.log('[Passport] 用户未激活:', username);
         return done(null, false, { message: '用户账户未激活' });
       }
@@ -85,13 +85,13 @@ passport.deserializeUser(async (id: number, done) => {
   try {
     console.log('[Passport] 反序列化用户ID:', id);
     
-    // 从数据库获取用户信息
+    // 从数据库获取用户信息 (注意使用全小写字段名)
     const result = await db.select({
       id: users.id,
       username: users.username,
       fullname: users.fullname,
       role: users.role,
-      isActive: users.isActive
+      isactive: users.isactive // 使用全小写字段名
     }).from(users).where(eq(users.id, id));
     
     if (!result || result.length === 0) {
