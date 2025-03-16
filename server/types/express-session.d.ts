@@ -11,5 +11,7 @@ declare module 'express-session' {
     internalUserId?: string;
     originalSessionID?: string;
     realAuthenticated?: boolean;
+    testUser?: boolean;
+    fakePositive?: boolean;
   }
 }
