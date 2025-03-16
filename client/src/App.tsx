@@ -70,6 +70,7 @@ function Sidebar() {
   const [pathname] = useLocation();
   const { t } = useTranslation();
   const { hasPagePermission, isLoading: isLoadingPermissions } = usePermissions();
+  const { isAuthenticated, realAuthenticated, user } = useAuthStatus();
 
   interface Activity {
     id: number;
@@ -153,9 +154,6 @@ function Sidebar() {
     '/settings': 'settings'
   };
   
-  // 获取用户认证状态
-  const { isAuthenticated, realAuthenticated } = useAuthStatus();
-
   // 判断哪些菜单项需要真实登录
   const requiresAuth = (href: string): boolean => {
     // 首页和仪表盘总是可以访问
@@ -251,6 +249,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const { t } = useTranslation();
   const [_, navigate] = useLocation();
+  const { isAuthenticated, user, logout } = useAuthStatus();
   
   // 响应式布局处理
   const [isSmallScreen, setIsSmallScreen] = useState(false);
@@ -321,14 +320,37 @@ function AppLayout({ children }: { children: React.ReactNode }) {
               <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500"></span>
             </div>
             
-            <div className="flex items-center">
-              <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
-                <span>U</span>
+            {isAuthenticated ? (
+              <div className="flex items-center">
+                <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
+                  <span>{user?.username?.charAt(0).toUpperCase() || 'U'}</span>
+                </div>
+                <span className="ml-2 text-sm font-medium text-gray-700 hidden md:inline-block">
+                  {user?.fullName || user?.username || '用户'}
+                </span>
+                <button 
+                  onClick={() => {
+                    if (window.confirm("确定要退出登录吗？")) {
+                      fetch('/api/auth/logout', {
+                        method: 'POST',
+                        credentials: 'include'
+                      }).then(() => {
+                        localStorage.removeItem('currentUser');
+                        window.location.href = '/login';
+                      });
+                    }
+                  }}
+                  className="ml-3 text-sm text-red-500 hidden md:inline-block"
+                >
+                  退出
+                </button>
               </div>
-              <span className="ml-2 text-sm font-medium text-gray-700 hidden md:inline-block">
-                用户名
-              </span>
-            </div>
+            ) : (
+              <Link to="/login" className="flex items-center text-blue-600 hover:text-blue-800 font-medium">
+                <i className="ri-login-box-line mr-1"></i>
+                <span>登录</span>
+              </Link>
+            )}
           </div>
         </header>
         
