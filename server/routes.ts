@@ -784,6 +784,193 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // 团队相关API端点
+  apiRouter.get("/teams", verifySession, async (req, res) => {
+    try {
+      // 检查用户是否真实登录，不允许假阳性登录用户访问团队数据
+      if (!req.session.realAuthenticated) {
+        return res.status(403).json({
+          error: "需要真实用户认证",
+          message: "此API只对真实登录用户开放，不支持访客模式"
+        });
+      }
+      
+      const teams = await storage.getTeams();
+      res.json(teams);
+    } catch (error) {
+      console.error('获取团队列表错误:', error);
+      res.status(500).json({ error: "获取团队列表失败" });
+    }
+  });
+  
+  // 获取用户所属的团队
+  apiRouter.get("/users/:userId/teams", verifySession, async (req, res) => {
+    try {
+      // 检查用户是否真实登录，不允许假阳性登录用户访问团队数据
+      if (!req.session.realAuthenticated) {
+        return res.status(403).json({
+          error: "需要真实用户认证",
+          message: "此API只对真实登录用户开放，不支持访客模式"
+        });
+      }
+      
+      const userId = parseInt(req.params.userId);
+      
+      // 检查当前用户是否就是请求的用户或者是管理员
+      const currentUserId = (req.user as any).id;
+      const isAdmin = (req.user as any).role === 'admin' || (req.user as any).role === 'super_admin';
+      
+      if (currentUserId !== userId && !isAdmin) {
+        return res.status(403).json({
+          error: "权限不足",
+          message: "您无权查看其他用户的团队信息"
+        });
+      }
+      
+      // 获取用户所在的团队
+      const teamMembers = await storage.getTeamMembersForUser(userId);
+      
+      // 获取完整的团队信息
+      const teams = await Promise.all(
+        teamMembers.map(async member => {
+          const team = await storage.getTeam(member.teamId);
+          return {
+            ...team,
+            role: member.role,
+            joinedAt: member.createdAt
+          };
+        })
+      );
+      
+      res.json(teams);
+    } catch (error) {
+      console.error(`获取用户团队错误:`, error);
+      res.status(500).json({ error: "获取用户团队失败" });
+    }
+  });
+  
+  // 获取团队成员
+  apiRouter.get("/teams/:teamId/members", verifySession, async (req, res) => {
+    try {
+      // 检查用户是否真实登录，不允许假阳性登录用户访问团队数据
+      if (!req.session.realAuthenticated) {
+        return res.status(403).json({
+          error: "需要真实用户认证",
+          message: "此API只对真实登录用户开放，不支持访客模式"
+        });
+      }
+      
+      const teamId = parseInt(req.params.teamId);
+      
+      // 检查当前用户是否是团队成员或管理员
+      const currentUserId = (req.user as any).id;
+      const isAdmin = (req.user as any).role === 'admin' || (req.user as any).role === 'super_admin';
+      const teamMembers = await storage.getTeamMembers(teamId);
+      const isMember = teamMembers.some(member => member.userId === currentUserId);
+      
+      if (!isMember && !isAdmin) {
+        return res.status(403).json({
+          error: "权限不足",
+          message: "您不是此团队成员，无权查看团队成员列表"
+        });
+      }
+      
+      // 获取完整的成员信息，包括用户详情
+      const membersWithDetails = await Promise.all(
+        teamMembers.map(async member => {
+          const user = await storage.getUser(member.userId);
+          return {
+            ...member,
+            user: {
+              id: user?.id,
+              username: user?.username,
+              fullName: user?.fullName,
+              email: user?.email,
+              role: user?.role
+            }
+          };
+        })
+      );
+      
+      res.json(membersWithDetails);
+    } catch (error) {
+      console.error(`获取团队成员错误:`, error);
+      res.status(500).json({ error: "获取团队成员失败" });
+    }
+  });
+  
+  // 获取团队仓库权限
+  apiRouter.get("/teams/:teamId/warehouse-permissions", verifySession, async (req, res) => {
+    try {
+      // 检查用户是否真实登录，不允许假阳性登录用户访问团队数据
+      if (!req.session.realAuthenticated) {
+        return res.status(403).json({
+          error: "需要真实用户认证",
+          message: "此API只对真实登录用户开放，不支持访客模式"
+        });
+      }
+      
+      const teamId = parseInt(req.params.teamId);
+      
+      // 检查当前用户是否是团队成员或管理员
+      const currentUserId = (req.user as any).id;
+      const isAdmin = (req.user as any).role === 'admin' || (req.user as any).role === 'super_admin';
+      const teamMembers = await storage.getTeamMembers(teamId);
+      const isMember = teamMembers.some(member => member.userId === currentUserId);
+      
+      if (!isMember && !isAdmin) {
+        return res.status(403).json({
+          error: "权限不足",
+          message: "您不是此团队成员，无权查看团队仓库权限"
+        });
+      }
+      
+      // 获取团队的仓库权限
+      const warehousePermissions = await storage.getTeamWarehousePermissions(teamId);
+      
+      res.json(warehousePermissions);
+    } catch (error) {
+      console.error(`获取团队仓库权限错误:`, error);
+      res.status(500).json({ error: "获取团队仓库权限失败" });
+    }
+  });
+
+  // 获取团队页面权限
+  apiRouter.get("/teams/:teamId/page-permissions", verifySession, async (req, res) => {
+    try {
+      // 检查用户是否真实登录，不允许假阳性登录用户访问团队数据
+      if (!req.session.realAuthenticated) {
+        return res.status(403).json({
+          error: "需要真实用户认证",
+          message: "此API只对真实登录用户开放，不支持访客模式"
+        });
+      }
+      
+      const teamId = parseInt(req.params.teamId);
+      
+      // 检查当前用户是否是团队成员或管理员
+      const currentUserId = (req.user as any).id;
+      const isAdmin = (req.user as any).role === 'admin' || (req.user as any).role === 'super_admin';
+      const teamMembers = await storage.getTeamMembers(teamId);
+      const isMember = teamMembers.some(member => member.userId === currentUserId);
+      
+      if (!isMember && !isAdmin) {
+        return res.status(403).json({
+          error: "权限不足",
+          message: "您不是此团队成员，无权查看团队页面权限"
+        });
+      }
+      
+      // 获取团队的页面权限
+      const pagePermissions = await storage.getTeamPagePermissions(teamId);
+      
+      res.json(pagePermissions);
+    } catch (error) {
+      console.error(`获取团队页面权限错误:`, error);
+      res.status(500).json({ error: "获取团队页面权限失败" });
+    }
+  });
+  
   // User routes
   apiRouter.get("/users", async (req, res) => {
     try {

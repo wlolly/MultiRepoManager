@@ -50,7 +50,12 @@ export interface IStorage {
   // Team members methods
   addTeamMember(teamMember: InsertTeamMember): Promise<TeamMember>;
   getTeamMembers(teamId: number): Promise<TeamMember[]>;
+  getTeamMembersForUser(userId: number): Promise<TeamMember[]>;
   removeTeamMember(teamId: number, userId: number): Promise<void>;
+  
+  // Team permission methods
+  getTeamPagePermissions(teamId: number): Promise<TeamPagePermission[]>;
+  getTeamWarehousePermissions(teamId: number): Promise<TeamWarehousePermission[]>;
   
   // Team repositories methods
   addTeamRepository(teamRepository: InsertTeamRepository): Promise<TeamRepository>;
@@ -179,6 +184,8 @@ export class MemStorage implements IStorage {
   private repositoriesMap: Map<number, Repository>;
   private teamsMap: Map<number, Team>;
   private teamMembersMap: Map<number, TeamMember>;
+  private teamPagePermissionsMap: Map<number, TeamPagePermission>;
+  private teamWarehousePermissionsMap: Map<number, TeamWarehousePermission>;
   private teamRepositoriesMap: Map<number, TeamRepository>;
   private activitiesMap: Map<number, Activity>;
   
@@ -237,6 +244,8 @@ export class MemStorage implements IStorage {
     this.repositoriesMap = new Map();
     this.teamsMap = new Map();
     this.teamMembersMap = new Map();
+    this.teamPagePermissionsMap = new Map();
+    this.teamWarehousePermissionsMap = new Map();
     this.teamRepositoriesMap = new Map();
     this.activitiesMap = new Map();
     
