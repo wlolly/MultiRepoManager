@@ -39,27 +39,28 @@ interface AccessibleWarehouse {
 export function TeamDashboard() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("overview");
-  const { realAuthenticated, user } = useAuthStatus();
+  const { realAuthenticated, user, loading } = useAuthStatus();
   const [shouldTryFetchingData, setShouldTryFetchingData] = useState(false);
   
+  // 监听认证状态和用户变化
   useEffect(() => {
     console.log("TeamDashboard - 认证状态:", realAuthenticated);
     console.log("TeamDashboard - 用户:", user);
     
-    // 极度简化的验证策略 - 总是尝试获取数据
-    setShouldTryFetchingData(true);
-  }, []);
+    // 在用户加载完成且认证状态为真实登录时，尝试获取数据
+    if (!loading) {
+      setShouldTryFetchingData(realAuthenticated);
+    }
+  }, [realAuthenticated, user, loading]);
   
-  // 执行团队数据查询，不关注认证状态
+  // 执行团队数据查询，仅在真实用户认证状态下
   const { data: teamStats, isLoading: isStatsLoading, error: statsError } = useQuery<TeamDashboardStats>({
     queryKey: ["/api/stats/team"],
     retry: 3, // 增加重试次数，确保请求成功
     retryDelay: 1000, // 设置1秒的重试延迟 
-    enabled: true, // 始终启用查询
+    enabled: shouldTryFetchingData, // 只在认证用户时启用查询
     staleTime: 1000 * 60 * 5, // 5分钟内不重新获取数据
     refetchOnWindowFocus: false, // 避免窗口聚焦时重新查询
-    onSuccess: (data) => console.log("TeamDashboard - 数据获取成功:", data),
-    onError: (error) => console.log("TeamDashboard - 获取团队统计数据失败:", error)
   });
   
   // Fetch warehouses for warehouse permission display
