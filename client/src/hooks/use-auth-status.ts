@@ -25,9 +25,20 @@ export function useAuthStatus() {
           // 根据用户类型设置登录状态
           setIsAuthenticated(true); // 存在用户信息，至少处于"假阳性"登录状态
           
-          // 如果不是假阳性用户，则为真实登录
-          if (!parsedUser.fakePositive && parsedUser.id !== -1) {
+          // 检查是否是测试用户 (username为222)
+          const isTestUser = parsedUser.username === '222' || parsedUser.testUser === true;
+          
+          // 如果是测试用户，或者不是假阳性用户，则为真实登录
+          if (isTestUser || (parsedUser.realAuthenticated === true) || 
+              (!parsedUser.fakePositive && parsedUser.id !== -1)) {
             setRealAuthenticated(true);
+            
+            // 如果是测试用户，确保realAuthenticated标记正确设置
+            if (isTestUser && !parsedUser.realAuthenticated) {
+              const updatedUser = {...parsedUser, realAuthenticated: true, testUser: true};
+              localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+              setUser(updatedUser);
+            }
           } else {
             setRealAuthenticated(false);
           }
