@@ -113,8 +113,8 @@ export type InsertRepository = z.infer<typeof insertRepositorySchema>;
 export type Repository = typeof repositories.$inferSelect;
 
 // Teams table
-export const teams = mysqlTable("teams", {
-  id: int("id").primaryKey().autoincrement(),
+export const teams = pgTable("teams", {
+  id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -151,10 +151,10 @@ export const pageNameEnum = pgEnum("page_name", [
 ]);
 
 // 团队页面权限表
-export const teamPagePermissions = mysqlTable("team_page_permissions", {
-  id: int("id").primaryKey().autoincrement(),
-  teamId: int("team_id").notNull().references(() => teams.id), // 团队ID
-  pageName: pageNameEnum.notNull(), // 页面名称
+export const teamPagePermissions = pgTable("team_page_permissions", {
+  id: serial("id").primaryKey(),
+  teamId: integer("team_id").notNull().references(() => teams.id), // 团队ID
+  pageName: pageNameEnum("page_name").notNull(), // 页面名称
   canAccess: boolean("can_access").default(false), // 是否可以访问该页面
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -170,10 +170,10 @@ export type InsertTeamPagePermission = z.infer<typeof insertTeamPagePermissionSc
 export type TeamPagePermission = typeof teamPagePermissions.$inferSelect;
 
 // 团队仓库权限表
-export const teamWarehousePermissions = mysqlTable("team_warehouse_permissions", {
-  id: int("id").primaryKey().autoincrement(),
-  teamId: int("team_id").notNull().references(() => teams.id), // 团队ID
-  warehouseId: int("warehouse_id").notNull().references(() => warehouses.id), // 仓库ID
+export const teamWarehousePermissions = pgTable("team_warehouse_permissions", {
+  id: serial("id").primaryKey(),
+  teamId: integer("team_id").notNull().references(() => teams.id), // 团队ID
+  warehouseId: integer("warehouse_id").notNull().references(() => warehouses.id), // 仓库ID
   canView: boolean("can_view").default(false), // 是否可以查看该仓库
   canManage: boolean("can_manage").default(false), // 是否可以管理该仓库
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -191,10 +191,10 @@ export type InsertTeamWarehousePermission = z.infer<typeof insertTeamWarehousePe
 export type TeamWarehousePermission = typeof teamWarehousePermissions.$inferSelect;
 
 // Team members (users in teams)
-export const teamMembers = mysqlTable("team_members", {
-  id: int("id").primaryKey().autoincrement(),
-  teamId: int("team_id").notNull().references(() => teams.id),
-  userId: int("user_id").notNull().references(() => users.id),
+export const teamMembers = pgTable("team_members", {
+  id: serial("id").primaryKey(),
+  teamId: integer("team_id").notNull().references(() => teams.id),
+  userId: integer("user_id").notNull().references(() => users.id),
   isAdmin: boolean("is_admin").default(false),
 });
 
