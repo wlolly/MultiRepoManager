@@ -486,15 +486,30 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
     // 访客模式：为未登录用户提供有限的访问能力
     // 设置用户ID为-1（访客ID）
     req.session.userId = -1;
-    req.session.authenticated = true;    // 标记为已认证（但是有限的权限）
+    req.session.authenticated = false;   // 明确标记为未认证（为了与前端保持一致）
     req.session.realAuthenticated = false; // 标记为实际未认证（访客模式）
     req.session.lastActivity = Date.now();
+    req.session.fakePositive = true;    // 标记为假阳性登录
     
-    // 设置访客用户角色
-    req.session.userRole = 'guest';
+    // 设置访客用户角色为anonymous（与全局权限检查保持一致）
+    req.session.userRole = 'anonymous';
     
-    // 其他路径继续处理，让各自的处理器决定如何响应
-    next();
+    // 创建访客用户对象直接放入req.user
+    (req as any).user = {
+      id: -1,
+      username: 'guest',
+      role: 'anonymous',
+      fullName: '访客用户',
+      isActive: true
+    };
+    
+    // 保存会话以确保变更持久化
+    req.session.save(err => {
+      if (err) console.error('保存访客会话出错:', err);
+      
+      // 其他路径继续处理，让各自的处理器决定如何响应
+      next();
+    });
   }
 }
 
