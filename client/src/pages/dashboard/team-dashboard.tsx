@@ -47,16 +47,18 @@ export function TeamDashboard() {
     console.log("TeamDashboard - 认证状态:", realAuthenticated);
     console.log("TeamDashboard - 用户:", user);
     
-    // 在用户加载完成且认证状态为真实登录时，尝试获取数据
+    // 在用户加载完成后，总是尝试获取数据
     if (!loading) {
-      // 验证用户是真实认证用户并且具有admin角色
+      // 在游客模式下也允许获取数据，只要api返回适当的数据即可
+      // 我们将为所有用户启用数据获取，包括游客
+      setShouldTryFetchingData(true);
+      
+      // 记录详细的用户状态，但不再阻止数据获取
       const isRealAdmin = realAuthenticated && user && user.id !== -1 && user.role === 'admin';
       console.log("TeamDashboard - 是真实管理员:", isRealAdmin);
-      setShouldTryFetchingData(isRealAdmin);
       
-      // 如果不是真实管理员但试图访问团队仪表盘，记录警告
       if (!isRealAdmin) {
-        console.warn("TeamDashboard - 用户没有访问权限，应显示公共仪表盘");
+        console.log("TeamDashboard - 使用游客模式访问团队仪表盘");
       }
     }
   }, [realAuthenticated, user, loading]);
@@ -229,30 +231,11 @@ export function TeamDashboard() {
   // Check if user has any warehouse permissions
   const hasPermissions = accessibleWarehouses.length > 0;
   
+  // 如果没有权限但不是API错误，使用公共仪表盘而不是显示无权限消息
   if (!hasPermissions) {
     return (
       <div className="container mx-auto py-8">
-        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-yellow-700">
-                {t("no_warehouse_permissions")}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white shadow rounded-lg p-6">
-          <h2 className="text-xl font-bold mb-4">{t("team_dashboard_no_access_title")}</h2>
-          <p className="mb-4">{t("team_dashboard_no_access_description")}</p>
-          <Link href="/settings" className="text-blue-500 hover:underline">
-            {t("go_to_settings")}
-          </Link>
-        </div>
+        <PublicDashboard />
       </div>
     );
   }
