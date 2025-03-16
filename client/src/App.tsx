@@ -354,6 +354,9 @@ export default function App() {
   // 从本地存储加载用户首选语言
   useEffect(() => {
     console.log("App组件已加载");
+    // 加载开始时间
+    const loadStartTime = performance.now();
+    
     // 导入i18n实例和changeLanguage函数
     import('./i18n').then(({ changeLanguage }) => {
       const savedLanguage = localStorage.getItem('i18nextLng');
@@ -400,10 +403,32 @@ export default function App() {
         console.log("认证已过期，请重新登录");
         setAuthenticated(false);
       }
+      
+      // 计算加载时间
+      const loadTime = ((performance.now() - loadStartTime) / 1000).toFixed(2);
+      console.log(`认证状态检查完成，耗时 ${loadTime} 秒`);
+      
+      // 触发应用加载完成事件
+      window.dispatchEvent(new Event('app-loaded'));
+      
+      // 隐藏加载提示
+      const loadingIndicator = document.getElementById('loading-indicator');
+      if (loadingIndicator) {
+        loadingIndicator.style.display = 'none';
+      }
     })
     .catch(error => {
       console.error("检查认证状态时出错:", error);
       setAuthenticated(false);
+      
+      // 即使出错也要触发加载完成
+      window.dispatchEvent(new Event('app-loaded'));
+      
+      // 隐藏加载提示
+      const loadingIndicator = document.getElementById('loading-indicator');
+      if (loadingIndicator) {
+        loadingIndicator.style.display = 'none';
+      }
     });
   }, []);
   
