@@ -8,6 +8,7 @@ import { eq, sql } from "drizzle-orm";
 import socialAuthConfig from './social-auth-config';
 import * as warehouseMatcher from './utils/warehouse-matcher';
 import { createInternalUserID } from './database/userID';
+import { configurePassport } from './passport-local';
 import { createInventoryRoutes } from './routes/inventory-routes';
 import { 
   insertUserSchema, 
@@ -128,9 +129,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return res.status(500).json({ message: "Internal server error" });
   };
 
-  // 初始化Passport认证 - 简化版，不再使用Passport
+  // 初始化Passport认证
   app.use(passport.initialize());
   app.use(passport.session());
+  
+  // 配置Passport策略
+  configurePassport();
   
   // 调试会话初始化
   app.use((req, res, next) => {

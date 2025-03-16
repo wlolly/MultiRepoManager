@@ -7,6 +7,8 @@ import { db, memStorage, useFallbackStorage } from "./db"; // 导入需要的组
 import createMemoryStore from "memorystore";
 import crypto from "crypto";
 import { sessionSyncMiddleware } from './middleware/session-sync';
+import passport from 'passport';
+import { configurePassport } from './passport-local';
 
 const MemoryStore = createMemoryStore(session);
 const app = express();

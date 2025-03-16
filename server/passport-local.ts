@@ -1,0 +1,113 @@
+/**
+ * Passport.js本地认证策略配置
+ * 用于处理用户名/密码登录验证
+ */
+import passport from 'passport';
+import { Strategy as LocalStrategy } from 'passport-local';
+import { db } from './db';
+import crypto from 'crypto';
+
+// 密码验证函数 - 用于PBKDF2格式的密码
+function verifyPassword(storedPassword: string, suppliedPassword: string): boolean {
+  // 格式应为: salt:hash
+  const parts = storedPassword.split(':');
+  if (parts.length !== 2) {
+    return false;
+  }
+  
+  const salt = parts[0];
+  const storedHash = parts[1];
+  
+  // 使用相同的加密参数计算提供的密码的哈希值
+  const hash = crypto.pbkdf2Sync(suppliedPassword, salt, 1000, 64, 'sha512').toString('hex');
+  
+  // 比较计算得到的哈希值和存储的哈希值
+  return storedHash === hash;
+}
+
+// 配置本地验证策略
+passport.use(new LocalStrategy(
+  {
+    usernameField: 'username',
+    passwordField: 'password'
+  },
+  async (username, password, done) => {
+    try {
+      console.log('[Passport] 尝试验证用户:', username);
+      
+      // 从数据库查询用户
+      const result = await db.execute({
+        query: 'SELECT * FROM users WHERE username = $1', 
+        values: [username]
+      });
+      
+      // 处理查询结果
+      if (!result || !Array.isArray(result[0]) || result[0].length === 0) {
+        console.log('[Passport] 用户不存在:', username);
+        return done(null, false, { message: '用户名或密码错误' });
+      }
+      
+      const user = result[0][0];
+      
+      // 验证密码
+      if (!verifyPassword(user.password, password)) {
+        console.log('[Passport] 密码验证失败:', username);
+        return done(null, false, { message: '用户名或密码错误' });
+      }
+      
+      // 检查用户是否激活
+      if (user.isactive !== true) {
+        console.log('[Passport] 用户未激活:', username);
+        return done(null, false, { message: '用户账户未激活' });
+      }
+      
+      console.log('[Passport] 用户验证成功:', username);
+      
+      // 返回用户对象，但不包含密码
+      const userWithoutPassword = { ...user };
+      delete userWithoutPassword.password;
+      
+      return done(null, userWithoutPassword);
+    } catch (error) {
+      console.error('[Passport] 验证过程出错:', error);
+      return done(error);
+    }
+  }
+));
+
+// 序列化用户 - 只在会话中存储用户ID
+passport.serializeUser((user: any, done) => {
+  console.log('[Passport] 序列化用户:', user.id);
+  done(null, user.id);
+});
+
+// 反序列化用户 - 根据ID恢复用户对象
+passport.deserializeUser(async (id: number, done) => {
+  try {
+    console.log('[Passport] 反序列化用户ID:', id);
+    
+    // 从数据库获取用户信息
+    const result = await db.execute({
+      query: 'SELECT id, username, fullname, role, isactive FROM users WHERE id = $1', 
+      values: [id]
+    });
+    
+    if (!result || !Array.isArray(result[0]) || result[0].length === 0) {
+      console.log('[Passport] 用户ID无效:', id);
+      return done(null, false);
+    }
+    
+    const user = result[0][0];
+    console.log('[Passport] 用户反序列化成功:', user.username);
+    done(null, user);
+  } catch (error) {
+    console.error('[Passport] 反序列化出错:', error);
+    done(error, null);
+  }
+});
+
+// 导出认证中间件
+export function configurePassport() {
+  console.log('[Passport] 本地认证策略已配置');
+  return passport;
+}
