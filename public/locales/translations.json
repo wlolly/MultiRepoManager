@@ -251,6 +251,363 @@
     "kk": "Қойма есептері",
     "uz": "Inventar hisobotlari"
   },
+  "reports.inventory_reports": {
+    "zh": "库存报表",
+    "en": "Inventory Reports",
+    "ru": "Отчеты по инвентарю",
+    "kk": "Қойма есептері",
+    "uz": "Inventar hisobotlari"
+  },
+  "reports.inventory_reports_description": {
+    "zh": "查看和导出仓库库存状态、变动和分析报表",
+    "en": "View and export warehouse inventory status, movement, and analysis reports",
+    "ru": "Просмотр и экспорт отчетов о состоянии, движении и анализе запасов на складе",
+    "kk": "Қойма қорының күйі, қозғалысы және талдау есептерін қарау және экспорттау",
+    "uz": "Ombor inventari holati, harakati va tahlil hisobotlarini ko'rish va eksport qilish"
+  },
+  "reports.available_reports": {
+    "zh": "可用报表",
+    "en": "Available Reports",
+    "ru": "Доступные отчеты",
+    "kk": "Қол жетімді есептер",
+    "uz": "Mavjud hisobotlar"
+  },
+  "reports.overview": {
+    "zh": "概览",
+    "en": "Overview",
+    "ru": "Обзор",
+    "kk": "Шолу",
+    "uz": "Umumiy ko'rinish"
+  },
+  "reports.inventory_movement": {
+    "zh": "库存变动",
+    "en": "Inventory Movement",
+    "ru": "Движение запасов",
+    "kk": "Қор қозғалысы",
+    "uz": "Inventar harakati"
+  },
+  "reports.inventory_status": {
+    "zh": "库存状态",
+    "en": "Inventory Status",
+    "ru": "Состояние запасов",
+    "kk": "Қор күйі",
+    "uz": "Inventar holati"
+  },
+  "reports.inventory_analysis": {
+    "zh": "库存分析",
+    "en": "Inventory Analysis",
+    "ru": "Анализ запасов",
+    "kk": "Қор талдауы",
+    "uz": "Inventar tahlili"
+  },
+  "reports.current_inventory_report": {
+    "zh": "当前库存报表",
+    "en": "Current Inventory Report",
+    "ru": "Отчет о текущих запасах",
+    "kk": "Ағымдағы қор есебі",
+    "uz": "Joriy inventar hisoboti"
+  },
+  "reports.current_inventory_description": {
+    "zh": "查看所有仓库当前库存水平的详细报表",
+    "en": "View detailed report of current inventory levels across all warehouses",
+    "ru": "Просмотр подробного отчета о текущих уровнях запасов на всех складах",
+    "kk": "Барлық қоймалардағы ағымдағы қор деңгейлерінің егжей-тегжейлі есебін көру",
+    "uz": "Barcha omborlardagi joriy inventar darajalarining batafsil hisobotini ko'rish"
+  },
+  "reports.inventory_movement_report": {
+    "zh": "库存变动报表",
+    "en": "Inventory Movement Report",
+    "ru": "Отчет о движении запасов",
+    "kk": "Қор қозғалысы есебі",
+    "uz": "Inventar harakati hisoboti"
+  },
+  "reports.inventory_movement_description": {
+    "zh": "分析一段时间内的库存收发和调拨情况",
+    "en": "Analyze inventory receipts, issues, and transfers over time",
+    "ru": "Анализ поступлений, выдачи и перемещения запасов за период",
+    "kk": "Уақыт өте келе қорларды қабылдау, шығару және аударымдарды талдау",
+    "uz": "Inventar qabul qilish, chiqarish va transferlarni vaqt davomida tahlil qilish"
+  },
+  "reports.inventory_summary_report": {
+    "zh": "库存汇总报表",
+    "en": "Inventory Summary Report",
+    "ru": "Сводный отчет по запасам",
+    "kk": "Қорлардың жиынтық есебі",
+    "uz": "Inventar umumiy hisoboti"
+  },
+  "reports.inventory_summary_description": {
+    "zh": "查看按类别和仓库分类的库存汇总",
+    "en": "View inventory summaries grouped by category and warehouse",
+    "ru": "Просмотр сводок запасов, сгруппированных по категориям и складам",
+    "kk": "Санаттар мен қоймалар бойынша топтастырылған қор жиынтықтарын қарау",
+    "uz": "Toifa va ombor bo'yicha guruhlangan inventar xulosalarini ko'rish"
+  },
+  "reports.low_stock_report": {
+    "zh": "库存预警报表",
+    "en": "Low Stock Report",
+    "ru": "Отчет о низком уровне запасов",
+    "kk": "Төмен қор деңгейі туралы есеп",
+    "uz": "Past inventar hisoboti"
+  },
+  "reports.low_stock_description": {
+    "zh": "识别库存水平低于最小阈值的商品",
+    "en": "Identify products with inventory levels below minimum thresholds",
+    "ru": "Выявление товаров с уровнем запасов ниже минимальных порогов",
+    "kk": "Қор деңгейі ең төменгі шектерден төмен өнімдерді анықтау",
+    "uz": "Inventar darajasi minimal chegaradan past bo'lgan mahsulotlarni aniqlash"
+  },
+  "reports.generate_report": {
+    "zh": "生成报表",
+    "en": "Generate Report",
+    "ru": "Создать отчет",
+    "kk": "Есеп жасау",
+    "uz": "Hisobot yaratish"
+  },
+  "reports.movement_tab_description": {
+    "zh": "查看指定时间段内的库存收发、调拨和其他库存变动情况",
+    "en": "View inventory receipts, issues, transfers, and other movements during a specified period",
+    "ru": "Просмотр поступлений, выдачи, перемещений и других движений запасов за указанный период",
+    "kk": "Белгіленген кезеңдегі қорларды қабылдау, шығару, аудару және басқа қозғалыстарды қарау",
+    "uz": "Belgilangan davr ichida inventar qabul qilish, chiqarish, o'tkazish va boshqa harakatlarni ko'rish"
+  },
+  "reports.generate_movement_report": {
+    "zh": "生成变动报表",
+    "en": "Generate Movement Report",
+    "ru": "Создать отчет о движении",
+    "kk": "Қозғалыс есебін жасау",
+    "uz": "Harakat hisobotini yaratish"
+  },
+  "reports.status_tab_description": {
+    "zh": "查看当前库存状态，包括库存水平、库龄和库存价值分析",
+    "en": "View current inventory status including stock levels, inventory age, and value analysis",
+    "ru": "Просмотр текущего состояния запасов, включая уровни запасов, возраст запасов и анализ стоимости",
+    "kk": "Қор деңгейлері, қор жасы және құндылық талдауын қоса, ағымдағы қор күйін қарау",
+    "uz": "Inventar darajalari, inventar yoshi va qiymat tahlilini o'z ichiga olgan joriy inventar holatini ko'rish"
+  },
+  "reports.generate_status_report": {
+    "zh": "生成状态报表",
+    "en": "Generate Status Report",
+    "ru": "Создать отчет о состоянии",
+    "kk": "Күй есебін жасау",
+    "uz": "Holat hisobotini yaratish"
+  },
+  "reports.analysis_tab_description": {
+    "zh": "分析库存趋势、周转率和其他关键绩效指标",
+    "en": "Analyze inventory trends, turnover rates, and other key performance indicators",
+    "ru": "Анализ тенденций запасов, оборачиваемости и других ключевых показателей",
+    "kk": "Қор тенденцияларын, айналым жылдамдығын және басқа негізгі көрсеткіштерді талдау",
+    "uz": "Inventar tendentsiyalarini, aylanish tezligini va boshqa asosiy ko'rsatkichlarni tahlil qilish"
+  },
+  "reports.generate_analysis_report": {
+    "zh": "生成分析报表",
+    "en": "Generate Analysis Report",
+    "ru": "Создать аналитический отчет",
+    "kk": "Талдау есебін жасау",
+    "uz": "Tahlil hisobotini yaratish"
+  },
+  "reports.export_description": {
+    "zh": "选择报表参数和导出格式",
+    "en": "Select report parameters and export format",
+    "ru": "Выберите параметры отчета и формат экспорта",
+    "kk": "Есеп параметрлері мен экспорт форматын таңдаңыз",
+    "uz": "Hisobot parametrlari va eksport formatini tanlang"
+  },
+  "reports.report_type": {
+    "zh": "报表类型",
+    "en": "Report Type",
+    "ru": "Тип отчета",
+    "kk": "Есеп түрі",
+    "uz": "Hisobot turi"
+  },
+  "reports.current_inventory": {
+    "zh": "当前库存",
+    "en": "Current Inventory",
+    "ru": "Текущие запасы",
+    "kk": "Ағымдағы қор",
+    "uz": "Joriy inventar"
+  },
+  "reports.inventory_summary": {
+    "zh": "库存汇总",
+    "en": "Inventory Summary",
+    "ru": "Сводка запасов",
+    "kk": "Қор жиынтығы",
+    "uz": "Inventar xulosasi"
+  },
+  "reports.warehouse": {
+    "zh": "仓库",
+    "en": "Warehouse",
+    "ru": "Склад",
+    "kk": "Қойма",
+    "uz": "Ombor"
+  },
+  "reports.select_warehouse": {
+    "zh": "选择仓库",
+    "en": "Select Warehouse",
+    "ru": "Выберите склад",
+    "kk": "Қойманы таңдаңыз",
+    "uz": "Omborni tanlang"
+  },
+  "reports.all_warehouses": {
+    "zh": "所有仓库",
+    "en": "All Warehouses",
+    "ru": "Все склады",
+    "kk": "Барлық қоймалар",
+    "uz": "Barcha omborlar"
+  },
+  "reports.date_range": {
+    "zh": "日期范围",
+    "en": "Date Range",
+    "ru": "Диапазон дат",
+    "kk": "Күн аралығы",
+    "uz": "Sana diapazoni"
+  },
+  "reports.select_date_range": {
+    "zh": "选择日期范围",
+    "en": "Select Date Range",
+    "ru": "Выберите диапазон дат",
+    "kk": "Күн аралығын таңдаңыз",
+    "uz": "Sana diapazonini tanlang"
+  },
+  "reports.today": {
+    "zh": "今天",
+    "en": "Today",
+    "ru": "Сегодня",
+    "kk": "Бүгін",
+    "uz": "Bugun"
+  },
+  "reports.this_week": {
+    "zh": "本周",
+    "en": "This Week",
+    "ru": "Эта неделя",
+    "kk": "Осы апта",
+    "uz": "Shu hafta"
+  },
+  "reports.this_month": {
+    "zh": "本月",
+    "en": "This Month",
+    "ru": "Этот месяц",
+    "kk": "Осы ай",
+    "uz": "Shu oy"
+  },
+  "reports.custom_range": {
+    "zh": "自定义范围",
+    "en": "Custom Range",
+    "ru": "Пользовательский диапазон",
+    "kk": "Арнаулы аралық",
+    "uz": "Maxsus diapazoni"
+  },
+  "reports.start_date": {
+    "zh": "开始日期",
+    "en": "Start Date",
+    "ru": "Дата начала",
+    "kk": "Басталу күні",
+    "uz": "Boshlang'ich sana"
+  },
+  "reports.end_date": {
+    "zh": "结束日期",
+    "en": "End Date",
+    "ru": "Дата окончания",
+    "kk": "Аяқталу күні",
+    "uz": "Tugash sanasi"
+  },
+  "reports.categories": {
+    "zh": "商品类别",
+    "en": "Categories",
+    "ru": "Категории",
+    "kk": "Санаттар",
+    "uz": "Toifalar"
+  },
+  "reports.select_all": {
+    "zh": "全选",
+    "en": "Select All",
+    "ru": "Выбрать все",
+    "kk": "Барлығын таңдау",
+    "uz": "Hammasini tanlash"
+  },
+  "reports.deselect_all": {
+    "zh": "取消全选",
+    "en": "Deselect All",
+    "ru": "Отменить все",
+    "kk": "Барлығынан бас тарту",
+    "uz": "Hammasini bekor qilish"
+  },
+  "reports.export_format": {
+    "zh": "导出格式",
+    "en": "Export Format",
+    "ru": "Формат экспорта",
+    "kk": "Экспорт форматы",
+    "uz": "Eksport formati"
+  },
+  "reports.additional_options": {
+    "zh": "其他选项",
+    "en": "Additional Options",
+    "ru": "Дополнительные опции",
+    "kk": "Қосымша опциялар",
+    "uz": "Qo'shimcha variantlar"
+  },
+  "reports.include_prices": {
+    "zh": "包含价格信息",
+    "en": "Include Price Information",
+    "ru": "Включить информацию о ценах",
+    "kk": "Баға ақпаратын қосу",
+    "uz": "Narx ma'lumotlarini kiritish"
+  },
+  "reports.include_images": {
+    "zh": "包含商品图片",
+    "en": "Include Product Images",
+    "ru": "Включить изображения товаров",
+    "kk": "Өнім суреттерін қосу",
+    "uz": "Mahsulot rasmlarini kiritish"
+  },
+  "reports.custom_filename": {
+    "zh": "自定义文件名",
+    "en": "Custom Filename",
+    "ru": "Пользовательское имя файла",
+    "kk": "Арнаулы файл атауы",
+    "uz": "Maxsus fayl nomi"
+  },
+  "reports.filename_placeholder": {
+    "zh": "输入文件名（可选）",
+    "en": "Enter filename (optional)",
+    "ru": "Введите имя файла (необязательно)",
+    "kk": "Файл атауын енгізіңіз (міндетті емес)",
+    "uz": "Fayl nomini kiriting (ixtiyoriy)"
+  },
+  "reports.generating": {
+    "zh": "正在生成...",
+    "en": "Generating...",
+    "ru": "Создание...",
+    "kk": "Жасалуда...",
+    "uz": "Yaratilmoqda..."
+  },
+  "reports.export": {
+    "zh": "导出",
+    "en": "Export",
+    "ru": "Экспорт",
+    "kk": "Экспорттау",
+    "uz": "Eksport"
+  },
+  "reports.export_inventory_report": {
+    "zh": "导出库存报表",
+    "en": "Export Inventory Report",
+    "ru": "Экспорт отчета по запасам",
+    "kk": "Қор есебін экспорттау",
+    "uz": "Inventar hisobotini eksport qilish"
+  },
+  "reports.export_success": {
+    "zh": "报表导出成功",
+    "en": "Report exported successfully",
+    "ru": "Отчет успешно экспортирован",
+    "kk": "Есеп сәтті экспортталды",
+    "uz": "Hisobot muvaffaqiyatli eksport qilindi"
+  },
+  "reports.export_failed": {
+    "zh": "报表导出失败",
+    "en": "Failed to export report",
+    "ru": "Не удалось экспортировать отчет",
+    "kk": "Есепті экспорттау сәтсіз аяқталды",
+    "uz": "Hisobotni eksport qilish amalga oshmadi"
+  },
   "order": {
     "zh": "订单",
     "en": "Order",
