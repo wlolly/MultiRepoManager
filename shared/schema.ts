@@ -1,16 +1,16 @@
-import { mysqlTable, int, varchar, boolean, timestamp, mysqlEnum, decimal, text } from "drizzle-orm/mysql-core";
+import { pgTable, serial, varchar, boolean, timestamp, pgEnum, decimal, text, integer, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Define enums for the application
 // UI languages enum (i18n)
-export const uiLanguageEnum = mysqlEnum("ui_language", ["zh", "en", "ru", "kk", "uz"]); // 中文，英文，俄文，哈萨克文，乌兹别克文
+export const uiLanguageEnum = pgEnum("ui_language", ["zh", "en", "ru", "kk", "uz"]); // 中文，英文，俄文，哈萨克文，乌兹别克文
 
 // Repository visibility enum
-export const visibilityEnum = mysqlEnum("visibility", ["public", "private", "internal"]);
+export const visibilityEnum = pgEnum("visibility", ["public", "private", "internal"]);
 
 // Programming languages enum
-export const languageEnum = mysqlEnum("language", [
+export const languageEnum = pgEnum("language", [
   "javascript",
   "typescript",
   "python",
@@ -28,7 +28,7 @@ export const languageEnum = mysqlEnum("language", [
 ]);
 
 // Operation types enum (入库，出库)
-export const operationTypeEnum = mysqlEnum("operation_type", ["inbound", "outbound"]);
+export const operationTypeEnum = pgEnum("operation_type", ["inbound", "outbound"]);
 
 // 入库单类型: 采购入库、退货入库、调拨入库、生产入库
 
@@ -37,10 +37,10 @@ export const operationTypeEnum = mysqlEnum("operation_type", ["inbound", "outbou
 // 出库单目的地类型: 客户、零售商、批发商、调拨仓库、供应商（退货）
 
 // 用户来源类型枚举
-export const userSourceEnum = mysqlEnum("user_source", ["local", "wechat", "whatsapp"]);
+export const userSourceEnum = pgEnum("user_source", ["local", "wechat", "whatsapp"]);
 
 // 用户角色枚举
-export const userRoleEnum = mysqlEnum("role", ["user", "admin", "super_admin"]);
+export const userRoleEnum = pgEnum("role", ["user", "admin", "super_admin"]);
 
 // Users table
 export const users = mysqlTable("users", {
@@ -131,7 +131,7 @@ export type InsertTeam = z.infer<typeof insertTeamSchema>;
 export type Team = typeof teams.$inferSelect;
 
 // 系统页面枚举定义
-export const pageNameEnum = mysqlEnum("page_name", [
+export const pageNameEnum = pgEnum("page_name", [
   "dashboard", // 首页
   "warehouses", // 仓库管理
   "products", // 产品管理
