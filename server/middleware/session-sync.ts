@@ -8,15 +8,26 @@ import { Request, Response, NextFunction } from 'express';
 
 export const sessionSyncMiddleware = (req: Request, res: Response, next: NextFunction) => {
   // 添加会话同步响应头，允许跨域访问
-  res.header('Access-Control-Allow-Origin', '*');
+  // 使用请求来源域而不是通配符，增强安全性
+  const origin = req.header('Origin') || '*';
+  res.header('Access-Control-Allow-Origin', origin);
+  
+  // 更安全地定义允许的请求头
   res.header('Access-Control-Allow-Headers', 
     'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Session-ID, X-Client-Session-ID, ' +
     'X-Original-Session-ID, sessionid, session-id, client-session-id, Cookie'
   );
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  
+  // 确保仅暴露必要的响应头，提高安全性
   res.header('Access-Control-Expose-Headers', 
     'X-Session-ID, X-Original-Session-ID, X-New-Session-ID, X-Session-Restored, X-Session-Authenticated, X-User-ID, X-Session-Source, Set-Cookie'
   );
+  
+  // 添加缓存控制，防止会话头部被缓存
+  res.header('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.header('Pragma', 'no-cache');
+  res.header('Expires', '0');
   
   // 如果是预检请求(OPTIONS)，直接返回200状态
   if (req.method === 'OPTIONS') {

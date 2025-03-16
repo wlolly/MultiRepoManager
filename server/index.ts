@@ -151,7 +151,8 @@ app.use(session({
         if (req.res) {
           req.res.setHeader('X-Session-ID', sessionId);
           req.res.setHeader('X-Original-Session-ID', sessionId);
-          req.res.setHeader('X-Session-Source', source.name);
+          // 使用安全的固定值作为会话来源，避免非法字符
+          req.res.setHeader('X-Session-Source', 'client_session');
           
           // 设置会话cookie，确保客户端端浏览器保留它
           req.res.cookie('sessionId', sessionId, { 
@@ -181,6 +182,8 @@ app.use(session({
       if (req.res) {
         req.res.setHeader('X-Session-ID', req.sessionID);
         req.res.setHeader('X-Original-Session-ID', req.sessionID);
+        // 添加安全的来源信息
+        req.res.setHeader('X-Session-Source', 'middleware_assigned');
       }
       
       return req.sessionID;
@@ -200,6 +203,8 @@ app.use(session({
       if (req.res) {
         req.res.setHeader('X-Session-ID', prevSessionId);
         req.res.setHeader('X-Original-Session-ID', prevSessionId);
+        // 添加安全的来源信息
+        req.res.setHeader('X-Session-Source', 'storage_cached');
       }
       
       return prevSessionId;
@@ -214,8 +219,9 @@ app.use(session({
     }
     
     // 将新的会话ID存储在SessionStorage中，避免频繁生成
-    if (!global.sessionStorage) {
-      global.sessionStorage = {};
+    if (typeof global.sessionStorage === 'undefined') {
+      // 使用Record<string, string>类型声明，满足TypeScript要求
+      global.sessionStorage = Object.create(null) as Record<string, string>;
     }
     global.sessionStorage[sessionStorageKey] = newSessionId;
     
@@ -224,6 +230,7 @@ app.use(session({
       req.res.setHeader('X-Session-ID', newSessionId);
       req.res.setHeader('X-Original-Session-ID', newSessionId);
       req.res.setHeader('X-New-Session-ID', newSessionId);  // 标记这是新创建的会话ID
+      req.res.setHeader('X-Session-Source', 'newly_generated');
     }
     
     return newSessionId;
