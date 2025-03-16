@@ -214,17 +214,22 @@ export async function loginUser(req: Request, res: Response) {
         });
       });
 
-      // 设置所有必要的cookie
+      // 设置关键会话cookie
       const cookieOptions = {
-        maxAge: 30 * 24 * 60 * 60 * 1000, // 30天
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax' as const
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+        httpOnly: false,  // 允许客户端JavaScript访问
+        secure: false,    // 开发环境不使用secure
+        sameSite: 'lax'
       };
 
+      // 设置多个会话cookie确保兼容性
       res.cookie('sessionId', req.sessionID, cookieOptions);
-      res.cookie('warehouse.sid', req.sessionID, cookieOptions);
-      res.cookie('connect.sid', req.sessionID, cookieOptions);
+      res.cookie('warehouse.sid', req.sessionID, {...cookieOptions, httpOnly: true});
+      res.cookie('connect.sid', req.sessionID, {...cookieOptions, httpOnly: true});
+
+      // 设置会话响应头
+      res.setHeader('X-Session-ID', req.sessionID);
+      res.setHeader('X-Real-Authenticated', 'true');
 
       // 返回完整的用户信息
       return res.json({
