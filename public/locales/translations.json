@@ -244,6 +244,13 @@
     "kk": "Қор",
     "uz": "Inventar"
   },
+  "inventory_reports": {
+    "zh": "库存报表",
+    "en": "Inventory Reports",
+    "ru": "Отчеты по инвентарю",
+    "kk": "Қойма есептері",
+    "uz": "Inventar hisobotlari"
+  },
   "order": {
     "zh": "订单",
     "en": "Order",
