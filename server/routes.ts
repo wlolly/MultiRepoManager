@@ -504,6 +504,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   apiRouter.post("/auth/bind-social", verifySession, bindSocialAccount);
   apiRouter.get("/auth/social-binding-status", verifySession, getSocialBindingStatus);
   
+  // 获取用户认证状态API
+  apiRouter.get("/auth/status", verifySession, (req, res) => {
+    // 获取基本会话信息
+    const userId = req.session?.userId || -1;
+    const userRole = req.session?.userRole || 'anonymous';
+    const realAuthenticated = req.session?.realAuthenticated === true;
+    
+    // 返回身份信息
+    res.json({
+      userId,
+      userRole,
+      realAuthenticated,
+      isGuest: userId === -1,
+      isAdmin: userRole === 'admin' || userRole === 'super_admin',
+      fakePositive: req.session?.fakePositive === true
+    });
+  });
+  
   // 社交认证配置管理路由 (仅管理员)
   apiRouter.get('/admin/social-auth-config', isAdmin, (req, res) => {
     try {
