@@ -43,18 +43,18 @@ export const userSourceEnum = pgEnum("user_source", ["local", "wechat", "whatsap
 export const userRoleEnum = pgEnum("role", ["user", "admin", "super_admin"]);
 
 // Users table
-export const users = mysqlTable("users", {
-  id: int("id").primaryKey().autoincrement(),
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
   username: varchar("username", { length: 255 }).notNull().unique(),
   password: varchar("password", { length: 255 }),
   fullName: varchar("full_name", { length: 255 }).notNull(),
   avatarUrl: varchar("avatar_url", { length: 255 }),
   email: varchar("email", { length: 255 }),
   phoneNumber: varchar("phone_number", { length: 50 }),
-  role: userRoleEnum.default("user").notNull(),
-  userSource: userSourceEnum.default("local").notNull(),
+  role: userRoleEnum("role").notNull().default("user"),
+  userSource: userSourceEnum("user_source").notNull().default("local"),
   // 团队关联字段
-  primaryTeamId: int("primary_team_id"), // 用户的主要团队ID，管理员可以没有主要团队
+  primaryTeamId: integer("primary_team_id"), // 用户的主要团队ID，管理员可以没有主要团队
   // 社交媒体登录相关字段
   socialId: varchar("social_id", { length: 255 }), // 微信或WhatsApp的唯一ID
   socialData: text("social_data"), // 存储从社交平台获取的JSON数据
@@ -83,17 +83,17 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
 // Repositories table
-export const repositories = mysqlTable("repositories", {
-  id: int("id").primaryKey().autoincrement(),
+export const repositories = pgTable("repositories", {
+  id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
-  ownerId: int("owner_id").notNull().references(() => users.id),
-  visibility: mysqlEnum("visibility", ["public", "private", "internal"]).notNull().default("public"),
-  language: mysqlEnum("language", ["javascript", "typescript", "python", "java", "go", "rust", "c", "cpp", "csharp", "php", "ruby", "swift", "kotlin", "other"]).default("other"),
+  ownerId: integer("owner_id").notNull().references(() => users.id),
+  visibility: visibilityEnum("visibility").notNull().default("public"),
+  language: languageEnum("language").default("other"),
   cloneUrl: varchar("clone_url", { length: 255 }),
-  branchCount: int("branch_count").default(0),
-  contributorCount: int("contributor_count").default(0),
-  viewCount: int("view_count").default(0),
+  branchCount: integer("branch_count").default(0),
+  contributorCount: integer("contributor_count").default(0),
+  viewCount: integer("view_count").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
