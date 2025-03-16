@@ -3576,6 +3576,216 @@
       "ru": "Подтвердить экспорт",
       "kk": "Экспортты растау",
       "uz": "Eksportni tasdiqlash"
+    },
+    "public_dashboard_title": {
+      "zh": "公共仪表盘",
+      "en": "Public Dashboard",
+      "ru": "Публичная панель управления",
+      "kk": "Жалпы басқару тақтасы",
+      "uz": "Ommaviy boshqaruv paneli"
+    },
+    "public_dashboard_description": {
+      "zh": "查看系统中的公共数据和统计信息",
+      "en": "View public data and statistics in the system",
+      "ru": "Просмотр общедоступных данных и статистики в системе",
+      "kk": "Жүйедегі жалпыға қолжетімді деректер мен статистиканы қарау",
+      "uz": "Tizimdagi ommaviy ma'lumotlar va statistikani ko'rish"
+    },
+    "team_dashboard_title": {
+      "zh": "团队仪表盘",
+      "en": "Team Dashboard",
+      "ru": "Панель управления команды",
+      "kk": "Команда басқару тақтасы",
+      "uz": "Jamoa boshqaruv paneli"
+    },
+    "team_dashboard_description": {
+      "zh": "查看团队的数据和统计信息",
+      "en": "View your team's data and statistics",
+      "ru": "Просмотр данных и статистики вашей команды",
+      "kk": "Командаңыздың деректері мен статистикасын қарау",
+      "uz": "Jamoangizning ma'lumotlari va statistikasini ko'rish"
+    },
+    "total_products_description": {
+      "zh": "系统中登记的产品总数",
+      "en": "Total number of products registered in the system",
+      "ru": "Общее количество товаров, зарегистрированных в системе",
+      "kk": "Жүйеде тіркелген өнімдердің жалпы саны",
+      "uz": "Tizimda ro'yxatdan o'tgan mahsulotlarning umumiy soni"
+    },
+    "total_warehouses": {
+      "zh": "仓库总数",
+      "en": "Total Warehouses",
+      "ru": "Всего складов",
+      "kk": "Қоймалар саны",
+      "uz": "Jami omborlar"
+    },
+    "total_warehouses_description": {
+      "zh": "系统中管理的仓库总数",
+      "en": "Total number of warehouses managed in the system",
+      "ru": "Общее количество складов, управляемых в системе",
+      "kk": "Жүйеде басқарылатын қоймалардың жалпы саны",
+      "uz": "Tizimda boshqariladigan omborlarning umumiy soni"
+    },
+    "categories_count": {
+      "zh": "分类数量",
+      "en": "Categories Count",
+      "ru": "Количество категорий",
+      "kk": "Санаттар саны",
+      "uz": "Toifalar soni"
+    },
+    "categories_description": {
+      "zh": "产品分类的总数量",
+      "en": "Total number of product categories",
+      "ru": "Общее количество категорий товаров",
+      "kk": "Өнім санаттарының жалпы саны",
+      "uz": "Mahsulot toifalarining umumiy soni"
+    },
+    "recent_operations": {
+      "zh": "最近操作",
+      "en": "Recent Operations",
+      "ru": "Недавние операции",
+      "kk": "Соңғы операциялар",
+      "uz": "So'nggi operatsiyalar"
+    },
+    "recent_operations_description": {
+      "zh": "过去30天内的操作数量",
+      "en": "Number of operations in the past 30 days",
+      "ru": "Количество операций за последние 30 дней",
+      "kk": "Соңғы 30 күндегі операциялар саны",
+      "uz": "O'tgan 30 kun ichidagi operatsiyalar soni"
+    },
+    "login_to_access_more": {
+      "zh": "登录以访问更多功能",
+      "en": "Login to Access More Features",
+      "ru": "Войдите, чтобы получить доступ к дополнительным функциям",
+      "kk": "Қосымша функцияларға қол жеткізу үшін жүйеге кіріңіз",
+      "uz": "Ko'proq imkoniyatlarga kirish uchun tizimga kiring"
+    },
+    "login_to_access_more_description": {
+      "zh": "登录后可以访问更多仓库管理功能",
+      "en": "Access more warehouse management features after logging in",
+      "ru": "Получите доступ к дополнительным функциям управления складом после входа в систему",
+      "kk": "Жүйеге кіргеннен кейін қойманы басқарудың қосымша функцияларына қол жеткізіңіз",
+      "uz": "Tizimga kirganingizdan so'ng ko'proq ombor boshqaruvi imkoniyatlariga ega bo'ling"
+    },
+    "login_button": {
+      "zh": "登录",
+      "en": "Login",
+      "ru": "Войти",
+      "kk": "Кіру",
+      "uz": "Kirish"
+    },
+    "accessible_warehouses_title": {
+      "zh": "可访问的仓库",
+      "en": "Accessible Warehouses",
+      "ru": "Доступные склады",
+      "kk": "Қолжетімді қоймалар",
+      "uz": "Mavjud omborlar"
+    },
+    "accessible_warehouses": {
+      "zh": "可访问仓库",
+      "en": "Accessible Warehouses",
+      "ru": "Доступные склады",
+      "kk": "Қолжетімді қоймалар",
+      "uz": "Mavjud omborlar"
+    },
+    "can_manage": {
+      "zh": "可管理",
+      "en": "Can Manage",
+      "ru": "Можно управлять",
+      "kk": "Басқара алады",
+      "uz": "Boshqarish mumkin"
+    },
+    "can_view": {
+      "zh": "可查看",
+      "en": "Can View",
+      "ru": "Можно просматривать",
+      "kk": "Қарай алады",
+      "uz": "Ko'rish mumkin"
+    },
+    "view_warehouse": {
+      "zh": "查看仓库",
+      "en": "View Warehouse",
+      "ru": "Просмотреть склад",
+      "kk": "Қойманы қарау",
+      "uz": "Omborni ko'rish"
+    },
+    "team_stats_access_denied": {
+      "zh": "您没有访问团队统计数据的权限",
+      "en": "You don't have permission to access team statistics",
+      "ru": "У вас нет разрешения на доступ к статистике команды",
+      "kk": "Сізде команда статистикасына кіру рұқсаты жоқ",
+      "uz": "Siz jamoa statistikasiga kirish huquqiga ega emassiz"
+    },
+    "api_error_title": {
+      "zh": "API错误",
+      "en": "API Error",
+      "ru": "Ошибка API",
+      "kk": "API қатесі",
+      "uz": "API xatosi"
+    },
+    "api_error_description": {
+      "zh": "获取数据时发生错误，显示公共数据作为替代",
+      "en": "An error occurred while fetching data, showing public data instead",
+      "ru": "Произошла ошибка при получении данных, вместо этого отображаются общедоступные данные",
+      "kk": "Деректерді алу кезінде қате орын алды, орнына жалпыға қолжетімді деректер көрсетілуде",
+      "uz": "Ma'lumotlarni olishda xatolik yuz berdi, uning o'rniga ommaviy ma'lumotlar ko'rsatilmoqda"
+    },
+    "total_value": {
+      "zh": "总价值",
+      "en": "Total Value",
+      "ru": "Общая стоимость",
+      "kk": "Жалпы құны",
+      "uz": "Umumiy qiymat"
+    },
+    "team_value_description": {
+      "zh": "团队管理的所有商品的总价值",
+      "en": "Total value of all products managed by your team",
+      "ru": "Общая стоимость всех товаров, управляемых вашей командой",
+      "kk": "Командаңыз басқаратын барлық өнімдердің жалпы құны",
+      "uz": "Jamoangiz tomonidan boshqariladigan barcha mahsulotlarning umumiy qiymati"
+    },
+    "team_weight_description": {
+      "zh": "团队管理的所有商品的总重量",
+      "en": "Total weight of all products managed by your team",
+      "ru": "Общий вес всех товаров, управляемых вашей командой",
+      "kk": "Командаңыз басқаратын барлық өнімдердің жалпы салмағы",
+      "uz": "Jamoangiz tomonidan boshqariladigan barcha mahsulotlarning umumiy og'irligi"
+    },
+    "team_volume_description": {
+      "zh": "团队管理的所有商品的总体积",
+      "en": "Total volume of all products managed by your team",
+      "ru": "Общий объем всех товаров, управляемых вашей командой",
+      "kk": "Командаңыз басқаратын барлық өнімдердің жалпы көлемі",
+      "uz": "Jamoangiz tomonidan boshqariladigan barcha mahsulotlarning umumiy hajmi"
+    },
+    "team_warehouses_description": {
+      "zh": "您的团队可以访问的仓库数量",
+      "en": "Number of warehouses accessible to your team",
+      "ru": "Количество складов, доступных вашей команде",
+      "kk": "Командаңыз үшін қолжетімді қоймалар саны",
+      "uz": "Jamoangiz uchun mavjud omborlar soni"
+    },
+    "team_products_description": {
+      "zh": "您的团队管理的产品总数",
+      "en": "Total number of products managed by your team",
+      "ru": "Общее количество товаров, управляемых вашей командой",
+      "kk": "Командаңыз басқаратын өнімдердің жалпы саны",
+      "uz": "Jamoangiz tomonidan boshqariladigan mahsulotlarning umumiy soni"
+    },
+    "team_categories_description": {
+      "zh": "您的团队使用的产品分类总数",
+      "en": "Total number of product categories used by your team",
+      "ru": "Общее количество категорий товаров, используемых вашей командой",
+      "kk": "Командаңыз пайдаланатын өнім санаттарының жалпы саны",
+      "uz": "Jamoangiz tomonidan ishlatiladigan mahsulot toifalarining umumiy soni"
+    },
+    "language_distribution": {
+      "zh": "语言分布",
+      "en": "Language Distribution",
+      "ru": "Распределение языков",
+      "kk": "Тілдер үлестірімі",
+      "uz": "Til taqsimoti"
     }
   }
 }
