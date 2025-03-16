@@ -3,10 +3,35 @@
  * 用于检查用户是否有权限访问特定资源
  */
 import { Request, Response, NextFunction } from 'express';
-import { eq, and, or, inArray, sql } from 'drizzle-orm';
+import { eq, and, or, inArray, sql, MySqlRawQueryResult } from 'drizzle-orm';
 import { db } from '../db';
 import { teamMembers, teamPagePermissions, teamWarehousePermissions, users, warehouses } from '../../shared/schema';
 import { validateInternalUserID } from '../database/userID';
+
+/**
+ * 处理SQL查询结果为数组
+ * 兼容不同类型的返回结果格式
+ * @param result SQL查询结果
+ * @returns 处理后的数组结果
+ */
+function processQueryResult(result: MySqlRawQueryResult): any[] {
+  // 适配不同版本的drizzle-orm返回结果
+  if (Array.isArray(result)) {
+    return result;
+  }
+  
+  // 处理包含rows属性的结果
+  if (result && typeof result === 'object') {
+    // @ts-ignore - MySqlRawQueryResult类型定义中可能没有rows属性
+    if (Array.isArray(result.rows)) {
+      // @ts-ignore
+      return result.rows;
+    }
+  }
+  
+  // Fallback处理 - 返回空数组
+  return [];
+}
 
 /**
  * 需要页面权限的中间件
@@ -140,8 +165,9 @@ export function requirePagePermission(pageName: string) {
       `;
       
       const teamPermissions = await db.execute(query);
+      const teamPermissionsRows = processQueryResult(teamPermissions);
       
-      if (teamPermissions && teamPermissions.rows && teamPermissions.rows.length > 0) {
+      if (teamPermissionsRows.length > 0) {
         return next();
       }
       
@@ -297,9 +323,9 @@ export function requireWarehousePermission(checkManage: boolean = false) {
       `;
       
       const result = await db.execute(query);
-      const warehousePermissions = result.rows;
+      const warehousePermissions = processQueryResult(result);
       
-      if (warehousePermissions && warehousePermissions.length > 0) {
+      if (warehousePermissions.length > 0) {
         // 如果需要管理权限，则检查canManage字段
         if (checkManage) {
           const hasManagePermission = warehousePermissions.some(p => p.can_manage === 1);
@@ -409,13 +435,12 @@ export async function getUserPagePermissions(userId: number): Promise<{[key: str
     `;
     
     const result = await db.execute(query);
+    const resultRows = processQueryResult(result);
     
     // 设置权限
-    if (result && result.rows) {
-      result.rows.forEach((row: any) => {
-        permissions[row.page_name] = true;
-      });
-    }
+    resultRows.forEach((row: any) => {
+      permissions[row.page_name] = true;
+    });
     
     return permissions;
   } catch (error) {
@@ -454,8 +479,9 @@ async function checkTeamPermissions(userId: number, pageName: string, req: Reque
     `;
     
     const teamPermissions = await db.execute(query);
+    const teamPermissionsRows = processQueryResult(teamPermissions);
     
-    if (teamPermissions && teamPermissions.rows && teamPermissions.rows.length > 0) {
+    if (teamPermissionsRows.length > 0) {
       return next();
     }
     
@@ -542,22 +568,21 @@ export async function getUserWarehousePermissions(userId: number): Promise<{[key
     `;
     
     const result = await db.execute(query);
+    const resultRows = processQueryResult(result);
     
     // 设置权限
-    if (result && result.rows) {
-      result.rows.forEach((permission: any) => {
-        const warehouseId = permission.warehouse_id;
-        if (!permissions[warehouseId]) {
-          permissions[warehouseId] = {
-            canView: true,
-            canManage: !!permission.can_manage
-          };
-        } else if (permission.can_manage) {
-          // 如果有多个团队赋予同一仓库的权限，只要有一个是管理权限，就设为管理权限
-          permissions[warehouseId].canManage = true;
-        }
-      });
-    }
+    resultRows.forEach((permission: any) => {
+      const warehouseId = permission.warehouse_id;
+      if (!permissions[warehouseId]) {
+        permissions[warehouseId] = {
+          canView: true,
+          canManage: !!permission.can_manage
+        };
+      } else if (permission.can_manage) {
+        // 如果有多个团队赋予同一仓库的权限，只要有一个是管理权限，就设为管理权限
+        permissions[warehouseId].canManage = true;
+      }
+    });
     
     return permissions;
   } catch (error) {
