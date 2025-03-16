@@ -2274,6 +2274,62 @@
     "kk": "Кіру орындалуда...",
     "uz": "Kirilmoqda..."
   },
+  "guest_login": {
+    "zh": "以访客身份访问",
+    "en": "Access as Guest",
+    "ru": "Войти как гость",
+    "kk": "Қонақ ретінде кіру",
+    "uz": "Mehmon sifatida kirish"
+  },
+  "guest_user": {
+    "zh": "访客用户",
+    "en": "Guest User",
+    "ru": "Гостевой пользователь",
+    "kk": "Қонақ пайдаланушы",
+    "uz": "Mehmon foydalanuvchi"
+  },
+  "guest_login_success": {
+    "zh": "访客登录成功",
+    "en": "Guest Login Successful",
+    "ru": "Гостевой вход выполнен",
+    "kk": "Қонақ кіру сәтті",
+    "uz": "Mehmon kirishi muvaffaqiyatli"
+  },
+  "test_account_login": {
+    "zh": "测试账号快速登录 (222/222)",
+    "en": "Test Account Quick Login (222/222)",
+    "ru": "Быстрый вход с тестовым аккаунтом (222/222)",
+    "kk": "Тест тіркелгісімен жылдам кіру (222/222)",
+    "uz": "Test hisobi bilan tezkor kirish (222/222)"
+  },
+  "login_failed": {
+    "zh": "登录失败",
+    "en": "Login Failed",
+    "ru": "Ошибка входа",
+    "kk": "Кіру сәтсіз аяқталды", 
+    "uz": "Kirishda xatolik"
+  },
+  "try_again": {
+    "zh": "发生错误，请重试",
+    "en": "An error occurred, please try again",
+    "ru": "Произошла ошибка, попробуйте снова",
+    "kk": "Қате орын алды, қайталап көріңіз",
+    "uz": "Xatolik yuz berdi, qayta urinib ko'ring"
+  },
+  "limited_mode": {
+    "zh": "受限模式登录",
+    "en": "Limited Mode Login",
+    "ru": "Вход в ограниченном режиме",
+    "kk": "Шектеулі режимде кіру",
+    "uz": "Cheklangan rejimda kirish"
+  },
+  "some_features_unavailable": {
+    "zh": "部分功能可能不可用",
+    "en": "Some features may be unavailable",
+    "ru": "Некоторые функции могут быть недоступны",
+    "kk": "Кейбір функциялар қолжетімсіз болуы мүмкін",
+    "uz": "Ba'zi funksiyalar mavjud bo'lmasligi mumkin"
+  },
   "or_continue_with": {
     "zh": "或继续使用",
     "en": "OR CONTINUE WITH",

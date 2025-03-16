@@ -256,8 +256,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                     // 创建访客用户
                     const guestUser = {
                       id: -1,
-                      username: '访客用户',
-                      fullName: '访客用户',
+                      username: t('guest_user') || '访客用户',
+                      fullName: t('guest_user') || '访客用户',
                       role: 'anonymous',
                       userSource: 'local',
                       fakePositive: true,
@@ -271,8 +271,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                     
                     // 显示提示
                     toast({
-                      title: "访客登录成功",
-                      description: "部分功能可能受限",
+                      title: t('guest_login_success') || "访客登录成功",
+                      description: t('some_features_unavailable') || "部分功能可能受限",
                       type: "success"
                     });
                     
@@ -282,7 +282,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                     }, 500);
                   }}
                 >
-                  以访客身份访问
+                  {t('guest_login')}
                 </Button>
                 
                 {/* 测试账号一键登录 - 临时开发用，可以在生产中删除 */}
@@ -299,7 +299,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                     form.handleSubmit(onSubmit)();
                   }}
                 >
-                  测试账号快速登录 (222/222)
+                  {t('test_account_login')}
                 </Button>
               </div>
             </form>
