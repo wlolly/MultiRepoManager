@@ -240,7 +240,7 @@ export const activities = pgTable("activities", {
   id: serial("id").primaryKey(),
   repositoryId: integer("repository_id").notNull().references(() => repositories.id),
   userId: integer("user_id").notNull().references(() => users.id),
-  type: activitiesTypeEnum.notNull(),
+  type: activitiesTypeEnum("type").notNull(),
   summary: varchar("summary", { length: 255 }).notNull(),
   details: text("details"),
   branch: varchar("branch", { length: 255 }),
