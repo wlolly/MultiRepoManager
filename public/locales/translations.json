@@ -3786,6 +3786,90 @@
       "ru": "Распределение языков",
       "kk": "Тілдер үлестірімі",
       "uz": "Til taqsimoti"
+    },
+    "warehouseTransfer.status_pending": {
+      "zh": "待处理",
+      "en": "Pending",
+      "ru": "В ожидании",
+      "kk": "Күтуде",
+      "uz": "Kutilmoqda"
+    },
+    "warehouseTransfer.status_processing": {
+      "zh": "处理中",
+      "en": "Processing",
+      "ru": "Обработка",
+      "kk": "Өңделуде",
+      "uz": "Ishlov berilmoqda"
+    },
+    "warehouseTransfer.status_completed": {
+      "zh": "已完成",
+      "en": "Completed",
+      "ru": "Завершено",
+      "kk": "Аяқталды",
+      "uz": "Bajarildi"
+    },
+    "warehouseTransfer.status_cancelled": {
+      "zh": "已取消",
+      "en": "Cancelled",
+      "ru": "Отменено",
+      "kk": "Бас тартылды",
+      "uz": "Bekor qilindi"
+    },
+    "inboundOrder.status_pending": {
+      "zh": "待处理",
+      "en": "Pending",
+      "ru": "В ожидании",
+      "kk": "Күтуде",
+      "uz": "Kutilmoqda"
+    },
+    "inboundOrder.status_processing": {
+      "zh": "处理中",
+      "en": "Processing",
+      "ru": "Обработка",
+      "kk": "Өңделуде",
+      "uz": "Ishlov berilmoqda"
+    },
+    "inboundOrder.status_completed": {
+      "zh": "已完成",
+      "en": "Completed",
+      "ru": "Завершено",
+      "kk": "Аяқталды",
+      "uz": "Bajarildi"
+    },
+    "inboundOrder.status_cancelled": {
+      "zh": "已取消",
+      "en": "Cancelled",
+      "ru": "Отменено",
+      "kk": "Бас тартылды",
+      "uz": "Bekor qilindi"
+    },
+    "outboundOrder.status_pending": {
+      "zh": "待处理",
+      "en": "Pending",
+      "ru": "В ожидании",
+      "kk": "Күтуде",
+      "uz": "Kutilmoqda"
+    },
+    "outboundOrder.status_processing": {
+      "zh": "处理中",
+      "en": "Processing",
+      "ru": "Обработка",
+      "kk": "Өңделуде",
+      "uz": "Ishlov berilmoqda"
+    },
+    "outboundOrder.status_completed": {
+      "zh": "已完成",
+      "en": "Completed",
+      "ru": "Завершено",
+      "kk": "Аяқталды",
+      "uz": "Bajarildi"
+    },
+    "outboundOrder.status_cancelled": {
+      "zh": "已取消",
+      "en": "Cancelled",
+      "ru": "Отменено",
+      "kk": "Бас тартылды",
+      "uz": "Bekor qilindi"
     }
   }
 }
