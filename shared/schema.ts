@@ -613,25 +613,39 @@ export type PlatformOrderItem = typeof platformOrderItems.$inferSelect;
 // 商品匹配规则表 - 保存手动匹配的规则
 export const productMatchingRules = mysqlTable("product_matching_rules", {
   id: int("id").primaryKey().autoincrement(),
-  platformType: varchar("platform_type", { length: 50 }).notNull(), // 平台类型
-  platformProductCode: varchar("platform_product_code", { length: 255 }).notNull(), // 平台商品码
+  platformType: varchar("platform_type", { length: 50 }).notNull(), // 平台类型 (Kaspi/Ozon/WB/Uzum)
+  platformProductCode: varchar("platform_product_code", { length: 255 }).notNull(), // 平台商品编码
+  platformProductId: varchar("platform_product_id", { length: 255 }), // 平台商品ID（可选）
+  platformProductName: varchar("platform_product_name", { length: 255 }), // 平台商品名称（可选）
   matchedCode: varchar("matched_code", { length: 255 }).notNull(), // 匹配后的编码
   matchedProductId: int("matched_product_id").notNull().references(() => products.id), // 匹配的系统产品ID
+  confidence: decimal("confidence", { precision: 5, scale: 2 }).default("1.00"), // 匹配置信度，默认100%
+  apiConfigId: int("api_config_id").references(() => apiConfigurations.id), // 关联的API配置（店铺）
+  matchMethod: mysqlEnum("match_method", ["manual", "auto", "fuzzy"]).default("manual"), // 匹配方式：手动/自动/模糊
+  lastUsedAt: timestamp("last_used_at"), // 上次使用时间
   createdBy: int("created_by").notNull().references(() => users.id), // 创建人
   createdAt: timestamp("created_at").defaultNow().notNull(), // 创建时间
   updatedAt: timestamp("updated_at").defaultNow().notNull(), // 更新时间
   isActive: boolean("is_active").default(true), // 是否有效
 }, (table) => {
   return {
-    platformCodeIdx: uniqueIndex("platform_code_idx").on(table.platformType, table.platformProductCode),
+    // 不再使用唯一索引，允许同一个平台商品代码匹配到多个系统商品
+    platformCodeIdx: mysqlIndex("platform_code_idx").on(table.platformType, table.platformProductCode),
+    matchedProductIdx: mysqlIndex("matched_product_idx").on(table.matchedProductId),
   };
 });
 
 export const insertProductMatchingRuleSchema = createInsertSchema(productMatchingRules).pick({
   platformType: true,
   platformProductCode: true,
+  platformProductId: true,
+  platformProductName: true,
   matchedCode: true,
   matchedProductId: true,
+  confidence: true,
+  apiConfigId: true,
+  matchMethod: true,
+  lastUsedAt: true,
   createdBy: true,
   isActive: true,
 });
