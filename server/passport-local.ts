@@ -49,13 +49,13 @@ passport.use(new LocalStrategy(
       const user = result[0];
       
       // 验证密码
-      if (!verifyPassword(user.password, password)) {
+      if (!user.password || !verifyPassword(user.password, suppliedPassword)) {
         console.log('[Passport] 密码验证失败:', username);
         return done(null, false, { message: '用户名或密码错误' });
       }
       
       // 检查用户是否激活
-      if (user.isactive !== true) {
+      if (user.isActive !== true) {
         console.log('[Passport] 用户未激活:', username);
         return done(null, false, { message: '用户账户未激活' });
       }
@@ -91,7 +91,7 @@ passport.deserializeUser(async (id: number, done) => {
       username: users.username,
       fullname: users.fullname,
       role: users.role,
-      isactive: users.isactive
+      isActive: users.isActive
     }).from(users).where(eq(users.id, id));
     
     if (!result || result.length === 0) {
