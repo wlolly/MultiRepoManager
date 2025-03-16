@@ -201,10 +201,11 @@ export function ImportTransferDialog({
         }
       }
       
+      // 使用useToast钩子返回的toast函数
       toast({
         title: t("common.error"),
-        description: errorMessage,
-        variant: "destructive"
+        description: errorMessage
+        // 移除了不支持的variant属性
       });
     } finally {
       setIsImporting(false);
@@ -233,10 +234,11 @@ export function ImportTransferDialog({
       });
     } catch (error) {
       console.error('Template download error:', error);
+      // 使用useToast钩子返回的toast函数
       toast({
         title: t("common.error"),
-        description: t("warehouseTransfer.template_download_error"),
-        variant: "destructive"
+        description: t("warehouseTransfer.template_download_error")
+        // 移除了不支持的variant属性
       });
     }
   };

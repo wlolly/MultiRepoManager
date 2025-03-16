@@ -87,18 +87,20 @@ export function TransferDetailsView({
       if (actionType === "complete") {
         // 标记调拨单为已完成
         await axios.post(`/api/warehouse-transfers/${transferId}/execute`);
+        // 使用useToast钩子返回的toast函数
         toast({
           title: t("common.success"),
-          description: t("warehouseTransfer.transfer_completed_success"),
-          variant: "success"
+          description: t("warehouseTransfer.transfer_completed_success")
+          // 移除了不支持的variant属性
         });
       } else {
         // 取消调拨单
         await axios.post(`/api/warehouse-transfers/${transferId}/cancel`);
+        // 使用useToast钩子返回的toast函数
         toast({
           title: t("common.success"),
-          description: t("warehouseTransfer.transfer_cancelled_success"),
-          variant: "success"
+          description: t("warehouseTransfer.transfer_cancelled_success")
+          // 移除了不支持的variant属性
         });
       }
       
@@ -114,12 +116,13 @@ export function TransferDetailsView({
     } catch (error) {
       console.error(`${actionType} error:`, error);
       
+      // 使用useToast钩子返回的toast函数
       toast({
         title: t("common.error"),
         description: actionType === "complete" 
           ? t("warehouseTransfer.transfer_completed_error") 
-          : t("warehouseTransfer.transfer_cancelled_error"),
-        variant: "destructive"
+          : t("warehouseTransfer.transfer_cancelled_error")
+        // 移除了不支持的variant属性
       });
     }
   };
