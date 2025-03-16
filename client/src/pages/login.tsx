@@ -46,8 +46,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     
     // 显示登录中提示
     toast({ 
-      title: t('logging_in'),
-      description: t('please_wait'),
+      title: t('auth.logging_in'),
+      description: t('auth.please_wait'),
       type: "success"
     });
     
@@ -93,16 +93,16 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           sessionStorage.setItem('currentUser', JSON.stringify(authUser));
           localStorage.setItem('currentUser', JSON.stringify(authUser));
           toast({
-            title: t('login_success'),
-            description: t('redirecting'),
+            title: t('auth.login_success'),
+            description: t('auth.redirecting'),
             type: "success"
           });
         } else if (data.fallbackMode || data.authenticated === false) {
           // 假阳性登录或访客用户
           const guestUser = {
             id: data.user?.id || -1,
-            username: data.user?.username || values.username || t('guest_user'),
-            fullName: data.user?.fullName || values.username || t('guest_user'),
+            username: data.user?.username || values.username || t('auth.guest_user'),
+            fullName: data.user?.fullName || values.username || t('auth.guest_user'),
             role: 'anonymous',
             userSource: 'local',
             fakePositive: true,
@@ -113,8 +113,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           sessionStorage.setItem('currentUser', JSON.stringify(guestUser));
           localStorage.setItem('currentUser', JSON.stringify(guestUser));
           toast({
-            title: t('limited_mode_login'),
-            description: t('some_features_unavailable'),
+            title: t('auth.limited_mode_login'),
+            description: t('auth.some_features_unavailable'),
             type: "warning"
           });
         } else {
@@ -126,8 +126,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           sessionStorage.setItem('currentUser', JSON.stringify(normalUser));
           localStorage.setItem('currentUser', JSON.stringify(normalUser));
           toast({
-            title: t('login_success'),
-            description: t('redirecting'),
+            title: t('auth.login_success'),
+            description: t('auth.redirecting'),
             type: "success"
           });
         }
@@ -149,8 +149,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     .catch(error => {
       console.error('登录请求错误:', error);
       toast({
-        title: t('login_failed'),
-        description: t('error_try_again'),
+        title: t('auth.login_failed'),
+        description: t('auth.error_try_again'),
         type: "error"
       });
     })

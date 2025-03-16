@@ -3871,5 +3871,202 @@
       "kk": "Бас тартылды",
       "uz": "Bekor qilindi"
     }
+  },
+  
+  "auth.login": {
+    "zh": "登录",
+    "en": "Login",
+    "ru": "Вход",
+    "kk": "Кіру",
+    "uz": "Kirish"
+  },
+  "auth.username": {
+    "zh": "用户名",
+    "en": "Username",
+    "ru": "Имя пользователя",
+    "kk": "Пайдаланушы аты",
+    "uz": "Foydalanuvchi nomi"
+  },
+  "auth.password": {
+    "zh": "密码",
+    "en": "Password",
+    "ru": "Пароль",
+    "kk": "Құпия сөз",
+    "uz": "Parol"
+  },
+  "auth.enter_username": {
+    "zh": "请输入用户名",
+    "en": "Enter username",
+    "ru": "Введите имя пользователя",
+    "kk": "Пайдаланушы атын енгізіңіз",
+    "uz": "Foydalanuvchi nomini kiriting"
+  },
+  "auth.enter_password": {
+    "zh": "请输入密码",
+    "en": "Enter password",
+    "ru": "Введите пароль",
+    "kk": "Құпия сөзді енгізіңіз",
+    "uz": "Parolni kiriting"
+  },
+  "auth.enter_credentials_to_login": {
+    "zh": "输入您的凭据进行登录",
+    "en": "Enter your credentials to login",
+    "ru": "Введите ваши данные для входа",
+    "kk": "Кіру үшін тіркелгі деректеріңізді енгізіңіз",
+    "uz": "Tizimga kirish uchun ma'lumotlaringizni kiriting"
+  },
+  "auth.login_success": {
+    "zh": "登录成功",
+    "en": "Login successful",
+    "ru": "Вход выполнен успешно",
+    "kk": "Кіру сәтті болды",
+    "uz": "Kirish muvaffaqiyatli"
+  },
+  "auth.login_failed": {
+    "zh": "登录失败",
+    "en": "Login failed",
+    "ru": "Ошибка входа",
+    "kk": "Кіру сәтсіз аяқталды",
+    "uz": "Kirish muvaffaqiyatsiz"
+  },
+  "auth.logging_in": {
+    "zh": "正在登录",
+    "en": "Logging in",
+    "ru": "Выполняется вход",
+    "kk": "Кіру орындалуда",
+    "uz": "Kirish jarayonida"
+  },
+  "auth.limited_mode_login": {
+    "zh": "受限模式登录",
+    "en": "Limited mode login",
+    "ru": "Вход в ограниченном режиме",
+    "kk": "Шектеулі режимде кіру",
+    "uz": "Cheklangan rejimda kirish"
+  },
+  "auth.guest_user": {
+    "zh": "访客用户",
+    "en": "Guest User",
+    "ru": "Гость",
+    "kk": "Қонақ",
+    "uz": "Mehmon"
+  },
+  "auth.guest_login": {
+    "zh": "访客登录",
+    "en": "Guest Login",
+    "ru": "Войти как гость",
+    "kk": "Қонақ ретінде кіру",
+    "uz": "Mehmon sifatida kirish"
+  },
+  "auth.guest_login_success": {
+    "zh": "访客登录成功",
+    "en": "Guest login successful",
+    "ru": "Вход в качестве гостя выполнен",
+    "kk": "Қонақ ретінде кіру сәтті болды",
+    "uz": "Mehmon sifatida kirish muvaffaqiyatli"
+  },
+  "auth.test_account_login": {
+    "zh": "测试账号登录",
+    "en": "Test Account Login",
+    "ru": "Войти как тестовый пользователь",
+    "kk": "Тест тіркелгісімен кіру",
+    "uz": "Test hisob qaydnomasi bilan kirish"
+  },
+  "auth.please_wait": {
+    "zh": "请稍候",
+    "en": "Please wait",
+    "ru": "Пожалуйста, подождите",
+    "kk": "Күте тұрыңыз",
+    "uz": "Iltimos, kuting"
+  },
+  "auth.error_try_again": {
+    "zh": "发生错误，请重试",
+    "en": "An error occurred, please try again",
+    "ru": "Произошла ошибка, попробуйте снова",
+    "kk": "Қате орын алды, қайталап көріңіз",
+    "uz": "Xato yuz berdi, qayta urinib ko'ring"
+  },
+  "auth.some_features_unavailable": {
+    "zh": "部分功能不可用",
+    "en": "Some features are unavailable",
+    "ru": "Некоторые функции недоступны",
+    "kk": "Кейбір функциялар қол жетімді емес",
+    "uz": "Ba'zi funksiyalar mavjud emas"
+  },
+  "auth.redirecting": {
+    "zh": "正在重定向",
+    "en": "Redirecting",
+    "ru": "Перенаправление",
+    "kk": "Қайта бағыттау",
+    "uz": "Yo'naltirish"
+  },
+  "auth.loading_session": {
+    "zh": "正在载入会话...",
+    "en": "Loading session...",
+    "ru": "Загрузка сессии...",
+    "kk": "Сессия жүктелуде...",
+    "uz": "Sessiya yuklanmoqda..."
+  },
+  "auth.verifying_session": {
+    "zh": "正在验证会话状态...",
+    "en": "Verifying session status...",
+    "ru": "Проверка статуса сессии...",
+    "kk": "Сессия күйі тексерілуде...",
+    "uz": "Sessiya holati tekshirilmoqda..."
+  },
+  "auth.session_verification_success": {
+    "zh": "会话验证成功，准备跳转...",
+    "en": "Session verification successful, preparing redirect...",
+    "ru": "Проверка сессии успешна, подготовка перенаправления...",
+    "kk": "Сессияны тексеру сәтті, қайта бағыттау дайындалуда...",
+    "uz": "Sessiya tekshiruvi muvaffaqiyatli, yo'naltirish tayyorlanmoqda..."
+  },
+  "auth.preparing_redirect": {
+    "zh": "准备跳转...",
+    "en": "Preparing redirect...",
+    "ru": "Подготовка перенаправления...",
+    "kk": "Қайта бағыттау дайындалуда...",
+    "uz": "Yo'naltirish tayyorlanmoqda..."
+  },
+  "auth.verification_complete": {
+    "zh": "验证完成，正在跳转...",
+    "en": "Verification complete, redirecting...",
+    "ru": "Проверка завершена, выполняется перенаправление...",
+    "kk": "Тексеру аяқталды, қайта бағытталуда...",
+    "uz": "Tekshirish yakunlandi, yo'naltirilmoqda..."
+  },
+  "auth.session_verification_failed": {
+    "zh": "会话验证失败",
+    "en": "Session verification failed",
+    "ru": "Сбой проверки сессии",
+    "kk": "Сессияны тексеру сәтсіз аяқталды",
+    "uz": "Sessiya tekshiruvi muvaffaqiyatsiz"
+  },
+  "auth.verification_error": {
+    "zh": "验证过程出错",
+    "en": "Error during verification",
+    "ru": "Ошибка во время проверки",
+    "kk": "Тексеру кезінде қате орын алды",
+    "uz": "Tekshirish vaqtida xato"
+  },
+  "auth.please_wait_verifying": {
+    "zh": "请稍候，正在验证登录并跳转",
+    "en": "Please wait, verifying login and redirecting",
+    "ru": "Пожалуйста, подождите, проверка входа и перенаправление",
+    "kk": "Күте тұрыңыз, кіру тексеріліп, қайта бағытталуда",
+    "uz": "Iltimos, kuting, kirish tekshirilib, yo'naltirilmoqda"
+  },
+  "auth.processing_login": {
+    "zh": "正在处理登录请求...",
+    "en": "Processing login request...",
+    "ru": "Обработка запроса на вход...",
+    "kk": "Кіру сұрауы өңделуде...",
+    "uz": "Kirish so'rovi ishlanmoqda..."
+  },
+  "auth.redirecting_to_login": {
+    "zh": "正在重定向到登录页...",
+    "en": "Redirecting to login page...",
+    "ru": "Перенаправление на страницу входа...",
+    "kk": "Кіру бетіне қайта бағытталуда...",
+    "uz": "Kirish sahifasiga yo'naltirilmoqda..."
   }
 }
