@@ -334,16 +334,16 @@ export type InsertWarehouse = z.infer<typeof insertWarehouseSchema>;
 export type Warehouse = typeof warehouses.$inferSelect;
 
 // 入库单
-export const inboundOrders = mysqlTable("inbound_orders", {
-  id: int("id").primaryKey().autoincrement(),
+export const inboundOrders = pgTable("inbound_orders", {
+  id: serial("id").primaryKey(),
   orderNumber: varchar("order_number", { length: 255 }).notNull().unique(), // 入库单号
-  warehouseId: int("warehouse_id").notNull().references(() => warehouses.id), // 仓库ID
+  warehouseId: integer("warehouse_id").notNull().references(() => warehouses.id), // 仓库ID
   totalWeight: decimal("total_weight", { precision: 10, scale: 3 }).notNull(), // 总重量
   totalVolume: decimal("total_volume", { precision: 10, scale: 6 }).notNull(), // 总体积
-  createdBy: int("created_by").notNull().references(() => users.id), // 创建人
+  createdBy: integer("created_by").notNull().references(() => users.id), // 创建人
   createdAt: timestamp("created_at").defaultNow().notNull(), // 创建时间
   status: varchar("status", { length: 50 }).notNull().default("pending"), // 状态：待处理、已完成、已取消
-  orderType: mysqlEnum("order_type", ["purchase", "return", "transfer", "production"]).default("purchase"), // 入库单类型：采购入库、退货入库、调拨入库、生产入库
+  orderType: pgEnum("order_type", ["purchase", "return", "transfer", "production"]).default("purchase"), // 入库单类型：采购入库、退货入库、调拨入库、生产入库
   notes: text("notes"), // 备注
 });
 
@@ -364,16 +364,16 @@ export type InsertInboundOrder = z.infer<typeof insertInboundOrderSchema>;
 export type InboundOrder = typeof inboundOrders.$inferSelect;
 
 // 入库单明细
-export const inboundOrderItems = mysqlTable("inbound_order_items", {
-  id: int("id").primaryKey().autoincrement(),
-  inboundOrderId: int("inbound_order_id").notNull().references(() => inboundOrders.id), // 入库单ID
-  productId: int("product_id").notNull().references(() => products.id), // 商品ID
+export const inboundOrderItems = pgTable("inbound_order_items", {
+  id: serial("id").primaryKey(),
+  inboundOrderId: integer("inbound_order_id").notNull().references(() => inboundOrders.id), // 入库单ID
+  productId: integer("product_id").notNull().references(() => products.id), // 商品ID
   productName: varchar("product_name", { length: 255 }).notNull(), // 商品名称
   barcode: varchar("barcode", { length: 255 }).notNull(), // 条形码
   uniqueCode: varchar("unique_code", { length: 50 }), // 唯一码
   externalOrderNumber: varchar("external_order_number", { length: 255 }), // 外部订单号
-  quantity: int("quantity").notNull(), // 数量
-  packageCount: int("package_count").notNull(), // 件数
+  quantity: integer("quantity").notNull(), // 数量
+  packageCount: integer("package_count").notNull(), // 件数
   weight: decimal("weight", { precision: 10, scale: 3 }).notNull(), // 重量
   volume: decimal("volume", { precision: 10, scale: 6 }).notNull(), // 体积
   remark: text("remark"), // 备注
@@ -397,17 +397,17 @@ export type InsertInboundOrderItem = z.infer<typeof insertInboundOrderItemSchema
 export type InboundOrderItem = typeof inboundOrderItems.$inferSelect;
 
 // 出库单
-export const outboundOrders = mysqlTable("outbound_orders", {
-  id: int("id").primaryKey().autoincrement(),
+export const outboundOrders = pgTable("outbound_orders", {
+  id: serial("id").primaryKey(),
   orderNumber: varchar("order_number", { length: 255 }).notNull().unique(), // 出库单号
-  warehouseId: int("warehouse_id").notNull().references(() => warehouses.id), // 仓库ID
+  warehouseId: integer("warehouse_id").notNull().references(() => warehouses.id), // 仓库ID
   totalWeight: decimal("total_weight", { precision: 10, scale: 3 }).notNull(), // 总重量
   totalVolume: decimal("total_volume", { precision: 10, scale: 6 }).notNull(), // 总体积
-  createdBy: int("created_by").notNull().references(() => users.id), // 创建人
+  createdBy: integer("created_by").notNull().references(() => users.id), // 创建人
   createdAt: timestamp("created_at").defaultNow().notNull(), // 创建时间
   status: varchar("status", { length: 50 }).notNull().default("pending"), // 状态：待处理、已完成、已取消
-  orderType: mysqlEnum("order_type", ["sale", "return", "transfer", "scrap"]).default("sale"), // 出库单类型：销售出库、退货出库、调拨出库、报废出库
-  destinationType: mysqlEnum("destination_type", ["customer", "retail", "wholesale", "transfer", "supplier"]).default("customer"), // 目的地类型：客户、零售商、批发商、调拨仓库、供应商
+  orderType: pgEnum("order_type", ["sale", "return", "transfer", "scrap"]).default("sale"), // 出库单类型：销售出库、退货出库、调拨出库、报废出库
+  destinationType: pgEnum("destination_type", ["customer", "retail", "wholesale", "transfer", "supplier"]).default("customer"), // 目的地类型：客户、零售商、批发商、调拨仓库、供应商
   notes: text("notes"), // 备注
 });
 
@@ -429,16 +429,16 @@ export type InsertOutboundOrder = z.infer<typeof insertOutboundOrderSchema>;
 export type OutboundOrder = typeof outboundOrders.$inferSelect;
 
 // 出库单明细
-export const outboundOrderItems = mysqlTable("outbound_order_items", {
-  id: int("id").primaryKey().autoincrement(),
-  outboundOrderId: int("outbound_order_id").notNull().references(() => outboundOrders.id), // 出库单ID
-  productId: int("product_id").notNull().references(() => products.id), // 商品ID
+export const outboundOrderItems = pgTable("outbound_order_items", {
+  id: serial("id").primaryKey(),
+  outboundOrderId: integer("outbound_order_id").notNull().references(() => outboundOrders.id), // 出库单ID
+  productId: integer("product_id").notNull().references(() => products.id), // 商品ID
   productName: varchar("product_name", { length: 255 }).notNull(), // 商品名称
   barcode: varchar("barcode", { length: 255 }).notNull(), // 条形码
   uniqueCode: varchar("unique_code", { length: 50 }), // 唯一码
   externalOrderNumber: varchar("external_order_number", { length: 255 }), // 外部订单号
-  quantity: int("quantity").notNull(), // 数量
-  packageCount: int("package_count").notNull(), // 件数
+  quantity: integer("quantity").notNull(), // 数量
+  packageCount: integer("package_count").notNull(), // 件数
   weight: decimal("weight", { precision: 10, scale: 3 }).notNull(), // 重量
   volume: decimal("volume", { precision: 10, scale: 6 }).notNull(), // 体积
   remark: text("remark"), // 备注
@@ -462,23 +462,21 @@ export type InsertOutboundOrderItem = z.infer<typeof insertOutboundOrderItemSche
 export type OutboundOrderItem = typeof outboundOrderItems.$inferSelect;
 
 // 电商平台产品表
-export const ecommerceProducts = mysqlTable("ecommerce_products", {
-  id: int("id").primaryKey().autoincrement(),
-  platformId: varchar("platform_id", { length: 255 }).notNull(), // 电商平台上的产品ID
+export const ecommerceProducts = pgTable("ecommerce_products", {
+  id: serial("id").primaryKey(), // 电商平台上的产品ID
   platformCode: varchar("platform_code", { length: 255 }).notNull(), // 电商平台上的产品编码
   platformName: varchar("platform_name", { length: 255 }).notNull(), // 电商平台上的产品名称
   platformCategory: varchar("platform_category", { length: 255 }), // 电商平台上的产品分类
   price: decimal("price", { precision: 10, scale: 2 }), // 价格
-  stock: int("stock"), // 库存
+  stock: integer("stock"), // 库存
   matchedCode: varchar("matched_code", { length: 255 }).notNull(), // 匹配后的编码
-  matchedProductId: int("matched_product_id").references(() => products.id), // 匹配的系统产品ID
+  matchedProductId: integer("matched_product_id").references(() => products.id), // 匹配的系统产品ID
   lastUpdated: timestamp("last_updated").defaultNow().notNull(), // 最后更新时间
   platformSource: varchar("platform_source", { length: 50 }).notNull(), // 来源平台
   additionalInfo: text("additional_info"), // 额外信息（JSON格式）
 });
 
 export const insertEcommerceProductSchema = createInsertSchema(ecommerceProducts).pick({
-  platformId: true,
   platformCode: true,
   platformName: true,
   platformCategory: true,
@@ -494,8 +492,8 @@ export type InsertEcommerceProduct = z.infer<typeof insertEcommerceProductSchema
 export type EcommerceProduct = typeof ecommerceProducts.$inferSelect;
 
 // API集成配置表
-export const apiConfigurations = mysqlTable("api_configurations", {
-  id: int("id").primaryKey().autoincrement(),
+export const apiConfigurations = pgTable("api_configurations", {
+  id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(), // 配置名称
   platformType: varchar("platform_type", { length: 50 }).notNull(), // 平台类型 (Kaspi/Ozon/WB/Uzum)
   storeName: varchar("store_name", { length: 255 }).notNull(), // 店铺名称
@@ -504,8 +502,8 @@ export const apiConfigurations = mysqlTable("api_configurations", {
   apiEndpoint: varchar("api_endpoint", { length: 255 }).notNull(), // API端点
   isActive: boolean("is_active").default(true), // 是否激活
   lastSyncTime: timestamp("last_sync_time"), // 最后同步时间
-  teamId: int("team_id").references(() => teams.id), // 关联的团队ID
-  warehouseId: int("warehouse_id").references(() => warehouses.id), // 关联的仓库ID
+  teamId: integer("team_id").references(() => teams.id), // 关联的团队ID
+  warehouseId: integer("warehouse_id").references(() => warehouses.id), // 关联的仓库ID
   createdAt: timestamp("created_at").defaultNow().notNull(), // 创建时间
   updatedAt: timestamp("updated_at").defaultNow().notNull(), // 更新时间
   config: text("config"), // 其他配置（JSON格式）
@@ -528,7 +526,7 @@ export type InsertApiConfiguration = z.infer<typeof insertApiConfigurationSchema
 export type ApiConfiguration = typeof apiConfigurations.$inferSelect;
 
 // 平台订单状态枚举
-export const platformOrderStatusEnum = mysqlEnum("platform_order_status", [
+export const platformOrderStatusEnum = pgEnum("platform_order_status", [
   "new", // 新订单
   "processing", // 处理中
   "shipped", // 已发货
@@ -538,11 +536,11 @@ export const platformOrderStatusEnum = mysqlEnum("platform_order_status", [
 ]);
 
 // 平台订单表 - 保存从各电商平台API获取的原始订单数据
-export const platformOrders = mysqlTable("platform_orders", {
-  id: int("id").primaryKey().autoincrement(),
+export const platformOrders = pgTable("platform_orders", {
+  id: serial("id").primaryKey(),
   platformId: varchar("platform_id", { length: 255 }).notNull(), // 平台订单ID
   platformType: varchar("platform_type", { length: 50 }).notNull(), // 平台类型 (Kaspi/Ozon/WB/Uzum)
-  apiConfigId: int("api_config_id").notNull().references(() => apiConfigurations.id), // API配置ID
+  apiConfigId: integer("api_config_id").notNull().references(() => apiConfigurations.id), // API配置ID
   orderDate: timestamp("order_date").notNull(), // 订单日期
   customerName: varchar("customer_name", { length: 255 }), // 客户名称
   customerPhone: varchar("customer_phone", { length: 50 }), // 客户电话
@@ -552,7 +550,7 @@ export const platformOrders = mysqlTable("platform_orders", {
   paymentMethod: varchar("payment_method", { length: 50 }), // 支付方式
   rawData: text("raw_data"), // 原始订单数据（JSON格式）
   processedAt: timestamp("processed_at"), // 处理日期（生成出入库单的日期）
-  outboundOrderId: int("outbound_order_id").references(() => outboundOrders.id), // 关联的出库单ID
+  outboundOrderId: integer("outbound_order_id").references(() => outboundOrders.id), // 关联的出库单ID
   createdAt: timestamp("created_at").defaultNow().notNull(), // 创建时间（数据同步时间）
   updatedAt: timestamp("updated_at").defaultNow().notNull(), // 更新时间
 });
@@ -577,16 +575,16 @@ export type InsertPlatformOrder = z.infer<typeof insertPlatformOrderSchema>;
 export type PlatformOrder = typeof platformOrders.$inferSelect;
 
 // 平台订单项目表 - 保存订单明细
-export const platformOrderItems = mysqlTable("platform_order_items", {
-  id: int("id").primaryKey().autoincrement(),
-  platformOrderId: int("platform_order_id").notNull().references(() => platformOrders.id), // 平台订单ID
+export const platformOrderItems = pgTable("platform_order_items", {
+  id: serial("id").primaryKey(),
+  platformOrderId: integer("platform_order_id").notNull().references(() => platformOrders.id), // 平台订单ID
   platformItemId: varchar("platform_item_id", { length: 255 }), // 平台订单项目ID
   platformProductId: varchar("platform_product_id", { length: 255 }).notNull(), // 平台商品ID
   platformProductCode: varchar("platform_product_code", { length: 255 }).notNull(), // 平台商品编码
   platformProductName: varchar("platform_product_name", { length: 255 }).notNull(), // 平台商品名称
   matchedCode: varchar("matched_code", { length: 255 }).notNull(), // 匹配后的编码
-  matchedProductId: int("matched_product_id").references(() => products.id), // 匹配的系统产品ID
-  quantity: int("quantity").notNull(), // 数量
+  matchedProductId: integer("matched_product_id").references(() => products.id), // 匹配的系统产品ID
+  quantity: integer("quantity").notNull(), // 数量
   unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(), // 单价
   totalPrice: decimal("total_price", { precision: 10, scale: 2 }).notNull(), // 总价
   hasBeenProcessed: boolean("has_been_processed").default(false), // 是否已处理
@@ -613,27 +611,27 @@ export type InsertPlatformOrderItem = z.infer<typeof insertPlatformOrderItemSche
 export type PlatformOrderItem = typeof platformOrderItems.$inferSelect;
 
 // 商品匹配规则表 - 保存手动匹配的规则
-export const productMatchingRules = mysqlTable("product_matching_rules", {
-  id: int("id").primaryKey().autoincrement(),
+export const productMatchingRules = pgTable("product_matching_rules", {
+  id: serial("id").primaryKey(),
   platformType: varchar("platform_type", { length: 50 }).notNull(), // 平台类型 (Kaspi/Ozon/WB/Uzum)
   platformProductCode: varchar("platform_product_code", { length: 255 }).notNull(), // 平台商品编码
   platformProductId: varchar("platform_product_id", { length: 255 }), // 平台商品ID（可选）
   platformProductName: varchar("platform_product_name", { length: 255 }), // 平台商品名称（可选）
   matchedCode: varchar("matched_code", { length: 255 }).notNull(), // 匹配后的编码
-  matchedProductId: int("matched_product_id").notNull().references(() => products.id), // 匹配的系统产品ID
+  matchedProductId: integer("matched_product_id").notNull().references(() => products.id), // 匹配的系统产品ID
   confidence: decimal("confidence", { precision: 5, scale: 2 }).default("1.00"), // 匹配置信度，默认100%
-  apiConfigId: int("api_config_id").references(() => apiConfigurations.id), // 关联的API配置（店铺）
-  matchMethod: mysqlEnum("match_method", ["manual", "auto", "fuzzy"]).default("manual"), // 匹配方式：手动/自动/模糊
+  apiConfigId: integer("api_config_id").references(() => apiConfigurations.id), // 关联的API配置（店铺）
+  matchMethod: pgEnum("match_method", ["manual", "auto", "fuzzy"]).default("manual"), // 匹配方式：手动/自动/模糊
   lastUsedAt: timestamp("last_used_at"), // 上次使用时间
-  createdBy: int("created_by").notNull().references(() => users.id), // 创建人
+  createdBy: integer("created_by").notNull().references(() => users.id), // 创建人
   createdAt: timestamp("created_at").defaultNow().notNull(), // 创建时间
   updatedAt: timestamp("updated_at").defaultNow().notNull(), // 更新时间
   isActive: boolean("is_active").default(true), // 是否有效
 }, (table) => {
   return {
     // 不再使用唯一索引，允许同一个平台商品代码匹配到多个系统商品
-    platformCodeIdx: mysqlIndex("platform_code_idx").on(table.platformType, table.platformProductCode),
-    matchedProductIdx: mysqlIndex("matched_product_idx").on(table.matchedProductId),
+    platformCodeIdx: index("platform_code_idx").on(table.platformType, table.platformProductCode),
+    matchedProductIdx: index("matched_product_idx").on(table.matchedProductId),
   };
 });
 
@@ -656,7 +654,7 @@ export type InsertProductMatchingRule = z.infer<typeof insertProductMatchingRule
 export type ProductMatchingRule = typeof productMatchingRules.$inferSelect;
 
 // 预审核订单状态枚举
-export const preAuditOrderStatusEnum = mysqlEnum("pre_audit_order_status", [
+export const preAuditOrderStatusEnum = pgEnum("pre_audit_order_status", [
   "draft", // 草稿
   "pending", // 待审核
   "approved", // 已审核
@@ -664,22 +662,22 @@ export const preAuditOrderStatusEnum = mysqlEnum("pre_audit_order_status", [
 ]);
 
 // 预审核出入库单表 - 保存等待审核的出入库单信息
-export const preAuditOrders = mysqlTable("pre_audit_orders", {
-  id: int("id").primaryKey().autoincrement(),
+export const preAuditOrders = pgTable("pre_audit_orders", {
+  id: serial("id").primaryKey(),
   orderNumber: varchar("order_number", { length: 255 }).notNull().unique(), // 预生成单号
   orderType: operationTypeEnum.notNull(), // 单据类型: 入库/出库
   platformType: varchar("platform_type", { length: 50 }).notNull(), // 平台类型
   storeName: varchar("store_name", { length: 255 }).notNull(), // 店铺名称
-  warehouseId: int("warehouse_id").notNull().references(() => warehouses.id), // 仓库ID
+  warehouseId: integer("warehouse_id").notNull().references(() => warehouses.id), // 仓库ID
   orderDate: timestamp("order_date").notNull(), // 订单日期
   status: preAuditOrderStatusEnum.notNull().default("pending"), // 状态: 待审核/已审核/已拒绝
-  createdBy: int("created_by").notNull().references(() => users.id), // 创建人
-  approvedBy: int("approved_by").references(() => users.id), // 审核人
+  createdBy: integer("created_by").notNull().references(() => users.id), // 创建人
+  approvedBy: integer("approved_by").references(() => users.id), // 审核人
   approvedAt: timestamp("approved_at"), // 审核时间
-  teamId: int("team_id").references(() => teams.id), // 关联的团队ID
-  totalItems: int("total_items").notNull(), // 商品总数量
-  totalUnmatchedItems: int("total_unmatched_items").notNull(), // 未匹配商品数量
-  resultOrderId: int("result_order_id"), // 最终生成的出入库单ID
+  teamId: integer("team_id").references(() => teams.id), // 关联的团队ID
+  totalItems: integer("total_items").notNull(), // 商品总数量
+  totalUnmatchedItems: integer("total_unmatched_items").notNull(), // 未匹配商品数量
+  resultOrderId: integer("result_order_id"), // 最终生成的出入库单ID
   createdAt: timestamp("created_at").defaultNow().notNull(), // 创建时间
   updatedAt: timestamp("updated_at").defaultNow().notNull(), // 更新时间
   notes: text("notes"), // 备注
@@ -707,17 +705,17 @@ export type InsertPreAuditOrder = z.infer<typeof insertPreAuditOrderSchema>;
 export type PreAuditOrder = typeof preAuditOrders.$inferSelect;
 
 // 预审核出入库单明细表
-export const preAuditOrderItems = mysqlTable("pre_audit_order_items", {
-  id: int("id").primaryKey().autoincrement(),
-  preAuditOrderId: int("pre_audit_order_id").notNull().references(() => preAuditOrders.id), // 预审核单ID
+export const preAuditOrderItems = pgTable("pre_audit_order_items", {
+  id: serial("id").primaryKey(),
+  preAuditOrderId: integer("pre_audit_order_id").notNull().references(() => preAuditOrders.id), // 预审核单ID
   platformProductCode: varchar("platform_product_code", { length: 255 }).notNull(), // 平台商品编码
   platformProductName: varchar("platform_product_name", { length: 255 }).notNull(), // 平台商品名称
   matchedCode: varchar("matched_code", { length: 255 }), // 匹配后的编码
-  matchedProductId: int("matched_product_id").references(() => products.id), // 匹配的系统产品ID
-  quantity: int("quantity").notNull(), // 数量
-  packageCount: int("package_count").notNull().default(1), // 件数
+  matchedProductId: integer("matched_product_id").references(() => products.id), // 匹配的系统产品ID
+  quantity: integer("quantity").notNull(), // 数量
+  packageCount: integer("package_count").notNull().default(1), // 件数
   isMatched: boolean("is_matched").default(false), // 是否已匹配
-  matchedBy: int("matched_by").references(() => users.id), // 匹配人
+  matchedBy: integer("matched_by").references(() => users.id), // 匹配人
   matchedAt: timestamp("matched_at"), // 匹配时间
   createdAt: timestamp("created_at").defaultNow().notNull(), // 创建时间
   updatedAt: timestamp("updated_at").defaultNow().notNull(), // 更新时间
@@ -742,21 +740,21 @@ export type InsertPreAuditOrderItem = z.infer<typeof insertPreAuditOrderItemSche
 export type PreAuditOrderItem = typeof preAuditOrderItems.$inferSelect;
 
 // 仓库调拨单表
-export const warehouseTransfers = mysqlTable("warehouse_transfers", {
-  id: int("id").primaryKey().autoincrement(),
+export const warehouseTransfers = pgTable("warehouse_transfers", {
+  id: serial("id").primaryKey(),
   referenceNumber: varchar("reference_number", { length: 50 }).notNull().unique(), // 调拨单号
-  sourceWarehouseId: int("source_warehouse_id").notNull().references(() => warehouses.id), // 源仓库ID
-  targetWarehouseId: int("target_warehouse_id").notNull().references(() => warehouses.id), // 目标仓库ID
-  totalItems: int("total_items").notNull().default(0), // 总商品数量
-  totalPackages: int("total_packages").notNull().default(0), // 总件数
+  sourceWarehouseId: integer("source_warehouse_id").notNull().references(() => warehouses.id), // 源仓库ID
+  targetWarehouseId: integer("target_warehouse_id").notNull().references(() => warehouses.id), // 目标仓库ID
+  totalItems: integer("total_items").notNull().default(0), // 总商品数量
+  totalPackages: integer("total_packages").notNull().default(0), // 总件数
   totalWeight: decimal("total_weight", { precision: 10, scale: 3 }).notNull(), // 总重量
   totalVolume: decimal("total_volume", { precision: 10, scale: 6 }).notNull(), // 总体积
   status: varchar("status", { length: 50 }).notNull().default("pending"), // 状态：待处理、处理中、已完成、已取消
-  createdBy: int("created_by").notNull().references(() => users.id), // 创建人
+  createdBy: integer("created_by").notNull().references(() => users.id), // 创建人
   createdAt: timestamp("created_at").defaultNow().notNull(), // 创建时间
   completedAt: timestamp("completed_at"), // 完成时间
-  outboundOrderId: int("outbound_order_id").references(() => outboundOrders.id), // 出库单ID
-  inboundOrderId: int("inbound_order_id").references(() => inboundOrders.id), // 入库单ID
+  outboundOrderId: integer("outbound_order_id").references(() => outboundOrders.id), // 出库单ID
+  inboundOrderId: integer("inbound_order_id").references(() => inboundOrders.id), // 入库单ID
   notes: text("notes"), // 备注
   documentFilePath: varchar("document_file_path", { length: 255 }), // 底单文件路径
   documentFileName: varchar("document_file_name", { length: 255 }), // 底单文件名称
@@ -796,13 +794,13 @@ export type InsertWarehouseTransfer = z.infer<typeof insertWarehouseTransferSche
 export type WarehouseTransfer = typeof warehouseTransfers.$inferSelect;
 
 // 仓库调拨单明细表
-export const warehouseTransferItems = mysqlTable("warehouse_transfer_items", {
-  id: int("id").primaryKey().autoincrement(),
-  transferId: int("transfer_id").notNull().references(() => warehouseTransfers.id), // 调拨单ID
-  productId: int("product_id").notNull().references(() => products.id), // 商品ID
+export const warehouseTransferItems = pgTable("warehouse_transfer_items", {
+  id: serial("id").primaryKey(),
+  transferId: integer("transfer_id").notNull().references(() => warehouseTransfers.id), // 调拨单ID
+  productId: integer("product_id").notNull().references(() => products.id), // 商品ID
   uniqueCode: varchar("unique_code", { length: 50 }), // 唯一码
-  quantity: int("quantity").notNull(), // 数量
-  packageCount: int("package_count").notNull(), // 件数
+  quantity: integer("quantity").notNull(), // 数量
+  packageCount: integer("package_count").notNull(), // 件数
   weight: decimal("weight", { precision: 10, scale: 3 }).notNull(), // 重量
   volume: decimal("volume", { precision: 10, scale: 6 }).notNull(), // 体积
   // status字段在数据库表中不存在，已移除
@@ -825,22 +823,22 @@ export type InsertWarehouseTransferItem = z.infer<typeof insertWarehouseTransfer
 export type WarehouseTransferItem = typeof warehouseTransferItems.$inferSelect;
 
 // 唯一码跟踪表
-export const uniqueCodeTracking = mysqlTable("unique_code_tracking", {
-  id: int("id").primaryKey().autoincrement(),
+export const uniqueCodeTracking = pgTable("unique_code_tracking", {
+  id: serial("id").primaryKey(),
   uniqueCode: varchar("unique_code", { length: 50 }).notNull().unique(), // 唯一码
-  productId: int("product_id").notNull().references(() => products.id), // 商品ID
-  warehouseId: int("warehouse_id").notNull().references(() => warehouses.id), // 仓库ID
-  currentStatus: mysqlEnum("current_status", [
+  productId: integer("product_id").notNull().references(() => products.id), // 商品ID
+  warehouseId: integer("warehouse_id").notNull().references(() => warehouses.id), // 仓库ID
+  currentStatus: pgEnum("current_status", [
     "in_stock", "transferred", "sold", "returned", "scrapped"
   ]).notNull().default("in_stock"), // 当前状态
-  quantity: int("quantity").notNull().default(1), // 数量
-  inboundOrderId: int("inbound_order_id").references(() => inboundOrders.id), // 入库单ID
-  inboundItemId: int("inbound_item_id"), // 入库单明细ID
-  outboundOrderId: int("outbound_order_id").references(() => outboundOrders.id), // 出库单ID
-  outboundItemId: int("outbound_item_id"), // 出库单明细ID
-  transferId: int("transfer_id").references(() => warehouseTransfers.id), // 调拨单ID
-  transferItemId: int("transfer_item_id"), // 调拨单明细ID
-  lastOperationType: mysqlEnum("last_operation_type", [
+  quantity: integer("quantity").notNull().default(1), // 数量
+  inboundOrderId: integer("inbound_order_id").references(() => inboundOrders.id), // 入库单ID
+  inboundItemId: integer("inbound_item_id"), // 入库单明细ID
+  outboundOrderId: integer("outbound_order_id").references(() => outboundOrders.id), // 出库单ID
+  outboundItemId: integer("outbound_item_id"), // 出库单明细ID
+  transferId: integer("transfer_id").references(() => warehouseTransfers.id), // 调拨单ID
+  transferItemId: integer("transfer_item_id"), // 调拨单明细ID
+  lastOperationType: pgEnum("last_operation_type", [
     "inbound", "outbound", "transfer", "adjust"
   ]).notNull(), // 最后操作类型
   lastOperationDate: timestamp("last_operation_date").notNull().defaultNow(), // 最后操作日期
@@ -870,27 +868,27 @@ export type InsertUniqueCodeTracking = z.infer<typeof insertUniqueCodeTrackingSc
 export type UniqueCodeTracking = typeof uniqueCodeTracking.$inferSelect;
 
 // 唯一码流转历史表
-export const uniqueCodeHistory = mysqlTable("unique_code_history", {
-  id: int("id").primaryKey().autoincrement(),
+export const uniqueCodeHistory = pgTable("unique_code_history", {
+  id: serial("id").primaryKey(),
   uniqueCode: varchar("unique_code", { length: 50 }).notNull(), // 唯一码
-  productId: int("product_id").notNull().references(() => products.id), // 商品ID
-  warehouseId: int("warehouse_id").notNull().references(() => warehouses.id), // 仓库ID
-  operationType: mysqlEnum("operation_type", [
+  productId: integer("product_id").notNull().references(() => products.id), // 商品ID
+  warehouseId: integer("warehouse_id").notNull().references(() => warehouses.id), // 仓库ID
+  operationType: pgEnum("operation_type", [
     "inbound", "outbound", "transfer_in", "transfer_out", "adjust"
   ]).notNull(), // 操作类型
-  quantity: int("quantity").notNull().default(1), // 数量
-  orderId: int("order_id"), // 单据ID
-  orderItemId: int("order_item_id"), // 单据明细ID
-  transferId: int("transfer_id"), // 调拨单ID
-  transferItemId: int("transfer_item_id"), // 调拨单明细ID
-  oldStatus: mysqlEnum("old_status", [
+  quantity: integer("quantity").notNull().default(1), // 数量
+  orderId: integer("order_id"), // 单据ID
+  orderItemId: integer("order_item_id"), // 单据明细ID
+  transferId: integer("transfer_id"), // 调拨单ID
+  transferItemId: integer("transfer_item_id"), // 调拨单明细ID
+  oldStatus: pgEnum("old_status", [
     "in_stock", "transferred", "sold", "returned", "scrapped"
   ]), // 旧状态
-  newStatus: mysqlEnum("new_status", [
+  newStatus: pgEnum("new_status", [
     "in_stock", "transferred", "sold", "returned", "scrapped"
   ]).notNull(), // 新状态
   operationDate: timestamp("operation_date").notNull().defaultNow(), // 操作日期
-  userId: int("user_id").references(() => users.id), // 操作用户ID
+  userId: integer("user_id").references(() => users.id), // 操作用户ID
   remark: text("remark"), // 备注
 });
 
