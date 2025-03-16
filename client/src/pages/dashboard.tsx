@@ -10,10 +10,10 @@ import { Skeleton } from "@/components/ui/skeleton";
  */
 export default function Dashboard() {
   // 使用新的认证状态钩子，获取realAuthenticated标志
-  const { realAuthenticated, isLoading } = useAuthStatus();
+  const { realAuthenticated, loading } = useAuthStatus();
 
   // 根据真实认证状态选择仪表盘
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="container mx-auto p-8">
         <Skeleton className="h-12 w-3/4 mb-6" />
