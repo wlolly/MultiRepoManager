@@ -63,22 +63,37 @@ function processTranslations(translationsData: Record<string, any>) {
 // 异步加载翻译文件
 async function loadTranslations() {
   try {
-    const response = await fetch('/locales/translations.json');
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    // 首先尝试从API加载
+    const apiResponse = await fetch('/api/translations');
+    if (apiResponse.ok) {
+      const translationsData = await apiResponse.json();
+      console.log('从API加载翻译数据成功');
+      
+      // 处理从API获取的翻译数据
+      processTranslations(translationsData);
+      console.log('翻译资源处理完成，可用语言：', Object.keys(resources));
+      
+      // 加载翻译后重新初始化i18n
+      initializeI18n();
+      return;
     }
-    const translationsData = await response.json();
     
+    // 如果API加载失败，尝试从静态文件加载
+    console.log('从API加载翻译失败，尝试使用静态文件');
+    const fileResponse = await fetch('/locales/translations.json');
+    if (!fileResponse.ok) {
+      throw new Error(`HTTP error! status: ${fileResponse.status}`);
+    }
+    
+    const translationsData = await fileResponse.json();
     processTranslations(translationsData);
-    console.log('翻译资源处理完成，可用语言：', Object.keys(resources));
-    
-    // 专门查看时间相关翻译键
-    const timeKeys = Object.keys(resources.zh.translation).filter(key => key.startsWith('time.'));
-    console.log('时间相关翻译键（中文）:', timeKeys.map(key => `${key}: ${resources.zh.translation[key]}`));
+    console.log('从静态文件加载翻译资源成功，可用语言：', Object.keys(resources));
     
     // 打印前10个键的示例，便于调试
-    const sampleKeys = Object.keys(resources.zh.translation).slice(0, 10);
-    console.log('示例翻译键（中文）:', sampleKeys.map(key => `${key}: ${resources.zh.translation[key]}`));
+    if (resources.zh && resources.zh.translation) {
+      const sampleKeys = Object.keys(resources.zh.translation).slice(0, 10);
+      console.log('示例翻译键（中文）:', sampleKeys.map(key => `${key}: ${resources.zh.translation[key]}`));
+    }
     
     // 加载翻译后重新初始化i18n
     initializeI18n();
