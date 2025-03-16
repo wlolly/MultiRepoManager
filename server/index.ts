@@ -195,16 +195,37 @@ import { initializeUserIDTable } from './database/userID';
   // 初始化文件清理调度器，每24小时清理一次过期文件
   scheduleCleanup();
   
-  // 数据库已经通过db.ts初始化
-  log('使用预初始化的数据库连接', 'mysql');
+  // 数据库已经通过db.ts初始化 - 但这个过程是异步的，需要进行检查
+  log('验证数据库连接状态', 'mysql');
+  
+  // 等待1秒，给db.ts中的连接测试留出时间
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  
+  // 验证数据库连接池状态
+  let dbConnectionStatus = false;
+  try {
+    const testConn = await db.execute('SELECT 1 AS test');
+    if (testConn && testConn[0] && testConn[0][0] && testConn[0][0].test === 1) {
+      log('数据库连接测试成功', 'mysql');
+      dbConnectionStatus = true;
+    } else {
+      log('数据库连接测试失败: 无法获取有效响应', 'mysql-error');
+    }
+  } catch (e) {
+    log(`数据库连接测试失败: ${e}`, 'mysql-error');
+  }
   
   // 初始化内部用户ID表（创建并设置定期清理任务）
-  try {
-    await initializeUserIDTable();
-    log('内部用户ID表初始化成功，有效期为2天', 'mysql');
-  } catch (error) {
-    console.error('初始化内部用户ID表失败:', error);
-    // 继续启动服务器，即使ID表初始化失败
+  if (dbConnectionStatus) {
+    try {
+      await initializeUserIDTable();
+      log('内部用户ID表初始化成功，有效期为2天', 'mysql');
+    } catch (error) {
+      console.error('初始化内部用户ID表失败:', error);
+      // 继续启动服务器，即使ID表初始化失败
+    }
+  } else {
+    log('跳过用户ID表初始化，因为数据库连接不可用', 'mysql-warning');
   }
   
   // 即使没有数据库连接，也继续启动服务器 - 确保应用的高可用性

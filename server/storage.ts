@@ -309,7 +309,8 @@ export class MemStorage implements IStorage {
     this.initializeDemoData();
   }
 
-  private initializeDemoData() {
+  // 允许公开访问以便在降级模式下初始化数据
+  public initializeDemoData() {
     // Create some demo users
     const demoUsers = [
       { username: "liuyang", password: "password", fullName: "Liu Yang", avatarUrl: "https://randomuser.me/api/portraits/men/1.jpg", isActive: true, role: "user", userSource: "local" },

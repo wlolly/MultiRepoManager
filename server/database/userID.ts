@@ -4,9 +4,37 @@
  * 内部用户ID有效期为两天，之后自动清除
  */
 
-import { db } from '../db';
+import { db, useFallbackStorage } from '../db';
 import { sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
+
+// 检查数据库连接是否有效
+async function isDatabaseConnected(): Promise<boolean> {
+  // 如果使用内存存储模式，则认为数据库不可用
+  if (useFallbackStorage) {
+    console.log('[UserID] 系统正在使用内存存储模式，跳过数据库操作');
+    return false;
+  }
+  
+  try {
+    const result = await db.execute(sql`SELECT 1 AS test`);
+    
+    // 检查查询结果是否包含正确的值
+    const isConnected = result && 
+                       result[0] && 
+                       result[0][0] && 
+                       result[0][0].test === 1;
+    
+    if (!isConnected) {
+      console.error('[UserID] 数据库连接测试失败: 未返回预期结果');
+    }
+    
+    return isConnected;
+  } catch (error) {
+    console.error('[UserID] 数据库连接测试失败:', error);
+    return false;
+  }
+}
 
 // 检查internal_user_ids表是否存在，不存在则创建
 export async function initializeUserIDTable(retryCount = 0, maxRetries = 3) {
