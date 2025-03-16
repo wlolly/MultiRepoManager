@@ -41,6 +41,28 @@ export async function initializeUserIDTable(retryCount = 0, maxRetries = 3) {
   try {
     console.log('[UserID] 初始化内部用户ID表...');
     
+    // 首先检查数据库连接是否有效
+    const isConnected = await isDatabaseConnected();
+    if (!isConnected) {
+      console.log('[UserID] 数据库连接不可用，跳过用户ID表初始化');
+      return false;
+    }
+    
+    // 检查users表是否存在（是foreign key的前提）
+    const usersTableExists = await db.execute(sql`
+      SELECT table_name FROM information_schema.tables 
+      WHERE table_schema = DATABASE() AND table_name = 'users'
+    `);
+    
+    const usersExist = usersTableExists && 
+                      (usersTableExists as any).rows && 
+                      (usersTableExists as any).rows.length > 0;
+                      
+    if (!usersExist) {
+      console.log('[UserID] users表不存在，跳过用户ID表初始化（因为需要外键引用）');
+      return false;
+    }
+    
     // 检查表是否存在
     const checkTableExists = await db.execute(sql`
       SELECT table_name FROM information_schema.tables 
@@ -62,7 +84,7 @@ export async function initializeUserIDTable(retryCount = 0, maxRetries = 3) {
           user_id INT NOT NULL,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           expires_at TIMESTAMP NOT NULL,
-          FOREIGN KEY (user_id) REFERENCES users(id)
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )
       `);
       
@@ -131,8 +153,29 @@ export async function createInternalUserID(userId: number, retryCount = 0, maxRe
     return null;
   }
   
+  // 检查数据库连接状态
+  const isConnected = await isDatabaseConnected();
+  if (!isConnected) {
+    console.log('[UserID] 数据库连接不可用，跳过内部ID创建');
+    return null;
+  }
+  
   try {
-    // 首先移除该用户的所有现有ID（避免重复）
+    // 首先检查用户是否存在
+    const userExists = await db.execute(sql`
+      SELECT id FROM users WHERE id = ${userId} LIMIT 1
+    `);
+    
+    const userFound = userExists && 
+                      userExists[0] && 
+                      userExists[0][0];
+                      
+    if (!userFound) {
+      console.log(`[UserID] 用户ID ${userId} 不存在，跳过内部ID创建`);
+      return null;
+    }
+    
+    // 移除该用户的所有现有ID（避免重复）
     await removeUserIDs(userId);
     
     // 生成新的唯一ID
@@ -180,6 +223,13 @@ export async function validateInternalUserID(internalId: string | null, retryCou
     return -1; // 返回-1表示访客用户ID
   }
   
+  // 检查数据库连接状态
+  const isConnected = await isDatabaseConnected();
+  if (!isConnected) {
+    console.log('[UserID] 数据库连接不可用，无法验证ID，返回访客用户模式');
+    return -1; // 在数据库连接失败时也返回访客用户ID
+  }
+  
   try {
     // 查询匹配的有效ID
     const result = await db.execute(sql`
@@ -188,13 +238,19 @@ export async function validateInternalUserID(internalId: string | null, retryCou
       WHERE id = ${internalId} AND expires_at > CURRENT_TIMESTAMP
     `);
     
-    // 检查是否找到有效ID
-    const rowsExist = result && 
-                      (result as any).rows && 
-                      (result as any).rows.length > 0;
+    // 结果处理 - 兼容不同格式的查询结果
+    let userId = null;
     
-    if (rowsExist) {
-      const userId = (result as any).rows[0].user_id;
+    // MySQL2处理
+    if (result && result[0] && Array.isArray(result[0]) && result[0].length > 0) {
+      userId = result[0][0].user_id;
+    } 
+    // DrizzleORM处理
+    else if (result && (result as any).rows && (result as any).rows.length > 0) {
+      userId = (result as any).rows[0].user_id;
+    }
+    
+    if (userId !== null) {
       console.log(`[UserID] 验证成功: ID ${internalId} 对应用户 ${userId}`);
       return userId;
     }
@@ -217,21 +273,45 @@ export async function validateInternalUserID(internalId: string | null, retryCou
       });
     }
     
-    console.error(`[UserID] 验证内部ID ${internalId} 失败，已达到最大重试次数`);
-    return null;
+    console.error(`[UserID] 验证内部ID ${internalId} 失败，已达到最大重试次数，返回访客用户模式`);
+    return -1; // 在验证失败达到最大重试次数后返回访客用户ID
   }
 }
 
 // 移除用户的所有ID
 export async function removeUserIDs(userId: number): Promise<boolean> {
+  // 检查数据库连接状态
+  const isConnected = await isDatabaseConnected();
+  if (!isConnected) {
+    console.log('[UserID] 数据库连接不可用，无法删除用户ID');
+    return false;
+  }
+  
   try {
+    // 检查用户是否存在
+    const userExists = await db.execute(sql`
+      SELECT id FROM users WHERE id = ${userId} LIMIT 1
+    `);
+    
+    const userFound = userExists && 
+                      userExists[0] && 
+                      userExists[0][0];
+                      
+    if (!userFound) {
+      console.log(`[UserID] 用户ID ${userId} 不存在，跳过ID删除`);
+      return true; // 返回true因为不存在的用户不需要删除ID
+    }
+    
     // 删除该用户的所有ID
-    await db.execute(sql`
+    const result = await db.execute(sql`
       DELETE FROM internal_user_ids 
       WHERE user_id = ${userId}
     `);
     
-    console.log(`[UserID] 已移除用户 ${userId} 的所有ID`);
+    // 获取受影响行数（删除的ID数量）
+    const rowsAffected = result && (result as any).affectedRows ? (result as any).affectedRows : 0;
+    
+    console.log(`[UserID] 已移除用户 ${userId} 的 ${rowsAffected} 个ID`);
     return true;
   } catch (error) {
     console.error('[UserID] 移除用户ID失败:', error);
@@ -241,6 +321,13 @@ export async function removeUserIDs(userId: number): Promise<boolean> {
 
 // 手动清理所有过期ID
 export async function cleanupExpiredIDs(): Promise<number> {
+  // 检查数据库连接状态
+  const isConnected = await isDatabaseConnected();
+  if (!isConnected) {
+    console.log('[UserID] 数据库连接不可用，无法清理过期ID');
+    return 0;
+  }
+  
   try {
     // 删除所有已过期的ID
     const result = await db.execute(sql`
@@ -248,8 +335,20 @@ export async function cleanupExpiredIDs(): Promise<number> {
       WHERE expires_at < CURRENT_TIMESTAMP
     `);
     
-    // 安全获取删除的行数
-    const count = result && (result as any).rowsAffected ? (result as any).rowsAffected : 0;
+    // 获取受影响行数（删除的ID数量）
+    let count = 0;
+    
+    // 不同数据库接口返回不同的结果格式，需要兼容处理
+    if (result) {
+      if ((result as any).rowsAffected) {
+        count = (result as any).rowsAffected;
+      } else if ((result as any).affectedRows) {
+        count = (result as any).affectedRows;
+      } else if (Array.isArray(result) && result[0] && (result[0] as any).affectedRows) {
+        count = (result[0] as any).affectedRows;
+      }
+    }
+    
     console.log(`[UserID] 手动清理: 已删除 ${count} 个过期ID`);
     return count;
   } catch (error) {
