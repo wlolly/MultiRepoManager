@@ -18,6 +18,8 @@ interface WarehousePermissions {
 // 权限钩子返回类型
 interface PermissionsHook {
   loading: boolean;
+  // 为了兼容某些组件
+  isLoading: boolean;
   // 页面权限
   pagePermissions: PagePermissions;
   hasPagePermission: (pageName: string) => boolean;
@@ -203,6 +205,7 @@ export function usePermissions(): PermissionsHook {
 
   return {
     loading,
+    isLoading: loading, // 添加别名，保持兼容性
     pagePermissions,
     hasPagePermission,
     warehousePermissions,
