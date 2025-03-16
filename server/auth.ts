@@ -46,17 +46,17 @@ export function generateSessionId(): string {
 export function verifySession(req: Request, res: Response, next: NextFunction) {
   // 记录请求信息
   console.log(`[认证系统] ${req.method} ${req.path}`);
-  
+
   try {
     // 检查会话是否已认证（已登录）
     const isAuthenticated = req.session && 
                            req.session.userId && 
                            req.session.authenticated === true;
-    
+
     // 检查是否来自登录流程或明确要求绕过
     const isFromLoginFlow = req.headers['x-login-flow'] === 'true';
     const isBypassAuth = req.headers['x-bypass-auth'] === 'true';
-    
+
     if (isAuthenticated || isFromLoginFlow || isBypassAuth) {
       // 用户已登录或特殊请求 - 正常设置用户对象
       req.user = { 
@@ -66,7 +66,7 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
         fullName: '系统管理员',
         isActive: true
       };
-      
+
       // 只有确实已登录时才设置会话标记
       if (isAuthenticated || isFromLoginFlow) {
         // 设置会话标记（如果未设置）
@@ -78,12 +78,12 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
           req.session.lastActivity = Date.now();
         }
       }
-      
+
       // 取消之前假阳性标记以避免混淆
       if (req.session.fakePositive) {
         delete req.session.fakePositive;
       }
-      
+
       // 对于团队API，需要特别标记
       if (req.path.includes('/stats/team') || 
           req.path.includes('/teams') ||
@@ -95,7 +95,7 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
       let sessionId = req.headers['sessionid'] || 
                     req.headers['x-session-id'] || 
                     req.cookies?.sessionId;
-                            
+
       if (sessionId && typeof sessionId === 'string' && sessionId.length > 10) {
         // 如果发现客户端提供的会话ID与当前会话ID不同，使用客户端的会话ID
         if (req.sessionID !== sessionId) {
@@ -103,21 +103,21 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
           req.sessionID = sessionId;
         }
       }
-      
+
       // 确保立即保存会话（如果已认证）
       req.session.save((err) => {
         if (err) {
           console.error('[认证系统] 保存会话出错:', err);
         } else {
           console.log('[认证系统] 会话已保存，sessionID:', req.sessionID);
-          
+
           // 同步设置Cookie，确保客户端和服务器使用相同的会话ID
           res.cookie('sessionId', req.sessionID, {
             maxAge: 30 * 24 * 60 * 60 * 1000, // 30天
             httpOnly: false, // 允许客户端JavaScript读取
             path: '/'
           });
-          
+
           // 设置会话响应头，标记为已认证
           res.header('X-Session-ID', req.sessionID);
           res.header('X-Real-Authenticated', 'true');
@@ -148,10 +148,10 @@ export function isAdmin(req: Request, res: Response, next: NextFunction) {
   const isAuthenticated = req.session && 
                           req.session.userId && 
                           req.session.authenticated === true;
-  
+
   const isAdmin = req.session?.userRole === 'admin' || 
                  (req.user && (req.user as any).role === 'admin');
-  
+
   if (isAuthenticated && isAdmin) {
     console.log('[认证系统] 管理员权限验证通过');
     next();
@@ -167,34 +167,56 @@ export function isAdmin(req: Request, res: Response, next: NextFunction) {
 // 用户登录处理
 export async function loginUser(req: Request, res: Response) {
   try {
-    // 设置一个管理员用户进行登录
-    console.log('[认证系统] 登录请求 - 设置为管理员');
-    
-    // 使用ID为1的管理员用户
-    const userId = 1;
-    
-    // 设置会话
-    req.session.userId = userId;
-    req.session.authenticated = true;
-    req.session.realAuthenticated = true;
-    req.session.userRole = 'admin';
-    req.session.lastActivity = Date.now();
-    
-    // 保存会话
-    req.session.save((err) => {
-      if (err) {
-        console.error('[认证系统] 保存会话出错:', err);
-        return res.status(500).json({ message: '会话保存失败' });
-      }
-      
-      // 返回用户信息
-      return res.json({
-        id: userId,
-        username: 'admin',
-        role: 'admin',
-        authenticated: true,
-        realAuthenticated: true
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({ 
+        success: false,
+        message: '用户名和密码不能为空'
       });
+    }
+
+    // 测试账号登录逻辑
+    if (username === '222' && password === '222') {
+      const userId = 1;
+
+      // 设置会话
+      req.session.userId = userId;
+      req.session.authenticated = true;
+      req.session.realAuthenticated = true;
+      req.session.userRole = 'admin';
+      req.session.lastActivity = Date.now();
+
+      await new Promise((resolve, reject) => {
+        req.session.save((err) => {
+          if (err) reject(err);
+          resolve(true);
+        });
+      });
+
+      // 设置会话cookie
+      res.cookie('sessionId', req.sessionID, {
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax'
+      });
+
+      return res.json({
+        success: true,
+        message: '登录成功',
+        user: {
+          id: userId,
+          username: 'admin',
+          role: 'admin',
+          authenticated: true
+        }
+      });
+    }
+
+    return res.status(401).json({
+      success: false,
+      message: '用户名或密码错误'
     });
   } catch (error) {
     console.error('[认证系统] 登录处理出错:', error);
@@ -219,14 +241,14 @@ export async function getCurrentUser(req: Request, res: Response) {
     const isAuthenticated = req.session && 
                            req.session.userId && 
                            req.session.authenticated === true;
-    
+
     // 检查是否来自登录流程
     const isFromLoginFlow = req.headers['x-login-flow'] === 'true';
-    
+
     // 如果已登录或来自登录流程，返回管理员用户信息
     if (isAuthenticated || isFromLoginFlow) {
       console.log('[认证系统] 当前用户已认证 - 返回管理员用户');
-      
+
       // 返回管理员用户信息
       return res.json({
         id: 1,
@@ -244,7 +266,7 @@ export async function getCurrentUser(req: Request, res: Response) {
     } else {
       // 未登录，返回未授权状态和访客信息
       console.log('[认证系统] 当前用户未认证 - 返回访客信息');
-      
+
       // 返回401状态码和访客用户信息
       return res.status(401).json({
         authenticated: false,
@@ -268,7 +290,7 @@ export async function getCurrentUser(req: Request, res: Response) {
 export function logout(req: Request, res: Response) {
   // 清理会话
   console.log('[认证系统] 收到退出登录请求 - 清理会话');
-  
+
   req.session.destroy((err) => {
     if (err) {
       console.error('[认证系统] 销毁会话失败:', err);

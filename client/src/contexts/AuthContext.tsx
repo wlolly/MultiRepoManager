@@ -181,3 +181,98 @@ export function useAuth() {
   }
   return context;
 }
+import React, { createContext, useContext, useState, useEffect } from 'react';
+
+interface AuthState {
+  isAuthenticated: boolean;
+  user: null | {
+    id: number;
+    username: string;
+    role: string;
+  };
+  loading: boolean;
+}
+
+interface AuthContextType extends AuthState {
+  login: (username: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  checkAuth: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType | null>(null);
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [state, setState] = useState<AuthState>({
+    isAuthenticated: false,
+    user: null,
+    loading: true
+  });
+
+  const checkAuth = async () => {
+    try {
+      const response = await fetch('/api/auth/current-user');
+      const data = await response.json();
+      
+      if (response.ok) {
+        setState({
+          isAuthenticated: true,
+          user: data,
+          loading: false
+        });
+      } else {
+        setState({
+          isAuthenticated: false,
+          user: null,
+          loading: false
+        });
+      }
+    } catch (error) {
+      setState({
+        isAuthenticated: false,
+        user: null,
+        loading: false
+      });
+    }
+  };
+
+  const login = async (username: string, password: string) => {
+    const response = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+
+    if (!response.ok) {
+      throw new Error('Login failed');
+    }
+
+    await checkAuth();
+  };
+
+  const logout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    setState({
+      isAuthenticated: false,
+      user: null,
+      loading: false
+    });
+  };
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  return (
+    <AuthContext.Provider value={{ ...state, login, logout, checkAuth }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}
