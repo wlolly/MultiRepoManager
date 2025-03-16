@@ -42,6 +42,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { usePermissions } from "@/hooks/use-permissions";
 
 interface Product {
   id: number;
@@ -93,6 +94,9 @@ export default function ProductsPage() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [warehouseFilter, setWarehouseFilter] = useState("all");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  
+  // 使用权限钩子判断用户是否已登录以及是否有管理权限
+  const { isAuthenticated } = usePermissions();
   
   // 商品查询
   const { 
@@ -194,61 +198,64 @@ export default function ProductsPage() {
           <h1 className="text-2xl font-bold text-gray-900">{t('products')}</h1>
           <p className="mt-1 text-gray-500 text-sm">{t('products_page_description')}</p>
         </div>
-        <div className="flex items-center space-x-3">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex items-center">
-                <FileTypeIcon className="mr-2 h-4 w-4" />
-                {t('excel_operations')}
-                <ChevronDownIcon className="ml-2 h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => {
-                const link = document.createElement('a');
-                link.href = "/api/products/excel/template";
-                link.download = "product_import_template.xlsx";
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-              }}>
-                <DownloadIcon className="mr-2 h-4 w-4" />
-                {t('download_template')}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => {
-                const link = document.createElement('a');
-                link.href = "/api/products/excel/export";
-                link.download = "products_export.xlsx";
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-              }}>
-                <DatabaseIcon className="mr-2 h-4 w-4" />
-                {t('export_products')}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => document.getElementById('excel-upload')?.click()}>
-                <UploadIcon className="mr-2 h-4 w-4" />
-                {t('import_products')}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          
-          <input
-            type="file"
-            id="excel-upload"
-            className="hidden"
-            accept=".xlsx"
-            onChange={handleExcelImport}
-          />
-          
-          <Button
-            onClick={() => setCreateDialogOpen(true)}
-            className="flex items-center"
-          >
-            <PlusIcon className="mr-2 h-4 w-4" />
-            {t('new_product')}
-          </Button>
-        </div>
+        {/* 仅对已登录用户显示操作按钮 */}
+        {isAuthenticated && (
+          <div className="flex items-center space-x-3">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="flex items-center">
+                  <FileTypeIcon className="mr-2 h-4 w-4" />
+                  {t('excel_operations')}
+                  <ChevronDownIcon className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => {
+                  const link = document.createElement('a');
+                  link.href = "/api/products/excel/template";
+                  link.download = "product_import_template.xlsx";
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                }}>
+                  <DownloadIcon className="mr-2 h-4 w-4" />
+                  {t('download_template')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => {
+                  const link = document.createElement('a');
+                  link.href = "/api/products/excel/export";
+                  link.download = "products_export.xlsx";
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                }}>
+                  <DatabaseIcon className="mr-2 h-4 w-4" />
+                  {t('export_products')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => document.getElementById('excel-upload')?.click()}>
+                  <UploadIcon className="mr-2 h-4 w-4" />
+                  {t('import_products')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            <input
+              type="file"
+              id="excel-upload"
+              className="hidden"
+              accept=".xlsx"
+              onChange={handleExcelImport}
+            />
+            
+            <Button
+              onClick={() => setCreateDialogOpen(true)}
+              className="flex items-center"
+            >
+              <PlusIcon className="mr-2 h-4 w-4" />
+              {t('new_product')}
+            </Button>
+          </div>
+        )}
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
