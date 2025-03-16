@@ -371,6 +371,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       } else {
         console.log(`用户 ${user.username} 认证成功，准备创建会话`);
+        // 检查是否是测试用户
+        const isTestUser = user.username === '222' || user.username === 'testadmin';
+        if (isTestUser) {
+          console.log(`测试用户 ${user.username} 登录，直接标记为真实认证`);
+        }
         // 标记为实际认证
         (user as any).realAuthenticated = true;
       }
