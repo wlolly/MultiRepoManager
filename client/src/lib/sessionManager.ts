@@ -5,6 +5,19 @@
  * 提供请求防重复、会话一致性、自动恢复等功能
  */
 
+// 会话来源枚举
+export type SessionSource = 'server_generated' | 'client_generated' | 'recovered' | 'restored' | 'unknown';
+
+// 会话信息结构
+export type SessionInfo = {
+  sessionId: string;
+  isNewSession: boolean;
+  originalSessionId?: string;
+  source: SessionSource;
+  isAuthenticated?: boolean;
+  userId?: number;
+};
+
 // 存储当前使用的会话ID以便快速访问
 let currentSessionId: string | null = null;
 
@@ -62,6 +75,69 @@ export function getCookie(name: string): string | null {
 // 设置防抖动阈值
 const DEBOUNCE_THRESHOLD_MS = 300; // 300毫秒内的重复请求会被去抖
 const MAX_REQUESTS_PER_MINUTE = 5; // 每分钟最多允许的相同请求数
+
+// 从服务器响应中提取会话ID信息
+export function extractSessionInfoFromResponse(response: Response): SessionInfo | null {
+  try {
+    // 检查响应是否包含必要的会话ID头部
+    const sessionId = response.headers.get('x-session-id');
+    const newSessionId = response.headers.get('x-new-session-id');
+    const originalSessionId = response.headers.get('x-original-session-id');
+    const sessionSource = response.headers.get('x-session-source');
+    const isAuthenticated = response.headers.get('x-real-authenticated') === 'true';
+    const userId = response.headers.get('x-user-id');
+    
+    // 记录头部信息用于调试
+    console.log("响应头中的会话相关信息:", {
+      'x-new-session-id': newSessionId,
+      'x-original-session-id': originalSessionId,
+      'x-session-id': sessionId,
+      'x-session-source': sessionSource,
+      'x-real-authenticated': isAuthenticated ? 'true' : 'false',
+      'x-user-id': userId || 'none'
+    });
+    
+    // 如果没有会话ID，返回null
+    if (!sessionId) {
+      return null;
+    }
+    
+    // 构建会话信息对象
+    const sessionInfo: SessionInfo = {
+      sessionId,
+      isNewSession: !!newSessionId && newSessionId === sessionId,
+      originalSessionId: originalSessionId || undefined,
+      source: sessionSource as SessionSource || 'unknown',
+      isAuthenticated: isAuthenticated,
+      userId: userId ? parseInt(userId) : undefined
+    };
+    
+    // 如果认证状态为真，自动设置Cookie确保前后端一致
+    if (isAuthenticated && sessionId) {
+      // 使用我们已有的Cookie设置函数
+      setCookie('sessionId', sessionId, {
+        path: '/',
+        maxAgeDays: 30, // 过期时间30天
+        sameSite: 'Lax',
+        secure: window.location.protocol === 'https:'
+      });
+      
+      // 存储到localStorage作为备份 (确保不同标签页共享会话状态)
+      try {
+        localStorage.setItem('sessionId', sessionId);
+        localStorage.setItem('authenticated', 'true');
+        if (userId) localStorage.setItem('userId', userId);
+      } catch (e) {
+        console.warn('无法存储会话信息到localStorage:', e);
+      }
+    }
+    
+    return sessionInfo;
+  } catch (error) {
+    console.error('提取会话信息时出错:', error);
+    return null;
+  }
+}
 
 /**
  * 生成随机会话ID
