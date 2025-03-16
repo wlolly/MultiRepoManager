@@ -353,7 +353,7 @@ export const inboundOrders = pgTable("inbound_orders", (table) => {
     createdBy: integer("created_by").notNull().references(() => users.id), // 创建人
     createdAt: timestamp("created_at").defaultNow().notNull(), // 创建时间
     status: varchar("status", { length: 50 }).notNull().default("pending"), // 状态：待处理、已完成、已取消
-    orderType: orderTypeEnum("purchase"), // 入库单类型：采购入库、退货入库、调拨入库、生产入库
+    orderType: orderTypeEnum("order_type").default("purchase"), // 入库单类型：采购入库、退货入库、调拨入库、生产入库
     notes: text("notes") // 备注
   };
 });
@@ -418,8 +418,8 @@ export const outboundOrders = pgTable("outbound_orders", (table) => {
     createdBy: integer("created_by").notNull().references(() => users.id), // 创建人
     createdAt: timestamp("created_at").defaultNow().notNull(), // 创建时间
     status: varchar("status", { length: 50 }).notNull().default("pending"), // 状态：待处理、已完成、已取消
-    orderType: orderTypeEnum("sale"), // 出库单类型：销售出库、退货出库、调拨出库、报废出库
-    destinationType: destinationTypeEnum("customer"), // 目的地类型：客户、零售商、批发商、调拨仓库、供应商
+    orderType: orderTypeEnum("order_type").default("sale"), // 出库单类型：销售出库、退货出库、调拨出库、报废出库
+    destinationType: destinationTypeEnum("destination_type").default("customer"), // 目的地类型：客户、零售商、批发商、调拨仓库、供应商
     notes: text("notes") // 备注
   };
 });
