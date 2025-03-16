@@ -178,6 +178,73 @@ export function createInventoryRoutes() {
     }
   });
   
+  // 获取仓库调拨统计信息 - 必须放在特定ID路由之前
+  router.get('/transfers/stats', async (req: Request, res: Response) => {
+    try {
+      const stats = await warehouseTransferService.getWarehouseTransferStats();
+      res.json(stats);
+    } catch (error) {
+      console.error('获取仓库调拨统计信息失败:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: '获取仓库调拨统计信息失败: ' + error.message
+      });
+    }
+  });
+  
+  // 获取仓库调拨单列表
+  router.get('/transfers', async (req: Request, res: Response) => {
+    try {
+      const sourceWarehouseId = req.query.sourceWarehouseId ? Number(req.query.sourceWarehouseId) : undefined;
+      const targetWarehouseId = req.query.targetWarehouseId ? Number(req.query.targetWarehouseId) : undefined;
+      const status = req.query.status ? String(req.query.status) : undefined;
+      
+      const transfers = await warehouseTransferService.getWarehouseTransfers({
+        sourceWarehouseId,
+        targetWarehouseId,
+        status
+      });
+      
+      res.json(transfers);
+    } catch (error) {
+      console.error('获取仓库调拨单列表失败:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: '获取仓库调拨单列表失败: ' + error.message
+      });
+    }
+  });
+  
+  // 获取仓库调拨单明细 - 必须放在特定路径路由之后
+  router.get('/transfers/:id', async (req: Request, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+      const transfer = await warehouseTransferService.getWarehouseTransfer(id);
+      
+      if (!transfer) {
+        return res.status(404).json({ 
+          success: false, 
+          message: `未找到ID为${id}的仓库调拨单` 
+        });
+      }
+      
+      // 获取调拨单明细
+      const items = await warehouseTransferService.getWarehouseTransferItems(id);
+      const result = {
+        ...transfer,
+        items
+      };
+      
+      res.json(result);
+    } catch (error) {
+      console.error('获取仓库调拨单详情失败:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: '获取仓库调拨单详情失败: ' + error.message
+      });
+    }
+  });
+  
   // 执行调拨单
   router.post('/transfers/execute', async (req: Request, res: Response) => {
     try {
