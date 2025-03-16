@@ -6,6 +6,32 @@ import { z } from "zod";
 // UI languages enum (i18n)
 export const uiLanguageEnum = pgEnum("ui_language", ["zh", "en", "ru", "kk", "uz"]); // 中文，英文，俄文，哈萨克文，乌兹别克文
 
+// 翻译表 - 用于存储所有语言的翻译文本
+export const translations = pgTable("translations", {
+  id: serial("id").primaryKey(),
+  key: text("key").notNull(),
+  language: text("language").notNull(),
+  value: text("value").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+}, (table) => {
+  return {
+    languageIdx: index("translations_language_idx").on(table.language),
+    keyIdx: index("translations_key_idx").on(table.key),
+    uniqueKeyLang: index("translations_key_language_unique_idx").on(table.key, table.language)
+  };
+});
+
+// 为翻译表创建插入模式
+export const insertTranslationSchema = createInsertSchema(translations).pick({
+  key: true,
+  language: true,
+  value: true
+});
+
+export type InsertTranslation = z.infer<typeof insertTranslationSchema>;
+export type Translation = typeof translations.$inferSelect;
+
 // Repository visibility enum
 export const visibilityEnum = pgEnum("visibility", ["public", "private", "internal"]);
 

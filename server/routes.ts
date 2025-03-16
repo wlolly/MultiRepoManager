@@ -22,7 +22,8 @@ import {
   insertOutboundOrderItemSchema,
   insertEcommerceProductSchema,
   insertApiConfigurationSchema,
-  insertWarehouseTransferSchema
+  insertWarehouseTransferSchema,
+  insertTranslationSchema
 } from "@shared/schema";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
