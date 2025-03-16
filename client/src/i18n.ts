@@ -14,7 +14,7 @@ export const supportedLanguages = [
 // 定义翻译文件的类型
 type TranslationsType = Record<string, Record<string, string>>;
 
-// 从translations.json生成各语言的资源对象
+// 从translations.json生成各语言的资源对象 - 不再使用common.json文件
 const resources: Record<string, { translation: Record<string, string> }> = {};
 
 // 支持的语言代码
