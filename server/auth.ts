@@ -168,6 +168,7 @@ export function isAdmin(req: Request, res: Response, next: NextFunction) {
 export async function loginUser(req: Request, res: Response) {
   try {
     const { username, password } = req.body;
+    console.log('[认证系统] 尝试登录:', username);
 
     if (!username || !password) {
       return res.status(400).json({ 
@@ -179,44 +180,70 @@ export async function loginUser(req: Request, res: Response) {
     // 测试账号登录逻辑
     if (username === '222' && password === '222') {
       const userId = 1;
+      console.log('[认证系统] 测试账号登录成功');
 
-      // 设置会话
+      // 设置详细的会话信息
       req.session.userId = userId;
+      req.session.username = username;
       req.session.authenticated = true;
       req.session.realAuthenticated = true;
       req.session.userRole = 'admin';
       req.session.lastActivity = Date.now();
+      req.session.permissions = {
+        pages: ['dashboard', 'products', 'warehouses', 'team', 'admin'],
+        actions: ['view', 'create', 'edit', 'delete'],
+        warehouses: { 
+          1: { canView: true, canManage: true },
+          2: { canView: true, canManage: true }
+        }
+      };
 
       await new Promise((resolve, reject) => {
         req.session.save((err) => {
-          if (err) reject(err);
+          if (err) {
+            console.error('[认证系统] 保存会话失败:', err);
+            reject(err);
+          }
+          console.log('[认证系统] 会话已保存, ID:', req.sessionID);
           resolve(true);
         });
       });
 
-      // 设置会话cookie
-      res.cookie('sessionId', req.sessionID, {
-        maxAge: 30 * 24 * 60 * 60 * 1000,
+      // 设置所有必要的cookie
+      const cookieOptions = {
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30天
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax'
-      });
+        sameSite: 'lax' as const
+      };
 
+      res.cookie('sessionId', req.sessionID, cookieOptions);
+      res.cookie('warehouse.sid', req.sessionID, cookieOptions);
+      res.cookie('connect.sid', req.sessionID, cookieOptions);
+
+      // 返回完整的用户信息
       return res.json({
         success: true,
         message: '登录成功',
+        sessionId: req.sessionID,
         user: {
           id: userId,
           username: 'admin',
           role: 'admin',
-          authenticated: true
+          fullName: '系统管理员',
+          authenticated: true,
+          realAuthenticated: true,
+          permissions: req.session.permissions,
+          isActive: true
         }
       });
     }
 
+    console.log('[认证系统] 登录失败:', username);
     return res.status(401).json({
       success: false,
-      message: '用户名或密码错误'
+      message: '用户名或密码错误',
+      errorCode: 'INVALID_CREDENTIALS'
     });
   } catch (error) {
     console.error('[认证系统] 登录处理出错:', error);
