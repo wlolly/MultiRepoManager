@@ -102,15 +102,15 @@ export function RecentActivity({ teamFiltered = false }: RecentActivityProps) {
                   <div className="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
                     <div>
                       <p className="text-sm text-gray-500">
-                        <Link href={`/users/${activity.user.id}`}>
-                          <a className="font-medium text-gray-900">{activity.user.fullName || activity.user.username}</a>
+                        <Link className="font-medium text-gray-900" href={`/users/${activity.user.id}`}>
+                          {activity.user.fullName || activity.user.username}
                         </Link>{' '}
                         {activity.summary.indexOf(' in ') > -1 ? (
                           <>
                             {activity.summary.split(' in ')[0]}{' '}
                             {t('preposition_in')}{' '}
-                            <Link href={`/repository/${activity.repository.id}`}>
-                              <a className="font-medium text-blue-600">{activity.repository.name}</a>
+                            <Link className="font-medium text-blue-600" href={`/repository/${activity.repository.id}`}>
+                              {activity.repository.name}
                             </Link>
                           </>
                         ) : activity.summary}
