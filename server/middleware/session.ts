@@ -100,11 +100,14 @@ export function configureSession(app: any) {
 
   // 使用PostgreSQL存储会话（如果配置了数据库URL）
   if (usePostgresSession) {
-    console.log('[会话] 使用PostgreSQL存储会话');
+    console.log('[会话] 使用PostgreSQL存储会话 - 数据库URL存在:', !!process.env.DATABASE_URL);
     const PgSession = connect_pg_simple(session);
     
     const pool = new Pool({
-      connectionString: process.env.DATABASE_URL
+      connectionString: process.env.DATABASE_URL,
+      ssl: {
+        rejectUnauthorized: false // 允许自签名证书，用于开发环境
+      }
     });
 
     // 确保会话表存在
@@ -115,19 +118,36 @@ export function configureSession(app: any) {
         "expire" timestamp(6) NOT NULL,
         CONSTRAINT "session_pkey" PRIMARY KEY ("sid")
       )
-    `).catch(err => {
+    `)
+    .then(() => {
+      console.log('[会话] 会话表创建/验证成功');
+    })
+    .catch(err => {
       console.error('[会话] 创建会话表失败:', err);
     });
 
     sessionOptions.store = new PgSession({
       pool,
-      tableName: 'session'
+      tableName: 'session',
+      createTableIfMissing: true,
+      pruneSessionInterval: 60 * 15 // 每15分钟清理过期会话
     });
+    
+    // 为调试添加会话存储事件监听
+    sessionOptions.store.on('error', (err: Error) => {
+      console.error('[会话存储] 错误:', err);
+    });
+    
+    // 强制使用数据库会话
+    console.log('[会话] 成功配置PostgreSQL会话存储');
   } else {
-    console.log('[会话] 使用内存存储会话');
+    console.log('[会话] ⚠️警告: 未找到DATABASE_URL环境变量，回退到内存存储会话');
     // MemoryStore doesn't actually have a checkPeriod option in its type definition
     // but the implementation accepts it, so we use a type assertion
-    sessionOptions.store = new MemoryStore({} as any);
+    sessionOptions.store = new MemoryStore({
+      checkPeriod: 86400000, // 每24小时清理过期会话
+      ttl: 30 * 24 * 60 * 60 // 30天的会话生命周期
+    } as any);
   }
 
   // 应用会话中间件
