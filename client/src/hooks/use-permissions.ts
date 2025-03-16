@@ -54,12 +54,37 @@ export function usePermissions(): PermissionsHook {
         credentials: 'include' // 包含会话cookie
       });
       
+      // 无论状态码如何，都尝试解析响应
+      const userData = await currentUserResponse.json();
+      
       if (currentUserResponse.status === 401) {
-        // 认证失败，但不自动跳转（允许非登录用户访问公开内容）
-        setIsAuthenticated(false);
-        console.log('未登录，但允许访问公开内容');
-        setLoading(false);
-        return;
+        // 检查是否是假阳性登录
+        if (userData.fakePositive) {
+          console.log('检测到假阳性登录响应:', userData);
+          // 创建一个访客用户对象并存储
+          const guestUser = {
+            id: -1,
+            username: userData.fakeName || '访客用户',
+            fullName: userData.fakeName || '访客用户',
+            role: 'anonymous',
+            userSource: 'local',
+            fakePositive: true,
+            accessLevel: userData.accessLevel || 'limited'
+          };
+          
+          localStorage.setItem('currentUser', JSON.stringify(guestUser));
+          sessionStorage.setItem('currentUser', JSON.stringify(guestUser));
+          
+          // 设置为已认证状态，虽然是有限权限
+          setIsAuthenticated(true);
+          console.log('已创建假阳性登录访客用户');
+        } else {
+          // 常规未认证，但仍允许访问公开内容
+          setIsAuthenticated(false);
+          console.log('未登录，但允许访问公开内容');
+          setLoading(false);
+          return;
+        }
       }
       
       // 获取页面权限
@@ -106,6 +131,14 @@ export function usePermissions(): PermissionsHook {
       }
       
       // 设置用户为已认证状态(假阳性登录策略)
+      // 检查是否有假阳性登录的用户数据
+      const currentUserStr = localStorage.getItem('currentUser');
+      const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
+      
+      if (currentUser && (currentUser.fakePositive || currentUser.id === -1)) {
+        console.log('从本地存储检测到假阳性登录用户', currentUser);
+      }
+      
       setIsAuthenticated(true);
       
     } catch (error) {
