@@ -104,7 +104,11 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           };
           sessionStorage.setItem('currentUser', JSON.stringify(authUser));
           localStorage.setItem('currentUser', JSON.stringify(authUser));
-          toast.success("登录成功，正在跳转...");
+          toast({
+            title: "登录成功",
+            description: "正在跳转...",
+            type: "success"
+          });
         } else if (data.fallbackMode || data.authenticated === false) {
           // 假阳性登录或访客用户
           const guestUser = {
@@ -120,7 +124,11 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           console.log('创建假阳性登录用户:', guestUser);
           sessionStorage.setItem('currentUser', JSON.stringify(guestUser));
           localStorage.setItem('currentUser', JSON.stringify(guestUser));
-          toast.warning("以受限模式登录，部分功能可能不可用");
+          toast({
+            title: "受限模式登录",
+            description: "部分功能可能不可用",
+            type: "warning"
+          });
         } else {
           // 常规用户（确保包含realAuthenticated标志）
           const normalUser = {
@@ -129,7 +137,11 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           };
           sessionStorage.setItem('currentUser', JSON.stringify(normalUser));
           localStorage.setItem('currentUser', JSON.stringify(normalUser));
-          toast.success("登录成功，正在跳转...");
+          toast({
+            title: "登录成功",
+            description: "正在跳转...",
+            type: "success"
+          });
         }
       }
       
@@ -148,7 +160,11 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     })
     .catch(error => {
       console.error('登录请求错误:', error);
-      toast.error("登录过程中发生错误，请重试");
+      toast({
+        title: "登录失败",
+        description: "发生错误，请重试",
+        type: "error"
+      });
     })
     .finally(() => {
       setIsLoading(false);
@@ -254,7 +270,11 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                     localStorage.setItem('currentUser', JSON.stringify(guestUser));
                     
                     // 显示提示
-                    toast.success("以访客身份登录成功，部分功能可能受限");
+                    toast({
+                      title: "访客登录成功",
+                      description: "部分功能可能受限",
+                      type: "success"
+                    });
                     
                     // 重定向到首页
                     setTimeout(() => {
