@@ -3,7 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { scheduleCleanup } from "./utils/file-cleanup";
 import session from "express-session";
-import { db } from "./db"; // 直接导入db，不使用createConnection
+import { db, memStorage, useFallbackStorage } from "./db"; // 导入需要的组件
 import createMemoryStore from "memorystore";
 import crypto from "crypto";
 import { sessionSyncMiddleware } from './middleware/session-sync';
@@ -303,15 +303,20 @@ import { initializeUserIDTable } from './database/userID';
   // 初始化文件清理调度器，每24小时清理一次过期文件
   scheduleCleanup();
   
+  // 首先确保已经初始化了内存存储
+  // 使用已导入的memStorage，不能在异步函数中使用import语句
+  memStorage.initializeDemoData();
+  
   // 数据库已经通过db.ts初始化 - 但这个过程是异步的，需要进行检查
   log('验证数据库连接状态', 'mysql');
   
-  // 等待1秒，给db.ts中的连接测试留出时间
-  await new Promise(resolve => setTimeout(resolve, 1000));
+  // 给db.ts中的连接测试留出足够时间，等待更长时间
+  await new Promise(resolve => setTimeout(resolve, 5000)); // 增加到5秒
   
   // 验证数据库连接池状态
   let dbConnectionStatus = false;
   try {
+    log('尝试数据库测试连接...', 'mysql');
     const testConn = await db.execute('SELECT 1 AS test');
     
     // 安全地访问可能的嵌套结构
@@ -329,7 +334,7 @@ import { initializeUserIDTable } from './database/userID';
       log('数据库连接测试成功', 'mysql');
       dbConnectionStatus = true;
     } else {
-      log('数据库连接测试失败: 无法获取有效响应', 'mysql-error');
+      log('数据库连接测试失败: 无法获取有效响应，将使用内存存储模式', 'mysql-error');
     }
   } catch (e) {
     log(`数据库连接测试失败: ${e}`, 'mysql-error');

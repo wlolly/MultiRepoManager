@@ -26,12 +26,15 @@ process.on('unhandledRejection', (reason, promise) => {
 
 // 根据环境变量决定是否使用内存存储
 // 默认不使用回退存储，即使数据库连接失败也会继续尝试连接
-export let useFallbackStorage = false; 
+// 默认启用内存存储，当数据库成功连接后再关闭
+export let useFallbackStorage = true; 
 
 // 检查数据库URL是否设置，但不抛出错误
 if (!dbUrl) {
-  console.warn('警告: DATABASE_URL环境变量未设置，将使用内存存储模式');
-  useFallbackStorage = true; // 只有当没有数据库URL时才真正启用内存存储
+  console.warn('警告: DATABASE_URL环境变量未设置，将保持使用内存存储模式');
+} else {
+  console.log('数据库URL已设置，初始默认使用内存存储，系统将尝试连接数据库...');
+  console.log('即使数据库连接失败，应用程序也将继续工作');
 }
 
 // 创建优化后的MySQL连接池 - 增强版配置，添加更多的容错机制
