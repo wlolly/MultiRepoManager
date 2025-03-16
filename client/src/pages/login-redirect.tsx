@@ -11,8 +11,7 @@ export default function LoginRedirect() {
   const [status, setStatus] = useState<string>('正在载入会话...');
   const [error, setError] = useState<string | null>(null);
   
-  // 获取URL中的测试标识
-  const isTestUser = new URLSearchParams(window.location.search).get('test_user') === 'true';
+  // 登录重定向处理
   
   useEffect(() => {
     // 在加载页面时显示提示
@@ -45,8 +44,8 @@ export default function LoginRedirect() {
       credentials: 'include', // 确保包含cookie
       headers: {
         'X-Client-Session-ID': cookieSessionId || '', // 提供会话ID作为备用
-        'X-Test-Mode': isTestUser ? 'true' : 'false',
-        'X-Test-User': isTestUser ? 'true' : 'false'
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'X-Requested-With': 'XMLHttpRequest'
       }
     })
     .then(response => {
@@ -105,11 +104,7 @@ export default function LoginRedirect() {
         setTimeout(() => {
           setStatus('验证完成，正在跳转...');
           
-          // 测试用户额外处理
-          if (isTestUser) {
-            // 确保有这个标记以防止首页重定向循环
-            sessionStorage.setItem('testUserAuthenticated', 'true');
-          }
+          // 确保会话状态已保存
           
           // 使用window.location重定向到首页
           window.location.href = '/';

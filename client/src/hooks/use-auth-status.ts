@@ -29,21 +29,10 @@ export function useAuthStatus() {
           // 根据用户类型设置登录状态
           setIsAuthenticated(true); // 存在用户信息，至少处于"假阳性"登录状态
           
-          // 检查是否是测试用户 (username为222)
-          const isTestUser = parsedUser.username === '222' || parsedUser.testUser === true;
-          
-          // 如果是测试用户，或者不是假阳性用户，则为真实登录
-          if (isTestUser || (parsedUser.realAuthenticated === true) || 
+          // 根据用户属性判断是否为真实认证用户
+          if (parsedUser.realAuthenticated === true || 
               (!parsedUser.fakePositive && parsedUser.id !== -1)) {
             setRealAuthenticated(true);
-            
-            // 如果是测试用户，确保realAuthenticated标记正确设置
-            if (isTestUser && !parsedUser.realAuthenticated) {
-              const updatedUser = {...parsedUser, realAuthenticated: true, testUser: true};
-              localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-              setUser(updatedUser);
-              console.log('已更新测试用户状态:', updatedUser);
-            }
           } else {
             setRealAuthenticated(false);
           }
@@ -80,18 +69,9 @@ export function useAuthStatus() {
           const userData = await response.json();
           console.log('认证检查响应数据:', userData);
           
-          // 检查是否为测试用户 (username为222)
-          const isTestUser = userData.username === '222' || userData.testUser === true;
-          
           // 确保所有认证字段都正确设置
           userData.realAuthenticated = true; // 服务器确认为真实用户
           userData.authenticated = true;
-          
-          // 如果是测试用户，确保标记为测试用户
-          if (isTestUser) {
-            userData.testUser = true;
-            console.log('用户真实认证成功:', userData);
-          }
           
           // 存储用户数据并更新状态
           localStorage.setItem('currentUser', JSON.stringify(userData));
