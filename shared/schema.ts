@@ -679,7 +679,7 @@ export const preAuditOrders = pgTable("pre_audit_orders", {
   totalUnmatchedItems: integer("total_unmatched_items").notNull(), // 未匹配商品数量
   resultOrderId: integer("result_order_id"), // 最终生成的出入库单ID
   createdAt: timestamp("created_at").defaultNow().notNull(), // 创建时间
-  updatedAt: timestamp("updated_at").defaultNow().notNull(), // 更新时间
+  updatedAt: timestamp("updated_at").defaultNow.notNull(), // 更新时间
   notes: text("notes"), // 备注
 });
 
