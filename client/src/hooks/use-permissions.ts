@@ -63,29 +63,49 @@ export function usePermissions(): PermissionsHook {
       }
       
       // 获取页面权限
-      const pageResponse = await fetch('/api/permissions/pages', {
-        credentials: 'include' // 包含会话cookie
-      });
-      
-      if (pageResponse.status === 401) {
-        // 认证失败，重定向到登录页面
-        setIsAuthenticated(false);
-        navigate('/login');
-        console.log('认证已过期，请重新登录');
-        setLoading(false);
-        return;
+      try {
+        const pageResponse = await fetch('/api/permissions/pages', {
+          credentials: 'include' // 包含会话cookie
+        });
+        
+        if (pageResponse.status === 401) {
+          // 认证失败，但不强制重定向(假阳性登录策略)
+          console.log('权限API返回401，但允许假阳性登录');
+          setIsAuthenticated(true); // 即使权限API返回401，也保持用户登录状态
+          setPagePermissions({}); // 使用空权限
+        } else {
+          // 成功获取权限
+          const pageData = await pageResponse.json();
+          setPagePermissions(pageData);
+        }
+      } catch (error) {
+        console.error('获取页面权限时出错:', error);
+        // 出错时使用空权限集合，但不影响认证状态
+        setPagePermissions({});
       }
       
-      const pageData = await pageResponse.json();
-      setPagePermissions(pageData);
-      
       // 获取仓库权限
-      const warehouseResponse = await fetch('/api/permissions/warehouses', {
-        credentials: 'include' // 包含会话cookie
-      });
+      try {
+        const warehouseResponse = await fetch('/api/permissions/warehouses', {
+          credentials: 'include' // 包含会话cookie
+        });
+        
+        if (warehouseResponse.status === 401) {
+          // 认证失败，但不强制重定向(假阳性登录策略)
+          console.log('仓库权限API返回401，但允许假阳性登录');
+          setWarehousePermissions({}); // 使用空权限
+        } else {
+          // 成功获取权限
+          const warehouseData = await warehouseResponse.json();
+          setWarehousePermissions(warehouseData);
+        }
+      } catch (error) {
+        console.error('获取仓库权限时出错:', error);
+        // 出错时使用空权限集合
+        setWarehousePermissions({});
+      }
       
-      const warehouseData = await warehouseResponse.json();
-      setWarehousePermissions(warehouseData);
+      // 设置用户为已认证状态(假阳性登录策略)
       setIsAuthenticated(true);
       
     } catch (error) {
