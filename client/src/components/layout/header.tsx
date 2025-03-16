@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
-import { Search } from "lucide-react";
+import { Search, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "../language-switcher";
 import {
@@ -13,6 +13,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -20,6 +22,36 @@ interface HeaderProps {
 
 export function Header({ onMenuClick }: HeaderProps) {
   const { t } = useTranslation();
+  const { addToast } = useToast();
+  const [isGuestUser, setIsGuestUser] = useState(false);
+  const [username, setUsername] = useState('用户');
+  
+  // 检查当前用户是否为访客用户
+  useEffect(() => {
+    try {
+      const currentUserStr = localStorage.getItem('currentUser');
+      if (currentUserStr) {
+        const currentUser = JSON.parse(currentUserStr);
+        setUsername(currentUser.username || '用户');
+        
+        // 检查是否为假阳性登录用户
+        if (currentUser.fakePositive === true || currentUser.id === -1) {
+          setIsGuestUser(true);
+          
+          // 给访客用户显示提示消息（仅显示一次）
+          const guestNotified = sessionStorage.getItem('guest_notified');
+          if (!guestNotified) {
+            setTimeout(() => {
+              toast.info("您当前以访客身份浏览，部分功能可能受限");
+              sessionStorage.setItem('guest_notified', 'true');
+            }, 1500);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('解析用户信息出错:', error);
+    }
+  }, [toast]);
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6">
@@ -61,6 +93,14 @@ export function Header({ onMenuClick }: HeaderProps) {
         </form>
 
         <div className="flex items-center gap-2">
+          {/* 访客用户标识 */}
+          {isGuestUser && (
+            <Badge variant="outline" className="gap-1 border-amber-500 text-amber-600">
+              <AlertCircle className="h-3 w-3" />
+              <span>访客模式</span>
+            </Badge>
+          )}
+          
           <LanguageSwitcher />
 
           <DropdownMenu>
@@ -72,21 +112,43 @@ export function Header({ onMenuClick }: HeaderProps) {
               >
                 <Avatar className="h-8 w-8">
                   <AvatarImage src="/avatar-user.png" alt="User" />
-                  <AvatarFallback>U</AvatarFallback>
+                  <AvatarFallback>{username ? username.charAt(0).toUpperCase() : 'U'}</AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>{t('my_account')}</DropdownMenuLabel>
+              <DropdownMenuLabel className="flex items-center gap-2">
+                {t('my_account')}
+                {isGuestUser && (
+                  <Badge variant="outline" className="ml-1 text-xs border-amber-500 text-amber-600">
+                    访客
+                  </Badge>
+                )}
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              
+              {isGuestUser ? (
+                <DropdownMenuItem asChild>
+                  <Link to="/login" className="flex items-center gap-2">
+                    <span>登录</span>
+                    <Badge variant="secondary" className="ml-auto text-xs">获取完整功能</Badge>
+                  </Link>
+                </DropdownMenuItem>
+              ) : (
+                <>
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile">{t('profile')}</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/settings">{t('settings')}</Link>
+                  </DropdownMenuItem>
+                </>
+              )}
+              
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link to="/profile">{t('profile')}</Link>
+                <Link to="/login">{isGuestUser ? '登录' : t('logout')}</Link>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/settings">{t('settings')}</Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>{t('logout')}</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
