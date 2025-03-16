@@ -22,11 +22,12 @@ languageCodes.forEach(langCode => {
   resources[langCode] = { translation: {} };
 });
 
-// 处理翻译对象
+// 处理翻译对象 - 确保处理所有嵌套结构和插值
 function processTranslations() {
   // 记录处理的翻译键数量
   let processedKeys = 0;
   let processedLangEntries = 0;
+  let timeKeysProcessed = 0;
 
   // 遍历所有翻译键
   Object.entries(translations).forEach(([key, value]) => {
@@ -34,12 +35,20 @@ function processTranslations() {
     if (value && typeof value === 'object') {
       processedKeys++;
       
+      // 特别标记time.*相关的键以便调试
+      if (key.startsWith('time.')) {
+        timeKeysProcessed++;
+        console.log(`处理时间相关翻译键: ${key}`, value);
+      }
+      
       // 为每种语言提取对应的翻译值
       languageCodes.forEach(langCode => {
-        // 检查该语言的翻译是否存在
-        if (langCode in value && typeof value[langCode] === 'string') {
+        // 确保有该语言的翻译，且是字符串
+        if (langCode in value && value[langCode] !== undefined) {
+          const translationValue = value[langCode];
+          
           // 将翻译值添加到资源对象中
-          resources[langCode].translation[key] = value[langCode];
+          resources[langCode].translation[key] = translationValue;
           processedLangEntries++;
         }
       });
@@ -47,12 +56,17 @@ function processTranslations() {
   });
   
   console.log(`处理了 ${processedKeys} 个翻译键，共 ${processedLangEntries} 条翻译条目`);
+  console.log(`处理了 ${timeKeysProcessed} 个时间相关翻译键`);
 }
 
 // 执行翻译处理
 try {
   processTranslations();
   console.log('翻译资源处理完成，可用语言：', Object.keys(resources));
+  
+  // 专门查看时间相关翻译键
+  const timeKeys = Object.keys(resources.zh.translation).filter(key => key.startsWith('time.'));
+  console.log('时间相关翻译键（中文）:', timeKeys.map(key => `${key}: ${resources.zh.translation[key]}`));
   
   // 打印前10个键的示例，便于调试
   const sampleKeys = Object.keys(resources.zh.translation).slice(0, 10);
@@ -70,6 +84,13 @@ i18n
     debug: false,
     interpolation: {
       escapeValue: false, // 不转义HTML
+      format: function(value, format, lng) {
+        // 支持数字格式化
+        if (format === 'number' && !isNaN(value)) {
+          return new Intl.NumberFormat(lng).format(value);
+        }
+        return value;
+      }
     }
   });
 
