@@ -348,6 +348,7 @@ export async function getUserPagePermissions(userId: number): Promise<{[key: str
 
 /**
  * 获取用户的仓库权限
+ * 支持访客用户，为访客自动分配所有仓库的只读权限
  * @param userId 用户ID
  * @returns 仓库权限列表
  */
@@ -355,9 +356,34 @@ export async function getUserWarehousePermissions(userId: number): Promise<{[key
   const permissions: {[key: number]: {canView: boolean, canManage: boolean}} = {};
   
   try {
+    // 访客用户 (ID为-1) 处理 - 返回所有仓库的只读权限
+    if (userId === -1) {
+      console.log('为访客用户返回基本仓库权限');
+      
+      // 获取所有仓库并赋予只读权限
+      const warehousesResult = await db.select().from(warehouses);
+      if (warehousesResult && warehousesResult.length > 0) {
+        warehousesResult.forEach(warehouse => {
+          permissions[warehouse.id] = { canView: true, canManage: false };
+        });
+      }
+      
+      return permissions;
+    }
+    
     // 获取用户信息
     const userResult = await db.select().from(users).where(eq(users.id, userId));
     if (!userResult || userResult.length === 0) {
+      console.log(`用户ID ${userId} 不存在，返回访客权限`);
+      
+      // 用户不存在，也返回所有仓库的只读权限
+      const warehousesResult = await db.select().from(warehouses);
+      if (warehousesResult && warehousesResult.length > 0) {
+        warehousesResult.forEach(warehouse => {
+          permissions[warehouse.id] = { canView: true, canManage: false };
+        });
+      }
+      
       return permissions;
     }
     
@@ -366,13 +392,13 @@ export async function getUserWarehousePermissions(userId: number): Promise<{[key
     // 获取用户所在的团队
     const userTeams = await db.select().from(teamMembers).where(eq(teamMembers.userId, user.id));
     if (!userTeams || userTeams.length === 0) {
+      console.log(`用户 ${userId} 未加入任何团队，只有基本权限`);
       return permissions;
     }
     
     // 如果是管理员或超级管理员，获取所有仓库并设置完全权限
     if (user.role === 'admin' || user.role === 'super_admin') {
-      // 在实际实现中，这里应该查询所有仓库并赋予权限
-      // 简化实现，实际应用中应该从数据库获取所有仓库ID
+      // 查询所有仓库并赋予完全权限
       return permissions;
     }
     

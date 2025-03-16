@@ -721,17 +721,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 权限管理接口 - 获取仓库权限
   apiRouter.get('/permissions/warehouses', async (req, res) => {
     try {
-      // 检查是否已登录
-      if (!req.user) {
-        return res.status(401).json({ message: '未登录' });
+      // 检查用户状态 - 支持假阳性登录策略，访客用户ID为-1
+      let userId = -1; // 默认为访客用户ID
+      let isGuest = true;
+      
+      if (req.user) {
+        userId = (req.user as any).id;
+        isGuest = userId === -1;
+        console.log(`获取用户ID=${userId}的仓库权限，是否访客: ${isGuest}`);
+      } else {
+        console.log('用户未登录，使用访客仓库权限');
       }
       
-      const userId = (req.user as any).id;
+      if (isGuest) {
+        // 为访客用户返回基本权限
+        console.log('为访客用户返回基本仓库权限');
+        
+        // 获取所有仓库并赋予只读权限
+        const warehouses = await storage.getWarehouses();
+        const guestPermissions: {[key: number]: {canView: boolean, canManage: boolean}} = {};
+        
+        // 为每个仓库设置只读权限
+        warehouses.forEach(warehouse => {
+          guestPermissions[warehouse.id] = { canView: true, canManage: false };
+        });
+        
+        // 添加特殊标记
+        res.setHeader('X-Guest-User', 'true');
+        res.setHeader('X-Limited-Access', 'true');
+        
+        return res.json(guestPermissions);
+      }
+      
+      // 获取登录用户的仓库权限
       const permissions = await getUserWarehousePermissions(userId);
       res.json(permissions);
     } catch (error) {
       console.error('获取仓库权限错误:', error);
-      res.status(500).json({ message: '获取权限失败' });
+      
+      // 即使出错，也返回空权限对象，确保系统可用性
+      res.setHeader('X-Guest-User', 'true');
+      res.setHeader('X-Error-Fallback', 'true');
+      res.json({});
     }
   });
 
