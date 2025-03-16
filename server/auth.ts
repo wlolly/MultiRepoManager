@@ -402,11 +402,17 @@ export async function getCurrentUser(req: Request, res: Response) {
       // 未登录，返回未授权状态和访客信息
       console.log('[认证系统] 当前用户未认证 - 返回访客信息');
 
-      // 返回401状态码和访客用户信息
+      // 添加会话ID到响应头
+      res.setHeader('X-Session-ID', req.sessionID);
+      res.setHeader('X-Original-Session-ID', req.sessionID);
+      res.setHeader('X-Session-Authenticated', 'false');
+      
+      // 返回401状态码和访客用户信息，包括会话ID
       return res.status(401).json({
         authenticated: false,
         message: '用户未登录',
         guestAccess: true,
+        sessionId: req.sessionID, // 显式返回会话ID以便前端保存
         allowedPages: ['dashboard'],
         permissions: {
           pages: ['dashboard'],
