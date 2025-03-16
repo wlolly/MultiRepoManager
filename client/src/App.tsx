@@ -163,7 +163,8 @@ function Sidebar() {
     
     // 指定哪些页面只有真实登录用户才能看到
     const authOnlyPages = [
-      '/warehouse-products',  // 我的商品
+      '/products',            // 我的商品（仅登录用户可见）
+      '/warehouse-products',  // 仓库商品
       '/inbound-orders',      // 入库单
       '/outbound-orders',     // 出库单
       '/warehouse-transfers', // 仓库调拨
@@ -470,7 +471,7 @@ export default function App() {
               <ProtectedRoute path="/warehouses" component={Warehouses} pageName="warehouses" />
               <ProtectedRoute path="/warehouse-products" component={WarehouseProducts} pageName="warehouse_products" />
               <ProtectedRoute path="/warehouse-products/new" component={NewWarehouseProduct} pageName="warehouse_products" />
-              <ProtectedRoute path="/products" component={ProductsPage} pageName="products" requireAuth={false} publicContent={true} />
+              <ProtectedRoute path="/products" component={ProductsPage} pageName="products" requireAuth={true} publicContent={false} />
               <ProtectedRoute path="/products/product-detail/:id" component={ProductDetail} pageName="products" requireAuth={true} publicContent={false} />
               <Route path="/product-search" component={ProductSearch} />
               
