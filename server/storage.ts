@@ -54,8 +54,13 @@ export interface IStorage {
   removeTeamMember(teamId: number, userId: number): Promise<void>;
   
   // Team permission methods
+  addTeamPagePermission(insertTeamPagePermission: InsertTeamPagePermission): Promise<TeamPagePermission>;
   getTeamPagePermissions(teamId: number): Promise<TeamPagePermission[]>;
+  removeTeamPagePermission(teamId: number, pageName: string): Promise<void>;
+  
+  addTeamWarehousePermission(insertTeamWarehousePermission: InsertTeamWarehousePermission): Promise<TeamWarehousePermission>;
   getTeamWarehousePermissions(teamId: number): Promise<TeamWarehousePermission[]>;
+  removeTeamWarehousePermission(teamId: number, warehouseId: number): Promise<void>;
   
   // Team repositories methods
   addTeamRepository(teamRepository: InsertTeamRepository): Promise<TeamRepository>;
@@ -214,6 +219,8 @@ export class MemStorage implements IStorage {
   private repositoryIdCounter: number;
   private teamIdCounter: number;
   private teamMemberIdCounter: number;
+  private teamPagePermissionIdCounter: number;
+  private teamWarehousePermissionIdCounter: number;
   private teamRepositoryIdCounter: number;
   private activityIdCounter: number;
   
@@ -274,6 +281,8 @@ export class MemStorage implements IStorage {
     this.repositoryIdCounter = 1;
     this.teamIdCounter = 1;
     this.teamMemberIdCounter = 1;
+    this.teamPagePermissionIdCounter = 1;
+    this.teamWarehousePermissionIdCounter = 1;
     this.teamRepositoryIdCounter = 1;
     this.activityIdCounter = 1;
     
@@ -589,6 +598,12 @@ export class MemStorage implements IStorage {
       (tm) => tm.teamId === teamId,
     );
   }
+  
+  async getTeamMembersForUser(userId: number): Promise<TeamMember[]> {
+    return Array.from(this.teamMembersMap.values()).filter(
+      (tm) => tm.userId === userId,
+    );
+  }
 
   async removeTeamMember(teamId: number, userId: number): Promise<void> {
     const teamMember = Array.from(this.teamMembersMap.values()).find(
@@ -596,6 +611,54 @@ export class MemStorage implements IStorage {
     );
     if (teamMember) {
       this.teamMembersMap.delete(teamMember.id);
+    }
+  }
+  
+  async addTeamPagePermission(insertTeamPagePermission: InsertTeamPagePermission): Promise<TeamPagePermission> {
+    const id = this.teamPagePermissionIdCounter++;
+    const createdAt = new Date();
+    const updatedAt = new Date();
+    const teamPagePermission: TeamPagePermission = { ...insertTeamPagePermission, id, createdAt, updatedAt };
+    this.teamPagePermissionsMap.set(id, teamPagePermission);
+    return teamPagePermission;
+  }
+
+  async getTeamPagePermissions(teamId: number): Promise<TeamPagePermission[]> {
+    return Array.from(this.teamPagePermissionsMap.values()).filter(
+      (tp) => tp.teamId === teamId,
+    );
+  }
+  
+  async addTeamWarehousePermission(insertTeamWarehousePermission: InsertTeamWarehousePermission): Promise<TeamWarehousePermission> {
+    const id = this.teamWarehousePermissionIdCounter++;
+    const createdAt = new Date();
+    const updatedAt = new Date();
+    const teamWarehousePermission: TeamWarehousePermission = { ...insertTeamWarehousePermission, id, createdAt, updatedAt };
+    this.teamWarehousePermissionsMap.set(id, teamWarehousePermission);
+    return teamWarehousePermission;
+  }
+  
+  async getTeamWarehousePermissions(teamId: number): Promise<TeamWarehousePermission[]> {
+    return Array.from(this.teamWarehousePermissionsMap.values()).filter(
+      (twp) => twp.teamId === teamId,
+    );
+  }
+  
+  async removeTeamPagePermission(teamId: number, pageName: string): Promise<void> {
+    const permission = Array.from(this.teamPagePermissionsMap.values()).find(
+      (tp) => tp.teamId === teamId && tp.pageName === pageName,
+    );
+    if (permission) {
+      this.teamPagePermissionsMap.delete(permission.id);
+    }
+  }
+  
+  async removeTeamWarehousePermission(teamId: number, warehouseId: number): Promise<void> {
+    const permission = Array.from(this.teamWarehousePermissionsMap.values()).find(
+      (twp) => twp.teamId === teamId && twp.warehouseId === warehouseId,
+    );
+    if (permission) {
+      this.teamWarehousePermissionsMap.delete(permission.id);
     }
   }
 
