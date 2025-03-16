@@ -476,13 +476,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             needSocialBinding: needSocialBinding, // 通知前端需要绑定社交账号
             sessionId: req.sessionID, // 返回会话ID，方便客户端恢复
             authenticated: true,
+            realAuthenticated: req.session.realAuthenticated, // 添加实际认证状态标志
             user: {
               id: user.id,
               username: user.username,
               fullName: user.fullName,
               role: user.role,
               avatarUrl: user.avatarUrl,
-              userSource: user.userSource
+              userSource: user.userSource,
+              realAuthenticated: req.session.realAuthenticated || false // 确保在用户对象中也包含此标志
             }
           });
         });

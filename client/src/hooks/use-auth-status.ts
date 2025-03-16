@@ -54,12 +54,17 @@ export function useAuthStatus() {
         
         if (response.ok) {
           const userData = await response.json();
+          console.log('认证检查响应数据:', userData);
           
           // 存储用户数据
           localStorage.setItem('currentUser', JSON.stringify(userData));
           setUser(userData);
           setIsAuthenticated(true);
-          setRealAuthenticated(true); // 服务器会话有效表示真实登录
+          
+          // 检查真实认证状态
+          const isRealAuth = userData.realAuthenticated === true || 
+                           (userData.role && (userData.role === 'admin' || userData.role === 'super_admin'));
+          setRealAuthenticated(isRealAuth); // 根据服务器返回的真实认证状态设置
         } else {
           // 尝试解析响应以检查假阳性登录
           try {
