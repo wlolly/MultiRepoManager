@@ -33,82 +33,100 @@ app.use(session({
     domain: undefined // 不指定域名，使用当前域名
   },
   genid: function(req) {
-    // 当请求头中包含客户端已知的会话ID时，优先使用该ID
-    const clientSessionId = req.headers['x-client-session-id'];
-    if (clientSessionId && typeof clientSessionId === 'string' && 
-        /^[a-zA-Z0-9\-_]{20,}$/.test(clientSessionId)) {
-      console.log(`使用客户端提供的会话ID: ${clientSessionId}`);
-      
-      // 同步到响应头
-      if (req.res) {
-        req.res.setHeader('X-Session-ID', clientSessionId);
-        req.res.setHeader('X-Original-Session-ID', clientSessionId);
+    // 检查所有可能的会话ID来源，按优先级排序
+    const possibleSources: Array<{name: string, value: string | null}> = [];
+    
+    // 1. 优先从各种请求头中获取，支持多种可能的头名称
+    const headersToCheck = [
+      'x-client-session-id', 'x-session-id', 'x-original-session-id',
+      'sessionid', 'session-id', 'client-session-id'
+    ];
+    
+    // 依次检查各个头
+    for (const headerName of headersToCheck) {
+      const headerValue = req.headers[headerName];
+      if (headerValue && typeof headerValue === 'string' && headerValue.length >= 10) {
+        possibleSources.push({name: `请求头(${headerName})`, value: headerValue});
       }
-      
-      return clientSessionId;
     }
     
-    // 已经有会话ID的情况下，保持该ID不变
-    if (req.sessionID && /^[a-zA-Z0-9\-_]{20,}$/.test(req.sessionID)) {
-      if (req.res) {
-        req.res.setHeader('X-Session-ID', req.sessionID);
-        req.res.setHeader('X-Original-Session-ID', req.sessionID);
-      }
-      return req.sessionID;
+    // 2. 从查询参数中获取会话ID
+    if (req.query.sessionId && typeof req.query.sessionId === 'string' && req.query.sessionId.length >= 10) {
+      possibleSources.push({name: '查询参数(sessionId)', value: req.query.sessionId as string});
     }
     
-    // 从cookie中提取会话ID
-    if (req.cookies && req.cookies['warehouse.sid']) {
-      let cookieId = req.cookies['warehouse.sid'];
+    if (req.query.sid && typeof req.query.sid === 'string' && req.query.sid.length >= 10) {
+      possibleSources.push({name: '查询参数(sid)', value: req.query.sid as string});
+    }
+    
+    // 3. 从cookie中获取会话ID
+    if (req.cookies) {
+      // 检查所有可能的cookie名称
+      const cookieNames = ['sessionId', 'warehouse.sid', 'connect.sid', 'express.sid'];
       
-      // 处理签名cookie
-      if (cookieId.startsWith('s%3A')) {
-        cookieId = cookieId.substring(4);
+      for (const cookieName of cookieNames) {
+        if (req.cookies[cookieName]) {
+          let cookieId = req.cookies[cookieName];
+          
+          // 处理签名cookie
+          if (cookieId.startsWith('s%3A')) {
+            cookieId = cookieId.substring(4);
+          }
+          
+          // 如果cookie包含点号(.)，取第一部分(签名前的原始ID)
+          if (cookieId.includes('.')) {
+            cookieId = cookieId.split('.')[0];
+          }
+          
+          if (cookieId.length >= 10) {
+            possibleSources.push({name: `Cookie(${cookieName})`, value: cookieId});
+          }
+        }
       }
-      
-      // 如果cookie包含点号(.)，取第一部分(签名前的原始ID)
-      if (cookieId.includes('.')) {
-        cookieId = cookieId.split('.')[0];
-      }
-      
-      if (/^[a-zA-Z0-9\-_]{20,}$/.test(cookieId)) {
-        console.log(`从cookie中恢复会话ID: ${cookieId}`);
-        
-        // 同步到响应头
-        if (req.res) {
-          req.res.setHeader('X-Session-ID', cookieId);
-          req.res.setHeader('X-Original-Session-ID', cookieId);
+    }
+    
+    // 4. 如果已经有会话ID，也加入考虑
+    if (req.sessionID && req.sessionID.length >= 10) {
+      possibleSources.push({name: '现有会话ID', value: req.sessionID});
+    }
+    
+    // 记录调试信息
+    const isImportantRequest = req.path.includes('/api/auth/') || 
+                              req.path.includes('current-user') || 
+                              req.path.includes('/permissions/');
+    
+    if (possibleSources.length > 0 && isImportantRequest) {
+      console.log(`会话ID来源 (${req.path}):`);
+      possibleSources.forEach(source => {
+        console.log(`- ${source.name}: ${source.value}`);
+      });
+    }
+    
+    // 遍历所有来源，找到第一个有效的会话ID
+    for (const source of possibleSources) {
+      const sessionId = source.value;
+      if (sessionId && /^[a-zA-Z0-9\-_]{10,}$/.test(sessionId)) {
+        // 只在重要请求中打印详细日志
+        if (isImportantRequest) {
+          console.log(`使用${source.name}提供的会话ID: ${sessionId}`);
         }
         
-        return cookieId;
-      }
-    }
-    
-    // 从其他请求头中寻找会话ID
-    const headerNames = ['x-session-id', 'x-original-session-id'];
-    for (const name of headerNames) {
-      const headerValue = req.headers[name];
-      if (headerValue && typeof headerValue === 'string' && 
-          /^[a-zA-Z0-9\-_]{20,}$/.test(headerValue)) {
-        console.log(`从请求头(${name})中恢复会话ID: ${headerValue}`);
-        
-        // 同步到响应头
+        // 同步到响应头，确保客户端能识别服务器使用的会话ID
         if (req.res) {
-          req.res.setHeader('X-Session-ID', headerValue);
-          req.res.setHeader('X-Original-Session-ID', headerValue);
+          req.res.setHeader('X-Session-ID', sessionId);
+          req.res.setHeader('X-Original-Session-ID', sessionId);
         }
         
-        return headerValue;
+        return sessionId;
       }
     }
     
-    // 生成新的会话ID
+    // 如果没有找到有效会话ID，生成新的会话ID
     const newSessionId = crypto.randomBytes(16).toString('hex');
     
-    // 如果是登录或认证相关请求，记录详细信息
-    const isAuthRequest = req.path.includes('/api/auth/');
-    if (isAuthRequest) {
-      console.log(`认证请求创建新会话ID: ${newSessionId}, 路径: ${req.path}`);
+    // 如果是重要请求，记录详细信息
+    if (isImportantRequest) {
+      console.log(`为路径 ${req.path} 创建新会话ID: ${newSessionId}，未找到现有会话ID`);
     }
     
     // 同步到响应头
@@ -205,7 +223,19 @@ import { initializeUserIDTable } from './database/userID';
   let dbConnectionStatus = false;
   try {
     const testConn = await db.execute('SELECT 1 AS test');
-    if (testConn && testConn[0] && testConn[0][0] && testConn[0][0].test === 1) {
+    
+    // 安全地访问可能的嵌套结构
+    const hasValidResponse = testConn && 
+      Array.isArray(testConn) && 
+      testConn.length > 0 && 
+      Array.isArray(testConn[0]) && 
+      testConn[0].length > 0 && 
+      typeof testConn[0][0] === 'object' && 
+      testConn[0][0] !== null && 
+      'test' in testConn[0][0] && 
+      testConn[0][0].test === 1;
+      
+    if (hasValidResponse) {
       log('数据库连接测试成功', 'mysql');
       dbConnectionStatus = true;
     } else {
