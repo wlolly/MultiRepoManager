@@ -176,9 +176,44 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                 )}
               />
               
-              <Button type="submit" className="w-full h-9 mt-4" disabled={isLoading}>
-                {isLoading ? t('logging_in') : t('login')}
-              </Button>
+              <div className="flex flex-col space-y-2 mt-4">
+                <Button type="submit" className="w-full h-9" disabled={isLoading}>
+                  {isLoading ? t('logging_in') : t('login')}
+                </Button>
+                
+                {/* 访客登录按钮 */}
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  className="w-full h-9 text-sm" 
+                  onClick={() => {
+                    // 创建访客用户
+                    const guestUser = {
+                      id: -1,
+                      username: '访客用户',
+                      fullName: '访客用户',
+                      role: 'anonymous',
+                      userSource: 'local',
+                      fakePositive: true,
+                      accessLevel: 'limited'
+                    };
+                    
+                    // 保存访客用户信息
+                    sessionStorage.setItem('currentUser', JSON.stringify(guestUser));
+                    localStorage.setItem('currentUser', JSON.stringify(guestUser));
+                    
+                    // 显示提示
+                    toast.success("以访客身份登录成功，部分功能可能受限");
+                    
+                    // 重定向到首页
+                    setTimeout(() => {
+                      window.location.href = '/';
+                    }, 500);
+                  }}
+                >
+                  以访客身份访问
+                </Button>
+              </div>
             </form>
           </Form>
           
