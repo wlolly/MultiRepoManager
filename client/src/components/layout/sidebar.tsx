@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from 'react-i18next';
+import { usePermissions } from "@/hooks/use-permissions";
 
 interface NavItem {
   icon: string;
@@ -28,6 +29,28 @@ const navItems: NavItem[] = [
 export function Sidebar() {
   const [pathname] = useLocation();
   const { t } = useTranslation();
+  const { isAuthenticated } = usePermissions();
+  const [isRealUser, setIsRealUser] = useState(false);
+  
+  // 检查是否为真实用户（非访客）
+  useEffect(() => {
+    const currentUserStr = localStorage.getItem('currentUser');
+    if (currentUserStr) {
+      try {
+        const currentUser = JSON.parse(currentUserStr);
+        // 检查是否是假阳性登录用户
+        if (!currentUser.fakePositive && currentUser.id !== -1) {
+          setIsRealUser(true);
+        } else {
+          setIsRealUser(false);
+        }
+      } catch (e) {
+        setIsRealUser(false);
+      }
+    } else {
+      setIsRealUser(false);
+    }
+  }, [isAuthenticated]);
 
   interface Activity {
     id: number;
@@ -103,24 +126,30 @@ export function Sidebar() {
         <h1 className="text-xl font-semibold">{t('app_name')}</h1>
       </div>
       
-      <div className="p-4">
-        <Link to="/products/new" className="bg-blue-600 hover:bg-blue-700 w-full py-2 px-4 rounded-md flex items-center justify-center transition">
-          <i className="ri-add-line mr-2"></i> {t('new_product')}
-        </Link>
-      </div>
+      {/* 只有真实登录用户才显示新增产品按钮 */}
+      {isRealUser && (
+        <div className="p-4">
+          <Link to="/products/new" className="bg-blue-600 hover:bg-blue-700 w-full py-2 px-4 rounded-md flex items-center justify-center transition">
+            <i className="ri-add-line mr-2"></i> {t('new_product')}
+          </Link>
+        </div>
+      )}
       
       <nav className="mt-2">
         <div className="px-4 py-2 text-gray-400 text-sm font-medium">{t('navigation')}</div>
-        {navItems.map((item) => (
-          <Link key={item.href} to={item.href} className={cn(
-            "flex items-center py-2 px-4 transition",
-            pathname === item.href
-              ? "bg-gray-800 text-blue-500" 
-              : "text-gray-300 hover:bg-gray-800 hover:text-white"
-          )}>
-            <i className={`${item.icon} mr-3`}></i> {t(item.keyName)}
-          </Link>
-        ))}
+        {navItems
+          // 过滤导航项：只显示仪表盘和真实用户可以访问的其他页面
+          .filter(item => item.href === "/" || isRealUser)
+          .map((item) => (
+            <Link key={item.href} to={item.href} className={cn(
+              "flex items-center py-2 px-4 transition",
+              pathname === item.href
+                ? "bg-gray-800 text-blue-500" 
+                : "text-gray-300 hover:bg-gray-800 hover:text-white"
+            )}>
+              <i className={`${item.icon} mr-3`}></i> {t(item.keyName)}
+            </Link>
+          ))}
       </nav>
       
       <div className="px-4 py-2 mt-6 text-gray-400 text-sm font-medium">{t('recent_activity')}</div>

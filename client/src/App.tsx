@@ -405,7 +405,7 @@ export default function App() {
               <Route path="/test-toast" component={TestToast} />
               
               {/* 主页与通用页面 */}
-              <ProtectedRoute path="/" component={Dashboard} pageName="dashboard" requireAuth={false} publicContent={true} />
+              <ProtectedRoute exact path="/" component={Dashboard} pageName="dashboard" requireAuth={false} publicContent={true} />
               <Route path="/search" component={Search} />
               <ProtectedRoute path="/settings" component={Settings} pageName="settings" />
               <ProtectedRoute path="/users" component={Users} pageName="users_teams" />
@@ -417,12 +417,12 @@ export default function App() {
               <Route path="/repository-view/:id" component={RepositoryView} />
               <Route path="/repository/:id" component={Repository} />
               
-              {/* 仓库管理系统页面 */}
+              {/* 仓库管理系统页面 - 只有管理员才能访问 */}
               <ProtectedRoute path="/warehouses" component={Warehouses} pageName="warehouses" />
               <ProtectedRoute path="/warehouse-products" component={WarehouseProducts} pageName="warehouse_products" />
               <ProtectedRoute path="/warehouse-products/new" component={NewWarehouseProduct} pageName="warehouse_products" />
-              <ProtectedRoute path="/products" component={ProductsPage} pageName="products" />
-              <ProtectedRoute path="/products/product-detail/:id" component={ProductDetail} pageName="products" />
+              <ProtectedRoute path="/products" component={ProductsPage} pageName="products" requireAuth={true} publicContent={false} />
+              <ProtectedRoute path="/products/product-detail/:id" component={ProductDetail} pageName="products" requireAuth={true} publicContent={false} />
               <Route path="/product-search" component={ProductSearch} />
               
               {/* 入库单页面 */}
