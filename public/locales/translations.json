@@ -125,6 +125,13 @@
     "kk": "Төмен қорлы өнімдер",
     "uz": "Kam zaxiradagi mahsulotlar"
   },
+  "products_page_description": {
+    "zh": "管理仓库中的所有商品，包括库存追踪和分类",
+    "en": "Manage all products in your warehouses, including inventory tracking and categorization",
+    "ru": "Управление всеми товарами на складах, включая отслеживание запасов и категоризацию",
+    "kk": "Қоймалардағы барлық өнімдерді басқару, қорларды бақылау және санаттау",
+    "uz": "Omborlaringizdagi barcha mahsulotlarni boshqarish, inventar kuzatish va turkumlash"
+  },
   "stock_value": {
     "zh": "库存价值",
     "en": "Stock Value",
