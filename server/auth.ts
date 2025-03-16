@@ -289,87 +289,88 @@ export async function loginUser(req: Request, res: Response) {
       });
     }
     
-    // 不使用Express会话重生成，直接设置自定义会话ID
-    // 清理之前的会话数据
-    req.session.regenerate(async (err) => {
-      if (err) {
-        console.error('[认证系统] 重新生成会话失败:', err);
-        return res.status(500).json({
-          success: false,
-          message: '会话创建失败',
-          sessionId: ''
-        });
-      }
-      
-      // 设置详细的会话信息
-      req.session.userId = user.id;
-      req.session.authenticated = true;
-      req.session.userRole = user.role;
-      req.session.lastActivity = Date.now();
-      req.session.sessionCreatedAt = Date.now();
-      
-      // 关联数据库中的会话ID
-      req.session.databaseSessionId = sessionId;
-      
-      // 设置会话安全信息
-      req.session.securityLevel = 'high';
-      req.session.sessionIPAddress = req.ip;
-      req.session.sessionUserAgent = req.get('user-agent') || '';
-      
-      await new Promise((resolve, reject) => {
-        req.session.save((err) => {
-          if (err) {
-            console.error('[认证系统] 保存会话失败:', err);
-            reject(err);
-          }
-          console.log('[认证系统] 会话已保存, ID:', req.sessionID);
-          resolve(true);
-        });
-      });
+    // 使用更统一的会话处理方法
+    // 1. 更新全局持久化存储中的会话ID
+    if (global.sessionStorage && req.ip && typeof req.ip === 'string') {
+      global.sessionStorage[req.ip] = sessionId;
+      console.log(`[认证系统] 已更新全局会话存储，用户IP ${req.ip} -> 会话ID ${sessionId}`);
+    }
 
-      // 设置关键会话cookie
-      const cookieOptions = {
-        maxAge: 30 * 24 * 60 * 60 * 1000,
-        httpOnly: false,  // 允许客户端JavaScript访问
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax' as 'lax'  // 显式类型转换解决TypeScript错误
-      };
-
-      // 设置多个会话cookie确保兼容性
-      // 使用数据库生成的会话ID而不是Express生成的会话ID
-      res.cookie('sessionId', sessionId, cookieOptions);
-      res.cookie('warehouse.sid', sessionId, {...cookieOptions, httpOnly: true});
-      res.cookie('connect.sid', sessionId, {...cookieOptions, httpOnly: true});
-
-      // 设置会话响应头
-      res.setHeader('X-Session-ID', sessionId);
-      res.setHeader('X-Authenticated', 'true');
-      res.setHeader('X-Database-Session-ID', sessionId);
-
-      // 计算社交账号是否需要绑定
-      const needSocialBinding = user.usersource === 'local' && !user.socialid;
-      
-      // 返回完整的用户信息，使用数据库生成的会话ID
-      return res.json({
-        success: true,
-        message: '登录成功',
-        authenticated: true,
-        sessionId: sessionId,
-        needSocialBinding: needSocialBinding,
-        user: {
-          id: user.id,
-          username: user.username,
-          fullname: user.fullname, // 使用全小写字段名
-          role: user.role,
-          avatarurl: user.avatarurl, // 使用全小写字段名
-          usersource: user.usersource // 使用全小写字段名
+    // 2. 直接使用新的会话ID而非regenerate
+    // 这样避免了express-session的重生成可能导致会话ID不一致
+    req.sessionID = sessionId; // 确保请求对象使用新的sessionID
+    console.log(`[认证系统] 已将请求会话ID设置为: ${sessionId}`);
+    
+    // 3. 设置会话详细信息
+    req.session.userId = user.id;
+    req.session.authenticated = true;    // 标准认证标志
+    req.session.isAuthenticated = true;  // 兼容性认证标志
+    req.session.userRole = user.role;
+    req.session.lastActivity = Date.now();
+    req.session.sessionCreatedAt = Date.now();
+    req.session.realAuthenticated = true; // 确认是真实认证而非模拟认证
+    
+    // 4. 设置详细的会话元数据
+    req.session.securityLevel = 'high';
+    req.session.sessionIPAddress = req.ip;
+    req.session.sessionUserAgent = req.get('user-agent') || '';
+    req.session.sessionExpiration = Date.now() + (30 * 24 * 60 * 60 * 1000); // 30天后过期
+    
+    // 5. 保存会话数据
+    console.log('[认证系统] 会话数据已设置，准备保存...');
+    await new Promise<void>((resolve, reject) => {
+      req.session.save((err) => {
+        if (err) {
+          console.error('[认证系统] 保存会话失败:', err);
+          reject(err);
         }
+        console.log('[认证系统] 会话已保存, 使用ID:', sessionId);
+        resolve();
       });
     });
-    
-    // 根据API规范，会话重生成后不会执行这里的代码
-    // 但为了安全起见，如果重生成过程失败，也提供错误处理
-    return;
+
+    // 6. 设置统一的cookie，与会话同步中间件格式一致
+    const cookieOptions = {
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30天
+      httpOnly: false,  // 允许客户端JavaScript访问
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax' as 'lax',
+      path: '/'
+    };
+
+    // 设置cookie的顺序也很重要，确保一致性
+    res.cookie('sessionId', sessionId, cookieOptions);
+    res.cookie('warehouse.sid', sessionId, {...cookieOptions, httpOnly: true});
+    res.cookie('connect.sid', sessionId, {...cookieOptions, httpOnly: true});
+
+    // 7. 设置会话响应头，与会话同步中间件一致
+    res.setHeader('X-Session-ID', sessionId);
+    res.setHeader('X-New-Session-ID', sessionId);
+    res.setHeader('X-Original-Session-ID', sessionId);
+    res.setHeader('X-Session-Authenticated', 'true');
+    res.setHeader('X-Real-Authenticated', 'true');
+    res.setHeader('X-User-ID', user.id.toString());
+    res.setHeader('X-Session-Source', 'server_login');
+
+    // 计算社交账号是否需要绑定
+    const needSocialBinding = user.usersource === 'local' && !user.socialid;
+      
+    // 返回完整的用户信息，使用数据库生成的会话ID
+    return res.json({
+      success: true,
+      message: '登录成功',
+      authenticated: true,
+      sessionId: sessionId,
+      needSocialBinding: needSocialBinding,
+      user: {
+        id: user.id,
+        username: user.username,
+        fullname: user.fullname, // 使用全小写字段名
+        role: user.role,
+        avatarurl: user.avatarurl, // 使用全小写字段名
+        usersource: user.usersource // 使用全小写字段名
+      }
+    });
   } catch (error) {
     console.error('[认证系统] 登录处理出错:', error);
     res.status(500).json({ message: '登录失败，服务器错误' });
