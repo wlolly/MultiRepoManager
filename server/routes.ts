@@ -341,85 +341,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // 认证路由
 
-  // 登录接口 (实现假阳性登录策略) - 简化版本
+  // 登录接口 - 标准版本，无特殊处理
   apiRouter.post("/auth/login", (req, res, next) => {
     console.log(`尝试登录: 用户名=${req.body.username || '未提供'}`);
     console.log(`当前会话ID: ${req.sessionID || '无'}`);
     
-    // 检查是否为测试用户
-    const isTestUser = req.body.username === '222';
-    const isTestUserHeader = req.headers['x-test-user'] === 'true';
-    const isTestMode = req.headers['x-test-mode'] === 'true';
+    // 所有用户统一使用标准认证流程
+    // 确保使用当前活动的存储实现
+    const currentStorage = useFallbackStorage ? memStorage : storage;
+    console.log(`标准认证流程使用${useFallbackStorage ? '内存存储' : '数据库存储'}模式`);
     
-    if (isTestUser || isTestUserHeader || isTestMode) {
-      console.log('检测到测试用户登录请求:', {
-        username: req.body.username,
-        testUserHeader: isTestUserHeader,
-        testMode: isTestMode
-      });
-      
-      // 优先处理测试用户登录
-      // 直接创建测试用户，无需查询数据库
-      const testUser = {
-        id: 222,
-        username: '222',
-        password: 'hashed_password_222', // 仅用于完整对象，不会真正使用
-        role: 'admin', 
-        fullName: '测试管理员',
-        isActive: true,
-        userSource: 'local'
-      };
-      
-      console.log('直接授权测试用户:', testUser.id);
-      
-      // 设置会话状态
-      req.session.userId = testUser.id;
-      req.session.authenticated = true;
-      req.session.realAuthenticated = true; // 标记为真实认证
-      req.session.userRole = 'admin';
-      req.session.lastActivity = Date.now();
-      req.session.testUser = true; // 特殊标记
-      
-      // 保存会话
-      req.session.save(err => {
-        if (err) {
-          console.error('保存测试用户会话出错:', err);
-          return res.status(500).json({
-            message: '登录成功但会话保存失败，请重试',
-            success: false
-          });
-        }
-        
-        // 设置响应头
-        res.setHeader('X-Test-User-Authenticated', 'true');
-        
-        // 返回结果
-        const { password, ...safeUser } = testUser;
-        return res.json({
-          message: '测试用户登录成功',
-          success: true,
-          sessionId: req.sessionID,
-          authenticated: true,
-          realAuthenticated: true,
-          testUser: true,
-          user: {
-            ...safeUser,
-            testUser: true
-          }
-        });
-      });
-    } else {
-      // 不是测试用户，执行标准认证流程
-      proceedWithRegularAuth();
-    }
-    
-    // 标准认证流程函数
-    function proceedWithRegularAuth() {
-      // 确保使用当前活动的存储实现
-      const currentStorage = useFallbackStorage ? memStorage : storage;
-      console.log(`标准认证流程使用${useFallbackStorage ? '内存存储' : '数据库存储'}模式`);
-      
-      passport.authenticate('local', (err, user, info) => {
+    passport.authenticate('local', (err, user, info) => {
         // 处理认证错误
         if (err) {
           console.error('登录认证内部错误:', err);
@@ -441,12 +373,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
         } else {
           console.log(`用户 ${user.username} 认证成功，准备创建会话`);
-          // 检查是否是测试用户
-          const isTestUser = user.username === '222' || user.username === 'testadmin';
-          if (isTestUser) {
-            console.log(`测试用户 ${user.username} 登录，直接标记为真实认证`);
-          }
-          // 标记为实际认证
+          // 所有成功认证的用户都标记为真实认证
           (user as any).realAuthenticated = true;
         }
         
@@ -565,7 +492,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         });
       })(req, res, next);
-    }
   });
 
   // 注册接口

@@ -40,7 +40,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     },
   });
 
-  // 处理表单提交 - 极简版假阳性登录策略
+  // 处理表单提交 - 标准登录策略
   const onSubmit = (values: LoginFormValues) => {
     setIsLoading(true);
     
@@ -51,21 +51,11 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       type: "success"
     });
     
-    // 额外调试信息，特别是测试用户登录
-    if (values.username === '222') {
-      console.log('测试用户登录尝试：', values.username);
-    }
-    
-    // 检查是否为测试用户，添加特殊标记
-    const isTestUser = values.username === '222';
-    
     // 使用fetch进行API请求，确保能正确处理cookie和会话
     fetch('/api/auth/login', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'X-Test-User': isTestUser ? 'true' : 'false',
-        'X-Test-Mode': isTestUser ? 'true' : 'false'
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify(values),
       credentials: 'include' // 确保包含cookie
@@ -82,14 +72,12 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     .then(data => {
       console.log('登录响应数据:', data);
       
-      // 更明确地检查测试用户登录结果
-      if (values.username === '222') {
-        console.log('测试用户登录结果：', {
-          success: data.success,
-          realAuthenticated: data.realAuthenticated,
-          userInfo: data.user
-        });
-      }
+      // 记录登录结果，无需为特定用户做特殊处理
+      console.log('用户登录结果：', {
+        success: data.success,
+        realAuthenticated: data.realAuthenticated,
+        userInfo: data.user
+      });
       
       // 保存用户数据和会话ID（如果有）
       if (data.user) {
