@@ -152,10 +152,8 @@ export function PublicDashboard() {
       <div className="mt-8 p-6 bg-blue-50 rounded-lg">
         <h2 className="text-xl font-bold mb-2">{t("login_to_access_more")}</h2>
         <p className="mb-4">{t("login_to_access_more_description")}</p>
-        <Link href="/login">
-          <a className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded transition-colors">
-            {t("login_button")}
-          </a>
+        <Link href="/login" className="inline-block bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded transition-colors">
+          {t("login_button")}
         </Link>
       </div>
     </div>
