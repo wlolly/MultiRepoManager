@@ -17,7 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/utils";
 
 // 导入自定义组件
@@ -77,6 +77,7 @@ export default function OptimizedWarehouseTransfers() {
   const { t } = useTranslation();
   const [_, navigate] = useLocation();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   
   // 状态管理
   const [searchQuery, setSearchQuery] = useState("");
@@ -233,6 +234,7 @@ export default function OptimizedWarehouseTransfers() {
   // 处理排序
   const handleSort = (column: string) => {
     // 此处可实现排序逻辑
+    // 使用useToast钩子返回的toast函数
     toast({
       title: t("common.not_implemented"),
       description: t("common.feature_coming_soon"),
