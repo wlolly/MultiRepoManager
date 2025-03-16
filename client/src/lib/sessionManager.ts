@@ -112,128 +112,129 @@ function getExpressSessionId(): string | null {
 
 // 从各种可能的存储中获取会话ID
 export function getSessionId(): string {
-  // 1. 如果已经有缓存的会话ID，优先返回（提高性能）
+  // 1. If there's already a cached session ID, return it first (performance optimization)
   if (currentSessionId) {
     return currentSessionId;
   }
 
-  // 2. 从所有可能的存储中检索会话ID
-  // 优先级：sessionStorage > localStorage > cookie
+  // 2. Retrieve session ID from all possible storages
+  // Priority: sessionStorage > localStorage > cookie
   const sessionIdFromSession = sessionStorage.getItem('sessionId');
   const sessionIdFromLocal = localStorage.getItem('sessionId');
   const sessionIdFromCookie = getCookie('sessionId');
-  const expressSessionId = getExpressSessionId(); // 检查express会话cookie
+  const expressSessionId = getExpressSessionId(); // Check express session cookie
   
-  // 输出调试信息，帮助追踪会话ID来源
-  console.log('会话ID来源检查:', {
-    sessionStorage: sessionIdFromSession || '无',
-    localStorage: sessionIdFromLocal || '无',
-    sessionCookie: sessionIdFromCookie || '无',
-    expressCookie: expressSessionId || '无',
+  // Output debug information to help trace session ID source
+  console.log('Session ID source check:', {
+    sessionStorage: sessionIdFromSession || 'none',
+    localStorage: sessionIdFromLocal || 'none',
+    sessionCookie: sessionIdFromCookie || 'none',
+    expressCookie: expressSessionId || 'none',
   });
   
-  // 检查是否以前生成的会话ID被存储在不同位置
+  // Check if previously generated session ID is stored in different locations
   let sessionId: string | null = null;
   
-  // 跟踪找到的所有会话ID，防止使用不一致的ID
+  // Track all found session IDs to prevent using inconsistent IDs
   const foundIds: string[] = [];
   if (sessionIdFromSession) foundIds.push(sessionIdFromSession);
   if (sessionIdFromLocal) foundIds.push(sessionIdFromLocal);
   if (sessionIdFromCookie) foundIds.push(sessionIdFromCookie);
   if (expressSessionId) foundIds.push(expressSessionId);
   
-  // 3. 检查是否有不一致的会话ID
+  // 3. Check if there are inconsistent session IDs
   if (foundIds.length > 0) {
-    // 首先看看是否有express会话ID，那应该优先级最高
+    // First, check if there is an express session ID, which should have the highest priority
     if (expressSessionId) {
-      // Express会话cookie优先，可能是服务器最近创建的
+      // Express session cookie takes priority, may be recently created by the server
       sessionId = expressSessionId;
-      console.log(`优先使用Express会话ID: ${sessionId}`);
+      console.log(`Using Express session ID with priority: ${sessionId}`);
     } 
-    // 其次，如果所有ID都一致，使用那个ID
+    // Next, if all IDs are consistent, use that ID
     else {
       const allSame = foundIds.every(id => id === foundIds[0]);
       
       if (allSame) {
-        // 所有存储位置的ID都一致，直接使用
+        // All storage locations have consistent IDs, use directly
         sessionId = foundIds[0];
-        console.log(`从存储中加载会话ID (一致): ${sessionId}`);
+        console.log(`Loaded session ID from storage (consistent): ${sessionId}`);
       } else {
-      // 存在不一致的会话ID情况
-      console.log(`从存储中找到不一致的会话ID: ${foundIds.join(', ')}`);
-      
-      // 使用存在时间最长的会话ID：sessionStorage仅在当前浏览上下文，
-      // localStorage和cookie更持久，优先使用localStorage
-      sessionId = sessionIdFromLocal || sessionIdFromSession || sessionIdFromCookie;
-      
-      console.log(`选择最优会话ID: ${sessionId}`);
+        // Inconsistent session IDs found
+        console.log(`Found inconsistent session IDs in storage: ${foundIds.join(', ')}`);
+        
+        // Use the longest-lived session ID: sessionStorage is only in the current browsing context,
+        // localStorage and cookie are more persistent, prioritize localStorage
+        sessionId = sessionIdFromLocal || sessionIdFromSession || sessionIdFromCookie;
+        
+        console.log(`Selected optimal session ID: ${sessionId}`);
+      }
     }
   }
   
-  // 4. 如果没有找到会话ID，生成一个新ID并保存起来
+  // 4. If no session ID is found, generate a new one and save it
   if (!sessionId) {
     sessionId = generateSessionId();
-    console.log(`没有找到现有会话ID，生成新ID: ${sessionId}`);
+    console.log(`No existing session ID found, generating new ID: ${sessionId}`);
   }
   
-  // 5. 确保会话ID在所有存储层同步一致
+  // 5. Ensure session ID is synchronized consistently across all storage layers
   saveSessionId(sessionId);
   currentSessionId = sessionId;
   
   return sessionId;
 }
 
-// 保存会话ID到所有可用存储中
+// Save session ID to all available storages
 export function saveSessionId(sessionId: string) {
   if (!sessionId) return;
   
   try {
-    // 比较是否与当前会话ID相同，避免不必要的存储操作
+    // Compare if it's the same as the current session ID, avoid unnecessary storage operations
     if (currentSessionId === sessionId) {
-      console.log(`会话ID未变化，无需更新: ${sessionId}`);
+      console.log(`Session ID unchanged, no update needed: ${sessionId}`);
       return;
     }
     
-    // 查看所有已存储的会话ID, 记录会话ID变化历史
+    // Check all stored session IDs, record session ID change history
     const oldSessionId = currentSessionId;
-    console.log(`会话ID变更: ${oldSessionId || '无'} -> ${sessionId}`);
+    console.log(`Session ID changed: ${oldSessionId || 'none'} -> ${sessionId}`);
     
-    // 更新缓存
+    // Update cache
     currentSessionId = sessionId;
     
-    // 将旧会话ID保存到历史中，以便可能的恢复
+    // Save old session ID to history for possible recovery
     const sessionHistory = JSON.parse(localStorage.getItem('sessionIdHistory') || '[]');
     if (oldSessionId && !sessionHistory.includes(oldSessionId)) {
       sessionHistory.push(oldSessionId);
-      // 最多保留5个历史会话ID
+      // Keep at most 5 historical session IDs
       if (sessionHistory.length > 5) {
         sessionHistory.shift();
       }
       localStorage.setItem('sessionIdHistory', JSON.stringify(sessionHistory));
     }
     
-    // 更新存储
+    // Update storage
     sessionStorage.setItem('sessionId', sessionId);
     localStorage.setItem('sessionId', sessionId);
     
-    // 使用我们的统一Cookie设置函数
+    // Use our unified Cookie setting function
     setCookie('sessionId', sessionId, {
       path: '/',
-      maxAgeDays: 30, // 30天过期
+      maxAgeDays: 30, // Expires in 30 days
       sameSite: 'Lax',
       secure: window.location.protocol === 'https:'
     });
     
-    // 同时设置与服务器匹配的会话cookie名称
-    // 注意：服务器使用connect.sid或warehouse.sid作为cookie名称
+    // Also set cookie names that match the server
+    // Note: Server uses connect.sid or warehouse.sid as cookie name
     setCookie('warehouse.sid', sessionId, {
       path: '/',
-      maxAgeDays: 30, // 30天过期
+      maxAgeDays: 30, // Expires in 30 days
       sameSite: 'Lax',
       secure: window.location.protocol === 'https:'
     });
     
-    // 确保同时设置connect.sid兼容旧版express session
+    // Ensure connect.sid is also set for compatibility with older express sessions
     setCookie('connect.sid', sessionId, {
       path: '/',
       maxAgeDays: 30,
@@ -241,20 +242,20 @@ export function saveSessionId(sessionId: string) {
       secure: window.location.protocol === 'https:'
     });
     
-    // 触发会话ID更新事件，使其他组件可以响应会话变化
+    // Trigger session ID update event, so other components can respond to session changes
     window.dispatchEvent(new CustomEvent('sessionIdChanged', { detail: { sessionId } }));
     
-    // 记录会话状态，方便调试
+    // Record session state for debugging
     const sessionState = {
       current: sessionId,
       previous: oldSessionId || 'none',
       timestamp: new Date().toISOString(),
       authStatus: localStorage.getItem('currentUser') ? 'logged_in' : 'anonymous'
     };
-    console.log('会话状态更新:', sessionState);
+    console.log('Session state updated:', sessionState);
     localStorage.setItem('sessionState', JSON.stringify(sessionState));
   } catch (error) {
-    console.error('保存会话ID时出错:', error);
+    console.error('Error saving session ID:', error);
   }
 }
 
