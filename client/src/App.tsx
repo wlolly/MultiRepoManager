@@ -13,6 +13,7 @@ import TestToast from "./pages/test-toast";
 import { usePermissions } from "./hooks/use-permissions";
 import { useAuthStatus } from "./hooks/use-auth-status";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { AuthProvider } from "./contexts/AuthContext";
 
 // 页面导入
 import Dashboard from "./pages/dashboard";
@@ -457,13 +458,14 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
-        {noLayoutPaths.includes(pathname) ? (
-          <Switch>
-            <Route path="/login">
-              <LoginPage onLoginSuccess={() => updateAuthState(true)} />
-            </Route>
-            <Route path="/login-redirect">
-              <LoginRedirect />
+        <AuthProvider>
+          {noLayoutPaths.includes(pathname) ? (
+            <Switch>
+              <Route path="/login">
+                <LoginPage onLoginSuccess={() => updateAuthState(true)} />
+              </Route>
+              <Route path="/login-redirect">
+                <LoginRedirect />
             </Route>
             <Route path="/register" component={RegisterPage} />
             <Route>
@@ -525,6 +527,7 @@ export default function App() {
           </AppLayout>
         )}
         <Toaster />
+        </AuthProvider>
       </ToastProvider>
     </QueryClientProvider>
   );
