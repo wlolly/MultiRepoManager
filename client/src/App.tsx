@@ -450,7 +450,7 @@ export default function App() {
               <ProtectedRoute path="/warehouses" component={Warehouses} pageName="warehouses" />
               <ProtectedRoute path="/warehouse-products" component={WarehouseProducts} pageName="warehouse_products" />
               <ProtectedRoute path="/warehouse-products/new" component={NewWarehouseProduct} pageName="warehouse_products" />
-              <ProtectedRoute path="/products" component={ProductsPage} pageName="products" requireAuth={true} publicContent={false} />
+              <ProtectedRoute path="/products" component={ProductsPage} pageName="products" requireAuth={false} publicContent={true} />
               <ProtectedRoute path="/products/product-detail/:id" component={ProductDetail} pageName="products" requireAuth={true} publicContent={false} />
               <Route path="/product-search" component={ProductSearch} />
               
