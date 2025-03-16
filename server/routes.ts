@@ -476,10 +476,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               user: {
                 id: user.id,
                 username: user.username,
-                fullName: user.fullName,
+                fullname: user.fullname, // 使用全小写字段名
                 role: user.role,
-                avatarUrl: user.avatarUrl,
-                userSource: user.userSource
+                avatarurl: user.avatarurl, // 使用全小写字段名
+                usersource: user.usersource // 使用全小写字段名
               }
             });
           });
@@ -901,7 +901,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             user: {
               id: user?.id,
               username: user?.username,
-              fullName: user?.fullName,
+              fullname: user?.fullname, // 使用全小写字段名
               email: user?.email,
               role: user?.role
             }
