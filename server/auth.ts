@@ -671,15 +671,22 @@ export async function getCurrentUser(req: Request, res: Response) {
       }
     }
     
-    // 如果没有找到有效的用户信息，返回未认证状态
-    console.log('getCurrentUser: 没有找到有效的用户信息，返回未认证状态');
-    res.setHeader('X-Session-Authenticated', 'false');
+    // 如果没有找到有效的用户信息，应用假阳性登录策略
+    console.log('getCurrentUser: 没有找到有效的用户信息，应用假阳性登录策略');
     
+    // 增加标识假阳性登录策略的响应头
+    res.setHeader('X-Session-Authenticated', 'false');
+    res.setHeader('X-Fake-Positive-Login', 'true');
+    
+    // 返回401，但提供会话信息便于客户端识别假阳性登录
     return res.status(401).json({ 
       message: '未认证',
       sessionId: req.sessionID, // 返回会话ID便于客户端保存
       authenticated: false,
-      requiresBinding: false
+      requiresBinding: false,
+      fakePositive: true, // 标记这是假阳性登录
+      fakeName: req.session.fakeName || '访客用户', // 返回假名称
+      accessLevel: 'limited' // 有限访问权限
     });
   } catch (error) {
     console.error('获取当前用户信息错误:', error);
