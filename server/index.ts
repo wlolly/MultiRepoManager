@@ -9,6 +9,7 @@ import crypto from "crypto";
 import { sessionSyncMiddleware } from './middleware/session-sync';
 import passport from 'passport';
 import { configurePassport } from './passport-local';
+import { sql } from 'drizzle-orm';
 
 const MemoryStore = createMemoryStore(session);
 const app = express();
@@ -328,18 +329,17 @@ import { initializeUserIDTable } from './database/userID';
   let dbConnectionStatus = false;
   try {
     log('尝试数据库测试连接...', 'mysql');
-    const testConn = await db.execute('SELECT 1 AS test');
     
-    // 安全地访问可能的嵌套结构
+    // 使用正确的SQL查询方式 - 使用sql模板字符串
+    // 这个sql对象是从最上面导入的，不需要使用require
+    const testConn = await db.execute(sql`SELECT 1 AS test`);
+    
+    console.log('数据库测试响应:', JSON.stringify(testConn));
+    
+    // 安全地访问可能的嵌套结构 - 适配drizzle返回结果格式
     const hasValidResponse = testConn && 
       Array.isArray(testConn) && 
-      testConn.length > 0 && 
-      Array.isArray(testConn[0]) && 
-      testConn[0].length > 0 && 
-      typeof testConn[0][0] === 'object' && 
-      testConn[0][0] !== null && 
-      'test' in testConn[0][0] && 
-      testConn[0][0].test === 1;
+      testConn.length > 0;
       
     if (hasValidResponse) {
       log('数据库连接测试成功', 'mysql');

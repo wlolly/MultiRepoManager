@@ -66,8 +66,9 @@ export function errorHandler(err: Error, req: Request, res: Response, next: Next
 
 // 配置会话管理
 export function configureSession(app: any) {
-  // 检查环境变量是否存在DATABASE_URL
-  const usePostgresSession = process.env.DATABASE_URL && process.env.DATABASE_URL.length > 0;
+  // 检查环境变量是否存在DATABASE_URL，强制使用PostgreSQL会话存储
+  // 即使没有URL也尝试使用，这样服务将在启动时报错而不是静默降级到内存存储
+  const usePostgresSession = true;
   
   let sessionOptions: any = {
     name: 'warehouse.sid',
