@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,6 +6,8 @@ import { LanguageDistribution } from "@/components/dashboard/language-distributi
 import { RecentActivity } from "@/components/dashboard/recent-activity";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
+import { useAuthStatus } from "@/hooks/use-auth-status";
+import { PublicDashboard } from "./public-dashboard";
 
 // Team dashboard stats interface
 interface TeamDashboardStats {
@@ -37,35 +39,21 @@ interface AccessibleWarehouse {
 export function TeamDashboard() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("overview");
+  const { realAuthenticated, user } = useAuthStatus();
+  const [shouldTryFetchingData, setShouldTryFetchingData] = useState(false);
   
-  // Fetch team stats with error handling for unauthorized access
-  const { data: teamStats, isLoading: isStatsLoading, error: statsError } = useQuery<TeamDashboardStats>({
-    queryKey: ["/api/stats/team"],
-    retry: false, // 不重试访问被拒绝的API
-  });
-  
-  // Fetch warehouses for warehouse permission display
-  const { data: allWarehouses, isLoading: isWarehousesLoading } = useQuery({
-    queryKey: ["/api/warehouses"],
-  });
-  
-  // Process accessible warehouses based on permissions
-  const accessibleWarehouses: AccessibleWarehouse[] = React.useMemo(() => {
-    if (!teamStats?.warehousePermissions || !allWarehouses) return [];
+  // 监听用户认证状态变化
+  useEffect(() => {
+    console.log("TeamDashboard - 认证状态:", realAuthenticated);
+    console.log("TeamDashboard - 用户:", user);
     
-    return allWarehouses
-      .filter((warehouse: any) => {
-        const permission = teamStats.warehousePermissions[warehouse.id];
-        return permission && permission.canView;
-      })
-      .map((warehouse: any) => ({
-        ...warehouse,
-        isManageable: teamStats.warehousePermissions[warehouse.id]?.canManage || false
-      }));
-  }, [teamStats, allWarehouses]);
+    // 只有在确认用户真实登录的情况下才获取团队数据
+    setShouldTryFetchingData(!!realAuthenticated);
+  }, [realAuthenticated, user]);
   
-  // 处理API访问被拒绝的情况（403错误）
-  if (statsError) {
+  // 如果不应该尝试获取数据，展示提示信息并引导用户登录
+  if (!shouldTryFetchingData) {
+    console.log("TeamDashboard - 用户未真实登录，显示公共仪表盘");
     return (
       <div className="container mx-auto py-8">
         <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
@@ -88,6 +76,64 @@ export function TeamDashboard() {
           <Link href="/login" className="text-blue-500 hover:underline">
             {t("login_link")}
           </Link>
+        </div>
+        <PublicDashboard />
+      </div>
+    );
+  }
+  
+  // 确认需要获取数据，执行团队数据查询
+  // Fetch team stats with error handling for unauthorized access
+  const { data: teamStats, isLoading: isStatsLoading, error: statsError } = useQuery<TeamDashboardStats>({
+    queryKey: ["/api/stats/team"],
+    retry: false, // 不重试访问被拒绝的API
+    enabled: shouldTryFetchingData, // 只有在应该获取数据时才启用查询
+  });
+  
+  // Fetch warehouses for warehouse permission display
+  const { data: allWarehouses, isLoading: isWarehousesLoading } = useQuery({
+    queryKey: ["/api/warehouses"],
+    enabled: shouldTryFetchingData, // 同样，只有在应该获取数据时才启用查询
+  });
+  
+  // Process accessible warehouses based on permissions
+  const accessibleWarehouses: AccessibleWarehouse[] = React.useMemo(() => {
+    if (!teamStats?.warehousePermissions || !allWarehouses) return [];
+    
+    return allWarehouses
+      .filter((warehouse: any) => {
+        const permission = teamStats.warehousePermissions[warehouse.id];
+        return permission && permission.canView;
+      })
+      .map((warehouse: any) => ({
+        ...warehouse,
+        isManageable: teamStats.warehousePermissions[warehouse.id]?.canManage || false
+      }));
+  }, [teamStats, allWarehouses]);
+  
+  // 处理API访问被拒绝的情况（403错误）
+  if (statsError) {
+    console.error("TeamDashboard - API错误:", statsError);
+    return (
+      <div className="container mx-auto py-8">
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-yellow-700">
+                {t("team_stats_access_denied")}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white shadow rounded-lg p-6">
+          <h2 className="text-xl font-bold mb-4">{t("api_error_title")}</h2>
+          <p className="mb-4">{t("api_error_description")}</p>
+          <PublicDashboard />
         </div>
       </div>
     );
