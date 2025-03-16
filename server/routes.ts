@@ -390,6 +390,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const hasSocialBound = user.socialId && user.socialId !== '';
       const needSocialBinding = user.userSource === 'local' && !hasSocialBound;
       
+      // 防止会话ID被修改
+      const originalSessionID = req.sessionID;
+      
       // 更新会话数据
       req.session.userId = user.id;
       req.session.socialBound = hasSocialBound;
@@ -400,8 +403,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 假阳性登录策略：添加实际认证状态到会话中
       req.session.realAuthenticated = (user as any).realAuthenticated || false;
       
+      // 保存原始会话ID到会话数据中，确保不被修改
+      req.session.originalSessionID = originalSessionID;
+      
       // 调试输出会话内容
-      console.log(`更新会话数据: userId=${req.session.userId}, socialBound=${req.session.socialBound}, role=${req.session.userRole}, authenticated=${req.session.authenticated}`);
+      console.log(`更新会话数据: userId=${req.session.userId}, role=${req.session.userRole}, 会话ID=${originalSessionID}`);
       
       // 创建内部用户ID (有效期为两天)
       createInternalUserID(user.id).then(internalId => {
@@ -410,8 +416,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // 在会话中记录内部用户ID
           req.session.internalUserId = internalId;
           
-          // 保存会话
-          req.session.save();
+          // 再次验证会话ID一致性
+          if (req.sessionID !== originalSessionID) {
+            console.warn(`警告：会话ID已被修改 - 原始ID=${originalSessionID}, 当前ID=${req.sessionID}`);
+            // 强制还原会话ID
+            (req as any).sessionID = originalSessionID;
+          }
+          
+          // 保存会话（使用回调方式确保完成）
+          req.session.save((err) => {
+            if (err) {
+              console.error('保存会话(带内部ID)时出错:', err);
+            } else {
+              console.log(`内部用户ID已保存到会话中，会话ID=${req.sessionID}`);
+            }
+          });
         } else {
           console.warn(`无法为用户 ${user.username} 创建内部ID，将使用常规会话认证`);
         }
@@ -457,9 +476,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
           }
 
-          // 设置会话cookie
-          res.cookie('sessionId', req.sessionID, {
+          // 设置多个会话cookie，确保客户端可以通过多种方式获取会话ID
+          // 主会话cookie (express-session使用)
+          res.cookie('warehouse.sid', req.sessionID, {
             httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: 30 * 24 * 60 * 60 * 1000, // 30天
+            path: '/'
+          });
+          
+          // 客户端可读会话cookie (供前端JavaScript使用)
+          res.cookie('sessionId', req.sessionID, {
+            httpOnly: false,
             secure: process.env.NODE_ENV === 'production',
             maxAge: 30 * 24 * 60 * 60 * 1000, // 30天
             path: '/'
