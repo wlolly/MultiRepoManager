@@ -10,20 +10,24 @@ interface NavItem {
   icon: string;
   keyName: string;
   href: string;
+  public?: boolean;
 }
 
+// 只有仪表盘是公共页面
+const publicPages = ['dashboard']; 
+
 const navItems: NavItem[] = [
-  { icon: "ri-dashboard-line", keyName: "dashboard", href: "/" },
-  { icon: "ri-building-2-line", keyName: "warehouses", href: "/warehouses" },
-  { icon: "ri-shopping-bag-line", keyName: "my_products", href: "/products" },
-  { icon: "ri-store-line", keyName: "warehouse_products", href: "/warehouse-products" },
+  { icon: "ri-dashboard-line", keyName: "dashboard", href: "/", public: true },
+  { icon: "ri-building-2-line", keyName: "warehouses", href: "/warehouses", public: false },
+  { icon: "ri-shopping-bag-line", keyName: "my_products", href: "/products", public: false },
+  { icon: "ri-store-line", keyName: "warehouse_products", href: "/warehouse-products", public: false },
   // 订单管理相关导航
-  { icon: "ri-arrow-down-circle-line", keyName: "inbound_orders", href: "/inbound-orders" },
-  { icon: "ri-arrow-up-circle-line", keyName: "outbound_orders", href: "/outbound-orders" },
-  { icon: "ri-exchange-fill", keyName: "warehouse_transfers", href: "/warehouse-transfers" },
-  { icon: "ri-cloud-line", keyName: "api_configurations", href: "/api-configurations" },
-  { icon: "ri-group-line", keyName: "users_teams", href: "/users" },
-  { icon: "ri-settings-line", keyName: "settings", href: "/settings" },
+  { icon: "ri-arrow-down-circle-line", keyName: "inbound_orders", href: "/inbound-orders", public: false },
+  { icon: "ri-arrow-up-circle-line", keyName: "outbound_orders", href: "/outbound-orders", public: false },
+  { icon: "ri-exchange-fill", keyName: "warehouse_transfers", href: "/warehouse-transfers", public: false },
+  { icon: "ri-cloud-line", keyName: "api_configurations", href: "/api-configurations", public: false },
+  { icon: "ri-group-line", keyName: "users_teams", href: "/users", public: false },
+  { icon: "ri-settings-line", keyName: "settings", href: "/settings", public: false },
 ];
 
 export function Sidebar() {
@@ -139,15 +143,12 @@ export function Sidebar() {
         <div className="px-4 py-2 text-gray-400 text-sm font-medium">{t('navigation')}</div>
         {navItems
           // 过滤导航项：
-          // 1. 仪表盘（"/"）总是显示
-          // 2. 对于访客不显示"我的商品"（"/products"）
-          // 3. 其他页面只有真实用户才能访问
+          // 1. 公共页面总是显示
+          // 2. 非公共页面只有真实用户才能访问
           .filter(item => {
-            // 仪表盘总是显示
-            if (item.href === "/") return true;
-            // "我的商品"页面只对真实用户显示
-            if (item.href === "/products") return isRealUser;
-            // 其他页面只对真实用户显示
+            // 公共页面总是显示
+            if (item.public) return true;
+            // 非公共页面只对真实用户显示
             return isRealUser;
           })
           .map((item) => (
