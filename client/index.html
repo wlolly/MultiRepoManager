@@ -52,27 +52,67 @@
       // 显示当前时间
       document.getElementById('startup-time').textContent = new Date().toLocaleString();
       
+      // 强制显示加载指示器至少5秒钟
+      const loadStartTime = Date.now();
+      const LOADING_MIN_TIME = 5000; // 至少显示5秒加载指示器
+      const loadingStatus = document.getElementById('loading-status');
+      const loadingIndicator = document.getElementById('loading-indicator');
+      
+      // 显示数据库连接进度指示
+      let progress = 0;
+      const updateProgress = () => {
+        progress++;
+        if (loadingStatus) {
+          if (progress <= 5) {
+            loadingStatus.textContent = `正在连接数据库 (${progress}秒)...`;
+          } else {
+            loadingStatus.textContent = `数据库连接可能需要更长时间 (${progress}秒)...`;
+            loadingStatus.style.color = '#ff9900';
+          }
+        }
+      };
+      
+      // 每秒更新一次进度
+      const progressInterval = setInterval(updateProgress, 1000);
+      
+      // 隐藏加载指示器的函数
+      window.hideLoadingIndicator = function() {
+        // 计算已经显示的时间
+        const elapsedTime = Date.now() - loadStartTime;
+        const remainingTime = Math.max(0, LOADING_MIN_TIME - elapsedTime);
+        
+        // 如果已显示不足5秒，则等待到5秒后再隐藏
+        setTimeout(function() {
+          clearInterval(progressInterval);
+          if (loadingIndicator) {
+            loadingIndicator.style.display = 'none';
+          }
+          console.log('加载指示器已隐藏，总显示时间:', (Date.now() - loadStartTime) / 1000, '秒');
+        }, remainingTime);
+      };
+      
       // 5秒后检查React应用是否已加载
       setTimeout(function() {
-        const loadingIndicator = document.getElementById('loading-indicator');
         const rootElement = document.getElementById('root');
         
         if (rootElement && rootElement.children.length === 0) {
-          loadingIndicator.innerHTML = `
-            <h2>应用加载遇到问题</h2>
-            <p>您可以尝试刷新页面或检查控制台错误</p>
-            <div style="margin-top: 20px; text-align: left; max-width: 600px;">
-              <h3>调试信息：</h3>
-              <ul>
-                <li>当前URL：${window.location.href}</li>
-                <li>当前时间：${new Date().toLocaleString()}</li>
-                <li>浏览器：${navigator.userAgent}</li>
-              </ul>
-              <p>如果问题持续，请联系管理员</p>
-            </div>
-          `;
+          if (loadingIndicator) {
+            loadingIndicator.innerHTML = `
+              <h2>应用加载遇到问题</h2>
+              <p>您可以尝试刷新页面或检查控制台错误</p>
+              <div style="margin-top: 20px; text-align: left; max-width: 600px;">
+                <h3>调试信息：</h3>
+                <ul>
+                  <li>当前URL：${window.location.href}</li>
+                  <li>当前时间：${new Date().toLocaleString()}</li>
+                  <li>浏览器：${navigator.userAgent}</li>
+                </ul>
+                <p>如果问题持续，请联系管理员</p>
+              </div>
+            `;
+          }
         }
-      }, 5000);
+      }, 10000); // 增加到10秒
     </script>
     
     <!-- React应用入口点 -->
