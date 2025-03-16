@@ -34,61 +34,89 @@ app.use(session({
   },
   genid: function(req) {
     // 检查所有可能的会话ID来源，按优先级排序
-    const possibleSources: Array<{name: string, value: string | null}> = [];
+    const possibleSources: Array<{name: string, value: string | null, priority: number}> = [];
     
-    // 1. 优先从各种请求头中获取，支持多种可能的头名称
+    // 1. 从请求Cookie中获取会话ID (优先级最高，因为这是express-session默认的传递方式)
+    const getCookieValue = (cookieString: string | undefined, name: string): string | null => {
+      if (!cookieString) return null;
+      
+      const nameEQ = name + "=";
+      const cookies = cookieString.split(';');
+      
+      for (let cookie of cookies) {
+        cookie = cookie.trim();
+        if (cookie.indexOf(nameEQ) === 0) {
+          let value = cookie.substring(nameEQ.length);
+          
+          // 处理签名cookie
+          if (value.startsWith('s%3A')) {
+            value = value.substring(4);
+          }
+          
+          // 如果包含点号(.)，取第一部分(签名前的原始ID)
+          if (value.includes('.')) {
+            value = value.split('.')[0];
+          }
+          
+          return value;
+        }
+      }
+      return null;
+    };
+    
+    // 直接从请求的cookies字符串中解析，避免依赖中间件
+    const cookieHeader = req.headers.cookie;
+    
+    // 检查已知的cookie名称
+    const sessionIdCookie = getCookieValue(cookieHeader, 'sessionId');
+    const connectSidCookie = getCookieValue(cookieHeader, 'connect.sid');
+    const warehouseSidCookie = getCookieValue(cookieHeader, 'warehouse.sid');
+    
+    if (sessionIdCookie && sessionIdCookie.length >= 10) {
+      possibleSources.push({name: 'Cookie(sessionId)', value: sessionIdCookie, priority: 1});
+    }
+    
+    if (warehouseSidCookie && warehouseSidCookie.length >= 10) {
+      possibleSources.push({name: 'Cookie(warehouse.sid)', value: warehouseSidCookie, priority: 2});
+    }
+    
+    if (connectSidCookie && connectSidCookie.length >= 10) {
+      possibleSources.push({name: 'Cookie(connect.sid)', value: connectSidCookie, priority: 3});
+    }
+    
+    // 2. 从各种请求头中获取会话ID (次优先级)
     const headersToCheck = [
       'x-client-session-id', 'x-session-id', 'x-original-session-id',
       'sessionid', 'session-id', 'client-session-id'
     ];
     
-    // 依次检查各个头
     for (const headerName of headersToCheck) {
       const headerValue = req.headers[headerName];
       if (headerValue && typeof headerValue === 'string' && headerValue.length >= 10) {
-        possibleSources.push({name: `请求头(${headerName})`, value: headerValue});
+        possibleSources.push({
+          name: `请求头(${headerName})`, 
+          value: headerValue, 
+          priority: 10 + headersToCheck.indexOf(headerName)
+        });
       }
     }
     
-    // 2. 从查询参数中获取会话ID
+    // 3. 从查询参数中获取会话ID (低优先级)
     if (req.query.sessionId && typeof req.query.sessionId === 'string' && req.query.sessionId.length >= 10) {
-      possibleSources.push({name: '查询参数(sessionId)', value: req.query.sessionId as string});
+      possibleSources.push({name: '查询参数(sessionId)', value: req.query.sessionId as string, priority: 20});
     }
     
     if (req.query.sid && typeof req.query.sid === 'string' && req.query.sid.length >= 10) {
-      possibleSources.push({name: '查询参数(sid)', value: req.query.sid as string});
+      possibleSources.push({name: '查询参数(sid)', value: req.query.sid as string, priority: 21});
     }
     
-    // 3. 从cookie中获取会话ID
-    if (req.cookies) {
-      // 检查所有可能的cookie名称
-      const cookieNames = ['sessionId', 'warehouse.sid', 'connect.sid', 'express.sid'];
-      
-      for (const cookieName of cookieNames) {
-        if (req.cookies[cookieName]) {
-          let cookieId = req.cookies[cookieName];
-          
-          // 处理签名cookie
-          if (cookieId.startsWith('s%3A')) {
-            cookieId = cookieId.substring(4);
-          }
-          
-          // 如果cookie包含点号(.)，取第一部分(签名前的原始ID)
-          if (cookieId.includes('.')) {
-            cookieId = cookieId.split('.')[0];
-          }
-          
-          if (cookieId.length >= 10) {
-            possibleSources.push({name: `Cookie(${cookieName})`, value: cookieId});
-          }
-        }
-      }
-    }
-    
-    // 4. 如果已经有会话ID，也加入考虑
+    // 4. 如果已经有会话ID，也加入考虑 (最低优先级，因为这通常是服务器分配的)
     if (req.sessionID && req.sessionID.length >= 10) {
-      possibleSources.push({name: '现有会话ID', value: req.sessionID});
+      possibleSources.push({name: '现有会话ID', value: req.sessionID, priority: 30});
     }
+    
+    // 按优先级排序
+    possibleSources.sort((a, b) => a.priority - b.priority);
     
     // 记录调试信息
     const isImportantRequest = req.path.includes('/api/auth/') || 
@@ -96,13 +124,10 @@ app.use(session({
                               req.path.includes('/permissions/');
     
     if (possibleSources.length > 0 && isImportantRequest) {
-      console.log(`会话ID来源 (${req.path}):`);
-      possibleSources.forEach(source => {
-        console.log(`- ${source.name}: ${source.value}`);
-      });
+      console.log(`会话ID来源 (${req.path}):`, possibleSources.map(s => `${s.name}: ${s.value}`).join(', '));
     }
     
-    // 遍历所有来源，找到第一个有效的会话ID
+    // 使用优先级最高的有效会话ID
     for (const source of possibleSources) {
       const sessionId = source.value;
       if (sessionId && /^[a-zA-Z0-9\-_]{10,}$/.test(sessionId)) {
@@ -115,6 +140,7 @@ app.use(session({
         if (req.res) {
           req.res.setHeader('X-Session-ID', sessionId);
           req.res.setHeader('X-Original-Session-ID', sessionId);
+          req.res.setHeader('X-Session-Source', source.name);
         }
         
         return sessionId;
@@ -126,7 +152,7 @@ app.use(session({
     
     // 如果是重要请求，记录详细信息
     if (isImportantRequest) {
-      console.log(`为路径 ${req.path} 创建新会话ID: ${newSessionId}，未找到现有会话ID`);
+      console.log(`为路径 ${req.path} 创建新会话ID: ${newSessionId}，未找到有效会话ID`);
     }
     
     // 同步到响应头
