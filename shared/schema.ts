@@ -98,11 +98,11 @@ export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
   phonenumber: true,
   role: true,
-  userSource: true,
+  usersource: true, // 修改为与数据库字段名一致的全小写
   primaryTeamId: true,
   socialId: true,
   socialData: true,
-  isactive: true, // 修改为与数据库字段名一致的全小写
+  isactive: true, // 与数据库字段名一致的全小写
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

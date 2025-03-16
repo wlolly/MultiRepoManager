@@ -102,9 +102,9 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           const guestUser = {
             id: data.user?.id || -1,
             username: data.user?.username || values.username || t('auth.guest_user'),
-            fullName: data.user?.fullName || values.username || t('auth.guest_user'),
+            fullname: data.user?.fullname || values.username || t('auth.guest_user'),
             role: 'anonymous',
-            userSource: 'local',
+            usersource: 'local',
             fakePositive: true,
             realAuthenticated: false,
             accessLevel: 'limited'
@@ -245,9 +245,9 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                     const guestUser = {
                       id: -1,
                       username: t('auth.guest_user'),
-                      fullName: t('auth.guest_user'),
+                      fullname: t('auth.guest_user'),
                       role: 'anonymous',
-                      userSource: 'local',
+                      usersource: 'local',
                       fakePositive: true,
                       realAuthenticated: false,
                       accessLevel: 'limited'
