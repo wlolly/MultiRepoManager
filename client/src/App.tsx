@@ -40,6 +40,7 @@ import Warehouses from "./pages/warehouses";
 import InboundOrders from "./pages/inbound-orders";
 import OutboundOrders from "./pages/outbound-orders";
 import WarehouseTransfers from "./pages/warehouse-transfers/index";
+import OptimizedWarehouseTransfers from "./pages/warehouse-transfers/optimized-index";
 import NewWarehouseTransfer from "./pages/warehouse-transfers/new";
 import WarehouseTransferImport from "./pages/warehouse-transfers/import";
 import OutboundOrder from "./pages/outbound-order/[id]";
@@ -49,6 +50,7 @@ import NewMultiInboundOrder from "./pages/inbound-orders/new-multi";
 import ProductDetail from "./pages/products/product-detail";
 import ProductsPage from "./pages/products/index";
 import ProductSearch from "./pages/product-search";
+import InventoryReportsPage from "./pages/reports/inventory-reports";
 
 // 导航项定义
 const navItems = [
@@ -60,6 +62,9 @@ const navItems = [
   { icon: "ri-arrow-down-circle-line", keyName: "inbound_orders", href: "/inbound-orders" },
   { icon: "ri-arrow-up-circle-line", keyName: "outbound_orders", href: "/outbound-orders" },
   { icon: "ri-exchange-fill", keyName: "warehouse_transfers", href: "/warehouse-transfers" },
+  // 报表相关导航
+  { icon: "ri-file-chart-line", keyName: "inventory_reports", href: "/reports/inventory" },
+  // 系统相关导航
   { icon: "ri-cloud-line", keyName: "api_configurations", href: "/api-configurations" },
   { icon: "ri-group-line", keyName: "users_teams", href: "/users" },
   { icon: "ri-shield-keyhole-line", keyName: "team_permissions", href: "/team-permissions" },
@@ -149,6 +154,8 @@ function Sidebar() {
     '/inbound-orders': 'inbound_orders',
     '/outbound-orders': 'outbound_orders',
     '/warehouse-transfers': 'warehouse_transfers',
+    '/warehouse-transfers/optimized': 'warehouse_transfers',
+    '/reports/inventory': 'reports',
     '/api-configurations': 'api_configurations',
     '/users': 'users_teams',
     '/team-permissions': 'team_permissions',
@@ -167,13 +174,21 @@ function Sidebar() {
       '/inbound-orders',      // 入库单
       '/outbound-orders',     // 出库单
       '/warehouse-transfers', // 仓库调拨
+      '/reports/inventory',   // 库存报表
       '/api-configurations',  // API配置
       '/users',               // 用户和团队
       '/team-permissions',    // 团队权限
       '/settings'             // 设置
     ];
     
-    return authOnlyPages.includes(href);
+    // 检查是否以这些路径开头，支持子路由
+    for (const page of authOnlyPages) {
+      if (href === page || href.startsWith(`${page}/`)) {
+        return true;
+      }
+    }
+    
+    return false;
   };
 
   return (
@@ -511,8 +526,12 @@ export default function App() {
               
               {/* 仓库调拨单页面 */}
               <ProtectedRoute path="/warehouse-transfers" component={WarehouseTransfers} pageName="warehouse_transfers" />
+              <ProtectedRoute path="/warehouse-transfers/optimized" component={OptimizedWarehouseTransfers} pageName="warehouse_transfers" />
               <ProtectedRoute path="/warehouse-transfers/new" component={NewWarehouseTransfer} pageName="warehouse_transfers" />
               <ProtectedRoute path="/warehouse-transfers/import" component={WarehouseTransferImport} pageName="warehouse_transfers" />
+              
+              {/* 库存报表页面 */}
+              <ProtectedRoute path="/reports/inventory" component={InventoryReportsPage} pageName="reports" />
               
               {/* API配置页面 */}
               <ProtectedRoute path="/api-configurations" component={ApiConfigurations} pageName="api_configurations" />

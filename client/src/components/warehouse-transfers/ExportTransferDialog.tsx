@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -36,6 +36,7 @@ export function ExportTransferDialog({
   onSuccess
 }: ExportTransferDialogProps) {
   const { t } = useTranslation();
+  const { toast } = useToast();
   const [isExporting, setIsExporting] = useState(false);
   const [exportFormat, setExportFormat] = useState<"excel" | "pdf" | "1c">("excel");
   const [includeDetails, setIncludeDetails] = useState(true);
