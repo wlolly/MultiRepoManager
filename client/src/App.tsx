@@ -11,6 +11,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useQuery } from "@tanstack/react-query";
 import TestToast from "./pages/test-toast";
 import { usePermissions } from "./hooks/use-permissions";
+import { useAuthStatus } from "./hooks/use-auth-status";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 // 页面导入
@@ -151,6 +152,29 @@ function Sidebar() {
     '/team-permissions': 'team_permissions',
     '/settings': 'settings'
   };
+  
+  // 获取用户认证状态
+  const { isAuthenticated, realAuthenticated } = useAuthStatus();
+
+  // 判断哪些菜单项需要真实登录
+  const requiresAuth = (href: string): boolean => {
+    // 首页和仪表盘总是可以访问
+    if (href === '/') return false;
+    
+    // 指定哪些页面只有真实登录用户才能看到
+    const authOnlyPages = [
+      '/warehouse-products',  // 我的商品
+      '/inbound-orders',      // 入库单
+      '/outbound-orders',     // 出库单
+      '/warehouse-transfers', // 仓库调拨
+      '/api-configurations',  // API配置
+      '/users',               // 用户和团队
+      '/team-permissions',    // 团队权限
+      '/settings'             // 设置
+    ];
+    
+    return authOnlyPages.includes(href);
+  };
 
   return (
     <div className="h-full bg-gray-900 text-white w-full md:w-64 overflow-y-auto">
@@ -160,7 +184,7 @@ function Sidebar() {
       </div>
       
       <div className="p-4">
-        {hasPagePermission('products') && (
+        {hasPagePermission('products') && realAuthenticated && (
           <Link to="/products/new" className="bg-blue-600 hover:bg-blue-700 w-full py-2 px-4 rounded-md flex items-center justify-center transition">
             <i className="ri-add-line mr-2"></i> {t('new_product')}
           </Link>
@@ -180,8 +204,13 @@ function Sidebar() {
           // 根据权限渲染菜单项
           navItems.map((item) => {
             const pageName = pagePermissionMap[item.href];
-            // 如果没有找到对应的页面权限标识，或者用户有该页面的权限，则显示菜单项
-            if (!pageName || hasPagePermission(pageName)) {
+            const needsAuth = requiresAuth(item.href);
+            
+            // 三种情况下显示菜单项：
+            // 1. 不需要认证的页面
+            // 2. 需要认证的页面，且用户已真实认证
+            // 3. 用户有该页面权限
+            if ((!needsAuth || realAuthenticated) && (!pageName || hasPagePermission(pageName))) {
               return (
                 <Link key={item.href} to={item.href} className={cn(
                   "flex items-center py-2 px-4 transition whitespace-nowrap overflow-hidden",
