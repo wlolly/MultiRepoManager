@@ -9,10 +9,14 @@ interface LanguageDistribution {
   percentage: number;
 }
 
-export function LanguageDistribution() {
+interface LanguageDistributionProps {
+  teamFiltered?: boolean;
+}
+
+export function LanguageDistribution({ teamFiltered = false }: LanguageDistributionProps) {
   const { t } = useTranslation();
   const { data: distribution, isLoading } = useQuery<LanguageDistribution[]>({
-    queryKey: ["/api/stats/language-distribution"],
+    queryKey: [teamFiltered ? "/api/stats/language-distribution/team" : "/api/stats/language-distribution"],
   });
 
   if (isLoading) {

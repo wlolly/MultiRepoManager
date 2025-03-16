@@ -20,10 +20,14 @@ interface Activity {
   };
 }
 
-export function RecentActivity() {
+interface RecentActivityProps {
+  teamFiltered?: boolean;
+}
+
+export function RecentActivity({ teamFiltered = false }: RecentActivityProps) {
   const { t } = useTranslation();
   const { data: activities, isLoading } = useQuery<Activity[]>({
-    queryKey: ["/api/activities?limit=4"],
+    queryKey: [teamFiltered ? "/api/activities/team?limit=4" : "/api/activities?limit=4"],
   });
 
   if (isLoading) {
