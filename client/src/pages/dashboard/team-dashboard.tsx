@@ -51,6 +51,35 @@ export function TeamDashboard() {
     setShouldTryFetchingData(!!realAuthenticated);
   }, [realAuthenticated, user]);
   
+  // 确认需要获取数据，执行团队数据查询
+  // Fetch team stats with error handling for unauthorized access
+  const { data: teamStats, isLoading: isStatsLoading, error: statsError } = useQuery<TeamDashboardStats>({
+    queryKey: ["/api/stats/team"],
+    retry: false, // 不重试访问被拒绝的API
+    enabled: shouldTryFetchingData, // 只有在应该获取数据时才启用查询
+  });
+  
+  // Fetch warehouses for warehouse permission display
+  const { data: allWarehouses, isLoading: isWarehousesLoading } = useQuery({
+    queryKey: ["/api/warehouses"],
+    enabled: shouldTryFetchingData, // 同样，只有在应该获取数据时才启用查询
+  });
+  
+  // Process accessible warehouses based on permissions
+  const accessibleWarehouses: AccessibleWarehouse[] = React.useMemo(() => {
+    if (!teamStats?.warehousePermissions || !allWarehouses) return [];
+    
+    return allWarehouses
+      .filter((warehouse: any) => {
+        const permission = teamStats.warehousePermissions[warehouse.id];
+        return permission && permission.canView;
+      })
+      .map((warehouse: any) => ({
+        ...warehouse,
+        isManageable: teamStats.warehousePermissions[warehouse.id]?.canManage || false
+      }));
+  }, [teamStats, allWarehouses]);
+  
   // 如果不应该尝试获取数据，展示提示信息并引导用户登录
   if (!shouldTryFetchingData) {
     console.log("TeamDashboard - 用户未真实登录，显示公共仪表盘");
@@ -81,35 +110,6 @@ export function TeamDashboard() {
       </div>
     );
   }
-  
-  // 确认需要获取数据，执行团队数据查询
-  // Fetch team stats with error handling for unauthorized access
-  const { data: teamStats, isLoading: isStatsLoading, error: statsError } = useQuery<TeamDashboardStats>({
-    queryKey: ["/api/stats/team"],
-    retry: false, // 不重试访问被拒绝的API
-    enabled: shouldTryFetchingData, // 只有在应该获取数据时才启用查询
-  });
-  
-  // Fetch warehouses for warehouse permission display
-  const { data: allWarehouses, isLoading: isWarehousesLoading } = useQuery({
-    queryKey: ["/api/warehouses"],
-    enabled: shouldTryFetchingData, // 同样，只有在应该获取数据时才启用查询
-  });
-  
-  // Process accessible warehouses based on permissions
-  const accessibleWarehouses: AccessibleWarehouse[] = React.useMemo(() => {
-    if (!teamStats?.warehousePermissions || !allWarehouses) return [];
-    
-    return allWarehouses
-      .filter((warehouse: any) => {
-        const permission = teamStats.warehousePermissions[warehouse.id];
-        return permission && permission.canView;
-      })
-      .map((warehouse: any) => ({
-        ...warehouse,
-        isManageable: teamStats.warehousePermissions[warehouse.id]?.canManage || false
-      }));
-  }, [teamStats, allWarehouses]);
   
   // 处理API访问被拒绝的情况（403错误）
   if (statsError) {
