@@ -95,9 +95,10 @@ export function TeamDashboard() {
   // 数据获取逻辑已经修改，我们直接尝试获取数据
   // 不再需要这部分条件判断
   
-  // 用户权限验证失败或者非认证用户尝试访问时，显示错误并回退到公共仪表盘
-  if (!realAuthenticated || !shouldTryFetchingData || statsError) {
-    console.error("TeamDashboard - 访问错误:", statsError || "用户没有权限访问团队仪表盘");
+  // 不要在这里执行权限验证，让Dashboard组件完成这个判断
+  // 只在有API错误时才显示错误信息
+  if (statsError) {
+    console.error("TeamDashboard - API错误:", statsError);
     return (
       <div className="container mx-auto py-8">
         <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
