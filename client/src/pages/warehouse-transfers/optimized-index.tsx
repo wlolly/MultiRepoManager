@@ -228,7 +228,7 @@ export default function OptimizedWarehouseTransfers() {
   
   // 获取状态文本
   const getStatusText = (status: string) => {
-    return t(`warehouseTransfer.status.${status}`);
+    return t(`warehouseTransfer.status_${status}`);
   };
   
   // 处理排序
@@ -408,10 +408,10 @@ export default function OptimizedWarehouseTransfers() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t("warehouseTransfer.all_statuses")}</SelectItem>
-              <SelectItem value="pending">{t("warehouseTransfer.status.pending")}</SelectItem>
-              <SelectItem value="processing">{t("warehouseTransfer.status.processing")}</SelectItem>
-              <SelectItem value="completed">{t("warehouseTransfer.status.completed")}</SelectItem>
-              <SelectItem value="cancelled">{t("warehouseTransfer.status.cancelled")}</SelectItem>
+              <SelectItem value="pending">{t("warehouseTransfer.status_pending")}</SelectItem>
+              <SelectItem value="processing">{t("warehouseTransfer.status_processing")}</SelectItem>
+              <SelectItem value="completed">{t("warehouseTransfer.status_completed")}</SelectItem>
+              <SelectItem value="cancelled">{t("warehouseTransfer.status_cancelled")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
