@@ -25,9 +25,8 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 // 根据环境变量决定是否使用内存存储
-// 默认不使用回退存储，即使数据库连接失败也会继续尝试连接
-// 默认启用内存存储，当数据库成功连接后再关闭
-export let useFallbackStorage = true; 
+// 禁用内存存储，强制使用数据库连接
+export let useFallbackStorage = false; 
 
 // 检查数据库URL是否设置，但不抛出错误
 if (!dbUrl) {
@@ -182,6 +181,8 @@ try {
       .then(newPool => {
         if (newPool) {
           pool = newPool;
+          // 使用新的连接池更新drizzle实例
+          updateDbInstance(newPool);
           console.log('[数据库] 连接池初始化成功');
         }
       })
@@ -198,6 +199,8 @@ try {
               if (newPool) {
                 pool = newPool;
                 useFallbackStorage = false;
+                // 更新drizzle实例
+                updateDbInstance(newPool);
                 console.log('[数据库] 重新连接成功，切换回数据库存储模式');
                 clearInterval(retryInterval);
               }
@@ -216,60 +219,55 @@ try {
   setupFallbackPool();
 }
 
-// 设置后备内存存储池
+// 设置后备内存存储池 - 现在禁用此功能，强制使用数据库连接
 function setupFallbackPool() {
-  useFallbackStorage = true;
-  console.log('[数据库] 使用内存存储模式运行');
+  // 不再设置useFallbackStorage为true，保持强制使用数据库
+  console.error('[数据库] 错误: 数据库连接失败，系统需要数据库连接才能正常工作');
+  console.error('[数据库] 请检查数据库连接配置和网络连接');
   
-  pool = {
-    execute: () => Promise.resolve([[], []]),
-    query: () => Promise.resolve([[], []]),
-    getConnection: () => Promise.resolve({
-      execute: () => Promise.resolve([[], []]),
-      query: () => Promise.resolve([[], []]),
-      release: () => {}
-    }),
-    on: () => {} // 添加on方法以匹配Pool接口
-  } as any;
-  
-  // 初始化内存存储的测试数据
-  memStorage.initializeDemoData();
+  // 不再提供模拟池对象
+  throw new Error('数据库连接失败，无法启动应用程序');
 }
 
-// 给数据库连接更长的等待时间，2分钟后仍未初始化pool，才设置后备池
-// 这样可以在数据库暂时不可用时，仍然坚持等待更长时间而不是快速切换到内存存储
+// 给数据库连接更长的等待时间，2分钟后仍未初始化pool，就报错退出
+// 这样可以在数据库暂时不可用时，仍然坚持等待更长时间
 setTimeout(() => {
   if (!pool) {
-    console.log('[数据库] 连接池初始化超时 (2分钟)，但仍将继续尝试连接数据库');
-    console.log('[数据库] 同时临时使用内存存储以保证系统功能');
-    setupFallbackPool();
+    console.error('[数据库] 连接池初始化超时 (2分钟)，应用程序需要数据库连接才能工作');
+    console.error('[数据库] 请检查数据库连接配置和网络连接');
     
-    // 继续尝试连接数据库，成功后会自动切换回数据库存储
-    createPoolWithRetry(0, 10) // 增加到10次重试
-      .then(newPool => {
-        if (newPool) {
-          pool = newPool;
-          useFallbackStorage = false; // 成功连接后，关闭回退存储
-          console.log('[数据库] 已成功建立连接池，切换为数据库存储');
-        }
-      })
-      .catch(err => {
-        console.error('[数据库] 创建连接池失败，将继续使用内存存储:', err);
-      });
+    // 不再提供内存存储，直接抛出错误
+    throw new Error('数据库连接失败，无法启动应用程序');
   }
 }, 120000); // 两分钟
 
-// 确保pool总是有定义值
-pool = pool || {
-  execute: () => Promise.resolve([[], []]),
-  query: () => Promise.resolve([[], []]),
-  getConnection: () => Promise.resolve({
-    execute: () => Promise.resolve([[], []]),
-    query: () => Promise.resolve([[], []]),
-    release: () => {}
-  }),
+// 创建初始空连接池
+// 我们会在连接成功后更新这个对象
+const initialPool = {
+  execute: async () => { 
+    throw new Error('数据库尚未连接，请等待连接完成或检查数据库配置'); 
+  },
+  query: async () => { 
+    throw new Error('数据库尚未连接，请等待连接完成或检查数据库配置'); 
+  },
+  getConnection: async () => { 
+    throw new Error('数据库尚未连接，请等待连接完成或检查数据库配置'); 
+  },
   on: () => {}
-} as any;
+};
 
-// 导出数据库实例
-export const db = drizzle(pool);
+// 使用初始连接池创建drizzle实例
+let poolInstance = initialPool;
+export const db = drizzle(poolInstance as any);
+
+// 导出获取连接池状态的函数
+export function isDatabaseConnected(): boolean {
+  return poolInstance !== initialPool;
+}
+
+// 在连接池建立后更新drizzle实例
+export function updateDbInstance(newPool: any): void {
+  poolInstance = newPool;
+  // 由于drizzle对象内部引用了pool，我们不需要更新db对象
+  console.log('[数据库] Drizzle实例已更新为使用新的连接池');
+}

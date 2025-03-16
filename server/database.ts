@@ -25,13 +25,32 @@ export async function createConnection(retryAttempt = 0, maxRetries = 5) {
       return null;
     }
     
-    // 解析连接URL
-    const urlObj = new URL(dbUrl);
-    const host = urlObj.hostname;
-    const port = parseInt(urlObj.port || '3306');
-    const user = urlObj.username;
-    const password = decodeURIComponent(urlObj.password);
-    const database = urlObj.pathname.substring(1); // 移除开头的'/'
+    let host, port, user, password, database;
+    
+    try {
+      // 正则解析连接URL，更可靠地处理特殊字符
+      const mysqlRegex = /mysql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)/;
+      const match = dbUrl.match(mysqlRegex);
+      
+      if (match) {
+        user = match[1];
+        password = match[2]; // 不需要再次解码
+        host = match[3];
+        port = parseInt(match[4] || '3306');
+        database = match[5];
+      } else {
+        // 备用解析方法
+        const urlObj = new URL(dbUrl);
+        host = urlObj.hostname;
+        port = parseInt(urlObj.port || '3306');
+        user = urlObj.username;
+        password = urlObj.password; // 尝试直接使用
+        database = urlObj.pathname.substring(1); // 移除开头的'/'
+      }
+    } catch (error) {
+      log(`解析数据库URL失败: ${error}`, 'mysql-error');
+      return null;
+    }
     
     log(`连接到数据库 ${host}:${port}/${database} (尝试 ${retryAttempt + 1}/${maxRetries + 1})`, 'mysql');
     
