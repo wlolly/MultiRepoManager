@@ -348,26 +348,26 @@ export default function ProductsPage() {
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatsCard 
-          title={i18n.language === 'zh' ? "总产品数" : t('total_products')} 
+          title={t('total_products')} 
           value={isLoadingStats ? "..." : stats?.totalProducts || filteredProducts.length} 
           icon="package" 
           color="blue" 
         />
         <StatsCard 
-          title={i18n.language === 'zh' ? "产品类别" : t('product_categories')} 
+          title={t('product_categories')} 
           value={isLoadingStats ? "..." : stats?.totalCategories || categories.length} 
           icon="tags" 
           color="green" 
         />
         <StatsCard 
-          title={i18n.language === 'zh' ? "低库存产品" : t('low_stock_products')} 
+          title={t('low_stock_products')} 
           value={isLoadingStats ? "..." : stats?.lowStockProducts || 
             filteredProducts.filter(p => p.stock < 10).length} 
           icon="alert-triangle" 
           color="yellow" 
         />
         <StatsCard 
-          title={i18n.language === 'zh' ? "库存价值" : t('stock_value')} 
+          title={t('stock_value')} 
           value={isLoadingStats ? "..." : 
             new Intl.NumberFormat('zh-CN', { 
               style: 'currency', 
@@ -384,7 +384,7 @@ export default function ProductsPage() {
           <div className="flex-1 relative">
             <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
             <Input
-              placeholder={i18n.language === 'zh' ? "搜索产品" : t('search_products')}
+              placeholder={t('search_products')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"
@@ -394,10 +394,10 @@ export default function ProductsPage() {
           <div className="flex flex-col md:flex-row gap-4">
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder={i18n.language === 'zh' ? "分类" : t('category')} />
+                <SelectValue placeholder={t('category')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">{i18n.language === 'zh' ? "所有分类" : t('all_categories')}</SelectItem>
+                <SelectItem value="all">{t('all_categories')}</SelectItem>
                 {categories.map(category => (
                   <SelectItem key={category} value={category}>{category}</SelectItem>
                 ))}
@@ -406,10 +406,10 @@ export default function ProductsPage() {
             
             <Select value={warehouseFilter} onValueChange={setWarehouseFilter}>
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder={i18n.language === 'zh' ? "仓库" : t('warehouse')} />
+                <SelectValue placeholder={t('warehouse')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">{i18n.language === 'zh' ? "所有仓库" : t('all_warehouses')}</SelectItem>
+                <SelectItem value="all">{t('all_warehouses')}</SelectItem>
                 {warehouses.map(warehouse => (
                   <SelectItem key={warehouse} value={warehouse}>{warehouse}</SelectItem>
                 ))}
@@ -423,18 +423,18 @@ export default function ProductsPage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>{i18n.language === 'zh' ? "视图选项" : t('view_options')}</DropdownMenuLabel>
+                <DropdownMenuLabel>{t('view_options')}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => setViewMode("grid")}>
                   <div className="flex items-center">
                     {viewMode === "grid" && <span className="mr-2">✓</span>}
-                    {i18n.language === 'zh' ? "网格视图" : t('grid_view')}
+                    {t('grid_view')}
                   </div>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setViewMode("list")}>
                   <div className="flex items-center">
                     {viewMode === "list" && <span className="mr-2">✓</span>}
-                    {i18n.language === 'zh' ? "列表视图" : t('list_view')}
+                    {t('list_view')}
                   </div>
                 </DropdownMenuItem>
               </DropdownMenuContent>
