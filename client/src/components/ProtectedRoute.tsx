@@ -46,11 +46,26 @@ export const ProtectedRoute: FC<ProtectedRouteProps> = ({
     const currentUserStr = localStorage.getItem('currentUser');
     const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
     const isFakePositiveUser = currentUser?.fakePositive === true;
+    const isRealUser = currentUser?.authenticated === true || currentUser?.role === 'admin';
+    
+    console.log(`权限检查 - 路径: ${path}, 当前用户:`, currentUser);
+    console.log(`权限检查 - 是真实用户: ${isRealUser}, 是假阳性用户: ${isFakePositiveUser}`);
+    
+    // 需要真实认证的页面（requireAuth=true，publicContent=false）
+    if (requireAuth && !publicContent) {
+      // 如果不是真实用户，重定向到仪表盘
+      if (!isRealUser) {
+        console.log(`${path}页面需要真实登录，重定向到仪表盘`);
+        navigate('/');
+        permissionResult = false;
+        return;
+      }
+    }
     
     // 如果未认证但又需要认证（除非是特殊路径如首页可以允许非登录状态）
     if (!isAuthenticated && requireAuth) {
       // 检查是否是假阳性登录用户
-      if (isFakePositiveUser) {
+      if (isFakePositiveUser && publicContent) {
         console.log(`${path}页面遇到假阳性登录用户，允许访问公开内容`);
         permissionResult = true;
       } 
