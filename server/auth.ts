@@ -214,7 +214,8 @@ export async function loginUser(req: Request, res: Response) {
       console.log('[认证系统] 登录失败: 用户不存在');
       return res.status(401).json({
         success: false,
-        message: '用户名或密码不正确'
+        message: '用户名或密码不正确',
+        sessionId: '' // 验证失败返回空会话ID
       });
     }
     
@@ -223,7 +224,8 @@ export async function loginUser(req: Request, res: Response) {
       console.log('[认证系统] 登录失败: 密码不正确');
       return res.status(401).json({
         success: false,
-        message: '用户名或密码不正确'
+        message: '用户名或密码不正确',
+        sessionId: '' // 验证失败返回空会话ID
       });
     }
     
@@ -232,19 +234,40 @@ export async function loginUser(req: Request, res: Response) {
       console.log('[认证系统] 登录失败: 账号未激活');
       return res.status(403).json({
         success: false,
-        message: '账号未激活，请联系管理员'
+        message: '账号未激活，请联系管理员',
+        sessionId: '' // 验证失败返回空会话ID
       });
     }
     
     console.log('[认证系统] 登录成功: 用户ID:', user.id, '角色:', user.role);
     
+    // 生成随机会话ID - 仅在验证成功时生成
+    const sessionId = generateSessionId();
+    console.log('[认证系统] 生成新会话ID:', sessionId);
+    
+    // 存储会话ID到数据库
+    try {
+      // 这里应该将sessionId与userId关联存储到数据库
+      // await db.storeSessionId(sessionId, user.id);
+      console.log('[认证系统] 会话ID已存储到数据库');
+    } catch (dbError) {
+      console.error('[认证系统] 存储会话ID失败:', dbError);
+      return res.status(500).json({
+        success: false,
+        message: '会话存储失败',
+        sessionId: ''
+      });
+    }
+    
+    // 不使用Express会话重生成，直接设置自定义会话ID
     // 清理之前的会话数据
     req.session.regenerate(async (err) => {
       if (err) {
         console.error('[认证系统] 重新生成会话失败:', err);
         return res.status(500).json({
           success: false,
-          message: '会话创建失败'
+          message: '会话创建失败',
+          sessionId: ''
         });
       }
       

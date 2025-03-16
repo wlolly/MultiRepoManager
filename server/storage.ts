@@ -26,7 +26,9 @@ import {
   warehouseTransferItems, type WarehouseTransferItem, type InsertWarehouseTransferItem,
   // 唯一码跟踪相关导入
   uniqueCodeTracking, type UniqueCodeTracking, type InsertUniqueCodeTracking,
-  uniqueCodeHistory, type UniqueCodeHistory, type InsertUniqueCodeHistory
+  uniqueCodeHistory, type UniqueCodeHistory, type InsertUniqueCodeHistory,
+  // 会话表相关导入
+  userSessions, type UserSession, type InsertUserSession
 } from "@shared/schema";
 import { processProductCode } from "./utils/product-code-matcher";
 // 去除直接导入db，改为在需要时动态获取
