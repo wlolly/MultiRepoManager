@@ -3577,91 +3577,91 @@
       "kk": "Экспортты растау",
       "uz": "Eksportni tasdiqlash"
     },
-    "public_dashboard_title": {
+    "dashboard.public_dashboard_title": {
       "zh": "公共仪表盘",
       "en": "Public Dashboard",
       "ru": "Публичная панель управления",
       "kk": "Жалпы басқару тақтасы",
       "uz": "Ommaviy boshqaruv paneli"
     },
-    "public_dashboard_description": {
+    "dashboard.public_dashboard_description": {
       "zh": "查看系统中的公共数据和统计信息",
       "en": "View public data and statistics in the system",
       "ru": "Просмотр общедоступных данных и статистики в системе",
       "kk": "Жүйедегі жалпыға қолжетімді деректер мен статистиканы қарау",
       "uz": "Tizimdagi ommaviy ma'lumotlar va statistikani ko'rish"
     },
-    "team_dashboard_title": {
+    "dashboard.team_dashboard_title": {
       "zh": "团队仪表盘",
       "en": "Team Dashboard",
       "ru": "Панель управления команды",
       "kk": "Команда басқару тақтасы",
       "uz": "Jamoa boshqaruv paneli"
     },
-    "team_dashboard_description": {
+    "dashboard.team_dashboard_description": {
       "zh": "查看团队的数据和统计信息",
       "en": "View your team's data and statistics",
       "ru": "Просмотр данных и статистики вашей команды",
       "kk": "Командаңыздың деректері мен статистикасын қарау",
       "uz": "Jamoangizning ma'lumotlari va statistikasini ko'rish"
     },
-    "total_products_description": {
+    "dashboard.total_products_description": {
       "zh": "系统中登记的产品总数",
       "en": "Total number of products registered in the system",
       "ru": "Общее количество товаров, зарегистрированных в системе",
       "kk": "Жүйеде тіркелген өнімдердің жалпы саны",
       "uz": "Tizimda ro'yxatdan o'tgan mahsulotlarning umumiy soni"
     },
-    "total_warehouses": {
+    "dashboard.total_warehouses": {
       "zh": "仓库总数",
       "en": "Total Warehouses",
       "ru": "Всего складов",
       "kk": "Қоймалар саны",
       "uz": "Jami omborlar"
     },
-    "total_warehouses_description": {
+    "dashboard.total_warehouses_description": {
       "zh": "系统中管理的仓库总数",
       "en": "Total number of warehouses managed in the system",
       "ru": "Общее количество складов, управляемых в системе",
       "kk": "Жүйеде басқарылатын қоймалардың жалпы саны",
       "uz": "Tizimda boshqariladigan omborlarning umumiy soni"
     },
-    "categories_count": {
+    "dashboard.categories_count": {
       "zh": "分类数量",
       "en": "Categories Count",
       "ru": "Количество категорий",
       "kk": "Санаттар саны",
       "uz": "Toifalar soni"
     },
-    "categories_description": {
+    "dashboard.categories_description": {
       "zh": "产品分类的总数量",
       "en": "Total number of product categories",
       "ru": "Общее количество категорий товаров",
       "kk": "Өнім санаттарының жалпы саны",
       "uz": "Mahsulot toifalarining umumiy soni"
     },
-    "recent_operations": {
+    "dashboard.recent_operations": {
       "zh": "最近操作",
       "en": "Recent Operations",
       "ru": "Недавние операции",
       "kk": "Соңғы операциялар",
       "uz": "So'nggi operatsiyalar"
     },
-    "recent_operations_description": {
+    "dashboard.recent_operations_description": {
       "zh": "过去30天内的操作数量",
       "en": "Number of operations in the past 30 days",
       "ru": "Количество операций за последние 30 дней",
       "kk": "Соңғы 30 күндегі операциялар саны",
       "uz": "O'tgan 30 kun ichidagi operatsiyalar soni"
     },
-    "login_to_access_more": {
+    "dashboard.login_to_access_more": {
       "zh": "登录以访问更多功能",
       "en": "Login to Access More Features",
       "ru": "Войдите, чтобы получить доступ к дополнительным функциям",
       "kk": "Қосымша функцияларға қол жеткізу үшін жүйеге кіріңіз",
       "uz": "Ko'proq imkoniyatlarga kirish uchun tizimga kiring"
     },
-    "login_to_access_more_description": {
+    "dashboard.login_to_access_more_description": {
       "zh": "登录后可以访问更多仓库管理功能",
       "en": "Access more warehouse management features after logging in",
       "ru": "Получите доступ к дополнительным функциям управления складом после входа в систему",
