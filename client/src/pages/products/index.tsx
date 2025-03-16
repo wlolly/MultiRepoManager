@@ -245,7 +245,7 @@ export default function ProductsPage() {
           <h1 className="text-2xl font-bold text-gray-900">{t('products')}</h1>
           <p className="mt-1 text-gray-500 text-sm">{t('products_page_description')}</p>
         </div>
-        {/* 仅对真实登录用户（非访客）显示操作按钮 */}
+        {/* 仅显示Excel操作按钮，移除新增产品按钮 */}
         {isRealAuthenticated && (
           <div className="flex items-center space-x-3">
             <DropdownMenu>
@@ -293,14 +293,6 @@ export default function ProductsPage() {
               accept=".xlsx"
               onChange={handleExcelImport}
             />
-            
-            <Button
-              onClick={() => setCreateDialogOpen(true)}
-              className="flex items-center"
-            >
-              <PlusIcon className="mr-2 h-4 w-4" />
-              {t('new_product')}
-            </Button>
           </div>
         )}
       </div>

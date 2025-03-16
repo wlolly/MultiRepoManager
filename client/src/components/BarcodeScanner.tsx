@@ -58,9 +58,8 @@ export function BarcodeScanner({
     setScanning(false);
   };
   
-  // 手动处理表单输入
-  const handleManualInput = (e: React.FormEvent) => {
-    e.preventDefault();
+  // 手动处理条码输入
+  const handleManualInput = () => {
     if (barcode) {
       if (onBarcodeScanned) {
         onBarcodeScanned(barcode);
@@ -193,7 +192,7 @@ export function BarcodeScanner({
         </>
       ) : (
         <>
-          <form onSubmit={handleManualInput} className="flex gap-2">
+          <div className="flex gap-2">
             <Input
               type="text"
               value={barcode}
@@ -201,8 +200,8 @@ export function BarcodeScanner({
               placeholder={placeholder || t('enter_barcode')}
               className="flex-1"
             />
-            <Button type="submit">{t('submit')}</Button>
-          </form>
+            <Button onClick={handleManualInput} type="button">{t('submit')}</Button>
+          </div>
           <Button onClick={startScanning} type="button" className="w-full">
             <Scan className="mr-2 h-4 w-4" />
             {t('scan_with_camera')}
