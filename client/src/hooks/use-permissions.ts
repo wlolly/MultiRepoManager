@@ -130,16 +130,24 @@ export function usePermissions(): PermissionsHook {
         setWarehousePermissions({});
       }
       
-      // 设置用户为已认证状态(假阳性登录策略)
       // 检查是否有假阳性登录的用户数据
       const currentUserStr = localStorage.getItem('currentUser');
       const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
       
-      if (currentUser && (currentUser.fakePositive || currentUser.id === -1)) {
-        console.log('从本地存储检测到假阳性登录用户', currentUser);
+      if (currentUser) {
+        // 只有非假阳性登录用户才被视为已登录
+        if (currentUser.fakePositive || currentUser.id === -1) {
+          console.log('从本地存储检测到假阳性登录用户', currentUser);
+          // 假阳性登录用户（访客用户）置为未登录状态
+          setIsAuthenticated(false);
+        } else {
+          // 正常登录用户置为已登录状态
+          setIsAuthenticated(true);
+        }
+      } else {
+        // 没有用户信息视为未登录
+        setIsAuthenticated(false);
       }
-      
-      setIsAuthenticated(true);
       
     } catch (error) {
       console.error('获取权限失败:', error);
