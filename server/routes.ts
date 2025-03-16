@@ -10,6 +10,7 @@ import * as warehouseMatcher from './utils/warehouse-matcher';
 import { createInternalUserID } from './database/userID';
 import { configurePassport } from './passport-local';
 import { createInventoryRoutes } from './routes/inventory-routes';
+import { createTranslationRoutes } from './routes/translation-routes';
 import { 
   insertUserSchema, 
   insertRepositorySchema, 
@@ -5059,8 +5060,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const inventoryRoutes = createInventoryRoutes();
   apiRouter.use('/inventory', inventoryRoutes);
 
-  // 翻译API路由 - 数据库版本
-  apiRouter.get('/translations', async (req, res) => {
+  // 翻译API路由
+  const translationRoutes = createTranslationRoutes(useFallbackStorage ? memStorage : storage);
+  apiRouter.use('/translations', translationRoutes);
+
+  // 下面的直接定义的翻译API路由将被删除，改用上面的路由模块
+  /* 这部分代码已移动到translation-routes.ts
+  *
+  apiRouter.get('/translations-old', async (req, res) => {
     try {
       // 获取请求的语言参数，如果未指定则返回所有语言
       const language = req.query.language as string;
@@ -5097,7 +5104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // 添加翻译
-  apiRouter.post('/translations', async (req, res) => {
+  apiRouter.post('/translations-old', async (req, res) => {
     try {
       // 验证请求数据
       const validatedData = insertTranslationSchema.safeParse(req.body);
@@ -5166,6 +5173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: '批量添加翻译数据失败' });
     }
   });
+  */
 
   // Mount the API router
   app.use("/api", apiRouter);
