@@ -584,6 +584,10 @@ export function attachSessionToRequest(url: string, headers: Record<string, stri
     headers['session-id'] = cleanSessionId;
     headers['client-session-id'] = cleanSessionId;
     
+    // 添加内部用户ID头部，用于简化的ID验证
+    // 这个头部会被服务器的verifySession中间件识别和使用
+    headers['X-Internal-User-ID'] = cleanSessionId;
+    
     // 设置Cookie方式的会话ID，增加一种传递机制
     try {
       setCookie('sessionId', cleanSessionId, {
@@ -670,6 +674,9 @@ export function attachSessionToRequest(url: string, headers: Record<string, stri
     // 使用同样的头设置逻辑 - 简化为核心头，减少混乱
     headers['X-Session-ID'] = newSessionId;
     headers['X-Client-Session-ID'] = newSessionId;
+    
+    // 添加内部用户ID头部，用于简化的ID验证
+    headers['X-Internal-User-ID'] = newSessionId;
     
     // 同时通过URL参数传递
     const separator = url.includes('?') ? '&' : '?';
