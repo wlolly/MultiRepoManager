@@ -46,7 +46,7 @@ export function requirePagePermission(pageName: string) {
     console.log(`[会话调试] 路径: ${req.path}, 会话信息:`, req.session);
     
     // 检查特定页面的公共访问权限 - 这些页面无需登录即可访问
-    const publicPages = ['dashboard', 'products']; // 可以自定义哪些页面允许访客访问
+    const publicPages = ['dashboard']; // 可以自定义哪些页面允许访客访问
     
     if (publicPages.includes(pageName)) {
       console.log(`${pageName} 是公共页面，允许访客访问`);
@@ -382,7 +382,7 @@ export async function getUserPagePermissions(userId: number): Promise<{[key: str
   const permissions: {[key: string]: boolean} = {};
   
   // 定义公共页面 - 访客可以访问的页面
-  const publicPages = ['dashboard', 'products'];
+  const publicPages = ['dashboard'];
   
   // 为公共页面设置权限
   publicPages.forEach(page => {
@@ -455,7 +455,7 @@ export async function getUserPagePermissions(userId: number): Promise<{[key: str
  */
 async function checkTeamPermissions(userId: number, pageName: string, req: Request, res: Response, next: NextFunction) {
   // 公共页面列表
-  const publicPages = ['dashboard', 'products'];
+  const publicPages = ['dashboard'];
   
   try {
     // 获取用户所在的团队
