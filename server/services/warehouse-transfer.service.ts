@@ -1,6 +1,7 @@
 /**
  * 仓库调拨单服务
  * 提供仓库调拨单相关的数据库操作和业务逻辑
+ * 整合库存服务确保调拨过程中的库存同步
  */
 
 import { db } from '../db';
@@ -14,9 +15,14 @@ import {
 } from '../../shared/schema';
 import { IStorage } from '../storage';
 import { and, desc, eq } from 'drizzle-orm';
+import { InventoryService, TransferInventoryOperation } from './inventory.service';
 
 export class WarehouseTransferService {
-  constructor(private storage: IStorage) {}
+  private inventoryService: InventoryService;
+  
+  constructor(private storage: IStorage) {
+    this.inventoryService = new InventoryService(storage);
+  }
   
   /**
    * 生成调拨单编号
@@ -242,6 +248,146 @@ export class WarehouseTransferService {
       .where(eq(warehouseTransfers.id, id));
     
     return this.getWarehouseTransfer(id);
+  }
+  
+  /**
+   * 执行调拨操作 - 处理库存变动
+   * 此方法将统一处理源仓库出库和目标仓库入库操作
+   * 确保调拨过程中的库存同步问题得到解决
+   * @param transferId 调拨单ID
+   * @param userId 操作用户ID
+   * @returns 操作结果
+   */
+  async executeTransfer(transferId: number, userId: number): Promise<{success: boolean, message: string}> {
+    try {
+      // 获取调拨单及其明细
+      const transfer = await this.getWarehouseTransfer(transferId);
+      if (!transfer) {
+        return { success: false, message: `未找到ID为${transferId}的调拨单` };
+      }
+      
+      // 检查调拨单状态
+      if (transfer.status === 'completed') {
+        return { success: false, message: `调拨单${transferId}已完成，不能重复执行` };
+      }
+      
+      if (transfer.status === 'cancelled') {
+        return { success: false, message: `调拨单${transferId}已取消，不能执行调拨操作` };
+      }
+      
+      // 获取调拨单明细
+      const items = await this.getWarehouseTransferItems(transferId);
+      if (items.length === 0) {
+        return { success: false, message: `调拨单${transferId}没有明细项，无法执行调拨操作` };
+      }
+      
+      // 创建调拨库存操作对象
+      const transferOperation: TransferInventoryOperation = {
+        transferId,
+        sourceWarehouseId: transfer.sourceWarehouseId,
+        targetWarehouseId: transfer.targetWarehouseId,
+        userId,
+        items: items.map(item => ({
+          transferItemId: item.id,
+          productId: item.productId,
+          quantity: item.quantity,
+          uniqueCode: item.uniqueCode || undefined
+        }))
+      };
+      
+      // 执行库存调拨操作
+      const result = await this.inventoryService.processTransfer(transferOperation);
+      
+      // 如果成功，更新调拨单和明细状态
+      if (result.success) {
+        // 更新调拨单状态
+        await db.update(warehouseTransfers)
+          .set({ status: 'completed' })
+          .where(eq(warehouseTransfers.id, transferId));
+          
+        // 更新调拨单明细状态
+        for (const item of items) {
+          await db.update(warehouseTransferItems)
+            .set({ status: 'completed' })
+            .where(eq(warehouseTransferItems.id, item.id));
+        }
+        
+        // 如果有关联的入库单，更新其状态
+        if (transfer.inboundOrderId) {
+          await this.storage.updateInboundOrder(transfer.inboundOrderId, {
+            status: 'completed'
+          });
+        }
+        
+        // 如果有关联的出库单，更新其状态
+        if (transfer.outboundOrderId) {
+          await this.storage.updateOutboundOrder(transfer.outboundOrderId, {
+            status: 'completed'
+          });
+        }
+      }
+      
+      return result;
+    } catch (error) {
+      console.error(`执行调拨单${transferId}操作失败:`, error);
+      return {
+        success: false,
+        message: `执行调拨单操作失败: ${error.message}`
+      };
+    }
+  }
+  
+  /**
+   * 取消调拨单
+   * @param transferId 调拨单ID
+   * @param userId 操作用户ID
+   * @returns 操作结果
+   */
+  async cancelTransfer(transferId: number, userId: number): Promise<{success: boolean, message: string}> {
+    try {
+      // 获取调拨单
+      const transfer = await this.getWarehouseTransfer(transferId);
+      if (!transfer) {
+        return { success: false, message: `未找到ID为${transferId}的调拨单` };
+      }
+      
+      // 检查调拨单状态
+      if (transfer.status === 'completed') {
+        return { success: false, message: `调拨单${transferId}已完成，不能取消` };
+      }
+      
+      if (transfer.status === 'cancelled') {
+        return { success: false, message: `调拨单${transferId}已取消，无需重复操作` };
+      }
+      
+      // 更新调拨单状态
+      await db.update(warehouseTransfers)
+        .set({ 
+          status: 'cancelled',
+          cancelledBy: userId,
+          cancelledAt: new Date()
+        })
+        .where(eq(warehouseTransfers.id, transferId));
+        
+      // 更新调拨单明细状态
+      const items = await this.getWarehouseTransferItems(transferId);
+      for (const item of items) {
+        await db.update(warehouseTransferItems)
+          .set({ status: 'cancelled' })
+          .where(eq(warehouseTransferItems.id, item.id));
+      }
+      
+      return {
+        success: true,
+        message: `调拨单${transferId}已成功取消`
+      };
+    } catch (error) {
+      console.error(`取消调拨单${transferId}失败:`, error);
+      return {
+        success: false,
+        message: `取消调拨单失败: ${error.message}`
+      };
+    }
   }
 
   async getWarehouseTransfers(filter?: { sourceWarehouseId?: number, targetWarehouseId?: number, status?: string }): Promise<WarehouseTransfer[]> {
