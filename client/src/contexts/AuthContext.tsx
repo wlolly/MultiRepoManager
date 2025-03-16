@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -12,11 +13,19 @@ export interface User {
   permissions?: {
     pages: string[];
     actions: string[];
-    warehouses: Record<number, { canView: boolean, canManage: boolean }>;
+    warehouses: Record<number, { canView: boolean; canManage: boolean }>;
   };
 }
 
-// 权限上下文类型
+// 认证状态
+interface AuthState {
+  user: User | null;
+  isLoading: boolean;
+  pagePermissions: Record<string, boolean>;
+  warehousePermissions: Record<number, { canView: boolean; canManage: boolean }>;
+}
+
+// 上下文类型
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
@@ -26,82 +35,52 @@ interface AuthContextType {
   isVisitor: boolean;
   pagePermissions: Record<string, boolean>;
   warehousePermissions: Record<number, { canView: boolean; canManage: boolean }>;
+  login: (username: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
   hasPagePermission: (pageName: string) => boolean;
   canViewWarehouse: (warehouseId: number) => boolean;
   canManageWarehouse: (warehouseId: number) => boolean;
-  refreshPermissions: () => Promise<void>;
-  logout: () => Promise<void>;
-  login?: (username: string, password: string) => Promise<void>;
-  checkAuth?: () => Promise<void>;
 }
 
 // 创建上下文
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | null>(null);
 
-// 权限提供者组件
+// 认证提供者组件
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [pagePermissions, setPagePermissions] = useState<Record<string, boolean>>({});
-  const [warehousePermissions, setWarehousePermissions] = useState<Record<number, { canView: boolean; canManage: boolean }>>({});
-  const [isLoading, setIsLoading] = useState(true);
   const { addToast } = useToast();
-
-  // 计算派生状态
-  const isAuthenticated = !!user?.authenticated;
-  const isRealUser = isAuthenticated && user !== null;
-  const isAdmin = isRealUser && (user?.role === 'admin' || user?.role === 'super_admin');
-  const isVisitor = !isRealUser;
+  const [state, setState] = useState<AuthState>({
+    user: null,
+    isLoading: true,
+    pagePermissions: {},
+    warehousePermissions: {}
+  });
 
   // 获取用户数据和权限
   const fetchUserAndPermissions = async () => {
-    setIsLoading(true);
     try {
-      // 1. 获取用户信息
-      const userResponse = await fetch('/api/auth/current-user', {
+      const response = await fetch('/api/auth/current-user', {
         credentials: 'include'
       });
       
-      if (userResponse.ok) {
-        const userData = await userResponse.json();
-        console.log('AuthContext - 获取到用户数据:', userData);
-        setUser(userData);
-        localStorage.setItem('currentUser', JSON.stringify(userData));
-      } else if (userResponse.status === 401) {
-        console.log('AuthContext - 用户未认证');
-        setUser(null);
-        localStorage.removeItem('currentUser');
-      }
-
-      // 2. 获取页面权限
-      const pagesResponse = await fetch('/api/permissions/pages', {
-        credentials: 'include'
-      });
-      
-      if (pagesResponse.ok) {
-        const pagesData = await pagesResponse.json();
-        console.log('AuthContext - 获取到页面权限:', pagesData);
-        setPagePermissions(pagesData);
-      }
-
-      // 3. 获取仓库权限
-      const warehouseResponse = await fetch('/api/permissions/warehouses', {
-        credentials: 'include'
-      });
-      
-      if (warehouseResponse.ok) {
-        const warehouseData = await warehouseResponse.json();
-        console.log('AuthContext - 获取到仓库权限:', warehouseData);
-        setWarehousePermissions(warehouseData);
+      if (response.ok) {
+        const userData = await response.json();
+        console.log('权限钩子获取用户数据:', userData);
+        setState(prev => ({
+          ...prev,
+          user: userData,
+          isLoading: false,
+          pagePermissions: userData.permissions?.pages.reduce((acc: Record<string, boolean>, page: string) => {
+            acc[page] = true;
+            return acc;
+          }, {}) || {},
+          warehousePermissions: userData.permissions?.warehouses || {}
+        }));
+      } else {
+        setState(prev => ({ ...prev, user: null, isLoading: false }));
       }
     } catch (error) {
-      console.error('AuthContext - 获取用户或权限数据失败:', error);
-      addToast({
-        title: '权限数据加载失败',
-        description: '无法获取用户权限信息，部分功能可能不可用',
-        type: 'error'
-      });
-    } finally {
-      setIsLoading(false);
+      console.error('获取用户数据失败:', error);
+      setState(prev => ({ ...prev, user: null, isLoading: false }));
     }
   };
 
@@ -119,12 +98,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error('登录失败');
       }
 
-      await fetchUserAndPermissions();
-      addToast({
-        title: '登录成功',
-        description: '欢迎回到系统',
-        type: 'success'
-      });
+      const data = await response.json();
+      if (data.success) {
+        await fetchUserAndPermissions();
+        addToast({
+          title: '登录成功',
+          description: '欢迎回来！',
+          type: 'success'
+        });
+      } else {
+        throw new Error(data.message || '登录失败');
+      }
     } catch (error) {
       console.error('登录失败:', error);
       addToast({
@@ -136,28 +120,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // 初始加载
-  useEffect(() => {
-    console.log('AuthContext - 初始化加载用户和权限数据');
-    fetchUserAndPermissions();
-  }, []);
-
-  // 权限检查函数
-  const hasPagePermission = (pageName: string): boolean => {
-    if (isAdmin) return true; // 管理员有所有页面权限
-    return pagePermissions[pageName] === true;
-  };
-
-  const canViewWarehouse = (warehouseId: number): boolean => {
-    if (isAdmin) return true; // 管理员可查看所有仓库
-    return warehousePermissions[warehouseId]?.canView === true;
-  };
-
-  const canManageWarehouse = (warehouseId: number): boolean => {
-    if (isAdmin) return true; // 管理员可管理所有仓库
-    return warehousePermissions[warehouseId]?.canManage === true;
-  };
-
   // 登出函数
   const logout = async () => {
     try {
@@ -165,8 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         method: 'POST',
         credentials: 'include'
       });
-      setUser(null);
-      localStorage.removeItem('currentUser');
+      setState(prev => ({ ...prev, user: null }));
       addToast({
         title: '已退出登录',
         description: '您已成功退出系统',
@@ -182,23 +143,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // 上下文值
+  // 权限检查函数
+  const hasPagePermission = (pageName: string): boolean => {
+    if (state.user?.role === 'admin') return true;
+    return state.pagePermissions[pageName] === true;
+  };
+
+  const canViewWarehouse = (warehouseId: number): boolean => {
+    if (state.user?.role === 'admin') return true;
+    return state.warehousePermissions[warehouseId]?.canView === true;
+  };
+
+  const canManageWarehouse = (warehouseId: number): boolean => {
+    if (state.user?.role === 'admin') return true;
+    return state.warehousePermissions[warehouseId]?.canManage === true;
+  };
+
+  // 初始加载
+  useEffect(() => {
+    console.log('AuthContext - 初始化加载用户和权限数据');
+    fetchUserAndPermissions();
+  }, []);
+
   const contextValue: AuthContextType = {
-    user,
-    isLoading,
-    isAuthenticated,
-    isRealUser,
-    isAdmin,
-    isVisitor,
-    pagePermissions,
-    warehousePermissions,
+    user: state.user,
+    isLoading: state.isLoading,
+    isAuthenticated: Boolean(state.user?.authenticated),
+    isRealUser: Boolean(state.user?.id > 0),
+    isAdmin: state.user?.role === 'admin',
+    isVisitor: !state.user || state.user.id <= 0,
+    pagePermissions: state.pagePermissions,
+    warehousePermissions: state.warehousePermissions,
+    login,
+    logout,
     hasPagePermission,
     canViewWarehouse,
-    canManageWarehouse,
-    refreshPermissions: fetchUserAndPermissions,
-    logout,
-    login,
-    checkAuth: fetchUserAndPermissions
+    canManageWarehouse
   };
 
   return (
@@ -212,7 +192,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth必须在AuthProvider内使用');
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 }
