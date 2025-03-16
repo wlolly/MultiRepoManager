@@ -42,7 +42,11 @@ export function Header({ onMenuClick }: HeaderProps) {
           const guestNotified = sessionStorage.getItem('guest_notified');
           if (!guestNotified) {
             setTimeout(() => {
-              toast.info("您当前以访客身份浏览，部分功能可能受限");
+              addToast({
+                title: "访客模式",
+                description: "您当前以访客身份浏览，部分功能可能受限",
+                type: "default"
+              });
               sessionStorage.setItem('guest_notified', 'true');
             }, 1500);
           }
@@ -51,7 +55,7 @@ export function Header({ onMenuClick }: HeaderProps) {
     } catch (error) {
       console.error('解析用户信息出错:', error);
     }
-  }, [toast]);
+  }, [addToast]);
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6">
