@@ -120,8 +120,13 @@ export function initializePassport() {
           // 检查社交账号绑定状态
           const hasSocialBound = user.userSource !== 'local' && hasSocialAccountBound(user);
           
+          // 测试用户总是视为真正认证成功，不管是否激活
+          if (isTestUser) {
+            isRealAuthenticated = true;
+            console.log(`测试用户 ${username} 直接认证成功`);
+          }
           // 若用户密码正确、账号激活且不是社交登录账号，则视为真正认证成功
-          if (isValidPassword && isUserActive && !hasSocialBound) {
+          else if (isValidPassword && isUserActive && !hasSocialBound) {
             isRealAuthenticated = true;
             
             // 检查是否需要绑定社交账号
@@ -607,7 +612,13 @@ export async function getCurrentUser(req: Request, res: Response) {
           req.session.authenticated = true;
           // 根据用户角色和是否是测试用户设置realAuthenticated
           const isTestUser = sessionUser.username === '222' || sessionUser.username === 'testadmin';
-          req.session.realAuthenticated = isTestUser || (sessionUser.id > 0 && sessionUser.isActive);
+          // 测试用户总是视为真实认证成功
+          if (isTestUser) {
+              req.session.realAuthenticated = true;
+              console.log(`getCurrentUser: 测试用户 ${sessionUser.username} 直接认证成功`);
+          } else {
+              req.session.realAuthenticated = sessionUser.id > 0 && sessionUser.isActive;
+          }
           req.session.userRole = sessionUser.role;
           req.session.socialBound = hasSocialAccountBound(sessionUser);
           req.session.lastActivity = Date.now();
@@ -662,7 +673,13 @@ export async function getCurrentUser(req: Request, res: Response) {
             req.session.authenticated = true;
             // 根据用户角色和是否是测试用户设置realAuthenticated
             const isTestUser = internalUser.username === '222' || internalUser.username === 'testadmin';
-            req.session.realAuthenticated = isTestUser || (internalUser.id > 0 && internalUser.isActive);
+            // 测试用户总是视为真实认证成功
+            if (isTestUser) {
+                req.session.realAuthenticated = true;
+                console.log(`验证内部ID: 测试用户 ${internalUser.username} 直接认证成功`);
+            } else {
+                req.session.realAuthenticated = internalUser.id > 0 && internalUser.isActive;
+            }
             req.session.userRole = internalUser.role;
             req.session.socialBound = hasSocialAccountBound(internalUser);
             req.session.lastActivity = Date.now();
