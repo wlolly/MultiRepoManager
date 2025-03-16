@@ -98,13 +98,15 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
             type: "success"
           });
         } else if (data.fallbackMode || data.authenticated === false) {
-          // 假阳性登录或访客用户
+          // 假阳性登录或访客用户 - 使用全小写字段名
           const guestUser = {
             id: data.user?.id || -1,
             username: data.user?.username || values.username || t('auth.guest_user'),
-            fullname: data.user?.fullname || values.username || t('auth.guest_user'),
+            fullname: data.user?.fullname || values.username || t('auth.guest_user'), // 全小写
             role: 'anonymous',
-            usersource: 'local',
+            usersource: 'local', // 全小写
+            isactive: true, // 全小写
+            avatarurl: null, // 全小写
             fakePositive: true,
             realAuthenticated: false,
             accessLevel: 'limited'
@@ -119,8 +121,12 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           });
         } else {
           // 常规用户（确保包含realAuthenticated标志）
+          // 注意：直接使用data.user，因为后端已经使用全小写字段名
+          // 确保关键字段不为空
           const normalUser = {
             ...data.user,
+            isactive: data.user?.isactive !== undefined ? data.user.isactive : true,
+            avatarurl: data.user?.avatarurl || null,
             realAuthenticated: data.realAuthenticated || false
           };
           sessionStorage.setItem('currentUser', JSON.stringify(normalUser));
@@ -241,13 +247,15 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                   variant="outline" 
                   className="w-full h-9 text-sm" 
                   onClick={() => {
-                    // 创建访客用户
+                    // 创建访客用户 - 使用全小写字段名与后端保持一致
                     const guestUser = {
                       id: -1,
                       username: t('auth.guest_user'),
-                      fullname: t('auth.guest_user'),
+                      fullname: t('auth.guest_user'), // 全小写
                       role: 'anonymous',
-                      usersource: 'local',
+                      usersource: 'local', // 全小写
+                      isactive: true, // 全小写
+                      avatarurl: null, // 全小写
                       fakePositive: true,
                       realAuthenticated: false,
                       accessLevel: 'limited'

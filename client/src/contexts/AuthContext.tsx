@@ -2,14 +2,16 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
-// 用户类型
+// 用户类型 - 使用全小写字段名与后端保持一致
 export interface User {
   id: number;
   username: string;
   role: string;
-  fullName?: string;
-  isActive: boolean;
+  fullname?: string; // 全小写字段名
+  isactive: boolean; // 全小写字段名
   authenticated: boolean;
+  avatarurl?: string; // 全小写字段名
+  usersource?: string; // 全小写字段名 (local, wechat, whatsapp等)
   permissions?: {
     pages: string[];
     actions: string[];
@@ -165,13 +167,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     fetchUserAndPermissions();
   }, []);
 
+  // 创建上下文值，使用更新后的字段名
   const contextValue: AuthContextType = {
     user: state.user,
     isLoading: state.isLoading,
     isAuthenticated: Boolean(state.user?.authenticated),
-    isRealUser: Boolean(state.user?.id > 0),
+    isRealUser: Boolean(state.user?.id && state.user?.id > 0),
     isAdmin: state.user?.role === 'admin',
-    isVisitor: !state.user || state.user.id <= 0,
+    // 检查用户是否为访客 (id <= 0 或不存在或未激活)
+    isVisitor: !state.user || !state.user.id || state.user.id <= 0 || state.user.isactive === false,
     pagePermissions: state.pagePermissions,
     warehousePermissions: state.warehousePermissions,
     login,
