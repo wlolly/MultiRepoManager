@@ -5,12 +5,14 @@
 import { Request, Response, NextFunction } from 'express';
 import { eq, and, or, inArray, sql } from 'drizzle-orm';
 import { db } from '../db';
-import { teamMembers, teamPagePermissions, teamWarehousePermissions, users } from '../../shared/schema';
+import { teamMembers, teamPagePermissions, teamWarehousePermissions, users, warehouses } from '../../shared/schema';
+import { validateInternalUserID } from '../database/userID';
 
 /**
  * 需要页面权限的中间件
- * 检查当前用户是否有权限访问指定页面
+ * 检查用户是否有权限访问特定页面
  * 支持假阳性登录策略和访客用户
+ * 支持内部用户ID验证
  * @param pageName 页面名称
  */
 export function requirePagePermission(pageName: string) {
@@ -26,6 +28,39 @@ export function requirePagePermission(pageName: string) {
       return next();
     }
     
+    // 尝试从请求头获取内部用户ID
+    const internalUserId = req.headers['x-internal-user-id'] as string;
+    
+    // 如果有内部用户ID，尝试验证它
+    if (internalUserId) {
+      try {
+        const userId = await validateInternalUserID(internalUserId);
+        if (userId && userId > 0) {
+          console.log(`通过内部用户ID验证成功: ${userId}，授权访问${pageName}`);
+          // 设置会话以便后续请求
+          req.session.userId = userId;
+          req.session.authenticated = true;
+          req.session.realAuthenticated = true;
+          req.session.internalUserId = internalUserId;
+          req.session.lastActivity = Date.now();
+          
+          // 检查管理员权限并允许访问
+          const user = await db.query.users.findFirst({
+            where: eq(users.id, userId),
+          });
+          
+          if (user && (user.role === 'admin' || user.role === 'super_admin')) {
+            return next(); // 管理员可以访问任何页面
+          }
+          
+          // 对于非管理员，检查团队权限
+          return checkTeamPermissions(userId, pageName, req, res, next);
+        }
+      } catch (error) {
+        console.error('内部用户ID验证错误:', error);
+      }
+    }
+    
     // 判断是否已经登录
     if (!req.session?.userId && !req.user) {
       // 实现假阳性登录策略 - 返回401但是带上guest权限信息
@@ -34,6 +69,12 @@ export function requirePagePermission(pageName: string) {
         guestAccess: true,
         allowedPages: publicPages
       });
+    }
+    
+    // 检查测试用户特殊标记 (session.testUser = true)
+    if (req.session?.testUser === true) {
+      console.log('检测到测试用户会话，授予完全权限');
+      return next();
     }
     
     // 尝试获取用户ID - 可能来自会话或req.user
@@ -126,12 +167,49 @@ export function requirePagePermission(pageName: string) {
  * 需要仓库访问权限的中间件
  * 检查当前用户是否有权限访问指定仓库
  * 支持假阳性登录策略和访客用户
+ * 支持内部用户ID验证
  * @param checkManage 是否需要管理权限 (true: 需要管理权限, false: 只需要查看权限)
  */
 export function requireWarehousePermission(checkManage: boolean = false) {
   return async (req: Request, res: Response, next: NextFunction) => {
     // 记录会话信息用于调试
     console.log(`[会话调试] 路径: ${req.path}, 会话信息:`, req.session);
+    
+    // 尝试从请求头获取内部用户ID
+    const internalUserId = req.headers['x-internal-user-id'] as string;
+    
+    // 如果有内部用户ID，尝试验证它
+    if (internalUserId) {
+      try {
+        const userId = await validateInternalUserID(internalUserId);
+        if (userId && userId > 0) {
+          console.log(`通过内部用户ID验证成功: ${userId}，授权访问仓库`);
+          // 设置会话以便后续请求
+          req.session.userId = userId;
+          req.session.authenticated = true;
+          req.session.realAuthenticated = true;
+          req.session.internalUserId = internalUserId;
+          req.session.lastActivity = Date.now();
+          
+          // 检查管理员权限并允许访问
+          const user = await db.query.users.findFirst({
+            where: eq(users.id, userId),
+          });
+          
+          if (user && (user.role === 'admin' || user.role === 'super_admin')) {
+            return next(); // 管理员可以访问任何仓库
+          }
+        }
+      } catch (error) {
+        console.error('内部用户ID验证错误:', error);
+      }
+    }
+    
+    // 检查测试用户特殊标记 (session.testUser = true)
+    if (req.session?.testUser === true) {
+      console.log('检测到测试用户会话，授予完全仓库权限');
+      return next();
+    }
     
     // 尝试获取用户ID - 可能来自会话或req.user
     const userId = req.session?.userId || (req.user as any)?.id;
@@ -343,6 +421,58 @@ export async function getUserPagePermissions(userId: number): Promise<{[key: str
   } catch (error) {
     console.error('获取用户页面权限失败:', error);
     return permissions; // 已包含公共页面权限
+  }
+}
+
+/**
+ * 检查团队权限辅助函数
+ * 用于检查用户所在团队是否有特定页面的访问权限
+ */
+async function checkTeamPermissions(userId: number, pageName: string, req: Request, res: Response, next: NextFunction) {
+  // 公共页面列表
+  const publicPages = ['dashboard', 'products'];
+  
+  try {
+    // 获取用户所在的团队
+    const userTeams = await db.select().from(teamMembers).where(eq(teamMembers.userId, userId));
+    if (!userTeams || userTeams.length === 0) {
+      // 如果用户没有加入任何团队，但请求的是公共页面，仍然允许访问
+      if (publicPages.includes(pageName)) {
+        return next();
+      }
+      return res.status(403).json({ message: '没有访问权限：未加入任何团队' });
+    }
+    
+    // 检查用户团队是否有权限访问页面
+    const teamIds = userTeams.map(t => t.teamId);
+    
+    // 使用SQL直接执行查询
+    const query = sql`
+      SELECT * FROM team_page_permissions 
+      WHERE page_name = ${pageName} 
+      AND team_id IN (${sql.join(teamIds, sql`, `)})
+    `;
+    
+    const teamPermissions = await db.execute(query);
+    
+    if (teamPermissions && teamPermissions.rows && teamPermissions.rows.length > 0) {
+      return next();
+    }
+    
+    // 最后一次检查是否为公共页面
+    if (publicPages.includes(pageName)) {
+      return next();
+    }
+    
+    return res.status(403).json({ message: `没有访问"${pageName}"页面的权限` });
+  } catch (err) {
+    console.error('团队权限检查错误:', err);
+    // 错误情况下，仍然允许访问公共页面
+    if (publicPages.includes(pageName)) {
+      console.log(`发生错误，但仍允许访问公共页面 ${pageName}`);
+      return next();
+    }
+    return res.status(500).json({ message: '服务器错误：团队权限检查失败' });
   }
 }
 
