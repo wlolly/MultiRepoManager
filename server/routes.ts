@@ -362,7 +362,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // 优先处理测试用户登录
-      storage.getUserByUsername('222')
+      // 使用当前活动的存储实现（根据系统运行模式）
+      const currentStorage = useFallbackStorage ? memStorage : storage;
+      console.log(`使用${useFallbackStorage ? '内存存储' : '数据库存储'}模式查询测试用户`);
+      
+      currentStorage.getUserByUsername('222')
         .then(testUser => {
           if (testUser) {
             console.log('测试用户登录成功:', testUser.id);
@@ -422,6 +426,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     // 标准认证流程函数
     function proceedWithRegularAuth() {
+      // 确保使用当前活动的存储实现
+      const currentStorage = useFallbackStorage ? memStorage : storage;
+      console.log(`标准认证流程使用${useFallbackStorage ? '内存存储' : '数据库存储'}模式`);
+      
       passport.authenticate('local', (err, user, info) => {
         // 处理认证错误
         if (err) {
@@ -778,6 +786,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 权限管理接口 - 获取页面权限
   apiRouter.get('/permissions/pages', async (req, res) => {
     try {
+      // 确保使用当前活动的存储实现
+      const currentStorage = useFallbackStorage ? memStorage : storage;
+      console.log(`权限检查使用${useFallbackStorage ? '内存存储' : '数据库存储'}模式`);
+      
       // 检查用户状态 - 支持假阳性登录策略，访客用户ID为-1
       let userId = -1; // 默认为访客用户ID
       let isGuest = true;
@@ -820,6 +832,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 权限管理接口 - 获取仓库权限
   apiRouter.get('/permissions/warehouses', async (req, res) => {
     try {
+      // 确保使用当前活动的存储实现
+      const currentStorage = useFallbackStorage ? memStorage : storage;
+      console.log(`仓库权限检查使用${useFallbackStorage ? '内存存储' : '数据库存储'}模式`);
+      
       // 检查用户状态 - 支持假阳性登录策略，访客用户ID为-1
       let userId = -1; // 默认为访客用户ID
       let isGuest = true;
@@ -837,7 +853,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('为访客用户返回基本仓库权限');
         
         // 获取所有仓库并赋予只读权限
-        const warehouses = await storage.getWarehouses();
+        const warehouses = await currentStorage.getWarehouses();
         const guestPermissions: {[key: number]: {canView: boolean, canManage: boolean}} = {};
         
         // 为每个仓库设置只读权限
@@ -868,6 +884,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 团队相关API端点
   apiRouter.get("/teams", verifySession, async (req, res) => {
     try {
+      // 确保使用当前活动的存储实现
+      const currentStorage = useFallbackStorage ? memStorage : storage;
+      console.log(`团队数据获取使用${useFallbackStorage ? '内存存储' : '数据库存储'}模式`);
+      
       // 检查用户是否真实登录，不允许假阳性登录用户访问团队数据
       if (!req.session.realAuthenticated) {
         return res.status(403).json({
@@ -876,7 +896,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      const teams = await storage.getTeams();
+      const teams = await currentStorage.getTeams();
       res.json(teams);
     } catch (error) {
       console.error('获取团队列表错误:', error);
@@ -887,6 +907,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 获取用户所属的团队
   apiRouter.get("/users/:userId/teams", verifySession, async (req, res) => {
     try {
+      // 确保使用当前活动的存储实现
+      const currentStorage = useFallbackStorage ? memStorage : storage;
+      console.log(`用户团队数据获取使用${useFallbackStorage ? '内存存储' : '数据库存储'}模式`);
+      
       // 检查用户是否真实登录，不允许假阳性登录用户访问团队数据
       if (!req.session.realAuthenticated) {
         return res.status(403).json({
@@ -908,22 +932,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // 获取用户所在的团队
-      const teamMembers = await storage.getTeamMembersForUser(userId);
+      // 获取用户所在的所有团队
+      // 因为存储接口可能不支持getTeamMembersForUser直接获取，我们采用替代方案
+      // 获取所有团队，然后过滤出用户所在的团队
+      const teams = await currentStorage.getTeams();
+      const userTeams = [];
       
-      // 获取完整的团队信息
-      const teams = await Promise.all(
-        teamMembers.map(async member => {
-          const team = await storage.getTeam(member.teamId);
-          return {
+      for (const team of teams) {
+        const members = await currentStorage.getTeamMembers(team.id);
+        const userMember = members.find(member => member.userId === userId);
+        
+        if (userMember) {
+          userTeams.push({
             ...team,
-            role: member.role,
-            joinedAt: member.createdAt
-          };
-        })
-      );
+            role: userMember.role || 'member',
+            joinedAt: userMember.createdAt
+          });
+        }
+      }
       
-      res.json(teams);
+      res.json(userTeams);
     } catch (error) {
       console.error(`获取用户团队错误:`, error);
       res.status(500).json({ error: "获取用户团队失败" });
@@ -933,6 +961,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 获取团队成员
   apiRouter.get("/teams/:teamId/members", verifySession, async (req, res) => {
     try {
+      // 确保使用当前活动的存储实现
+      const currentStorage = useFallbackStorage ? memStorage : storage;
+      console.log(`团队成员数据获取使用${useFallbackStorage ? '内存存储' : '数据库存储'}模式`);
+      
       // 检查用户是否真实登录，不允许假阳性登录用户访问团队数据
       if (!req.session.realAuthenticated) {
         return res.status(403).json({
@@ -946,7 +978,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 检查当前用户是否是团队成员或管理员
       const currentUserId = (req.user as any).id;
       const isAdmin = (req.user as any).role === 'admin' || (req.user as any).role === 'super_admin';
-      const teamMembers = await storage.getTeamMembers(teamId);
+      const teamMembers = await currentStorage.getTeamMembers(teamId);
       const isMember = teamMembers.some(member => member.userId === currentUserId);
       
       if (!isMember && !isAdmin) {
@@ -959,7 +991,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 获取完整的成员信息，包括用户详情
       const membersWithDetails = await Promise.all(
         teamMembers.map(async member => {
-          const user = await storage.getUser(member.userId);
+          const user = await currentStorage.getUser(member.userId);
           return {
             ...member,
             user: {
@@ -983,6 +1015,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 获取团队仓库权限
   apiRouter.get("/teams/:teamId/warehouse-permissions", verifySession, async (req, res) => {
     try {
+      // 确保使用当前活动的存储实现
+      const currentStorage = useFallbackStorage ? memStorage : storage;
+      console.log(`团队仓库权限数据获取使用${useFallbackStorage ? '内存存储' : '数据库存储'}模式`);
+      
       // 检查用户是否真实登录，不允许假阳性登录用户访问团队数据
       if (!req.session.realAuthenticated) {
         return res.status(403).json({
@@ -996,7 +1032,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 检查当前用户是否是团队成员或管理员
       const currentUserId = (req.user as any).id;
       const isAdmin = (req.user as any).role === 'admin' || (req.user as any).role === 'super_admin';
-      const teamMembers = await storage.getTeamMembers(teamId);
+      const teamMembers = await currentStorage.getTeamMembers(teamId);
       const isMember = teamMembers.some(member => member.userId === currentUserId);
       
       if (!isMember && !isAdmin) {
@@ -1007,7 +1043,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // 获取团队的仓库权限
-      const warehousePermissions = await storage.getTeamWarehousePermissions(teamId);
+      const warehousePermissions = await currentStorage.getTeamWarehousePermissions(teamId);
       
       res.json(warehousePermissions);
     } catch (error) {
@@ -1019,6 +1055,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 获取团队页面权限
   apiRouter.get("/teams/:teamId/page-permissions", verifySession, async (req, res) => {
     try {
+      // 确保使用当前活动的存储实现
+      const currentStorage = useFallbackStorage ? memStorage : storage;
+      console.log(`团队页面权限数据获取使用${useFallbackStorage ? '内存存储' : '数据库存储'}模式`);
+      
       // 检查用户是否真实登录，不允许假阳性登录用户访问团队数据
       if (!req.session.realAuthenticated) {
         return res.status(403).json({
@@ -1032,7 +1072,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 检查当前用户是否是团队成员或管理员
       const currentUserId = (req.user as any).id;
       const isAdmin = (req.user as any).role === 'admin' || (req.user as any).role === 'super_admin';
-      const teamMembers = await storage.getTeamMembers(teamId);
+      const teamMembers = await currentStorage.getTeamMembers(teamId);
       const isMember = teamMembers.some(member => member.userId === currentUserId);
       
       if (!isMember && !isAdmin) {
@@ -1043,7 +1083,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // 获取团队的页面权限
-      const pagePermissions = await storage.getTeamPagePermissions(teamId);
+      const pagePermissions = await currentStorage.getTeamPagePermissions(teamId);
       
       res.json(pagePermissions);
     } catch (error) {
@@ -1303,6 +1343,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 团队活动数据API（需要真实认证）
   apiRouter.get("/activities/team", verifySession, async (req, res) => {
     try {
+      // 确保使用当前活动的存储实现
+      const currentStorage = useFallbackStorage ? memStorage : storage;
+      console.log(`团队活动数据获取使用${useFallbackStorage ? '内存存储' : '数据库存储'}模式`);
+      
       // 检查是否是真实认证用户
       const realAuthenticated = req.session?.realAuthenticated === true;
       if (!realAuthenticated) {
@@ -1319,10 +1363,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const warehousePermissions = await getUserWarehousePermissions(userId);
       
       // 获取用户的团队
-      const teams = await storage.getTeams();
+      const teams = await currentStorage.getTeams();
       const userTeams = [];
       for (const team of teams) {
-        const members = await storage.getTeamMembers(team.id);
+        const members = await currentStorage.getTeamMembers(team.id);
         if (members.some(member => member.userId === userId)) {
           userTeams.push(team);
         }
@@ -1339,7 +1383,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // 这里暂时使用公共活动，实际应根据团队过滤
       // 在真实环境中应该根据团队权限进行过滤
-      let activities = await storage.getActivities(repositoryId, limit);
+      let activities = await currentStorage.getActivities(repositoryId, limit);
       
       // 如果用户有团队权限，过滤活动
       if (userTeams.length > 0) {
@@ -1352,8 +1396,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 获取用户数据
       const activitiesWithUserData = await Promise.all(
         activities.map(async (activity) => {
-          const user = await storage.getUser(activity.userId);
-          const repository = await storage.getRepository(activity.repositoryId);
+          const user = await currentStorage.getUser(activity.userId);
+          const repository = await currentStorage.getRepository(activity.repositoryId);
           return { 
             ...activity, 
             user,
