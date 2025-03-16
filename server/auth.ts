@@ -44,6 +44,11 @@ export function generateSessionId(): string {
 
 // 验证会话中间件
 export function verifySession(req: Request, res: Response, next: NextFunction) {
+  console.log('[认证] 验证会话:', {
+    sessionID: req.sessionID,
+    authenticated: req.session?.authenticated,
+    userId: req.session?.userId
+  });
   // 记录请求信息
   console.log(`[认证系统] ${req.method} ${req.path}`);
 
