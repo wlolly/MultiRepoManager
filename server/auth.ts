@@ -248,7 +248,6 @@ export async function getCurrentUser(req: Request, res: Response) {
       // 返回401状态码和访客用户信息
       return res.status(401).json({
         authenticated: false,
-        realAuthenticated: false,
         message: '用户未登录',
         guestAccess: true,
         allowedPages: ['dashboard'],
