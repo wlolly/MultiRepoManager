@@ -6,7 +6,8 @@ import session from "express-session";
 import { db, memStorage, useFallbackStorage } from "./db"; // 导入需要的组件
 import createMemoryStore from "memorystore";
 import crypto from "crypto";
-import { sessionSyncMiddleware } from './middleware/session-sync';
+// 导入修复版本的会话同步中间件
+import { sessionSyncMiddleware } from './middleware/session-sync-fix';
 import passport from 'passport';
 import { configurePassport } from './passport-local';
 import { sql } from 'drizzle-orm';
@@ -23,8 +24,8 @@ console.log("初始化Express应用中间件...");
 // 这将使用PostgreSQL保存会话数据，确保持久性
 configureSession(app);
 
-// 使用专用的会话同步中间件替代简化版本
-// 提供更完整的跨域支持和会话管理功能
+// 使用修复版本的会话同步中间件
+// 解决会话跨域和ID不匹配问题
 app.use(sessionSyncMiddleware);
 
 // 保留会话活动监控和调试日志
