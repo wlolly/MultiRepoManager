@@ -85,7 +85,7 @@ export const users = pgTable("users", {
   socialId: varchar("social_id", { length: 255 }), // 微信或WhatsApp的唯一ID
   socialData: text("social_data"), // 存储从社交平台获取的JSON数据
   lastLoginAt: timestamp("last_login_at"),
-  isActive: boolean("is_active").default(true), // 用户是否激活
+  isactive: boolean("isactive").default(true), // 用户是否激活
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
