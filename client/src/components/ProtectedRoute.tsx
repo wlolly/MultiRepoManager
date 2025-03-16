@@ -30,6 +30,7 @@ export const ProtectedRoute: FC<ProtectedRouteProps> = ({
   exact,
   ...rest
 }) => {
+  console.log(`ProtectedRoute [${path}] 检查权限, requireAuth=${requireAuth}, publicContent=${publicContent}`);
   const { isAuthenticated, loading, hasPagePermission, canViewWarehouse, canManageWarehouse } = usePermissions();
   const [, navigate] = useLocation();
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
@@ -41,10 +42,20 @@ export const ProtectedRoute: FC<ProtectedRouteProps> = ({
     // 检查权限
     let permissionResult = true;
 
+    // 检查当前用户状态
+    const currentUserStr = localStorage.getItem('currentUser');
+    const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
+    const isFakePositiveUser = currentUser?.fakePositive === true;
+    
     // 如果未认证但又需要认证（除非是特殊路径如首页可以允许非登录状态）
     if (!isAuthenticated && requireAuth) {
+      // 检查是否是假阳性登录用户
+      if (isFakePositiveUser) {
+        console.log(`${path}页面遇到假阳性登录用户，允许访问公开内容`);
+        permissionResult = true;
+      } 
       // 如果允许显示公开内容，则不强制重定向，仍然保持权限为true
-      if (publicContent) {
+      else if (publicContent) {
         console.log(`${path}页面允许非登录用户查看公开内容`);
         permissionResult = true;
       } else {

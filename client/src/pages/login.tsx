@@ -62,8 +62,25 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       
       // 保存用户数据和会话ID（如果有）
       if (data.user) {
-        sessionStorage.setItem('currentUser', JSON.stringify(data.user));
-        localStorage.setItem('currentUser', JSON.stringify(data.user));
+        // 检查是否是假阳性登录用户
+        if (data.fallbackMode || data.authenticated === false) {
+          const guestUser = {
+            id: data.user.id || -1,
+            username: data.user.username || values.username || '访客用户',
+            fullName: data.user.fullName || values.username || '访客用户',
+            role: 'anonymous',
+            userSource: 'local',
+            fakePositive: true,
+            accessLevel: 'limited'
+          };
+          console.log('创建假阳性登录用户:', guestUser);
+          sessionStorage.setItem('currentUser', JSON.stringify(guestUser));
+          localStorage.setItem('currentUser', JSON.stringify(guestUser));
+        } else {
+          // 常规用户
+          sessionStorage.setItem('currentUser', JSON.stringify(data.user));
+          localStorage.setItem('currentUser', JSON.stringify(data.user));
+        }
       }
       
       if (data.sessionId) {

@@ -19,13 +19,29 @@ export default function LoginRedirect() {
     })
     .then(response => response.json())
     .then(data => {
-      if (data.authenticated) {
-        console.log('会话验证成功，当前用户:', data.user);
+      // 检查是否是已认证用户或假阳性登录(假阳性登录策略)
+      if (data.authenticated || data.fakePositive) {
+        console.log('会话验证成功或符合假阳性登录策略:', data);
         
         // 存储用户信息
         if (data.user) {
           localStorage.setItem('currentUser', JSON.stringify(data.user));
           sessionStorage.setItem('currentUser', JSON.stringify(data.user));
+        } else if (data.fakePositive) {
+          // 对于假阳性登录，创建一个访客用户对象
+          const guestUser = {
+            id: -1,
+            username: data.fakeName || '访客用户',
+            fullName: data.fakeName || '访客用户',
+            role: 'anonymous',
+            userSource: 'local',
+            fakePositive: true,
+            accessLevel: data.accessLevel || 'limited'
+          };
+          
+          localStorage.setItem('currentUser', JSON.stringify(guestUser));
+          sessionStorage.setItem('currentUser', JSON.stringify(guestUser));
+          console.log('已创建假阳性登录访客用户:', guestUser);
         }
         
         // 使用延时确保数据已存储
