@@ -46,8 +46,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     
     // 显示登录中提示
     toast({ 
-      title: "登录中",
-      description: "请稍候...",
+      title: t('logging_in'),
+      description: t('please_wait'),
       type: "success"
     });
     
@@ -105,16 +105,16 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           sessionStorage.setItem('currentUser', JSON.stringify(authUser));
           localStorage.setItem('currentUser', JSON.stringify(authUser));
           toast({
-            title: "登录成功",
-            description: "正在跳转...",
+            title: t('login_success'),
+            description: t('redirecting'),
             type: "success"
           });
         } else if (data.fallbackMode || data.authenticated === false) {
           // 假阳性登录或访客用户
           const guestUser = {
             id: data.user?.id || -1,
-            username: data.user?.username || values.username || '访客用户',
-            fullName: data.user?.fullName || values.username || '访客用户',
+            username: data.user?.username || values.username || t('guest_user'),
+            fullName: data.user?.fullName || values.username || t('guest_user'),
             role: 'anonymous',
             userSource: 'local',
             fakePositive: true,
@@ -125,8 +125,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           sessionStorage.setItem('currentUser', JSON.stringify(guestUser));
           localStorage.setItem('currentUser', JSON.stringify(guestUser));
           toast({
-            title: "受限模式登录",
-            description: "部分功能可能不可用",
+            title: t('limited_mode_login'),
+            description: t('some_features_unavailable'),
             type: "warning"
           });
         } else {
@@ -138,8 +138,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           sessionStorage.setItem('currentUser', JSON.stringify(normalUser));
           localStorage.setItem('currentUser', JSON.stringify(normalUser));
           toast({
-            title: "登录成功",
-            description: "正在跳转...",
+            title: t('login_success'),
+            description: t('redirecting'),
             type: "success"
           });
         }
@@ -161,8 +161,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     .catch(error => {
       console.error('登录请求错误:', error);
       toast({
-        title: "登录失败",
-        description: "发生错误，请重试",
+        title: t('login_failed'),
+        description: t('error_try_again'),
         type: "error"
       });
     })
@@ -186,7 +186,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       {/* 公司Logo和系统名称 */}
       <div className="absolute top-8 flex flex-col items-center w-full">
         <img src="/images/e5-logo.svg" alt="E5 Logo" className="w-16 h-16 mb-2" />
-        <h1 className="text-2xl font-bold text-gray-800">ELEMENT-5 仓储管理系统</h1>
+        <h1 className="text-2xl font-bold text-gray-800">{t('system_name')}</h1>
       </div>
       
       {/* 已经不需要手动跳转按钮 */}
@@ -256,8 +256,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                     // 创建访客用户
                     const guestUser = {
                       id: -1,
-                      username: t('guest_user') || '访客用户',
-                      fullName: t('guest_user') || '访客用户',
+                      username: t('guest_user'),
+                      fullName: t('guest_user'),
                       role: 'anonymous',
                       userSource: 'local',
                       fakePositive: true,
@@ -271,8 +271,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                     
                     // 显示提示
                     toast({
-                      title: t('guest_login_success') || "访客登录成功",
-                      description: t('some_features_unavailable') || "部分功能可能受限",
+                      title: t('guest_login_success'),
+                      description: t('some_features_unavailable'),
                       type: "success"
                     });
                     
@@ -329,7 +329,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                   <path d="M17 10.9c-1-.1-1.9-.9-1.9-2s.9-1.9 1.9-1.9c1.1 0 1.9.8 2 1.9 0 1.1-.9 2-2 2z"></path>
                 </svg>
               </div>
-              微信
+              {t('wechat')}
             </Button>
             <Button 
               variant="outline" 
@@ -357,7 +357,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       
       {/* 页脚版权信息 */}
       <div className="absolute bottom-4 text-xs text-gray-400">
-        &copy; {new Date().getFullYear()} ELEMENT-5 仓储管理系统 | 版本 1.0.0
+        &copy; {new Date().getFullYear()} {t('copyright_text')} | {t('version')} 1.0.0
       </div>
     </div>
   );
