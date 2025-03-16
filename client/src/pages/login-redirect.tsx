@@ -24,26 +24,6 @@ export default function LoginRedirect() {
       try {
         const userData = JSON.parse(storedUserData);
         console.log('从SessionStorage恢复用户数据:', userData);
-        
-        // 检查是否是测试用户
-        if (userData.username === '222' || isTestUser) {
-          console.log('检测到测试用户登录 (222)');
-          setStatus('已检测到测试用户登录，正在特殊处理...');
-          
-          // 强制设置测试用户为真实认证
-          userData.realAuthenticated = true;
-          
-          // 保存更新后的用户数据
-          localStorage.setItem('currentUser', JSON.stringify(userData));
-          sessionStorage.setItem('currentUser', JSON.stringify(userData));
-          
-          // 跳过服务器验证，直接重定向（防止会话问题）
-          setTimeout(() => {
-            console.log('测试用户直接重定向到首页');
-            window.location.href = '/';
-          }, 1000);
-          return; // 终止后续操作
-        }
       } catch (e) {
         console.error('解析存储的用户数据时出错:', e);
       }
@@ -79,12 +59,8 @@ export default function LoginRedirect() {
     .then(data => {
       console.log('会话验证响应数据:', data);
       
-      // 检查是否是测试用户名(222)
-      const isTestUserName = data.username === '222' || 
-                            (data.user && data.user.username === '222');
-                            
       // 检查是否是已认证用户或假阳性登录(假阳性登录策略)
-      if (data.authenticated || data.realAuthenticated || isTestUserName) {
+      if (data.authenticated || data.realAuthenticated) {
         setStatus('会话验证成功，准备跳转...');
         console.log('会话验证成功或符合登录策略:', data);
         
@@ -93,7 +69,7 @@ export default function LoginRedirect() {
           // 直接数据就是用户对象的情况
           const userData = {
             ...data,
-            realAuthenticated: data.realAuthenticated || isTestUserName
+            realAuthenticated: data.realAuthenticated
           };
           localStorage.setItem('currentUser', JSON.stringify(userData));
           sessionStorage.setItem('currentUser', JSON.stringify(userData));
@@ -102,7 +78,7 @@ export default function LoginRedirect() {
           // 用户数据在user字段内的情况
           const userData = {
             ...data.user,
-            realAuthenticated: data.realAuthenticated || isTestUserName
+            realAuthenticated: data.realAuthenticated
           };
           localStorage.setItem('currentUser', JSON.stringify(userData));
           sessionStorage.setItem('currentUser', JSON.stringify(userData));
@@ -130,7 +106,7 @@ export default function LoginRedirect() {
           setStatus('验证完成，正在跳转...');
           
           // 测试用户额外处理
-          if (isTestUserName) {
+          if (isTestUser) {
             // 确保有这个标记以防止首页重定向循环
             sessionStorage.setItem('testUserAuthenticated', 'true');
           }
