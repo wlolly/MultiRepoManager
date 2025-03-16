@@ -104,6 +104,62 @@
     "kk": "Қойма тауарлары",
     "uz": "Ombor mahsulotlari"
   },
+  "total_products": {
+    "zh": "总产品数",
+    "en": "Total Products",
+    "ru": "Всего товаров",
+    "kk": "Жалпы өнімдер",
+    "uz": "Jami mahsulotlar"
+  },
+  "product_categories": {
+    "zh": "产品类别",
+    "en": "Product Categories",
+    "ru": "Категории товаров",
+    "kk": "Өнім санаттары",
+    "uz": "Mahsulot kategoriyalari"
+  },
+  "low_stock_products": {
+    "zh": "低库存产品",
+    "en": "Low Stock Products",
+    "ru": "Товары с низким запасом",
+    "kk": "Төмен қорлы өнімдер",
+    "uz": "Kam zaxiradagi mahsulotlar"
+  },
+  "stock_value": {
+    "zh": "库存价值",
+    "en": "Stock Value",
+    "ru": "Стоимость запасов",
+    "kk": "Қор құны",
+    "uz": "Zaxira qiymati"
+  },
+  "search_products": {
+    "zh": "搜索产品",
+    "en": "Search Products",
+    "ru": "Поиск товаров",
+    "kk": "Өнімдерді іздеу",
+    "uz": "Mahsulotlarni qidirish"
+  },
+  "view_options": {
+    "zh": "视图选项",
+    "en": "View Options",
+    "ru": "Параметры просмотра",
+    "kk": "Көрініс опциялары",
+    "uz": "Ko'rish parametrlari"
+  },
+  "grid_view": {
+    "zh": "网格视图",
+    "en": "Grid View",
+    "ru": "Сетка",
+    "kk": "Тор көрінісі",
+    "uz": "To'r ko'rinishi"
+  },
+  "list_view": {
+    "zh": "列表视图",
+    "en": "List View",
+    "ru": "Список",
+    "kk": "Тізім көрінісі",
+    "uz": "Ro'yxat ko'rinishi"
+  },
   "users_teams": {
     "zh": "用户和团队",
     "en": "Users & Teams",
