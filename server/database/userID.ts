@@ -95,7 +95,14 @@ function setupCleanupTask() {
 }
 
 // 为内部用户创建ID，有效期为两天
+// 如果用户ID < 0，直接返回null表示不创建内部ID（访客用户）
 export async function createInternalUserID(userId: number, retryCount = 0, maxRetries = 2): Promise<string | null> {
+  // 访客用户或无效用户ID，不创建内部ID
+  if (userId < 0) {
+    console.log(`[UserID] 访客用户 (ID=${userId}) 不创建内部ID`);
+    return null;
+  }
+  
   try {
     // 首先移除该用户的所有现有ID（避免重复）
     await removeUserIDs(userId);
@@ -137,7 +144,14 @@ export async function createInternalUserID(userId: number, retryCount = 0, maxRe
 }
 
 // 验证内部用户ID是否有效
-export async function validateInternalUserID(internalId: string, retryCount = 0, maxRetries = 2): Promise<number | null> {
+// 如果传入的internalId是null或空字符串，视为访客用户，返回-1
+export async function validateInternalUserID(internalId: string | null, retryCount = 0, maxRetries = 2): Promise<number | null> {
+  // 空ID或null处理 - 对应访客用户（隐式访客模式）
+  if (!internalId) {
+    console.log(`[UserID] 访客模式: 空ID或null表示访客用户`);
+    return -1; // 返回-1表示访客用户ID
+  }
+  
   try {
     // 查询匹配的有效ID
     const result = await db.execute(sql`

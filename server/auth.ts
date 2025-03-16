@@ -307,7 +307,7 @@ export function generateSessionId(): string {
 }
 
 // 验证会话中间件 - 简化版本
-import { validateInternalUserID } from './database/userID';
+import { validateInternalUserID, createInternalUserID, removeUserIDs, cleanupExpiredIDs } from './database/userID';
 
 export function verifySession(req: Request, res: Response, next: NextFunction) {
   // 1. 白名单路径 - 无需验证的API路径可以直接跳过，减少性能开销
@@ -360,6 +360,9 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
       req.session.authenticated = true;
     }
     
+    // 有效用户标记，不是访客用户（userId > 0）
+    req.session.realAuthenticated = req.session.userId > 0;
+    
     next();
     return;
   }
@@ -378,6 +381,9 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
           req.session.userId = userId;
           req.session.authenticated = true;
           req.session.lastActivity = Date.now();
+          
+          // 有效用户标记，不是访客用户（userId > 0）
+          req.session.realAuthenticated = userId > 0;
           
           // 保存会话并继续
           req.session.save(err => {
@@ -417,11 +423,19 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
       });
     }
     
+    // 访客模式：为未登录用户提供有限的访问能力
+    // 设置用户ID为-1（访客ID）
+    req.session.userId = -1;
+    req.session.authenticated = true;    // 标记为已认证（但是有限的权限）
+    req.session.realAuthenticated = false; // 标记为实际未认证（访客模式）
+    req.session.lastActivity = Date.now();
+    
+    // 设置访客用户角色
+    req.session.userRole = 'guest';
+    
     // 其他路径继续处理，让各自的处理器决定如何响应
     next();
   }
-  
-
 }
 
 // 检查用户是否绑定了社交账号
