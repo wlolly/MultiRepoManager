@@ -208,10 +208,10 @@ export type InsertTeamMember = z.infer<typeof insertTeamMemberSchema>;
 export type TeamMember = typeof teamMembers.$inferSelect;
 
 // Team repositories
-export const teamRepositories = mysqlTable("team_repositories", {
-  id: int("id").primaryKey().autoincrement(),
-  teamId: int("team_id").notNull().references(() => teams.id),
-  repositoryId: int("repository_id").notNull().references(() => repositories.id),
+export const teamRepositories = pgTable("team_repositories", {
+  id: serial("id").primaryKey(),
+  teamId: integer("team_id").notNull().references(() => teams.id),
+  repositoryId: integer("repository_id").notNull().references(() => repositories.id),
 });
 
 export const insertTeamRepositorySchema = createInsertSchema(teamRepositories).pick({
