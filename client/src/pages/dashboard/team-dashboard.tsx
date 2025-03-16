@@ -186,14 +186,14 @@ export function TeamDashboard() {
             </div>
             <div className="ml-3">
               <p className="text-sm text-yellow-700">
-                {t("team_stats_access_denied")}
+                {t("dashboard.team_stats_access_denied")}
               </p>
             </div>
           </div>
         </div>
         <div className="bg-white shadow rounded-lg p-6">
-          <h2 className="text-xl font-bold mb-4">{t("api_error_title")}</h2>
-          <p className="mb-4">{t("api_error_description")}</p>
+          <h2 className="text-xl font-bold mb-4">{t("dashboard.api_error_title")}</h2>
+          <p className="mb-4">{t("dashboard.api_error_description")}</p>
           <PublicDashboard />
         </div>
       </div>
@@ -243,44 +243,44 @@ export function TeamDashboard() {
   // Define statistics cards data
   const stats = [
     {
-      title: t("total_products"),
+      title: t("dashboard.total_products"),
       value: teamStats?.totalProducts.toLocaleString() || "0",
-      description: t("team_products_description"),
+      description: t("dashboard.team_products_description"),
       icon: "package",
       color: "bg-indigo-500"
     },
     {
-      title: t("accessible_warehouses"),
+      title: t("dashboard.accessible_warehouses"),
       value: teamStats?.totalWarehouses.toLocaleString() || "0",
-      description: t("team_warehouses_description"),
+      description: t("dashboard.team_warehouses_description"),
       icon: "home",
       color: "bg-red-500"
     },
     {
-      title: t("total_value"),
+      title: t("dashboard.total_value"),
       value: teamStats?.totalValue ? `$${teamStats.totalValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}` : "$0",
-      description: t("team_value_description"),
+      description: t("dashboard.team_value_description"),
       icon: "dollar-sign",
       color: "bg-orange-500"
     },
     {
-      title: t("total_weight"),
+      title: t("dashboard.total_weight"),
       value: teamStats?.totalWeight ? `${teamStats.totalWeight.toLocaleString(undefined, { maximumFractionDigits: 2 })} kg` : "0 kg",
-      description: t("team_weight_description"),
+      description: t("dashboard.team_weight_description"),
       icon: "weight",
       color: "bg-emerald-500"
     },
     {
-      title: t("total_volume"),
+      title: t("dashboard.total_volume"),
       value: teamStats?.totalVolume ? `${teamStats.totalVolume.toLocaleString(undefined, { maximumFractionDigits: 2 })} m³` : "0 m³",
-      description: t("team_volume_description"),
+      description: t("dashboard.team_volume_description"),
       icon: "box",
       color: "bg-pink-500"
     },
     {
-      title: t("categories_count"),
+      title: t("dashboard.categories_count"),
       value: teamStats?.categoriesCount.toLocaleString() || "0",
-      description: t("team_categories_description"),
+      description: t("dashboard.team_categories_description"),
       icon: "tag",
       color: "bg-purple-500"
     }
@@ -333,8 +333,8 @@ export function TeamDashboard() {
   return (
     <div className="container mx-auto py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">{t("team_dashboard_title")}</h1>
-        <p className="text-gray-500">{t("team_dashboard_description")}</p>
+        <h1 className="text-3xl font-bold mb-2">{t("dashboard.team_dashboard_title")}</h1>
+        <p className="text-gray-500">{t("dashboard.team_dashboard_description")}</p>
       </div>
 
       {/* Statistics Cards */}
@@ -360,7 +360,7 @@ export function TeamDashboard() {
       {/* Accessible Warehouses List */}
       <Card className="mb-8">
         <CardHeader>
-          <CardTitle>{t("accessible_warehouses_title")}</CardTitle>
+          <CardTitle>{t("dashboard.accessible_warehouses_title")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -369,13 +369,13 @@ export function TeamDashboard() {
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="font-medium">{warehouse.name}</h3>
                   <span className={`text-xs px-2 py-1 rounded ${warehouse.isManageable ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
-                    {warehouse.isManageable ? t("can_manage") : t("can_view")}
+                    {warehouse.isManageable ? t("dashboard.can_manage") : t("dashboard.can_view")}
                   </span>
                 </div>
                 <p className="text-sm text-gray-500 mb-2">{warehouse.location}</p>
                 <div className="mt-auto">
                   <Link href={`/warehouses/${warehouse.id}`} className="text-sm text-blue-500 hover:underline">
-                    {t("view_warehouse")}
+                    {t("dashboard.view_warehouse")}
                   </Link>
                 </div>
               </div>

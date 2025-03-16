@@ -85,30 +85,30 @@ export function PublicDashboard() {
   // Define statistics cards data
   const stats = [
     {
-      title: t("total_products"),
+      title: t("dashboard.total_products"),
       value: safeStats.totalProducts.toLocaleString(),
-      description: t("total_products_description"),
+      description: t("dashboard.total_products_description"),
       icon: "package",
       color: "bg-blue-500"
     },
     {
-      title: t("total_warehouses"),
+      title: t("dashboard.total_warehouses"),
       value: safeStats.totalWarehouses.toLocaleString(),
-      description: t("total_warehouses_description"),
+      description: t("dashboard.total_warehouses_description"),
       icon: "home",
       color: "bg-green-500"
     },
     {
-      title: t("categories_count"),
+      title: t("dashboard.categories_count"),
       value: safeStats.categoriesCount.toLocaleString(),
-      description: t("categories_description"),
+      description: t("dashboard.categories_description"),
       icon: "tag",
       color: "bg-purple-500"
     },
     {
-      title: t("recent_operations"),
+      title: t("dashboard.recent_operations"),
       value: safeStats.recentOperations.toLocaleString(),
-      description: t("recent_operations_description"),
+      description: t("dashboard.recent_operations_description"),
       icon: "activity",
       color: "bg-yellow-500"
     }
@@ -149,8 +149,8 @@ export function PublicDashboard() {
   return (
     <div className="container mx-auto py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">{t("public_dashboard_title")}</h1>
-        <p className="text-gray-500">{t("public_dashboard_description")}</p>
+        <h1 className="text-3xl font-bold mb-2">{t("dashboard.public_dashboard_title")}</h1>
+        <p className="text-gray-500">{t("dashboard.public_dashboard_description")}</p>
       </div>
 
       {/* Statistics Cards */}
@@ -181,10 +181,10 @@ export function PublicDashboard() {
 
       {/* Login Call to Action */}
       <div className="mt-8 p-6 bg-blue-50 rounded-lg">
-        <h2 className="text-xl font-bold mb-2">{t("login_to_access_more")}</h2>
-        <p className="mb-4">{t("login_to_access_more_description")}</p>
+        <h2 className="text-xl font-bold mb-2">{t("dashboard.login_to_access_more")}</h2>
+        <p className="mb-4">{t("dashboard.login_to_access_more_description")}</p>
         <Link href="/login" className="inline-block bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded transition-colors">
-          {t("login_button")}
+          {t("auth.login")}
         </Link>
       </div>
     </div>
