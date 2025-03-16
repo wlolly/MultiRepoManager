@@ -36,7 +36,8 @@ try {
 }
 
 // 获取数据库连接字符串
-const connectionString = process.env.DATABASE_URL;
+// 获取数据库连接字符串,支持连接池
+const connectionString = process.env.DATABASE_URL?.replace('.us-east-2', '-pooler.us-east-2');
 
 if (!connectionString) {
   throw new Error('DATABASE_URL not found in environment variables');
