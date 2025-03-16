@@ -223,22 +223,24 @@ export type InsertTeamRepository = z.infer<typeof insertTeamRepositorySchema>;
 export type TeamRepository = typeof teamRepositories.$inferSelect;
 
 // Activity table to track repository events
-export const activities = mysqlTable("activities", {
-  id: int("id").primaryKey().autoincrement(),
-  repositoryId: int("repository_id").notNull().references(() => repositories.id),
-  userId: int("user_id").notNull().references(() => users.id),
-  type: mysqlEnum("type", [
-    "commit",
-    "branch",
-    "pull_request",
-    "comment",
-    "issue",
-    "release",
-    "fork",
-    "star",
-    "update",
-    "other"
-  ]).notNull(),
+export const activitiesTypeEnum = pgEnum("activity_type", [
+  "commit",
+  "branch",
+  "pull_request",
+  "comment",
+  "issue",
+  "release",
+  "fork",
+  "star",
+  "update",
+  "other"
+]);
+
+export const activities = pgTable("activities", {
+  id: serial("id").primaryKey(),
+  repositoryId: integer("repository_id").notNull().references(() => repositories.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  type: activitiesTypeEnum.notNull(),
   summary: varchar("summary", { length: 255 }).notNull(),
   details: text("details"),
   branch: varchar("branch", { length: 255 }),
@@ -260,15 +262,15 @@ export type Activity = typeof activities.$inferSelect;
 // 仓库管理系统的数据模型开始
 
 // 产品表
-export const products = mysqlTable("products", {
-  id: int("id").primaryKey().autoincrement(), // 商品ID
+export const products = pgTable("products", {
+  id: serial("id").primaryKey(), // 商品ID
   name: varchar("name", { length: 255 }).notNull(), // 商品名称
   // 数据库中缺少以下字段，临时添加了默认值以使代码兼容
   description: text("description").default(""), // 商品描述（数据库中不存在）
   barcode: varchar("barcode", { length: 255 }).notNull().unique(), // 条码
   uniqueCode: varchar("unique_code", { length: 255 }), // 唯一码，用于与电商平台匹配
   category: varchar("category", { length: 100 }).default(""), // 商品类别（数据库中不存在）
-  stock: int("stock").notNull().default(0), // 库存数量（数据库中不存在）
+  stock: integer("stock").notNull().default(0), // 库存数量（数据库中不存在）
   price: decimal("price", { precision: 10, scale: 2 }).notNull().default("0"), // 售价（数据库中不存在）
   cost: decimal("cost", { precision: 10, scale: 2 }).notNull().default("0"), // 成本（数据库中不存在）
   singleLengthCm: decimal("single_length_cm", { precision: 10, scale: 2 }).notNull(), // 单件尺寸（长CM）
@@ -276,7 +278,7 @@ export const products = mysqlTable("products", {
   singleHeightCm: decimal("single_height_cm", { precision: 10, scale: 2 }).notNull(), // 单件尺寸（高CM）
   singleVolumeM3: decimal("single_volume_m3", { precision: 10, scale: 6 }).notNull(), // 单件立方（M3）
   singleWeightKg: decimal("single_weight_kg", { precision: 10, scale: 3 }).notNull(), // 单件重量（kg）
-  bulkQuantity: int("bulk_quantity").notNull().default(1), // 整件包装内产品数量（数据库中不存在）
+  bulkQuantity: integer("bulk_quantity").notNull().default(1), // 整件包装内产品数量（数据库中不存在）
   bulkWidthCm: decimal("bulk_width_cm", { precision: 10, scale: 2 }).notNull(), // 整件尺寸（宽CM）
   bulkLengthCm: decimal("bulk_length_cm", { precision: 10, scale: 2 }).notNull(), // 整件尺寸（长CM）
   bulkHeightCm: decimal("bulk_height_cm", { precision: 10, scale: 2 }).notNull(), // 整件尺寸（高CM）
@@ -314,8 +316,8 @@ export type Product = typeof products.$inferSelect;
 // 操作类型枚举 (入库，出库)
 
 // 仓库
-export const warehouses = mysqlTable("warehouses", {
-  id: int("id").primaryKey().autoincrement(),
+export const warehouses = pgTable("warehouses", {
+  id: serial("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(), // 仓库名称
   location: varchar("location", { length: 255 }).notNull(), // 仓库地址
   capacity: decimal("capacity", { precision: 10, scale: 2 }).notNull(), // 容量
