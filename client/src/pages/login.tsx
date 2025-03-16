@@ -45,7 +45,11 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     setIsLoading(true);
     
     // 显示登录中提示
-    toast.success("登录中，请稍候...");
+    toast({ 
+      title: "登录中",
+      description: "请稍候...",
+      type: "success"
+    });
     
     // 额外调试信息，特别是测试用户登录
     if (values.username === '222') {
