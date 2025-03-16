@@ -123,7 +123,17 @@ export const sessionSyncMiddleware = (req: Request, res: Response, next: NextFun
     // 如果会话已认证，添加特殊标记
     if (req.session?.userId) {
       res.setHeader('X-Session-Authenticated', 'true');
+      
+      // 特别标记真实认证状态
+      if (req.session?.realAuthenticated === true) {
+        res.setHeader('X-Real-Authenticated', 'true');
+      }
+      
       res.setHeader('X-User-ID', req.session.userId.toString());
+      // 添加用户角色信息
+      if (req.session?.userRole) {
+        res.setHeader('X-User-Role', req.session.userRole.toString());
+      }
     }
   }
   
