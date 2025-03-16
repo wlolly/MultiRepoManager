@@ -81,8 +81,8 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
         id: 1, 
         username: 'admin',
         role: 'admin',
-        fullName: '系统管理员',
-        isActive: true
+        fullname: '系统管理员', // 使用全小写字段名
+        isactive: true // 使用全小写字段名
       };
 
       // 只有确实已登录时才设置会话标记
@@ -304,8 +304,8 @@ export async function getCurrentUser(req: Request, res: Response) {
         id: 1,
         username: 'admin',
         role: 'admin',
-        fullName: '系统管理员',
-        isActive: true,
+        fullname: '系统管理员', // 改为全小写字段名
+        isactive: true, // 改为全小写字段名
         authenticated: true,
         permissions: {
           pages: ['dashboard', 'products', 'warehouses', 'team', 'admin'],
