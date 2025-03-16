@@ -524,9 +524,9 @@ export default function App() {
               <ProtectedRoute path="/outbound-order/:id" component={OutboundOrder} pageName="outbound_orders" />
               <ProtectedRoute path="/outbound-orders/advanced" component={AdvancedOutboundOrder} pageName="outbound_orders" />
               
-              {/* 仓库调拨单页面 */}
-              <ProtectedRoute path="/warehouse-transfers" component={WarehouseTransfers} pageName="warehouse_transfers" />
-              <ProtectedRoute path="/warehouse-transfers/optimized" component={OptimizedWarehouseTransfers} pageName="warehouse_transfers" />
+              {/* 仓库调拨单页面 - 使用优化版作为默认页面 */}
+              <ProtectedRoute path="/warehouse-transfers" component={OptimizedWarehouseTransfers} pageName="warehouse_transfers" />
+              <ProtectedRoute path="/warehouse-transfers/legacy" component={WarehouseTransfers} pageName="warehouse_transfers" />
               <ProtectedRoute path="/warehouse-transfers/new" component={NewWarehouseTransfer} pageName="warehouse_transfers" />
               <ProtectedRoute path="/warehouse-transfers/import" component={WarehouseTransferImport} pageName="warehouse_transfers" />
               
