@@ -56,8 +56,10 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // 设置5秒钟的初始等待
   updateLoadingStatus('正在初始化应用程序...');
+  console.log('开始5秒钟的初始等待时间...');
+  
+  // 修改: 延长初始等待时间到5秒，确保加载指示器显示足够长的时间
   initialWaitTimer = setTimeout(() => {
-    console.log('开始5秒钟的初始等待时间...');
     startLoadingProgress();
     
     // 再给数据库5秒钟的额外时间
@@ -69,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
         updateLoadingStatus('数据库仍在连接中，请继续等待...');
       }
     }, 5000);
-  }, 100);
+  }, 5000); // 修改: 从100毫秒改为5000毫秒 (5秒)
 });
 
 // 检查窗口是否已完全加载
