@@ -13,5 +13,10 @@ declare module 'express-session' {
     realAuthenticated?: boolean;
     testUser?: boolean;
     fakePositive?: boolean;
+    
+    // 会话同步中间件新增字段
+    clientOrigin?: boolean;
+    sessionSource?: string;
+    lastSync?: string;
   }
 }

@@ -130,17 +130,42 @@ export const sessionSyncMiddleware = (req: Request, res: Response, next: NextFun
   // 找到客户端最高优先级的会话ID
   const topClientSessionId = clientSessionIds.length > 0 ? clientSessionIds[0] : null;
   
-  // 如果客户端发送的会话ID与服务器当前使用的不同，记录差异
+  // 如果客户端发送的会话ID与服务器当前使用的不同
   if (topClientSessionId && req.sessionID && topClientSessionId.id !== req.sessionID) {
     if (isImportantRequest) {
       console.log(`会话同步 - ID不匹配: 客户端ID ${topClientSessionId.id.substring(0, 8)}... (来源: ${topClientSessionId.source}) 与服务器ID ${req.sessionID.substring(0, 8)}... 不一致`);
     }
+
+    // 关键修复：优先采用客户端会话ID，覆盖req.sessionID
+    // 这是一个关键修改，确保客户端会话ID被尊重和保留
+    try {
+      if (req.session) {
+        // 直接修改会话ID，避免修改会话对象本身
+        req.sessionID = topClientSessionId.id; // 替换为客户端ID
+        
+        // 添加会话状态标记，帮助调试
+        req.session.clientOrigin = true;
+        req.session.sessionSource = topClientSessionId.source;
+        req.session.lastSync = new Date().toISOString();
+        
+        // 强制会话保存，确保更改被持久化
+        req.session.save((err) => {
+          if (err) console.error("会话保存错误:", err);
+        });
+        
+        if (isImportantRequest) {
+          console.log(`会话同步 - 已将服务器会话ID改为客户端会话ID: ${topClientSessionId.id}`);
+        }
+      }
+    } catch (e) {
+      console.error("会话同步ID替换失败:", e);
+    }
     
-    // 告诉客户端实际使用了哪个会话ID
+    // 告诉客户端我们使用了它的会话ID
     res.setHeader('X-Original-Session-ID', topClientSessionId.id);
-    res.setHeader('X-New-Session-ID', req.sessionID);
-    res.setHeader('X-Session-ID', req.sessionID);
-    res.setHeader('X-Session-Source', 'server-generated');
+    res.setHeader('X-Session-ID', topClientSessionId.id);
+    res.setHeader('X-Session-Source', topClientSessionId.source);
+    res.setHeader('X-Session-Restored', 'true');
   } 
   // 如果一致，记录一致性
   else if (topClientSessionId && req.sessionID && topClientSessionId.id === req.sessionID) {
@@ -148,6 +173,16 @@ export const sessionSyncMiddleware = (req: Request, res: Response, next: NextFun
       console.log(`会话同步 - ID一致: 客户端ID与服务器ID ${req.sessionID.substring(0, 8)}... 匹配`);
     }
     res.setHeader('X-Session-Source', topClientSessionId.source);
+    res.setHeader('X-Session-ID', req.sessionID);
+  } 
+  // 如果客户端没有会话ID，但服务器有，告诉客户端服务器会话ID
+  else if (!topClientSessionId && req.sessionID) {
+    if (isImportantRequest) {
+      console.log(`会话同步 - 客户端无会话ID，服务器会话ID: ${req.sessionID.substring(0, 8)}...`);
+    }
+    res.setHeader('X-Session-ID', req.sessionID);
+    res.setHeader('X-New-Session-ID', req.sessionID); 
+    res.setHeader('X-Session-Source', 'server-generated');
   }
   
   // 确保会话cookie始终与当前会话ID同步 (关键修复)
