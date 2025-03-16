@@ -138,8 +138,18 @@ export function Sidebar() {
       <nav className="mt-2">
         <div className="px-4 py-2 text-gray-400 text-sm font-medium">{t('navigation')}</div>
         {navItems
-          // 过滤导航项：只显示仪表盘和真实用户可以访问的其他页面
-          .filter(item => item.href === "/" || isRealUser)
+          // 过滤导航项：
+          // 1. 仪表盘（"/"）总是显示
+          // 2. 对于访客不显示"我的商品"（"/products"）
+          // 3. 其他页面只有真实用户才能访问
+          .filter(item => {
+            // 仪表盘总是显示
+            if (item.href === "/") return true;
+            // "我的商品"页面只对真实用户显示
+            if (item.href === "/products") return isRealUser;
+            // 其他页面只对真实用户显示
+            return isRealUser;
+          })
           .map((item) => (
             <Link key={item.href} to={item.href} className={cn(
               "flex items-center py-2 px-4 transition",
