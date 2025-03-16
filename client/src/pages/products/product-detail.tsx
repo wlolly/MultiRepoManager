@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import toast from "../../lib/toast";
 import { ArrowLeft, Edit, Trash, BarChart, PackageOpen, Box, Truck, Clipboard } from "lucide-react";
-import { useAuthStatus } from "../../hooks/use-auth-status";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -21,7 +21,7 @@ export default function ProductDetail() {
   const queryClient = useQueryClient();
   
   // 获取用户认证状态，用于判断是否显示编辑和删除按钮
-  const { isAuthenticated, realAuthenticated } = useAuthStatus();
+  const { isAuthenticated, isRealUser } = useAuth();
 
   // 获取产品数据
   const { data: product, isLoading, error } = useQuery({

@@ -6,7 +6,7 @@ import { LanguageDistribution } from "@/components/dashboard/language-distributi
 import { RecentActivity } from "@/components/dashboard/recent-activity";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
-import { useAuthStatus } from "@/hooks/use-auth-status";
+import { useAuth } from "@/contexts/AuthContext";
 import { PublicDashboard } from "./public-dashboard";
 
 // Team dashboard stats interface
@@ -39,29 +39,29 @@ interface AccessibleWarehouse {
 export function TeamDashboard() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("overview");
-  const { realAuthenticated, user, loading } = useAuthStatus();
+  const { isRealUser, user, isLoading } = useAuth();
   const [shouldTryFetchingData, setShouldTryFetchingData] = useState(false);
   
   // 监听认证状态和用户变化
   useEffect(() => {
-    console.log("TeamDashboard - 认证状态:", realAuthenticated);
+    console.log("TeamDashboard - 认证状态:", isRealUser);
     console.log("TeamDashboard - 用户:", user);
     
     // 在用户加载完成后，总是尝试获取数据
-    if (!loading) {
+    if (!isLoading) {
       // 在游客模式下也允许获取数据，只要api返回适当的数据即可
       // 我们将为所有用户启用数据获取，包括游客
       setShouldTryFetchingData(true);
       
       // 记录详细的用户状态，但不再阻止数据获取
-      const isRealAdmin = realAuthenticated && user && user.id !== -1 && user.role === 'admin';
+      const isRealAdmin = isRealUser && user && (user.role === 'admin' || user.role === 'super_admin');
       console.log("TeamDashboard - 是真实管理员:", isRealAdmin);
       
       if (!isRealAdmin) {
         console.log("TeamDashboard - 使用游客模式访问团队仪表盘");
       }
     }
-  }, [realAuthenticated, user, loading]);
+  }, [isRealUser, user, isLoading]);
   
   // 执行团队数据查询，仅在真实用户认证状态下
   const { data: teamStats, isLoading: isStatsLoading, error: statsError } = useQuery<TeamDashboardStats>({

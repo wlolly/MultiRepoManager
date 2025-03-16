@@ -9,7 +9,6 @@ export interface User {
   fullName?: string;
   isActive: boolean;
   authenticated: boolean;
-  realAuthenticated: boolean;
   permissions?: {
     pages: string[];
     actions: string[];
@@ -47,7 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // 计算派生状态
   const isAuthenticated = !!user?.authenticated;
-  const isRealUser = !!user?.realAuthenticated;
+  const isRealUser = isAuthenticated && user !== null;
   const isAdmin = isRealUser && (user?.role === 'admin' || user?.role === 'super_admin');
   const isVisitor = !isRealUser;
 

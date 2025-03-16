@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useAuthStatus } from "@/hooks/use-auth-status";
+import { useAuth } from "@/contexts/AuthContext";
 import { PublicDashboard } from "./dashboard/public-dashboard";
 import { TeamDashboard } from "./dashboard/team-dashboard";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,8 +10,8 @@ import { Skeleton } from "@/components/ui/skeleton";
  * 增强处理状态变化的稳定性
  */
 export default function Dashboard() {
-  // 使用认证状态钩子，获取realAuthenticated标志和用户信息
-  const { realAuthenticated, user, loading } = useAuthStatus();
+  // 使用认证上下文，获取用户认证状态和信息
+  const { user, isRealUser, isLoading } = useAuth();
   // 默认值设为public，确保页面在加载状态下也能正确地展示
   const [dashboardType, setDashboardType] = useState<'public' | 'team'>('public');
   // 添加延迟加载状态，防止在认证状态变化时出现闪烁
@@ -31,35 +31,29 @@ export default function Dashboard() {
   useEffect(() => {
     // 记录调试信息
     console.log("Dashboard组件 - 当前用户:", user);
-    console.log("Dashboard组件 - 真实认证状态:", realAuthenticated);
+    console.log("Dashboard组件 - 真实认证状态:", isRealUser);
     
-    if (loading) {
+    if (isLoading) {
       console.log("Dashboard组件 - 加载中，暂不切换仪表盘类型");
       return; // 在加载状态下不更改仪表盘类型
     }
     
-    // 判断是否为真实登录用户 - 必须满足所有条件：
-    // 1. 真实认证状态为true
-    // 2. 用户对象存在
-    // 3. 用户ID不为-1（不是游客）
-    // 4. 用户角色为admin
-    const isRealUser = realAuthenticated === true && 
+    // 判断是否为真实登录用户并且是管理员
+    const isAdminUser = isRealUser && 
                        user !== null && 
-                       user !== undefined && 
-                       user.id !== -1 && 
-                       (user.role === 'admin' || user.role === 'super_admin');
+                       (user?.role === 'admin' || user?.role === 'super_admin');
     
-    if (isRealUser) {
+    if (isAdminUser) {
       console.log("Dashboard组件 - 决定显示团队仪表盘");
       setDashboardType('team');
     } else {
       console.log("Dashboard组件 - 决定显示公共仪表盘");
       setDashboardType('public');
     }
-  }, [realAuthenticated, user, loading]);
+  }, [isRealUser, user, isLoading]);
 
   // 显示加载状态 - 同时考虑钩子的loading状态和组件自身的stableLoading状态
-  if (loading || stableLoading) {
+  if (isLoading || stableLoading) {
     return (
       <div className="container mx-auto p-8">
         <Skeleton className="h-12 w-3/4 mb-6" />
