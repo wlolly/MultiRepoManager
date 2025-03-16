@@ -175,9 +175,9 @@ export const sessionSyncMiddleware = (req: Request, res: Response, next: NextFun
     // 告诉客户端我们使用了它的会话ID
     res.setHeader('X-Original-Session-ID', topClientSessionId.id);
     res.setHeader('X-Session-ID', topClientSessionId.id);
-    // 确保HTTP头部值不包含非法字符
-    const safeSource = topClientSessionId.source ? topClientSessionId.source.replace(/[^\w-]/g, '_') : 'client';
-    res.setHeader('X-Session-Source', safeSource);
+    // 确保HTTP头部值不包含非法字符 - 完全避免使用source值，防止出现非法字符
+    // 改为使用固定值，避免传递可能包含括号或其他特殊字符的原始来源
+    res.setHeader('X-Session-Source', 'client_provided');
     res.setHeader('X-Session-Restored', 'true');
   } 
   // 如果一致，记录一致性
@@ -185,9 +185,9 @@ export const sessionSyncMiddleware = (req: Request, res: Response, next: NextFun
     if (isImportantRequest) {
       console.log(`会话同步 - ID一致: 客户端ID与服务器ID ${req.sessionID.substring(0, 8)}... 匹配`);
     }
-    // 确保HTTP头部值不包含非法字符
-    const safeSource = topClientSessionId.source ? topClientSessionId.source.replace(/[^\w-]/g, '_') : 'client';
-    res.setHeader('X-Session-Source', safeSource);
+    // 确保HTTP头部值不包含非法字符 - 完全避免使用source值
+    // 改为使用固定值，避免传递可能包含括号或其他特殊字符的原始来源
+    res.setHeader('X-Session-Source', 'client_matched');
     res.setHeader('X-Session-ID', req.sessionID);
   } 
   // 如果客户端没有会话ID，但服务器有，告诉客户端服务器会话ID
