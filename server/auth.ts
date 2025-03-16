@@ -182,40 +182,78 @@ export function isAdmin(req: Request, res: Response, next: NextFunction) {
   }
 }
 
-// 用户登录处理
+/**
+ * 用户登录处理
+ * 验证用户凭据并设置会话状态
+ * 已移除测试账号功能，提高系统安全性
+ */
 export async function loginUser(req: Request, res: Response) {
   try {
     const { username, password } = req.body;
-    console.log('[认证系统] 尝试登录:', username);
+    console.log('[认证系统] 尝试登录用户:', username);
 
     if (!username || !password) {
+      console.log('[认证系统] 登录失败: 用户名或密码为空');
       return res.status(400).json({ 
         success: false,
         message: '用户名和密码不能为空'
       });
     }
 
-    // 测试账号登录逻辑
-    if (username === '222' && password === '222') {
-      const userId = 1;
-      console.log('[认证系统] 测试账号登录成功');
-
+    // 查询数据库获取用户
+    const db = req.app.locals.storage;
+    const user = await db.getUserByUsername(username);
+    
+    if (!user) {
+      console.log('[认证系统] 登录失败: 用户不存在');
+      return res.status(401).json({
+        success: false,
+        message: '用户名或密码不正确'
+      });
+    }
+    
+    // 验证密码
+    if (!verifyPassword(user.password, password)) {
+      console.log('[认证系统] 登录失败: 密码不正确');
+      return res.status(401).json({
+        success: false,
+        message: '用户名或密码不正确'
+      });
+    }
+    
+    // 检查用户账号状态
+    if (!user.isactive) {
+      console.log('[认证系统] 登录失败: 账号未激活');
+      return res.status(403).json({
+        success: false,
+        message: '账号未激活，请联系管理员'
+      });
+    }
+    
+    console.log('[认证系统] 登录成功: 用户ID:', user.id, '角色:', user.role);
+    
+    // 清理之前的会话数据
+    req.session.regenerate(async (err) => {
+      if (err) {
+        console.error('[认证系统] 重新生成会话失败:', err);
+        return res.status(500).json({
+          success: false,
+          message: '会话创建失败'
+        });
+      }
+      
       // 设置详细的会话信息
-      req.session.userId = userId;
-      req.session.username = username;
+      req.session.userId = user.id;
       req.session.authenticated = true;
-      req.session.realAuthenticated = true;
-      req.session.userRole = 'admin';
+      req.session.userRole = user.role;
       req.session.lastActivity = Date.now();
-      req.session.permissions = {
-        pages: ['dashboard', 'products', 'warehouses', 'team', 'admin'],
-        actions: ['view', 'create', 'edit', 'delete'],
-        warehouses: { 
-          1: { canView: true, canManage: true },
-          2: { canView: true, canManage: true }
-        }
-      };
-
+      req.session.sessionCreatedAt = Date.now();
+      
+      // 设置会话安全信息
+      req.session.securityLevel = 'high';
+      req.session.sessionIPAddress = req.ip;
+      req.session.sessionUserAgent = req.get('user-agent') || '';
+      
       await new Promise((resolve, reject) => {
         req.session.save((err) => {
           if (err) {
@@ -231,7 +269,7 @@ export async function loginUser(req: Request, res: Response) {
       const cookieOptions = {
         maxAge: 30 * 24 * 60 * 60 * 1000,
         httpOnly: false,  // 允许客户端JavaScript访问
-        secure: false,    // 开发环境不使用secure
+        secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax' as 'lax'  // 显式类型转换解决TypeScript错误
       };
 
@@ -242,32 +280,32 @@ export async function loginUser(req: Request, res: Response) {
 
       // 设置会话响应头
       res.setHeader('X-Session-ID', req.sessionID);
-      res.setHeader('X-Real-Authenticated', 'true');
+      res.setHeader('X-Authenticated', 'true');
 
+      // 计算社交账号是否需要绑定
+      const needSocialBinding = user.usersource === 'local' && !user.socialid;
+      
       // 返回完整的用户信息
       return res.json({
         success: true,
         message: '登录成功',
+        authenticated: true,
         sessionId: req.sessionID,
+        needSocialBinding: needSocialBinding,
         user: {
-          id: userId,
-          username: 'admin',
-          role: 'admin',
-          fullName: '系统管理员',
-          authenticated: true,
-          realAuthenticated: true,
-          permissions: req.session.permissions,
-          isActive: true
+          id: user.id,
+          username: user.username,
+          fullname: user.fullname, // 使用全小写字段名
+          role: user.role,
+          avatarurl: user.avatarurl, // 使用全小写字段名
+          usersource: user.usersource // 使用全小写字段名
         }
       });
-    }
-
-    console.log('[认证系统] 登录失败:', username);
-    return res.status(401).json({
-      success: false,
-      message: '用户名或密码错误',
-      errorCode: 'INVALID_CREDENTIALS'
     });
+    
+    // 根据API规范，会话重生成后不会执行这里的代码
+    // 但为了安全起见，如果重生成过程失败，也提供错误处理
+    return;
   } catch (error) {
     console.error('[认证系统] 登录处理出错:', error);
     res.status(500).json({ message: '登录失败，服务器错误' });
@@ -284,7 +322,10 @@ export async function registerUser(req: Request, res: Response) {
   });
 }
 
-// 获取当前用户信息
+/**
+ * 获取当前用户信息
+ * 根据会话状态返回当前登录用户或访客权限
+ */
 export async function getCurrentUser(req: Request, res: Response) {
   try {
     // 检查是否已登录（会话中是否有userId且已认证）
@@ -292,27 +333,59 @@ export async function getCurrentUser(req: Request, res: Response) {
                            req.session.userId && 
                            req.session.authenticated === true;
 
-    // 检查是否来自登录流程
-    const isFromLoginFlow = req.headers['x-login-flow'] === 'true';
-
-    // 如果已登录或来自登录流程，返回管理员用户信息
-    if (isAuthenticated || isFromLoginFlow) {
-      console.log('[认证系统] 当前用户已认证 - 返回管理员用户');
-
-      // 返回管理员用户信息
-      return res.json({
-        id: 1,
-        username: 'admin',
-        role: 'admin',
-        fullname: '系统管理员', // 改为全小写字段名
-        isactive: true, // 改为全小写字段名
-        authenticated: true,
-        permissions: {
-          pages: ['dashboard', 'products', 'warehouses', 'team', 'admin'],
-          actions: ['view', 'create', 'edit', 'delete'],
-          warehouses: { 1: { canView: true, canManage: true } }
+    // 如果已登录，从数据库获取最新的用户信息
+    if (isAuthenticated) {
+      console.log('[认证系统] 当前用户已认证 - 尝试获取用户ID:', req.session.userId);
+      
+      try {
+        const db = req.app.locals.storage;
+        
+        // 从数据库获取用户信息
+        const user = await db.getUser(req.session.userId);
+        
+        if (user) {
+          console.log('[认证系统] 获取到用户数据:', user.username);
+          
+          // 返回用户信息
+          return res.json({
+            id: user.id,
+            username: user.username,
+            role: user.role,
+            fullname: user.fullname,
+            isactive: user.isactive,
+            authenticated: true,
+            permissions: {
+              pages: ['dashboard', 'products', 'warehouses', 'team', 'admin'],
+              actions: ['view', 'create', 'edit', 'delete'],
+              warehouses: { 1: { canView: true, canManage: true } }
+            }
+          });
+        } else {
+          // 会话中有userId但数据库找不到用户，可能是用户被删除
+          console.log('[认证系统] 警告: 会话中有userId但数据库找不到此用户');
+          req.session.authenticated = false;
+          req.session.userId = undefined;
+          
+          return res.status(401).json({
+            authenticated: false,
+            message: '会话用户无效，请重新登录',
+            guestAccess: true,
+            allowedPages: ['dashboard'],
+            permissions: {
+              pages: ['dashboard'],
+              actions: ['view'],
+              warehouses: {}
+            }
+          });
         }
-      });
+      } catch (dbError) {
+        console.error('[认证系统] 数据库查询用户时出错:', dbError);
+        // 数据库错误但不销毁会话，返回通用错误
+        return res.status(500).json({ 
+          message: '获取用户信息失败，请稍后再试',
+          authenticated: false
+        });
+      }
     } else {
       // 未登录，返回未授权状态和访客信息
       console.log('[认证系统] 当前用户未认证 - 返回访客信息');
@@ -332,7 +405,10 @@ export async function getCurrentUser(req: Request, res: Response) {
     }
   } catch (error) {
     console.error('[认证系统] 获取当前用户出错:', error);
-    res.status(500).json({ message: '获取用户信息失败' });
+    res.status(500).json({ 
+      message: '获取用户信息失败',
+      authenticated: false
+    });
   }
 }
 
