@@ -19,17 +19,17 @@ console.log("初始化Express应用中间件...");
 // 配置 express-session
 app.use(session({
   secret: process.env.SESSION_SECRET || 'warehouse-management-secret-2025-03-15',
-  resave: false, // 只在会话被修改时保存
-  saveUninitialized: true, // 修改为true，确保即使未初始化的会话也被保存，解决会话持久性问题
-  name: 'warehouse.sid', // 自定义会话ID cookie名称 (更简单的名称避免解析问题)
+  resave: true, // 修改为true，确保每次请求都重写会话，解决会话不持久问题
+  saveUninitialized: true, // 修改为true，确保即使未初始化的会话也被保存
+  name: 'warehouse.sid', // 会话ID cookie名称
   rolling: true, // 每次响应都重设cookie过期时间
-  proxy: true, // 信任反向代理，解决在Replit环境下cookie问题
+  proxy: true, // 信任反向代理，适应Replit环境
   cookie: { 
-    secure: false, // 开发环境不使用secure，避免cookie丢失
-    maxAge: 30 * 24 * 60 * 60 * 1000, // 延长到30天，确保测试期间不会过期
-    httpOnly: true, // 阻止客户端JS访问cookie
+    secure: false, // 开发环境不使用secure，确保Cookie能正常设置
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30天
+    httpOnly: false, // 改为false允许客户端JS访问cookie，方便调试和会话同步
     path: '/',
-    sameSite: 'lax', // 防止CSRF攻击的同时允许从外部链接访问
+    sameSite: 'lax' as 'lax', // 修复类型错误，使用lax模式更安全同时允许从外部链接访问
     domain: undefined // 不指定域名，使用当前域名
   },
   genid: function(req) {

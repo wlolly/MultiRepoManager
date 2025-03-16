@@ -40,7 +40,8 @@ export function setCookie(name: string, value: string, options: {
   maxAgeDays?: number, 
   path?: string,
   sameSite?: 'Strict' | 'Lax' | 'None',
-  secure?: boolean
+  secure?: boolean,
+  httpOnly?: boolean
 } = {}) {
   const {
     maxAgeDays = 30,
@@ -50,7 +51,12 @@ export function setCookie(name: string, value: string, options: {
   } = options;
   
   const maxAge = maxAgeDays * 24 * 60 * 60; // 转换为秒
-  document.cookie = `${name}=${encodeURIComponent(value)}; path=${path}; max-age=${maxAge}; SameSite=${sameSite}${secure ? '; secure' : ''}`;
+  // 注意：客户端JavaScript无法设置httpOnly标志，这将由服务器设置
+  // 确保分号和空格格式正确，避免一些浏览器解析问题
+  document.cookie = `${name}=${encodeURIComponent(value)}; path=${path}; max-age=${maxAge}; SameSite=${sameSite}${secure ? '; Secure' : ''}`;
+  
+  // 记录cookie设置操作，方便调试
+  console.log(`设置Cookie: ${name}=${value.substring(0, 8)}..., 过期时间: ${maxAgeDays}天, SameSite=${sameSite}`);
 }
 
 /**
