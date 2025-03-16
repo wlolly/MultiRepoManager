@@ -14,6 +14,7 @@ import { usePermissions } from "./hooks/use-permissions";
 import { useAuth } from "@/contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./contexts/AuthContext";
+import { TranslationProvider } from "./contexts/TranslationContext";
 
 // 页面导入
 import Dashboard from "./pages/dashboard";
@@ -383,6 +384,7 @@ export default function App() {
   const [pathname] = useLocation();
   // 无需布局的路径（登录、重定向和注册页面）
   const noLayoutPaths = ['/login', '/login-redirect', '/register'];
+  const { t } = useTranslation();
   
   // 从本地存储加载用户首选语言
   useEffect(() => {
@@ -474,6 +476,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
         <AuthProvider>
+          <TranslationProvider>
           {noLayoutPaths.includes(pathname) ? (
             <Switch>
               <Route path="/login">
@@ -546,6 +549,7 @@ export default function App() {
           </AppLayout>
         )}
         <Toaster />
+          </TranslationProvider>
         </AuthProvider>
       </ToastProvider>
     </QueryClientProvider>

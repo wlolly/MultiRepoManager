@@ -343,17 +343,19 @@ export type InsertWarehouse = z.infer<typeof insertWarehouseSchema>;
 export type Warehouse = typeof warehouses.$inferSelect;
 
 // 入库单
-export const inboundOrders = pgTable("inbound_orders", {
-  id: serial("id").primaryKey(),
-  orderNumber: varchar("order_number", { length: 255 }).notNull().unique(), // 入库单号
-  warehouseId: integer("warehouse_id").notNull().references(() => warehouses.id), // 仓库ID
-  totalWeight: decimal("total_weight", { precision: 10, scale: 3 }).notNull(), // 总重量
-  totalVolume: decimal("total_volume", { precision: 10, scale: 6 }).notNull(), // 总体积
-  createdBy: integer("created_by").notNull().references(() => users.id), // 创建人
-  createdAt: timestamp("created_at").defaultNow().notNull(), // 创建时间
-  status: varchar("status", { length: 50 }).notNull().default("pending"), // 状态：待处理、已完成、已取消
-  orderType: orderTypeEnum, // 入库单类型：采购入库、退货入库、调拨入库、生产入库
-  notes: text("notes"), // 备注
+export const inboundOrders = pgTable("inbound_orders", (table) => {
+  return {
+    id: serial("id").primaryKey(),
+    orderNumber: varchar("order_number", { length: 255 }).notNull().unique(), // 入库单号
+    warehouseId: integer("warehouse_id").notNull().references(() => warehouses.id), // 仓库ID
+    totalWeight: decimal("total_weight", { precision: 10, scale: 3 }).notNull(), // 总重量
+    totalVolume: decimal("total_volume", { precision: 10, scale: 6 }).notNull(), // 总体积
+    createdBy: integer("created_by").notNull().references(() => users.id), // 创建人
+    createdAt: timestamp("created_at").defaultNow().notNull(), // 创建时间
+    status: varchar("status", { length: 50 }).notNull().default("pending"), // 状态：待处理、已完成、已取消
+    orderType: orderTypeEnum("purchase"), // 入库单类型：采购入库、退货入库、调拨入库、生产入库
+    notes: text("notes") // 备注
+  };
 });
 
 export const insertInboundOrderSchema = createInsertSchema(inboundOrders).pick({
@@ -406,18 +408,20 @@ export type InsertInboundOrderItem = z.infer<typeof insertInboundOrderItemSchema
 export type InboundOrderItem = typeof inboundOrderItems.$inferSelect;
 
 // 出库单
-export const outboundOrders = pgTable("outbound_orders", {
-  id: serial("id").primaryKey(),
-  orderNumber: varchar("order_number", { length: 255 }).notNull().unique(), // 出库单号
-  warehouseId: integer("warehouse_id").notNull().references(() => warehouses.id), // 仓库ID
-  totalWeight: decimal("total_weight", { precision: 10, scale: 3 }).notNull(), // 总重量
-  totalVolume: decimal("total_volume", { precision: 10, scale: 6 }).notNull(), // 总体积
-  createdBy: integer("created_by").notNull().references(() => users.id), // 创建人
-  createdAt: timestamp("created_at").defaultNow().notNull(), // 创建时间
-  status: varchar("status", { length: 50 }).notNull().default("pending"), // 状态：待处理、已完成、已取消
-  orderType: orderTypeEnum, // 出库单类型：销售出库、退货出库、调拨出库、报废出库
-  destinationType: destinationTypeEnum, // 目的地类型：客户、零售商、批发商、调拨仓库、供应商
-  notes: text("notes"), // 备注
+export const outboundOrders = pgTable("outbound_orders", (table) => {
+  return {
+    id: serial("id").primaryKey(),
+    orderNumber: varchar("order_number", { length: 255 }).notNull().unique(), // 出库单号
+    warehouseId: integer("warehouse_id").notNull().references(() => warehouses.id), // 仓库ID
+    totalWeight: decimal("total_weight", { precision: 10, scale: 3 }).notNull(), // 总重量
+    totalVolume: decimal("total_volume", { precision: 10, scale: 6 }).notNull(), // 总体积
+    createdBy: integer("created_by").notNull().references(() => users.id), // 创建人
+    createdAt: timestamp("created_at").defaultNow().notNull(), // 创建时间
+    status: varchar("status", { length: 50 }).notNull().default("pending"), // 状态：待处理、已完成、已取消
+    orderType: orderTypeEnum("sale"), // 出库单类型：销售出库、退货出库、调拨出库、报废出库
+    destinationType: destinationTypeEnum("customer"), // 目的地类型：客户、零售商、批发商、调拨仓库、供应商
+    notes: text("notes") // 备注
+  };
 });
 
 export const insertOutboundOrderSchema = createInsertSchema(outboundOrders).pick({
@@ -876,26 +880,30 @@ export const insertUniqueCodeTrackingSchema = createInsertSchema(uniqueCodeTrack
 export type InsertUniqueCodeTracking = z.infer<typeof insertUniqueCodeTrackingSchema>;
 export type UniqueCodeTracking = typeof uniqueCodeTracking.$inferSelect;
 
+// 操作类型枚举
+export const operationTypeHistoryEnum = pgEnum("operation_type", [
+  "inbound", "outbound", "transfer_in", "transfer_out", "adjust"
+]);
+
+// 状态枚举
+export const statusHistoryEnum = pgEnum("status_history", [
+  "in_stock", "transferred", "sold", "returned", "scrapped"
+]);
+
 // 唯一码流转历史表
 export const uniqueCodeHistory = pgTable("unique_code_history", {
   id: serial("id").primaryKey(),
   uniqueCode: varchar("unique_code", { length: 50 }).notNull(), // 唯一码
   productId: integer("product_id").notNull().references(() => products.id), // 商品ID
   warehouseId: integer("warehouse_id").notNull().references(() => warehouses.id), // 仓库ID
-  operationType: pgEnum("operation_type", [
-    "inbound", "outbound", "transfer_in", "transfer_out", "adjust"
-  ]).notNull(), // 操作类型
+  operationType: operationTypeHistoryEnum("operation_type").notNull(), // 操作类型
   quantity: integer("quantity").notNull().default(1), // 数量
   orderId: integer("order_id"), // 单据ID
   orderItemId: integer("order_item_id"), // 单据明细ID
   transferId: integer("transfer_id"), // 调拨单ID
   transferItemId: integer("transfer_item_id"), // 调拨单明细ID
-  oldStatus: pgEnum("old_status", [
-    "in_stock", "transferred", "sold", "returned", "scrapped"
-  ]), // 旧状态
-  newStatus: pgEnum("new_status", [
-    "in_stock", "transferred", "sold", "returned", "scrapped"
-  ]).notNull(), // 新状态
+  oldStatus: statusHistoryEnum("old_status"), // 旧状态
+  newStatus: statusHistoryEnum("new_status").notNull(), // 新状态
   operationDate: timestamp("operation_date").notNull().defaultNow(), // 操作日期
   userId: integer("user_id").references(() => users.id), // 操作用户ID
   remark: text("remark"), // 备注

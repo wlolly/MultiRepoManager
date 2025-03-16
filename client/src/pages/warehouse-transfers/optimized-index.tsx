@@ -1,28 +1,56 @@
-import { useState, useEffect } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import React, { useState } from "react";
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { 
-  Plus, Download, Filter, ArrowUpDown, Search, FileUp, 
-  FileDown, RefreshCw, Calendar, Truck, Warehouse, ClipboardList
-} from "lucide-react";
-
+import { format } from "date-fns";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useToast } from "@/hooks/use-toast";
-import { formatDate } from "@/lib/utils";
-
-// 导入自定义组件
-import { ExportTransferDialog } from "@/components/warehouse-transfers/ExportTransferDialog";
-import { ImportTransferDialog } from "@/components/warehouse-transfers/ImportTransferDialog";
+import {
+  ChevronRight,
+  Plus,
+  Search,
+  FileDown,
+  Filter,
+  Package,
+  TrendingUp,
+  Clipboard,
+  MoreHorizontal,
+  AlertCircle,
+} from "lucide-react";
+import { LanguageSwitcher, LanguageStatusBadge } from "@/components/LanguageSwitcher";
+import { warehouseTransferKeys } from "@/lib/translations";
 
 // 调拨单接口定义
 interface WarehouseTransfer {
@@ -53,17 +81,9 @@ interface WarehouseTransfer {
     username: string;
     fullName?: string;
   };
-  outboundOrder?: {
-    id: number;
-    orderNumber: string;
-  };
-  inboundOrder?: {
-    id: number;
-    orderNumber: string;
-  };
 }
 
-// 数据汇总接口
+// 统计数据接口
 interface TransferStats {
   totalTransfers: number;
   pendingTransfers: number;
@@ -73,661 +93,392 @@ interface TransferStats {
   recentTransfers: number;
 }
 
-export default function OptimizedWarehouseTransfers() {
+// 仓库调拨主页组件
+export default function WarehouseTransfersOptimized() {
   const { t } = useTranslation();
   const [_, navigate] = useLocation();
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
   
   // 状态管理
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [dateFilter, setDateFilter] = useState<string>("all");
-  const [warehouseFilter, setWarehouseFilter] = useState<string>("all");
-  const [view, setView] = useState<"all" | "pending" | "recent">("all");
-  
-  // 多选功能相关状态
-  const [selectedTransfers, setSelectedTransfers] = useState<number[]>([]);
-  const [selectAll, setSelectAll] = useState(false);
-  
-  // 对话框状态
-  const [exportDialogOpen, setExportDialogOpen] = useState(false);
-  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [warehouseFilter, setWarehouseFilter] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState('');
   
   // 获取调拨单列表
   const { 
     data: transfers = [], 
-    isLoading: isLoadingTransfers, 
-    isError: isErrorTransfers,
-    refetch: refetchTransfers 
-  } = useQuery<WarehouseTransfer[]>({
-    queryKey: ["/api/warehouse-transfers", { status: statusFilter, date: dateFilter, warehouse: warehouseFilter }],
+    isLoading: isLoadingTransfers,
+    isError: isErrorTransfers
+  } = useQuery({
+    queryKey: ['/api/warehouse-transfers', statusFilter, warehouseFilter, searchTerm],
+    queryFn: () => fetch(`/api/warehouse-transfers?status=${statusFilter}&warehouseId=${warehouseFilter}&search=${searchTerm}`).then(res => res.json()),
   });
   
-  // 获取调拨单统计数据
+  // 获取统计信息
   const { 
-    data: stats,
-    isLoading: isLoadingStats,
-    isError: isErrorStats 
-  } = useQuery<TransferStats>({
-    queryKey: ["/api/warehouse-transfers/stats"],
+    data: stats, 
+    isLoading: isLoadingStats 
+  } = useQuery({
+    queryKey: ['/api/warehouse-transfers/stats'],
+    queryFn: () => fetch('/api/warehouse-transfers/stats').then(res => res.json()),
   });
   
   // 获取仓库列表
   const { 
     data: warehouses = [], 
     isLoading: isLoadingWarehouses 
-  } = useQuery<{ id: number; name: string; location: string }[]>({
-    queryKey: ["/api/warehouses"],
+  } = useQuery({
+    queryKey: ['/api/warehouses'],
+    queryFn: () => fetch('/api/warehouses').then(res => res.json()),
   });
   
-  // 处理全选/取消全选
-  useEffect(() => {
-    if (selectAll) {
-      setSelectedTransfers(filteredTransfers.map(transfer => transfer.id));
-    } else {
-      setSelectedTransfers([]);
-    }
-  }, [selectAll]);
+  // 每页显示的条目数
+  const itemsPerPage = 10;
   
-  // 当过滤条件变化时，取消全选
-  useEffect(() => {
-    setSelectAll(false);
-    setSelectedTransfers([]);
-  }, [statusFilter, dateFilter, warehouseFilter, searchQuery, view]);
+  // 计算分页
+  const totalPages = Math.ceil(transfers.length / itemsPerPage);
+  const paginatedTransfers = transfers.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
   
-  // 过滤调拨单
-  const filteredTransfers = transfers.filter((transfer) => {
-    // 状态过滤
-    if (statusFilter !== "all" && transfer.status !== statusFilter) {
-      return false;
+  // 格式化日期
+  const formatDate = (dateStr: string) => {
+    try {
+      return format(new Date(dateStr), "yyyy-MM-dd HH:mm");
+    } catch (e) {
+      return dateStr;
     }
-    
-    // 仓库过滤
-    if (warehouseFilter !== "all") {
-      const warehouseId = parseInt(warehouseFilter);
-      if (transfer.sourceWarehouseId !== warehouseId && transfer.targetWarehouseId !== warehouseId) {
-        return false;
-      }
-    }
-    
-    // 日期过滤
-    if (dateFilter !== "all") {
-      const transferDate = new Date(transfer.createdAt);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      const yesterday = new Date(today);
-      yesterday.setDate(yesterday.getDate() - 1);
-      
-      const thisWeekStart = new Date(today);
-      thisWeekStart.setDate(thisWeekStart.getDate() - thisWeekStart.getDay());
-      
-      const thisMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-      
-      if (dateFilter === 'today' && transferDate < today) {
-        return false;
-      } else if (dateFilter === 'yesterday' && (transferDate < yesterday || transferDate >= today)) {
-        return false;
-      } else if (dateFilter === 'this-week' && transferDate < thisWeekStart) {
-        return false;
-      } else if (dateFilter === 'this-month' && transferDate < thisMonthStart) {
-        return false;
-      }
-    }
-    
-    // 搜索查询
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      return (
-        transfer.referenceNumber.toLowerCase().includes(query) ||
-        transfer.sourceWarehouse.name.toLowerCase().includes(query) ||
-        transfer.targetWarehouse.name.toLowerCase().includes(query) ||
-        (transfer.notes && transfer.notes.toLowerCase().includes(query))
-      );
-    }
-    
-    return true;
-  });
-  
-  // 根据视图选择不同的数据集
-  const getViewTransfers = () => {
-    if (view === "pending") {
-      return filteredTransfers.filter(transfer => transfer.status === "pending");
-    } else if (view === "recent") {
-      return filteredTransfers.slice(0, 10);
-    }
-    return filteredTransfers;
   };
   
-  // 显示的调拨单列表
-  const displayedTransfers = getViewTransfers();
-  
-  // 计算选中的调拨单总数
-  const selectedCount = selectedTransfers.length;
-  
-  // 计算总重量和体积
-  const totalWeight = filteredTransfers.reduce((sum, transfer) => sum + Number(transfer.totalWeight), 0);
-  const totalVolume = filteredTransfers.reduce((sum, transfer) => sum + Number(transfer.totalVolume), 0);
-  
-  // 获取状态标签样式
-  const getStatusBadgeVariant = (status: string) => {
+  // 获取状态徽章样式
+  const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'completed':
-        return 'success';
-      case 'processing':
-        return 'secondary';
-      case 'pending':
-        return 'outline';
-      case 'cancelled':
-        return 'destructive';
+      case "pending":
+        return (
+          <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200">
+            {t(warehouseTransferKeys.statusPending)}
+          </Badge>
+        );
+      case "in_transit":
+        return (
+          <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
+            {t(warehouseTransferKeys.statusInTransit)}
+          </Badge>
+        );
+      case "completed":
+        return (
+          <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
+            {t(warehouseTransferKeys.statusCompleted)}
+          </Badge>
+        );
+      case "cancelled":
+        return (
+          <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200">
+            {t(warehouseTransferKeys.statusCancelled)}
+          </Badge>
+        );
       default:
-        return 'default';
+        return <Badge variant="outline">{status}</Badge>;
     }
   };
   
-  // 获取状态文本
-  const getStatusText = (status: string) => {
-    return t(`warehouseTransfer.status_${status}`);
+  // 处理新建调拨单
+  const handleNewTransfer = () => {
+    navigate("/warehouse-transfers/new");
   };
   
-  // 处理排序
-  const handleSort = (column: string) => {
-    // 此处可实现排序逻辑
-    // 使用useToast钩子返回的toast函数
-    toast({
-      title: t("common.not_implemented"),
-      description: t("common.feature_coming_soon"),
-    });
-  };
-  
-  // 处理查看调拨单
+  // 查看调拨单详情
   const handleViewTransfer = (id: number) => {
     navigate(`/warehouse-transfers/${id}`);
   };
   
-  // 处理创建新调拨单
-  const handleCreateTransfer = () => {
-    navigate("/warehouse-transfers/new");
-  };
-  
-  // 处理多选框变更
-  const handleCheckboxChange = (id: number, checked: boolean) => {
-    if (checked) {
-      setSelectedTransfers(prev => [...prev, id]);
-    } else {
-      setSelectedTransfers(prev => prev.filter(transferId => transferId !== id));
-    }
-  };
-  
-  // 处理刷新数据
-  const handleRefresh = () => {
-    // 刷新数据
-    queryClient.invalidateQueries({
-      queryKey: ["/api/warehouse-transfers"],
-    });
-    queryClient.invalidateQueries({
-      queryKey: ["/api/warehouse-transfers/stats"],
-    });
+  // 渲染分页控件
+  const renderPagination = () => {
+    if (totalPages <= 1) return null;
     
-    // 使用useToast钩子返回的toast函数
-    toast({
-      title: t("common.refreshing"),
-      description: t("warehouseTransfer.refreshing_data"),
-    });
+    return (
+      <Pagination className="mt-4">
+        <PaginationContent>
+          <PaginationItem>
+            <PaginationPrevious 
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+            />
+          </PaginationItem>
+          
+          {Array.from({ length: totalPages }).map((_, i) => (
+            <PaginationItem key={i}>
+              <PaginationLink
+                onClick={() => setCurrentPage(i + 1)}
+                isActive={currentPage === i + 1}
+              >
+                {i + 1}
+              </PaginationLink>
+            </PaginationItem>
+          ))}
+          
+          <PaginationItem>
+            <PaginationNext
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+            />
+          </PaginationItem>
+        </PaginationContent>
+      </Pagination>
+    );
   };
   
-  // 统计卡片数据
-  const statCards = stats ? [
-    {
-      title: t("warehouseTransfer.total_transfers"),
-      value: stats.totalTransfers,
-      icon: <ClipboardList className="h-4 w-4" />,
-      color: "bg-blue-500"
-    },
-    {
-      title: t("warehouseTransfer.pending_transfers"),
-      value: stats.pendingTransfers,
-      icon: <Truck className="h-4 w-4" />,
-      color: "bg-yellow-500"
-    },
-    {
-      title: t("warehouseTransfer.completed_transfers"),
-      value: stats.completedTransfers,
-      icon: <Warehouse className="h-4 w-4" />,
-      color: "bg-green-500"
-    },
-    {
-      title: t("warehouseTransfer.total_weight"),
-      value: `${stats.totalWeight.toLocaleString()} kg`,
-      icon: <ArrowUpDown className="h-4 w-4" />,
-      color: "bg-purple-500"
+  // 待实现：导出全部调拨单
+  const handleExportAll = () => {
+    console.log("导出所有调拨单");
+  };
+  
+  // 渲染统计卡片
+  const renderStatsCards = () => {
+    if (isLoadingStats) {
+      return (
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 mb-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-24 w-full" />
+          ))}
+        </div>
+      );
     }
-  ] : [];
+    
+    if (!stats) return null;
+    
+    return (
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 mb-6">
+        <Card>
+          <CardContent className="p-4 flex flex-col">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-gray-500">{t(warehouseTransferKeys.totalTransfers)}</span>
+              <Clipboard className="h-4 w-4 text-blue-500" />
+            </div>
+            <div className="text-2xl font-bold">{stats.totalTransfers}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4 flex flex-col">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-gray-500">{t(warehouseTransferKeys.pendingTransfers)}</span>
+              <AlertCircle className="h-4 w-4 text-yellow-500" />
+            </div>
+            <div className="text-2xl font-bold">{stats.pendingTransfers}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4 flex flex-col">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-gray-500">{t(warehouseTransferKeys.completedTransfers)}</span>
+              <ChevronRight className="h-4 w-4 text-green-500" />
+            </div>
+            <div className="text-2xl font-bold">{stats.completedTransfers}</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4 flex flex-col">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-gray-500">{t(warehouseTransferKeys.totalWeight)}</span>
+              <Package className="h-4 w-4 text-gray-500" />
+            </div>
+            <div className="text-2xl font-bold">{stats.totalWeight.toFixed(2)} kg</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4 flex flex-col">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-gray-500">{t(warehouseTransferKeys.totalVolume)}</span>
+              <Package className="h-4 w-4 text-gray-500" />
+            </div>
+            <div className="text-2xl font-bold">{stats.totalVolume.toFixed(2)} m³</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4 flex flex-col">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-gray-500">{t(warehouseTransferKeys.recent)}</span>
+              <TrendingUp className="h-4 w-4 text-blue-500" />
+            </div>
+            <div className="text-2xl font-bold">{stats.recentTransfers}</div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
   
   return (
-    <div className="container mx-auto py-8 space-y-6">
-      {/* 页面标题和操作按钮 */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="container py-8">
+      {/* 页面标题和操作 */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
-          <h1 className="text-2xl font-bold">{t("warehouseTransfer.warehouse_transfers")}</h1>
-          <p className="text-gray-500">
-            {t("warehouseTransfer.manage_warehouse_transfers")}
-          </p>
+          <h1 className="text-2xl font-bold mb-1">{t(warehouseTransferKeys.title)}</h1>
+          <p className="text-sm text-gray-500">{t('manage_warehouse_transfers_description')}</p>
         </div>
         
-        <div className="flex flex-wrap items-center gap-2">
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={handleRefresh}
-          >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            {t("common.refresh")}
-          </Button>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setImportDialogOpen(true)}
-          >
-            <FileUp className="h-4 w-4 mr-2" />
-            {t("warehouseTransfer.import")}
-          </Button>
-          
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setExportDialogOpen(true)}
-            disabled={selectedCount === 0}
-          >
-            <FileDown className="h-4 w-4 mr-2" />
-            {selectedCount > 0
-              ? t("warehouseTransfer.export_selected", { count: selectedCount })
-              : t("warehouseTransfer.export")}
-          </Button>
-          
-          <Button
-            size="sm"
-            onClick={handleCreateTransfer}
-          >
+        <div className="flex items-center gap-2">
+          <LanguageSwitcher />
+          <Button onClick={handleNewTransfer}>
             <Plus className="h-4 w-4 mr-2" />
-            {t("warehouseTransfer.create_transfer")}
+            {t(warehouseTransferKeys.newTransfer)}
           </Button>
         </div>
+      </div>
+      
+      {/* 语言状态显示 */}
+      <div className="mb-6">
+        <LanguageStatusBadge />
       </div>
       
       {/* 统计卡片 */}
-      {isLoadingStats ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-32 w-full" />
-          ))}
-        </div>
-      ) : isErrorStats ? (
-        <div className="bg-red-50 p-4 rounded-md text-red-500">
-          {t("warehouseTransfer.stats_error")}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {statCards.map((stat, index) => (
-            <Card key={index}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  {stat.title}
-                </CardTitle>
-                <div className={`${stat.color} p-2 rounded-full text-white`}>
-                  {stat.icon}
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+      {renderStatsCards()}
       
-      {/* 过滤器和搜索 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="flex items-center space-x-2">
-          <Input
-            placeholder={t("warehouseTransfer.search_placeholder")}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full"
-            prefix={<Search className="h-4 w-4 text-gray-400" />}
-          />
+      {/* 过滤和搜索 */}
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div className="flex flex-1 gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+            <Input
+              placeholder={t('search_transfers_placeholder')}
+              className="pl-8"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          
+          <Button variant="outline" onClick={handleExportAll} className="whitespace-nowrap">
+            <FileDown className="h-4 w-4 mr-2" />
+            {t(warehouseTransferKeys.exportExcel)}
+          </Button>
         </div>
         
-        <div className="flex items-center space-x-2">
-          <Label className="whitespace-nowrap">{t("warehouseTransfer.status")}:</Label>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder={t("warehouseTransfer.all_statuses")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t("warehouseTransfer.all_statuses")}</SelectItem>
-              <SelectItem value="pending">{t("warehouseTransfer.status_pending")}</SelectItem>
-              <SelectItem value="processing">{t("warehouseTransfer.status_processing")}</SelectItem>
-              <SelectItem value="completed">{t("warehouseTransfer.status_completed")}</SelectItem>
-              <SelectItem value="cancelled">{t("warehouseTransfer.status_cancelled")}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <Label className="whitespace-nowrap">{t("warehouseTransfer.date")}:</Label>
-          <Select value={dateFilter} onValueChange={setDateFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder={t("warehouseTransfer.all_dates")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t("warehouseTransfer.all_dates")}</SelectItem>
-              <SelectItem value="today">{t("warehouseTransfer.today")}</SelectItem>
-              <SelectItem value="yesterday">{t("warehouseTransfer.yesterday")}</SelectItem>
-              <SelectItem value="this-week">{t("warehouseTransfer.this_week")}</SelectItem>
-              <SelectItem value="this-month">{t("warehouseTransfer.this_month")}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <Label className="whitespace-nowrap">{t("warehouseTransfer.warehouse")}:</Label>
-          <Select value={warehouseFilter} onValueChange={setWarehouseFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder={t("warehouseTransfer.all_warehouses")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t("warehouseTransfer.all_warehouses")}</SelectItem>
-              {warehouses.map((warehouse) => (
-                <SelectItem key={warehouse.id} value={warehouse.id.toString()}>
-                  {warehouse.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-      
-      {/* 视图选项卡 */}
-      <Tabs defaultValue="all" value={view} onValueChange={(value) => setView(value as "all" | "pending" | "recent")}>
-        <TabsList>
-          <TabsTrigger value="all">
-            {t("warehouseTransfer.all_transfers")}
-          </TabsTrigger>
-          <TabsTrigger value="pending">
-            {t("warehouseTransfer.pending_only")}
-          </TabsTrigger>
-          <TabsTrigger value="recent">
-            {t("warehouseTransfer.recent")}
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="all" className="mt-4">
-          <TransferTable 
-            transfers={displayedTransfers}
-            isLoading={isLoadingTransfers}
-            isError={isErrorTransfers}
-            selectedTransfers={selectedTransfers}
-            selectAll={selectAll}
-            setSelectAll={setSelectAll}
-            onCheckboxChange={handleCheckboxChange}
-            onViewTransfer={handleViewTransfer}
-            warehouses={warehouses}
-            t={t}
-            getStatusBadgeVariant={getStatusBadgeVariant}
-            getStatusText={getStatusText}
-          />
-        </TabsContent>
-        
-        <TabsContent value="pending" className="mt-4">
-          <TransferTable 
-            transfers={displayedTransfers}
-            isLoading={isLoadingTransfers}
-            isError={isErrorTransfers}
-            selectedTransfers={selectedTransfers}
-            selectAll={selectAll}
-            setSelectAll={setSelectAll}
-            onCheckboxChange={handleCheckboxChange}
-            onViewTransfer={handleViewTransfer}
-            warehouses={warehouses}
-            t={t}
-            getStatusBadgeVariant={getStatusBadgeVariant}
-            getStatusText={getStatusText}
-          />
-        </TabsContent>
-        
-        <TabsContent value="recent" className="mt-4">
-          <TransferTable 
-            transfers={displayedTransfers}
-            isLoading={isLoadingTransfers}
-            isError={isErrorTransfers}
-            selectedTransfers={selectedTransfers}
-            selectAll={selectAll}
-            setSelectAll={setSelectAll}
-            onCheckboxChange={handleCheckboxChange}
-            onViewTransfer={handleViewTransfer}
-            warehouses={warehouses}
-            t={t}
-            getStatusBadgeVariant={getStatusBadgeVariant}
-            getStatusText={getStatusText}
-          />
-        </TabsContent>
-      </Tabs>
-      
-      {/* 导出对话框 */}
-      <ExportTransferDialog
-        open={exportDialogOpen}
-        onOpenChange={setExportDialogOpen}
-        transferIds={selectedTransfers}
-        onSuccess={() => {
-          // 重置选择
-          setSelectedTransfers([]);
-          setSelectAll(false);
-        }}
-      />
-      
-      {/* 导入对话框 */}
-      <ImportTransferDialog
-        open={importDialogOpen}
-        onOpenChange={setImportDialogOpen}
-        warehouses={warehouses}
-        onImportSuccess={() => {
-          refetchTransfers();
-        }}
-      />
-    </div>
-  );
-}
-
-// 表格组件
-interface TransferTableProps {
-  transfers: WarehouseTransfer[];
-  isLoading: boolean;
-  isError: boolean;
-  selectedTransfers: number[];
-  selectAll: boolean;
-  setSelectAll: (value: boolean) => void;
-  onCheckboxChange: (id: number, checked: boolean) => void;
-  onViewTransfer: (id: number) => void;
-  warehouses: { id: number; name: string }[];
-  t: any;
-  getStatusBadgeVariant: (status: string) => string;
-  getStatusText: (status: string) => string;
-}
-
-function TransferTable({
-  transfers,
-  isLoading,
-  isError,
-  selectedTransfers,
-  selectAll,
-  setSelectAll,
-  onCheckboxChange,
-  onViewTransfer,
-  warehouses,
-  t,
-  getStatusBadgeVariant,
-  getStatusText
-}: TransferTableProps) {
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-8 w-full" />
-        <Skeleton className="h-96 w-full" />
-      </div>
-    );
-  }
-  
-  if (isError) {
-    return (
-      <div className="bg-red-50 p-4 rounded-md text-red-500">
-        {t("warehouseTransfer.load_error")}
-      </div>
-    );
-  }
-  
-  if (transfers.length === 0) {
-    return (
-      <div className="text-center py-8 bg-gray-50 rounded-md">
-        <p className="text-gray-500">{t("warehouseTransfer.no_transfers_found")}</p>
-      </div>
-    );
-  }
-  
-  // 提取仓库名称
-  const getWarehouseName = (id: number) => {
-    const warehouse = warehouses.find(w => w.id === id);
-    return warehouse ? warehouse.name : t("warehouseTransfer.unknown_warehouse");
-  };
-  
-  return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[50px]">
-              <Checkbox
-                checked={selectAll}
-                onCheckedChange={setSelectAll}
-                aria-label={t("warehouseTransfer.select_all")}
-              />
-            </TableHead>
-            <TableHead className="w-[180px]">{t("warehouseTransfer.reference_number")}</TableHead>
-            <TableHead>{t("warehouseTransfer.source_warehouse")}</TableHead>
-            <TableHead>{t("warehouseTransfer.target_warehouse")}</TableHead>
-            <TableHead>{t("warehouseTransfer.created_at")}</TableHead>
-            <TableHead>{t("warehouseTransfer.status")}</TableHead>
-            <TableHead className="text-right">{t("warehouseTransfer.total_items")}</TableHead>
-            <TableHead className="text-right">{t("warehouseTransfer.weight_volume")}</TableHead>
-            <TableHead className="w-[80px]"></TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {transfers.map((transfer) => (
-            <TableRow 
-              key={transfer.id}
-              className="cursor-pointer hover:bg-gray-50"
-              onClick={() => onViewTransfer(transfer.id)}
+        <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-gray-500" />
+            <Select
+              value={statusFilter}
+              onValueChange={setStatusFilter}
             >
-              <TableCell onClick={(e) => e.stopPropagation()}>
-                <Checkbox
-                  checked={selectedTransfers.includes(transfer.id)}
-                  onCheckedChange={(checked) => 
-                    onCheckboxChange(transfer.id, checked as boolean)
-                  }
-                  aria-label={t("warehouseTransfer.select_transfer")}
-                />
-              </TableCell>
-              <TableCell className="font-medium">
-                {transfer.referenceNumber}
-              </TableCell>
-              <TableCell>
-                {transfer.sourceWarehouse?.name || getWarehouseName(transfer.sourceWarehouseId)}
-              </TableCell>
-              <TableCell>
-                {transfer.targetWarehouse?.name || getWarehouseName(transfer.targetWarehouseId)}
-              </TableCell>
-              <TableCell>
-                {formatDate(transfer.createdAt)}
-              </TableCell>
-              <TableCell>
-                <Badge variant={getStatusBadgeVariant(transfer.status)}>
-                  {getStatusText(transfer.status)}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-right">
-                {transfer.totalItems}
-              </TableCell>
-              <TableCell className="text-right">
-                <div>{transfer.totalWeight} kg</div>
-                <div className="text-gray-500 text-xs">{transfer.totalVolume} m³</div>
-              </TableCell>
-              <TableCell>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                    <Button variant="ghost" size="sm">
-                      <span className="sr-only">{t("common.open_menu")}</span>
-                      <MoreHorizontalIcon className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>{t("common.actions")}</DropdownMenuLabel>
-                    <DropdownMenuItem onClick={(e) => {
-                      e.stopPropagation();
-                      onViewTransfer(transfer.id);
-                    }}>
-                      {t("common.view")}
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        // 导出单个调拨单
-                        console.log("Export transfer", transfer.id);
-                      }}
-                    >
-                      {t("warehouseTransfer.export")}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder={t(warehouseTransferKeys.filterByStatus)} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t(warehouseTransferKeys.allStatuses)}</SelectItem>
+                <SelectItem value="pending">{t(warehouseTransferKeys.statusPending)}</SelectItem>
+                <SelectItem value="in_transit">{t(warehouseTransferKeys.statusInTransit)}</SelectItem>
+                <SelectItem value="completed">{t(warehouseTransferKeys.statusCompleted)}</SelectItem>
+                <SelectItem value="cancelled">{t(warehouseTransferKeys.statusCancelled)}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Package className="h-4 w-4 text-gray-500" />
+            <Select
+              value={warehouseFilter}
+              onValueChange={setWarehouseFilter}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder={t(warehouseTransferKeys.filterByWarehouse)} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t(warehouseTransferKeys.allWarehouses)}</SelectItem>
+                {warehouses.map((warehouse: any) => (
+                  <SelectItem key={warehouse.id} value={warehouse.id.toString()}>
+                    {warehouse.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+      
+      {/* 调拨单表格 */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{t(warehouseTransferKeys.title)}</CardTitle>
+          <CardDescription>
+            {isLoadingTransfers
+              ? t('loading_transfers')
+              : t('total_transfers_count', { count: transfers.length })}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoadingTransfers ? (
+            <div className="space-y-4">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
+            </div>
+          ) : isErrorTransfers ? (
+            <div className="text-center p-8 text-gray-500">
+              <AlertCircle className="h-12 w-12 mx-auto mb-4 text-red-500" />
+              <h3 className="text-lg font-medium mb-2">{t('error_loading_data')}</h3>
+              <p>{t('try_refreshing_page')}</p>
+            </div>
+          ) : transfers.length === 0 ? (
+            <div className="text-center p-8 text-gray-500">
+              <Package className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+              <h3 className="text-lg font-medium mb-2">{t(warehouseTransferKeys.noTransfersFound)}</h3>
+              <p>{t('create_your_first_transfer')}</p>
+              <Button onClick={handleNewTransfer} className="mt-4">
+                {t(warehouseTransferKeys.newTransfer)}
+              </Button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t(warehouseTransferKeys.referenceNumber)}</TableHead>
+                    <TableHead>{t(warehouseTransferKeys.fromWarehouse)}</TableHead>
+                    <TableHead>{t(warehouseTransferKeys.toWarehouse)}</TableHead>
+                    <TableHead>{t(warehouseTransferKeys.status)}</TableHead>
+                    <TableHead className="text-right">{t(warehouseTransferKeys.totalItems)}</TableHead>
+                    <TableHead className="text-right">{t(warehouseTransferKeys.totalWeight)}</TableHead>
+                    <TableHead>{t(warehouseTransferKeys.createdAt)}</TableHead>
+                    <TableHead className="text-right">{t(warehouseTransferKeys.actions)}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedTransfers.map((transfer: WarehouseTransfer) => (
+                    <TableRow key={transfer.id} className="cursor-pointer hover:bg-gray-50" onClick={() => handleViewTransfer(transfer.id)}>
+                      <TableCell className="font-medium">{transfer.referenceNumber}</TableCell>
+                      <TableCell>{transfer.sourceWarehouse?.name}</TableCell>
+                      <TableCell>{transfer.targetWarehouse?.name}</TableCell>
+                      <TableCell>{getStatusBadge(transfer.status)}</TableCell>
+                      <TableCell className="text-right">{transfer.totalItems}</TableCell>
+                      <TableCell className="text-right">{Number(transfer.totalWeight).toFixed(2)} kg</TableCell>
+                      <TableCell>{formatDate(transfer.createdAt)}</TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewTransfer(transfer.id);
+                          }}
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              
+              {renderPagination()}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
-  );
-}
-
-// 小组件辅助组件
-function MoreHorizontalIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="12" r="1" />
-      <circle cx="19" cy="12" r="1" />
-      <circle cx="5" cy="12" r="1" />
-    </svg>
-  );
-}
-
-function Label({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      className={`text-sm font-medium ${className || ""}`}
-      {...props}
-    />
   );
 }
