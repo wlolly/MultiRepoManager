@@ -495,12 +495,15 @@ export type EcommerceProduct = typeof ecommerceProducts.$inferSelect;
 export const apiConfigurations = mysqlTable("api_configurations", {
   id: int("id").primaryKey().autoincrement(),
   name: varchar("name", { length: 255 }).notNull(), // 配置名称
-  platformType: varchar("platform_type", { length: 50 }).notNull(), // 平台类型
+  platformType: varchar("platform_type", { length: 50 }).notNull(), // 平台类型 (Kaspi/Ozon/WB/Uzum)
+  storeName: varchar("store_name", { length: 255 }).notNull(), // 店铺名称
   apiKey: varchar("api_key", { length: 255 }), // API密钥
   apiSecret: varchar("api_secret", { length: 255 }), // API密钥
   apiEndpoint: varchar("api_endpoint", { length: 255 }).notNull(), // API端点
   isActive: boolean("is_active").default(true), // 是否激活
   lastSyncTime: timestamp("last_sync_time"), // 最后同步时间
+  teamId: int("team_id").references(() => teams.id), // 关联的团队ID
+  warehouseId: int("warehouse_id").references(() => warehouses.id), // 关联的仓库ID
   createdAt: timestamp("created_at").defaultNow().notNull(), // 创建时间
   updatedAt: timestamp("updated_at").defaultNow().notNull(), // 更新时间
   config: text("config"), // 其他配置（JSON格式）
@@ -509,15 +512,218 @@ export const apiConfigurations = mysqlTable("api_configurations", {
 export const insertApiConfigurationSchema = createInsertSchema(apiConfigurations).pick({
   name: true,
   platformType: true,
+  storeName: true,
   apiKey: true,
   apiSecret: true,
   apiEndpoint: true,
   isActive: true,
+  teamId: true,
+  warehouseId: true,
   config: true,
 });
 
 export type InsertApiConfiguration = z.infer<typeof insertApiConfigurationSchema>;
 export type ApiConfiguration = typeof apiConfigurations.$inferSelect;
+
+// 平台订单状态枚举
+export const platformOrderStatusEnum = mysqlEnum("platform_order_status", [
+  "new", // 新订单
+  "processing", // 处理中
+  "shipped", // 已发货
+  "delivered", // 已送达
+  "cancelled", // 已取消
+  "returned" // 已退回
+]);
+
+// 平台订单表 - 保存从各电商平台API获取的原始订单数据
+export const platformOrders = mysqlTable("platform_orders", {
+  id: int("id").primaryKey().autoincrement(),
+  platformId: varchar("platform_id", { length: 255 }).notNull(), // 平台订单ID
+  platformType: varchar("platform_type", { length: 50 }).notNull(), // 平台类型 (Kaspi/Ozon/WB/Uzum)
+  apiConfigId: int("api_config_id").notNull().references(() => apiConfigurations.id), // API配置ID
+  orderDate: timestamp("order_date").notNull(), // 订单日期
+  customerName: varchar("customer_name", { length: 255 }), // 客户名称
+  customerPhone: varchar("customer_phone", { length: 50 }), // 客户电话
+  deliveryAddress: text("delivery_address"), // 送货地址
+  orderStatus: platformOrderStatusEnum.notNull(), // 订单状态
+  totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(), // 订单总金额
+  paymentMethod: varchar("payment_method", { length: 50 }), // 支付方式
+  rawData: text("raw_data"), // 原始订单数据（JSON格式）
+  processedAt: timestamp("processed_at"), // 处理日期（生成出入库单的日期）
+  outboundOrderId: int("outbound_order_id").references(() => outboundOrders.id), // 关联的出库单ID
+  createdAt: timestamp("created_at").defaultNow().notNull(), // 创建时间（数据同步时间）
+  updatedAt: timestamp("updated_at").defaultNow().notNull(), // 更新时间
+});
+
+export const insertPlatformOrderSchema = createInsertSchema(platformOrders).pick({
+  platformId: true,
+  platformType: true,
+  apiConfigId: true,
+  orderDate: true,
+  customerName: true,
+  customerPhone: true,
+  deliveryAddress: true,
+  orderStatus: true,
+  totalAmount: true,
+  paymentMethod: true,
+  rawData: true,
+  processedAt: true,
+  outboundOrderId: true,
+});
+
+export type InsertPlatformOrder = z.infer<typeof insertPlatformOrderSchema>;
+export type PlatformOrder = typeof platformOrders.$inferSelect;
+
+// 平台订单项目表 - 保存订单明细
+export const platformOrderItems = mysqlTable("platform_order_items", {
+  id: int("id").primaryKey().autoincrement(),
+  platformOrderId: int("platform_order_id").notNull().references(() => platformOrders.id), // 平台订单ID
+  platformItemId: varchar("platform_item_id", { length: 255 }), // 平台订单项目ID
+  platformProductId: varchar("platform_product_id", { length: 255 }).notNull(), // 平台商品ID
+  platformProductCode: varchar("platform_product_code", { length: 255 }).notNull(), // 平台商品编码
+  platformProductName: varchar("platform_product_name", { length: 255 }).notNull(), // 平台商品名称
+  matchedCode: varchar("matched_code", { length: 255 }).notNull(), // 匹配后的编码
+  matchedProductId: int("matched_product_id").references(() => products.id), // 匹配的系统产品ID
+  quantity: int("quantity").notNull(), // 数量
+  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(), // 单价
+  totalPrice: decimal("total_price", { precision: 10, scale: 2 }).notNull(), // 总价
+  hasBeenProcessed: boolean("has_been_processed").default(false), // 是否已处理
+  rawData: text("raw_data"), // 原始项目数据（JSON格式）
+  createdAt: timestamp("created_at").defaultNow().notNull(), // 创建时间
+});
+
+export const insertPlatformOrderItemSchema = createInsertSchema(platformOrderItems).pick({
+  platformOrderId: true,
+  platformItemId: true,
+  platformProductId: true,
+  platformProductCode: true,
+  platformProductName: true,
+  matchedCode: true,
+  matchedProductId: true,
+  quantity: true,
+  unitPrice: true,
+  totalPrice: true,
+  hasBeenProcessed: true,
+  rawData: true,
+});
+
+export type InsertPlatformOrderItem = z.infer<typeof insertPlatformOrderItemSchema>;
+export type PlatformOrderItem = typeof platformOrderItems.$inferSelect;
+
+// 商品匹配规则表 - 保存手动匹配的规则
+export const productMatchingRules = mysqlTable("product_matching_rules", {
+  id: int("id").primaryKey().autoincrement(),
+  platformType: varchar("platform_type", { length: 50 }).notNull(), // 平台类型
+  platformProductCode: varchar("platform_product_code", { length: 255 }).notNull(), // 平台商品码
+  matchedCode: varchar("matched_code", { length: 255 }).notNull(), // 匹配后的编码
+  matchedProductId: int("matched_product_id").notNull().references(() => products.id), // 匹配的系统产品ID
+  createdBy: int("created_by").notNull().references(() => users.id), // 创建人
+  createdAt: timestamp("created_at").defaultNow().notNull(), // 创建时间
+  updatedAt: timestamp("updated_at").defaultNow().notNull(), // 更新时间
+  isActive: boolean("is_active").default(true), // 是否有效
+}, (table) => {
+  return {
+    platformCodeIdx: uniqueIndex("platform_code_idx").on(table.platformType, table.platformProductCode),
+  };
+});
+
+export const insertProductMatchingRuleSchema = createInsertSchema(productMatchingRules).pick({
+  platformType: true,
+  platformProductCode: true,
+  matchedCode: true,
+  matchedProductId: true,
+  createdBy: true,
+  isActive: true,
+});
+
+export type InsertProductMatchingRule = z.infer<typeof insertProductMatchingRuleSchema>;
+export type ProductMatchingRule = typeof productMatchingRules.$inferSelect;
+
+// 预审核订单状态枚举
+export const preAuditOrderStatusEnum = mysqlEnum("pre_audit_order_status", [
+  "draft", // 草稿
+  "pending", // 待审核
+  "approved", // 已审核
+  "rejected" // 已拒绝
+]);
+
+// 预审核出入库单表 - 保存等待审核的出入库单信息
+export const preAuditOrders = mysqlTable("pre_audit_orders", {
+  id: int("id").primaryKey().autoincrement(),
+  orderNumber: varchar("order_number", { length: 255 }).notNull().unique(), // 预生成单号
+  orderType: operationTypeEnum.notNull(), // 单据类型: 入库/出库
+  platformType: varchar("platform_type", { length: 50 }).notNull(), // 平台类型
+  storeName: varchar("store_name", { length: 255 }).notNull(), // 店铺名称
+  warehouseId: int("warehouse_id").notNull().references(() => warehouses.id), // 仓库ID
+  orderDate: timestamp("order_date").notNull(), // 订单日期
+  status: preAuditOrderStatusEnum.notNull().default("pending"), // 状态: 待审核/已审核/已拒绝
+  createdBy: int("created_by").notNull().references(() => users.id), // 创建人
+  approvedBy: int("approved_by").references(() => users.id), // 审核人
+  approvedAt: timestamp("approved_at"), // 审核时间
+  teamId: int("team_id").references(() => teams.id), // 关联的团队ID
+  totalItems: int("total_items").notNull(), // 商品总数量
+  totalUnmatchedItems: int("total_unmatched_items").notNull(), // 未匹配商品数量
+  resultOrderId: int("result_order_id"), // 最终生成的出入库单ID
+  createdAt: timestamp("created_at").defaultNow().notNull(), // 创建时间
+  updatedAt: timestamp("updated_at").defaultNow().notNull(), // 更新时间
+  notes: text("notes"), // 备注
+});
+
+export const insertPreAuditOrderSchema = createInsertSchema(preAuditOrders).pick({
+  orderNumber: true,
+  orderType: true,
+  platformType: true,
+  storeName: true,
+  warehouseId: true,
+  orderDate: true,
+  status: true,
+  createdBy: true,
+  approvedBy: true,
+  approvedAt: true,
+  teamId: true,
+  totalItems: true,
+  totalUnmatchedItems: true,
+  resultOrderId: true,
+  notes: true,
+});
+
+export type InsertPreAuditOrder = z.infer<typeof insertPreAuditOrderSchema>;
+export type PreAuditOrder = typeof preAuditOrders.$inferSelect;
+
+// 预审核出入库单明细表
+export const preAuditOrderItems = mysqlTable("pre_audit_order_items", {
+  id: int("id").primaryKey().autoincrement(),
+  preAuditOrderId: int("pre_audit_order_id").notNull().references(() => preAuditOrders.id), // 预审核单ID
+  platformProductCode: varchar("platform_product_code", { length: 255 }).notNull(), // 平台商品编码
+  platformProductName: varchar("platform_product_name", { length: 255 }).notNull(), // 平台商品名称
+  matchedCode: varchar("matched_code", { length: 255 }), // 匹配后的编码
+  matchedProductId: int("matched_product_id").references(() => products.id), // 匹配的系统产品ID
+  quantity: int("quantity").notNull(), // 数量
+  packageCount: int("package_count").notNull().default(1), // 件数
+  isMatched: boolean("is_matched").default(false), // 是否已匹配
+  matchedBy: int("matched_by").references(() => users.id), // 匹配人
+  matchedAt: timestamp("matched_at"), // 匹配时间
+  createdAt: timestamp("created_at").defaultNow().notNull(), // 创建时间
+  updatedAt: timestamp("updated_at").defaultNow().notNull(), // 更新时间
+  notes: text("notes"), // 备注
+});
+
+export const insertPreAuditOrderItemSchema = createInsertSchema(preAuditOrderItems).pick({
+  preAuditOrderId: true,
+  platformProductCode: true,
+  platformProductName: true,
+  matchedCode: true,
+  matchedProductId: true,
+  quantity: true,
+  packageCount: true,
+  isMatched: true,
+  matchedBy: true,
+  matchedAt: true,
+  notes: true,
+});
+
+export type InsertPreAuditOrderItem = z.infer<typeof insertPreAuditOrderItemSchema>;
+export type PreAuditOrderItem = typeof preAuditOrderItems.$inferSelect;
 
 // 仓库调拨单表
 export const warehouseTransfers = mysqlTable("warehouse_transfers", {

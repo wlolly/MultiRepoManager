@@ -15,6 +15,12 @@ import {
   // 电商平台相关导入
   apiConfigurations, type ApiConfiguration, type InsertApiConfiguration,
   ecommerceProducts, type EcommerceProduct, type InsertEcommerceProduct,
+  // API对接新增表
+  platformOrders, type PlatformOrder, type InsertPlatformOrder,
+  platformOrderItems, type PlatformOrderItem, type InsertPlatformOrderItem,
+  productMatchingRules, type ProductMatchingRule, type InsertProductMatchingRule,
+  preAuditOrders, type PreAuditOrder, type InsertPreAuditOrder,
+  preAuditOrderItems, type PreAuditOrderItem, type InsertPreAuditOrderItem,
   // 仓库调拨单相关导入
   warehouseTransfers, type WarehouseTransfer, type InsertWarehouseTransfer,
   warehouseTransferItems, type WarehouseTransferItem, type InsertWarehouseTransferItem,
@@ -182,6 +188,98 @@ export interface IStorage {
   registerUniqueCodeTransfer(uniqueCode: string, sourceWarehouseId: number, targetWarehouseId: number, transferId: number, transferItemId: number, userId: number): Promise<UniqueCodeTracking | undefined>;
   verifyUniqueCodeAvailable(uniqueCode: string, warehouseId: number): Promise<boolean>;
   generateUniqueCodeReport(filter?: { productId?: number, warehouseId?: number, status?: string, startDate?: Date, endDate?: Date }): Promise<any[]>;
+  
+  // 电商平台API集成 - 订单数据
+  // 平台订单相关方法
+  getPlatformOrder(id: number): Promise<PlatformOrder | undefined>;
+  getPlatformOrderByPlatformId(platformId: string, platformType: string): Promise<PlatformOrder | undefined>;
+  createPlatformOrder(order: InsertPlatformOrder): Promise<PlatformOrder>;
+  updatePlatformOrder(id: number, order: Partial<PlatformOrder>): Promise<PlatformOrder | undefined>;
+  getPlatformOrders(filter?: { 
+    platformType?: string, 
+    apiConfigId?: number, 
+    orderStatus?: string, 
+    startDate?: Date, 
+    endDate?: Date,
+    processed?: boolean
+  }): Promise<PlatformOrder[]>;
+  
+  // 平台订单明细相关方法
+  getPlatformOrderItem(id: number): Promise<PlatformOrderItem | undefined>;
+  getPlatformOrderItems(platformOrderId: number): Promise<PlatformOrderItem[]>;
+  createPlatformOrderItem(item: InsertPlatformOrderItem): Promise<PlatformOrderItem>;
+  updatePlatformOrderItem(id: number, item: Partial<PlatformOrderItem>): Promise<PlatformOrderItem | undefined>;
+  
+  // 平台商品匹配规则相关方法
+  getProductMatchingRule(id: number): Promise<ProductMatchingRule | undefined>;
+  getProductMatchingRuleByPlatformCode(platformType: string, platformProductCode: string): Promise<ProductMatchingRule | undefined>;
+  createProductMatchingRule(rule: InsertProductMatchingRule): Promise<ProductMatchingRule>;
+  updateProductMatchingRule(id: number, rule: Partial<ProductMatchingRule>): Promise<ProductMatchingRule | undefined>;
+  getProductMatchingRules(platformType?: string): Promise<ProductMatchingRule[]>;
+  
+  // 预审核出入库单相关方法
+  getPreAuditOrder(id: number): Promise<PreAuditOrder | undefined>;
+  getPreAuditOrderByNumber(orderNumber: string): Promise<PreAuditOrder | undefined>;
+  createPreAuditOrder(order: InsertPreAuditOrder): Promise<PreAuditOrder>;
+  updatePreAuditOrder(id: number, order: Partial<PreAuditOrder>): Promise<PreAuditOrder | undefined>;
+  getPreAuditOrders(filter?: { 
+    platformType?: string, 
+    orderType?: string, 
+    status?: string, 
+    teamId?: number,
+    startDate?: Date, 
+    endDate?: Date 
+  }): Promise<PreAuditOrder[]>;
+  
+  // 预审核出入库单明细相关方法
+  getPreAuditOrderItem(id: number): Promise<PreAuditOrderItem | undefined>;
+  getPreAuditOrderItems(preAuditOrderId: number): Promise<PreAuditOrderItem[]>;
+  createPreAuditOrderItem(item: InsertPreAuditOrderItem): Promise<PreAuditOrderItem>;
+  updatePreAuditOrderItem(id: number, item: Partial<PreAuditOrderItem>): Promise<PreAuditOrderItem | undefined>;
+  deletePreAuditOrderItem(id: number): Promise<void>;
+  
+  // API集成业务操作
+  // 从API获取平台订单数据并保存
+  fetchAndSavePlatformOrders(apiConfigId: number, startDate: Date, endDate: Date): Promise<{
+    total: number,
+    new: number,
+    updated: number
+  }>;
+  
+  // 根据平台订单生成预审核单
+  generatePreAuditOrderFromPlatformOrders(
+    platformType: string, 
+    apiConfigId: number, 
+    orderDate: Date, 
+    userId: number,
+    warehouseId: number,
+    orderType: 'inbound' | 'outbound'
+  ): Promise<PreAuditOrder>;
+  
+  // 审核预审核单并生成正式出入库单
+  approvePreAuditOrder(
+    preAuditOrderId: number, 
+    userId: number
+  ): Promise<{
+    success: boolean,
+    message: string,
+    resultOrderId?: number
+  }>;
+  
+  // 更新商品匹配状态
+  updatePreAuditOrderItemMatching(
+    preAuditOrderItemId: number,
+    matchedProductId: number,
+    userId: number
+  ): Promise<PreAuditOrderItem>;
+  
+  // 查询匹配统计信息
+  getPreAuditOrderMatchingStats(preAuditOrderId: number): Promise<{
+    totalItems: number,
+    matchedItems: number,
+    unmatchedItems: number,
+    matchedPercentage: number
+  }>;
 }
 
 export class MemStorage implements IStorage {
