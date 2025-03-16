@@ -109,11 +109,11 @@ export function Sidebar() {
     const activityDate = new Date(date);
     const diffInSeconds = Math.floor((now.getTime() - activityDate.getTime()) / 1000);
     
-    if (diffInSeconds < 60) return t('just_now');
-    if (diffInSeconds < 3600) return t('minutes_ago', { value: Math.floor(diffInSeconds / 60) });
-    if (diffInSeconds < 86400) return t('hours_ago', { value: Math.floor(diffInSeconds / 3600) });
-    if (diffInSeconds < 172800) return t('yesterday');
-    return t('days_ago', { value: Math.floor(diffInSeconds / 86400) });
+    if (diffInSeconds < 60) return t('time.just_now');
+    if (diffInSeconds < 3600) return t('time.minutes_ago', { value: Math.floor(diffInSeconds / 60) });
+    if (diffInSeconds < 86400) return t('time.hours_ago', { value: Math.floor(diffInSeconds / 3600) });
+    if (diffInSeconds < 172800) return t('time.yesterday');
+    return t('time.days_ago', { value: Math.floor(diffInSeconds / 86400) });
   };
   
   const getActivityIcon = (type: string) => {
@@ -161,13 +161,13 @@ export function Sidebar() {
       {isRealUser && (
         <div className="p-4">
           <Link to="/products/new" className="bg-blue-600 hover:bg-blue-700 w-full py-2 px-4 rounded-md flex items-center justify-center transition">
-            <i className="ri-add-line mr-2"></i> {t('new_product')}
+            <i className="ri-add-line mr-2"></i> {t('sidebar.new_product')}
           </Link>
         </div>
       )}
       
       <nav className="mt-2">
-        <div className="px-4 py-2 text-gray-400 text-sm font-medium">{t('navigation')}</div>
+        <div className="px-4 py-2 text-gray-400 text-sm font-medium">{t('sidebar.navigation')}</div>
         {navItems
           // 过滤导航项：
           // 1. 公共页面总是显示给所有用户
@@ -194,12 +194,12 @@ export function Sidebar() {
                 ? "bg-gray-800 text-blue-500" 
                 : "text-gray-300 hover:bg-gray-800 hover:text-white"
             )}>
-              <i className={`${item.icon} mr-3`}></i> {t(item.keyName)}
+              <i className={`${item.icon} mr-3`}></i> {t(`sidebar.${item.keyName}`)}
             </Link>
           ))}
       </nav>
       
-      <div className="px-4 py-2 mt-6 text-gray-400 text-sm font-medium">{t('recent_activity')}</div>
+      <div className="px-4 py-2 mt-6 text-gray-400 text-sm font-medium">{t('sidebar.recent_activity')}</div>
       <div className="px-4 py-2 text-sm">
         {activities && activities.length > 0 ? (
           activities.map((activity) => (
@@ -214,7 +214,7 @@ export function Sidebar() {
             </div>
           ))
         ) : (
-          <div className="text-gray-500">{t('no_activity')}</div>
+          <div className="text-gray-500">{t('sidebar.no_activity')}</div>
         )}
       </div>
       
