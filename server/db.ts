@@ -25,18 +25,20 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 // 根据环境变量决定是否使用内存存储
-export let useFallbackStorage = !dbUrl; 
+// 默认不使用回退存储，即使数据库连接失败也会继续尝试连接
+export let useFallbackStorage = false; 
 
 // 检查数据库URL是否设置，但不抛出错误
 if (!dbUrl) {
   console.warn('警告: DATABASE_URL环境变量未设置，将使用内存存储模式');
+  useFallbackStorage = true; // 只有当没有数据库URL时才真正启用内存存储
 }
 
 // 创建优化后的MySQL连接池 - 增强版配置，添加更多的容错机制
 let pool;
 
-// 自动重新连接函数
-async function createPoolWithRetry(retryCount = 0, maxRetries = 5) {
+// 自动重新连接函数 (增加默认重试次数)
+async function createPoolWithRetry(retryCount = 0, maxRetries = 10) {
   if (retryCount > 0) {
     console.log(`[数据库] 第 ${retryCount}/${maxRetries} 次尝试重新连接数据库...`);
   }
@@ -67,7 +69,7 @@ async function createPoolWithRetry(retryCount = 0, maxRetries = 5) {
       waitForConnections: true,
       connectionLimit: 5,         // 减少连接限制，避免超出数据库最大连接数
       queueLimit: 10,             // 适当减少队列长度
-      connectTimeout: 20000,      // 连接超时时间调整为20秒
+      connectTimeout: 60000,      // 连接超时时间调整为60秒
       // 移除不支持的配置项: acquireTimeout, timeout
       // 添加必要的连接保持活动配置
       keepAliveInitialDelay: 10000,
@@ -172,16 +174,35 @@ async function createPoolWithRetry(retryCount = 0, maxRetries = 5) {
 // 立即尝试创建连接池
 try {
   if (dbUrl) {
-    // 尝试连接数据库，最多重试5次
-    createPoolWithRetry(0, 5)
+    // 尝试连接数据库，最多重试10次，给更多的缓冲时间
+    createPoolWithRetry(0, 10)
       .then(newPool => {
         if (newPool) {
           pool = newPool;
+          console.log('[数据库] 连接池初始化成功');
         }
       })
       .catch(err => {
         console.error('[数据库] 创建连接池失败:', err);
+        console.log('[数据库] 切换到内存存储模式，但会继续尝试连接数据库');
         setupFallbackPool();
+        
+        // 失败后每60秒继续尝试连接一次数据库
+        const retryInterval = setInterval(() => {
+          console.log('[数据库] 定期尝试重新连接数据库...');
+          createPoolWithRetry(0, 3)
+            .then(newPool => {
+              if (newPool) {
+                pool = newPool;
+                useFallbackStorage = false;
+                console.log('[数据库] 重新连接成功，切换回数据库存储模式');
+                clearInterval(retryInterval);
+              }
+            })
+            .catch(() => {
+              console.log('[数据库] 重新连接仍然失败，将在60秒后重试');
+            });
+        }, 60000);
       });
   } else {
     // 没有数据库URL时使用内存存储
@@ -212,13 +233,28 @@ function setupFallbackPool() {
   memStorage.initializeDemoData();
 }
 
-// 如果10秒后仍未初始化pool，则设置后备池
+// 给数据库连接更长的等待时间，2分钟后仍未初始化pool，才设置后备池
+// 这样可以在数据库暂时不可用时，仍然坚持等待更长时间而不是快速切换到内存存储
 setTimeout(() => {
   if (!pool) {
-    console.log('[数据库] 连接池初始化超时，使用后备方案');
+    console.log('[数据库] 连接池初始化超时 (2分钟)，但仍将继续尝试连接数据库');
+    console.log('[数据库] 同时临时使用内存存储以保证系统功能');
     setupFallbackPool();
+    
+    // 继续尝试连接数据库，成功后会自动切换回数据库存储
+    createPoolWithRetry(0, 10) // 增加到10次重试
+      .then(newPool => {
+        if (newPool) {
+          pool = newPool;
+          useFallbackStorage = false; // 成功连接后，关闭回退存储
+          console.log('[数据库] 已成功建立连接池，切换为数据库存储');
+        }
+      })
+      .catch(err => {
+        console.error('[数据库] 创建连接池失败，将继续使用内存存储:', err);
+      });
   }
-}, 10000);
+}, 120000); // 两分钟
 
 // 确保pool总是有定义值
 pool = pool || {
