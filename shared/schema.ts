@@ -53,6 +53,8 @@ export const users = mysqlTable("users", {
   phoneNumber: varchar("phone_number", { length: 50 }),
   role: userRoleEnum.default("user").notNull(),
   userSource: userSourceEnum.default("local").notNull(),
+  // 团队关联字段
+  primaryTeamId: int("primary_team_id"), // 用户的主要团队ID，管理员可以没有主要团队
   // 社交媒体登录相关字段
   socialId: varchar("social_id", { length: 255 }), // 微信或WhatsApp的唯一ID
   socialData: text("social_data"), // 存储从社交平台获取的JSON数据
@@ -71,6 +73,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   phoneNumber: true,
   role: true,
   userSource: true,
+  primaryTeamId: true,
   socialId: true,
   socialData: true,
   isActive: true,
