@@ -313,7 +313,16 @@ export const insertProductSchema = createInsertSchema(products).pick({
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type Product = typeof products.$inferSelect;
 
-// 操作类型枚举 (入库，出库)
+// 操作类型枚举已在前面定义 (入库，出库)
+
+// 订单类型枚举 (采购、退货、调拨、生产、销售、报废)
+export const orderTypeEnum = pgEnum("order_type", ["purchase", "return", "transfer", "production", "sale", "scrap"]);
+
+// 目的地类型枚举 (客户、零售商、批发商、调拨仓库、供应商)
+export const destinationTypeEnum = pgEnum("destination_type", ["customer", "retail", "wholesale", "transfer", "supplier"]);
+
+// 匹配方式枚举 (手动、自动、模糊)
+export const matchMethodEnum = pgEnum("match_method", ["manual", "auto", "fuzzy"]);
 
 // 仓库
 export const warehouses = pgTable("warehouses", {
@@ -343,7 +352,7 @@ export const inboundOrders = pgTable("inbound_orders", {
   createdBy: integer("created_by").notNull().references(() => users.id), // 创建人
   createdAt: timestamp("created_at").defaultNow().notNull(), // 创建时间
   status: varchar("status", { length: 50 }).notNull().default("pending"), // 状态：待处理、已完成、已取消
-  orderType: pgEnum("order_type", ["purchase", "return", "transfer", "production"]), // 入库单类型：采购入库、退货入库、调拨入库、生产入库
+  orderType: orderTypeEnum, // 入库单类型：采购入库、退货入库、调拨入库、生产入库
   notes: text("notes"), // 备注
 });
 
@@ -406,8 +415,8 @@ export const outboundOrders = pgTable("outbound_orders", {
   createdBy: integer("created_by").notNull().references(() => users.id), // 创建人
   createdAt: timestamp("created_at").defaultNow().notNull(), // 创建时间
   status: varchar("status", { length: 50 }).notNull().default("pending"), // 状态：待处理、已完成、已取消
-  orderType: pgEnum("order_type", ["sale", "return", "transfer", "scrap"]), // 出库单类型：销售出库、退货出库、调拨出库、报废出库
-  destinationType: pgEnum("destination_type", ["customer", "retail", "wholesale", "transfer", "supplier"]), // 目的地类型：客户、零售商、批发商、调拨仓库、供应商
+  orderType: orderTypeEnum, // 出库单类型：销售出库、退货出库、调拨出库、报废出库
+  destinationType: destinationTypeEnum, // 目的地类型：客户、零售商、批发商、调拨仓库、供应商
   notes: text("notes"), // 备注
 });
 
@@ -545,7 +554,7 @@ export const platformOrders = pgTable("platform_orders", {
   customerName: varchar("customer_name", { length: 255 }), // 客户名称
   customerPhone: varchar("customer_phone", { length: 50 }), // 客户电话
   deliveryAddress: text("delivery_address"), // 送货地址
-  orderStatus: platformOrderStatusEnum.notNull(), // 订单状态
+  orderStatus: platformOrderStatusEnum("new"), // 订单状态, 默认为"new"
   totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(), // 订单总金额
   paymentMethod: varchar("payment_method", { length: 50 }), // 支付方式
   rawData: text("raw_data"), // 原始订单数据（JSON格式）
@@ -621,7 +630,7 @@ export const productMatchingRules = pgTable("product_matching_rules", {
   matchedProductId: integer("matched_product_id").notNull().references(() => products.id), // 匹配的系统产品ID
   confidence: decimal("confidence", { precision: 5, scale: 2 }).default("1.00"), // 匹配置信度，默认100%
   apiConfigId: integer("api_config_id").references(() => apiConfigurations.id), // 关联的API配置（店铺）
-  matchMethod: pgEnum("match_method", ["manual", "auto", "fuzzy"]).default("manual"), // 匹配方式：手动/自动/模糊
+  matchMethod: matchMethodEnum("manual"), // 匹配方式：手动/自动/模糊
   lastUsedAt: timestamp("last_used_at"), // 上次使用时间
   createdBy: integer("created_by").notNull().references(() => users.id), // 创建人
   createdAt: timestamp("created_at").defaultNow().notNull(), // 创建时间
@@ -665,12 +674,12 @@ export const preAuditOrderStatusEnum = pgEnum("pre_audit_order_status", [
 export const preAuditOrders = pgTable("pre_audit_orders", {
   id: serial("id").primaryKey(),
   orderNumber: varchar("order_number", { length: 255 }).notNull().unique(), // 预生成单号
-  orderType: operationTypeEnum.notNull(), // 单据类型: 入库/出库
+  orderType: operationTypeEnum("inbound"), // 单据类型: 入库/出库 默认为入库
   platformType: varchar("platform_type", { length: 50 }).notNull(), // 平台类型
   storeName: varchar("store_name", { length: 255 }).notNull(), // 店铺名称
   warehouseId: integer("warehouse_id").notNull().references(() => warehouses.id), // 仓库ID
   orderDate: timestamp("order_date").notNull(), // 订单日期
-  status: preAuditOrderStatusEnum.notNull().default("pending"), // 状态: 待审核/已审核/已拒绝
+  status: preAuditOrderStatusEnum("pending"), // 状态: 待审核/已审核/已拒绝
   createdBy: integer("created_by").notNull().references(() => users.id), // 创建人
   approvedBy: integer("approved_by").references(() => users.id), // 审核人
   approvedAt: timestamp("approved_at"), // 审核时间
@@ -830,7 +839,7 @@ export const uniqueCodeTracking = pgTable("unique_code_tracking", {
   warehouseId: integer("warehouse_id").notNull().references(() => warehouses.id), // 仓库ID
   currentStatus: pgEnum("current_status", [
     "in_stock", "transferred", "sold", "returned", "scrapped"
-  ]).notNull().default("in_stock"), // 当前状态
+  ])("in_stock"), // 当前状态
   quantity: integer("quantity").notNull().default(1), // 数量
   inboundOrderId: integer("inbound_order_id").references(() => inboundOrders.id), // 入库单ID
   inboundItemId: integer("inbound_item_id"), // 入库单明细ID
@@ -840,7 +849,7 @@ export const uniqueCodeTracking = pgTable("unique_code_tracking", {
   transferItemId: integer("transfer_item_id"), // 调拨单明细ID
   lastOperationType: pgEnum("last_operation_type", [
     "inbound", "outbound", "transfer", "adjust"
-  ]).notNull(), // 最后操作类型
+  ])("inbound"), // 最后操作类型
   lastOperationDate: timestamp("last_operation_date").notNull().defaultNow(), // 最后操作日期
   remark: text("remark"), // 备注
   createdAt: timestamp("created_at").notNull().defaultNow(), // 创建时间
