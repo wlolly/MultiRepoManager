@@ -91,6 +91,15 @@ export interface IStorage {
   getLanguageDistribution(): Promise<{ language: string, count: number, percentage: number }[]>;
   getRepositoryStats(): Promise<{ totalRepositories: number, totalUsers: number, languagesCount: number, recentCommits: number }>;
   
+  // 翻译方法
+  getTranslations(): Promise<Translation[]>;
+  getTranslationByKeyAndLanguage(key: string, language: string): Promise<Translation | undefined>;
+  createTranslation(translation: InsertTranslation): Promise<Translation>;
+  createTranslationsBatch(translations: InsertTranslation[]): Promise<Translation[]>;
+  updateTranslation(id: number, translation: Partial<Translation>): Promise<Translation | undefined>;
+  deleteTranslationByKeyAndLanguage(key: string, language: string): Promise<void>;
+  deleteTranslationByKey(key: string): Promise<void>;
+  
   // 仓库管理系统方法
   // 商品相关方法
   getProduct(id: number): Promise<Product | undefined>;
