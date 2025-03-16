@@ -57,6 +57,7 @@ async function createPoolWithRetry(retryCount = 0, maxRetries = 5) {
     console.log(`[数据库] 连接到 ${host}:${port}/${database} (尝试 ${retryCount+1}/${maxRetries+1})`);
     
     // 使用解析出的参数，创建更加健壮的连接池配置
+    // 注意：只使用mysql2支持的配置选项
     const newPool = mysql.createPool({
       host,
       port,
@@ -64,21 +65,21 @@ async function createPoolWithRetry(retryCount = 0, maxRetries = 5) {
       password,
       database,
       waitForConnections: true,
-      connectionLimit: 10,       // 增加连接限制
-      queueLimit: 20,            // 增加队列限制
-      connectTimeout: 30000,     // 增加连接超时时间到30秒
-      acquireTimeout: 30000,     // 获取连接的超时时间
-      timeout: 60000,            // 总体操作超时
+      connectionLimit: 5,         // 减少连接限制，避免超出数据库最大连接数
+      queueLimit: 10,             // 适当减少队列长度
+      connectTimeout: 20000,      // 连接超时时间调整为20秒
+      // 移除不支持的配置项: acquireTimeout, timeout
+      // 添加必要的连接保持活动配置
       keepAliveInitialDelay: 10000,
       enableKeepAlive: true,
-      multipleStatements: true,  // 允许多语句查询
-      dateStrings: true,         // 日期以字符串形式返回
-      // 添加重连策略
-      trace: true,               // 跟踪连接
-      debug: false,              // 不输出调试信息避免过多日志
-      charset: 'utf8mb4',        // 使用更好的字符集支持
-      supportBigNumbers: true,   // 支持大数字
-      bigNumberStrings: true,    // 大数字以字符串形式返回
+      multipleStatements: true,   // 允许多语句查询
+      dateStrings: true,          // 日期以字符串形式返回
+      // 移除trace选项，减少内存占用
+      debug: false,               // 不输出调试信息
+      charset: 'utf8mb4',         // 使用更好的字符集支持
+      supportBigNumbers: true,    // 支持大数字
+      bigNumberStrings: true,     // 大数字以字符串形式返回
+      namedPlaceholders: true,    // 支持命名参数，增强SQL安全性
     });
     
     // 监听连接错误，但不让它导致程序退出
