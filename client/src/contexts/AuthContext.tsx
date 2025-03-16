@@ -31,6 +31,8 @@ interface AuthContextType {
   canManageWarehouse: (warehouseId: number) => boolean;
   refreshPermissions: () => Promise<void>;
   logout: () => Promise<void>;
+  login?: (username: string, password: string) => Promise<void>;
+  checkAuth?: () => Promise<void>;
 }
 
 // 创建上下文
@@ -103,6 +105,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // 登录函数
+  const login = async (username: string, password: string) => {
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ username, password })
+      });
+
+      if (!response.ok) {
+        throw new Error('登录失败');
+      }
+
+      await fetchUserAndPermissions();
+      addToast({
+        title: '登录成功',
+        description: '欢迎回到系统',
+        type: 'success'
+      });
+    } catch (error) {
+      console.error('登录失败:', error);
+      addToast({
+        title: '登录失败',
+        description: '用户名或密码错误',
+        type: 'error'
+      });
+      throw error;
+    }
+  };
+
   // 初始加载
   useEffect(() => {
     console.log('AuthContext - 初始化加载用户和权限数据');
@@ -163,7 +196,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     canViewWarehouse,
     canManageWarehouse,
     refreshPermissions: fetchUserAndPermissions,
-    logout
+    logout,
+    login,
+    checkAuth: fetchUserAndPermissions
   };
 
   return (
@@ -178,101 +213,6 @@ export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error('useAuth必须在AuthProvider内使用');
-  }
-  return context;
-}
-import React, { createContext, useContext, useState, useEffect } from 'react';
-
-interface AuthState {
-  isAuthenticated: boolean;
-  user: null | {
-    id: number;
-    username: string;
-    role: string;
-  };
-  loading: boolean;
-}
-
-interface AuthContextType extends AuthState {
-  login: (username: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
-  checkAuth: () => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextType | null>(null);
-
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<AuthState>({
-    isAuthenticated: false,
-    user: null,
-    loading: true
-  });
-
-  const checkAuth = async () => {
-    try {
-      const response = await fetch('/api/auth/current-user');
-      const data = await response.json();
-      
-      if (response.ok) {
-        setState({
-          isAuthenticated: true,
-          user: data,
-          loading: false
-        });
-      } else {
-        setState({
-          isAuthenticated: false,
-          user: null,
-          loading: false
-        });
-      }
-    } catch (error) {
-      setState({
-        isAuthenticated: false,
-        user: null,
-        loading: false
-      });
-    }
-  };
-
-  const login = async (username: string, password: string) => {
-    const response = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
-    });
-
-    if (!response.ok) {
-      throw new Error('Login failed');
-    }
-
-    await checkAuth();
-  };
-
-  const logout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    setState({
-      isAuthenticated: false,
-      user: null,
-      loading: false
-    });
-  };
-
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  return (
-    <AuthContext.Provider value={{ ...state, login, logout, checkAuth }}>
-      {children}
-    </AuthContext.Provider>
-  );
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 }
