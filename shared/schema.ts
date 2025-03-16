@@ -1,4 +1,4 @@
-import { mysqlTable, int, varchar, boolean, timestamp, mysqlEnum, decimal, text } from "drizzle-orm/mysql-core";
+import { pgTable, integer, varchar, boolean, timestamp, pgEnum, decimal, text } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
