@@ -123,6 +123,11 @@ export default function InboundOrders() {
     }
   };
   
+  // 获取状态文本 - 统一使用模块前缀的翻译键格式
+  const getStatusText = (status: string) => {
+    return t(`inboundOrder.status_${status}`);
+  };
+  
   // 获取订单类型标签样式
   const getOrderTypeBadgeVariant = (orderType: string) => {
     switch (orderType) {
@@ -348,25 +353,25 @@ export default function InboundOrders() {
                 checked={statusFilter === "pending"}
                 onCheckedChange={() => setStatusFilter("pending")}
               >
-                {t("pending")}
+                {getStatusText("pending")}
               </DropdownMenuCheckboxItem>
               <DropdownMenuCheckboxItem
                 checked={statusFilter === "processing"}
                 onCheckedChange={() => setStatusFilter("processing")}
               >
-                {t("processing")}
+                {getStatusText("processing")}
               </DropdownMenuCheckboxItem>
               <DropdownMenuCheckboxItem
                 checked={statusFilter === "completed"}
                 onCheckedChange={() => setStatusFilter("completed")}
               >
-                {t("completed")}
+                {getStatusText("completed")}
               </DropdownMenuCheckboxItem>
               <DropdownMenuCheckboxItem
                 checked={statusFilter === "cancelled"}
                 onCheckedChange={() => setStatusFilter("cancelled")}
               >
-                {t("cancelled")}
+                {getStatusText("cancelled")}
               </DropdownMenuCheckboxItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -531,7 +536,7 @@ export default function InboundOrders() {
                       </TableCell>
                       <TableCell>
                         <Badge variant={getStatusBadgeVariant(order.status)}>
-                          {t(order.status)}
+                          {getStatusText(order.status)}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">{order.totalItems}</TableCell>
