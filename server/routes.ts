@@ -1193,7 +1193,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Team routes
   apiRouter.get("/teams", async (req, res) => {
     try {
-      const teams = await storage.getTeams();
+      // 确保使用当前活动的存储实现
+      const currentStorage = useFallbackStorage ? memStorage : storage;
+      console.log(`获取所有团队使用${useFallbackStorage ? '内存存储' : '数据库存储'}模式`);
+      
+      const teams = await currentStorage.getTeams();
       res.json(teams);
     } catch (err) {
       handleZodError(err, res);
@@ -1202,8 +1206,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   apiRouter.get("/teams/:id", async (req, res) => {
     try {
+      // 确保使用当前活动的存储实现
+      const currentStorage = useFallbackStorage ? memStorage : storage;
+      console.log(`获取单个团队使用${useFallbackStorage ? '内存存储' : '数据库存储'}模式`);
+      
       const id = parseInt(req.params.id);
-      const team = await storage.getTeam(id);
+      const team = await currentStorage.getTeam(id);
       
       if (!team) {
         return res.status(404).json({ message: "Team not found" });
@@ -1217,8 +1225,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   apiRouter.post("/teams", async (req, res) => {
     try {
+      // 确保使用当前活动的存储实现
+      const currentStorage = useFallbackStorage ? memStorage : storage;
+      console.log(`创建团队使用${useFallbackStorage ? '内存存储' : '数据库存储'}模式`);
+      
       const teamData = insertTeamSchema.parse(req.body);
-      const team = await storage.createTeam(teamData);
+      const team = await currentStorage.createTeam(teamData);
       res.status(201).json(team);
     } catch (err) {
       handleZodError(err, res);
