@@ -2393,6 +2393,41 @@
     "kk": "НЕМЕСЕ ЖАЛҒАСТЫРУ",
     "uz": "YOKI DAVOM ETING"
   },
+  "wechat": {
+    "zh": "微信",
+    "en": "WeChat",
+    "ru": "ВиЧат",
+    "kk": "ВиЧат",
+    "uz": "WeChat"
+  },
+  "whatsapp": {
+    "zh": "WhatsApp",
+    "en": "WhatsApp",
+    "ru": "WhatsApp",
+    "kk": "WhatsApp",
+    "uz": "WhatsApp"
+  },
+  "social_login": {
+    "zh": "社交媒体登录",
+    "en": "Social Media Login",
+    "ru": "Вход через соцсети",
+    "kk": "Әлеуметтік желілер арқылы кіру",
+    "uz": "Ijtimoiy tarmoqlar orqali kirish"
+  },
+  "connect_wechat": {
+    "zh": "关联微信账号",
+    "en": "Connect WeChat Account",
+    "ru": "Подключить аккаунт WeChat",
+    "kk": "WeChat аккаунтын қосу",
+    "uz": "WeChat hisobini ulash"
+  },
+  "connect_whatsapp": {
+    "zh": "关联WhatsApp账号",
+    "en": "Connect WhatsApp Account",
+    "ru": "Подключить аккаунт WhatsApp",
+    "kk": "WhatsApp аккаунтын қосу",
+    "uz": "WhatsApp hisobini ulash"
+  },
   "no_account": {
     "zh": "还没有账户?",
     "en": "Don't have an account?",

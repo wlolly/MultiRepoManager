@@ -344,7 +344,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                   <path d="M8 13h0c0 1 .895 2 2 2h4c1.105 0 2-1 2-2"></path>
                 </svg>
               </div>
-              WhatsApp
+              {t('whatsapp')}
             </Button>
           </div>
         </CardContent>
