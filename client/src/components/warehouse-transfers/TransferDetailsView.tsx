@@ -145,7 +145,7 @@ export function TransferDetailsView({
   
   // 获取状态文本
   const getStatusText = (status: string) => {
-    return t(`warehouseTransfer.status.${status}`);
+    return t(`warehouseTransfer.status_${status}`);
   };
   
   if (isLoading) {
