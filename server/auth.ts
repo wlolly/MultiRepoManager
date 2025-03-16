@@ -55,33 +55,41 @@ export function generateSessionId(): string {
   return crypto.randomBytes(32).toString('hex');
 }
 
+// 统一认证检查函数 - 系统唯一的认证状态检查方法
+export function isAuthenticated(req: Request): boolean {
+  if (!req.session) {
+    return false;
+  }
+  
+  // 统一使用authenticated作为主要认证标记，其他标记作为兼容
+  return Boolean(
+    // 主要标准认证标记
+    (req.session.authenticated === true) ||
+    // 备用认证标记，提供向后兼容性
+    (req.session.isAuthenticated === true) ||
+    // 数据验证 - 用户ID存在且大于0
+    (req.session.userId && req.session.userId > 0)
+  );
+}
+
 // 验证会话中间件
 export function verifySession(req: Request, res: Response, next: NextFunction) {
+  // 简化日志，只记录关键信息
   console.log('[认证] 验证会话:', {
     sessionID: req.sessionID,
-    authenticated: req.session?.authenticated,
+    authenticated: isAuthenticated(req),
     userId: req.session?.userId
   });
-  // 记录请求信息
-  console.log(`[认证系统] ${req.method} ${req.path}`);
-
+  
   try {
-    // 检查会话是否已认证（已登录）
-    // 更宽松的认证检查，允许任一条件匹配
-    const isAuthenticated = req.session && (
-      // 完整认证条件
-      (req.session.userId && req.session.authenticated === true) ||
-      // 兼容性条件 - 考虑只有userId情况
-      (req.session.userId && req.session.userId > 0) ||
-      // 直接标记 - 为了调试和兼容性
-      (req.session.isAuthenticated === true)
-    );
-
+    // 使用统一认证检查函数
+    const authenticated = isAuthenticated(req);
+    
     // 检查是否来自登录流程或明确要求绕过
     const isFromLoginFlow = req.headers['x-login-flow'] === 'true';
     const isBypassAuth = req.headers['x-bypass-auth'] === 'true';
 
-    if (isAuthenticated || isFromLoginFlow || isBypassAuth) {
+    if (authenticated || isFromLoginFlow || isBypassAuth) {
       // 用户已登录或特殊请求 - 正常设置用户对象
       req.user = { 
         id: 1, 
@@ -92,7 +100,7 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
       };
 
       // 只有确实已登录时才设置会话标记
-      if (isAuthenticated || isFromLoginFlow) {
+      if (authenticated || isFromLoginFlow) {
         // 设置会话标记（如果未设置）
         if (!req.session.userId) {
           req.session.userId = 1;
@@ -393,19 +401,11 @@ export async function registerUser(req: Request, res: Response) {
  */
 export async function getCurrentUser(req: Request, res: Response) {
   try {
-    // 检查是否已登录（会话中是否有userId且已认证）
-    // 更宽松的认证检查，允许任一条件匹配
-    const isAuthenticated = req.session && (
-      // 完整认证条件
-      (req.session.userId && req.session.authenticated === true) ||
-      // 兼容性条件 - 考虑只有userId情况
-      (req.session.userId && req.session.userId > 0) ||
-      // 直接标记 - 为了调试和兼容性
-      (req.session.isAuthenticated === true)
-    );
+    // 使用统一的认证检查函数
+    const authenticated = isAuthenticated(req);
 
     // 如果已登录，从数据库获取最新的用户信息
-    if (isAuthenticated) {
+    if (authenticated) {
       console.log('[认证系统] 当前用户已认证 - 尝试获取用户ID:', req.session.userId);
       
       try {
