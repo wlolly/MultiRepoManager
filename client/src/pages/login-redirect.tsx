@@ -147,12 +147,10 @@ export default function LoginRedirect() {
             <p className="text-gray-500">请稍候，正在验证登录并跳转</p>
           )}
           
-          {/* 测试用户特别提示 */}
-          {isTestUser && (
-            <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-700">
-              检测到测试用户登录，正在特殊处理...
-            </div>
-          )}
+          {/* 登录处理提示 */}
+          <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
+            正在处理登录请求...
+          </div>
         </div>
       </div>
       
@@ -162,7 +160,7 @@ export default function LoginRedirect() {
           <div className="font-mono">
             <p>会话调试:</p>
             <p>• Cookie 会话ID: {document.cookie.includes('sessionId=') ? '✓ 存在' : '✗ 不存在'}</p>
-            <p>• 测试用户模式: {isTestUser ? '✓ 是' : '✗ 否'}</p>
+            <p>• 请求时间: {new Date().toLocaleTimeString()}</p>
             <p>• 当前状态: {status}</p>
             <p>• 错误信息: {error || '无'}</p>
           </div>
