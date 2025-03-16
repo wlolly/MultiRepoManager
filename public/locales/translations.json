@@ -3927,13 +3927,6 @@
       "kk": "Командаңыз пайдаланатын өнім санаттарының жалпы саны",
       "uz": "Jamoangiz tomonidan ishlatiladigan mahsulot toifalarining umumiy soni"
     },
-    "language_distribution": {
-      "zh": "语言分布",
-      "en": "Language Distribution",
-      "ru": "Распределение языков",
-      "kk": "Тілдер үлестірімі",
-      "uz": "Til taqsimoti"
-    },
     "warehouseTransfer.status_pending": {
       "zh": "待处理",
       "en": "Pending",
