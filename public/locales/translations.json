@@ -734,6 +734,34 @@
     "kk": "Шығыс ордер сәтті жасалды",
     "uz": "Chiqish buyurtmasi muvaffaqiyatli yaratildi"
   },
+  "team_dashboard_no_access_title": {
+    "zh": "团队仪表盘访问受限",
+    "en": "Team Dashboard Access Restricted",
+    "ru": "Доступ к панели команды ограничен",
+    "kk": "Команда тақтасына қол жетімділік шектелген",
+    "uz": "Jamoa paneliga kirish cheklangan"
+  },
+  "team_dashboard_no_access_description": {
+    "zh": "您没有权限访问此仪表盘。请联系管理员获取适当的权限。",
+    "en": "You don't have permission to access this dashboard. Please contact an administrator for appropriate permissions.",
+    "ru": "У вас нет разрешения на доступ к этой панели. Пожалуйста, свяжитесь с администратором для получения соответствующих разрешений.",
+    "kk": "Бұл тақтаға кіруге рұқсатыңыз жоқ. Тиісті рұқсаттар алу үшін әкімшіге хабарласыңыз.",
+    "uz": "Ushbu paneliga kirish uchun ruxsatingiz yo'q. Tegishli ruxsatlar olish uchun administratorga murojaat qiling."
+  },
+  "no_warehouse_permissions": {
+    "zh": "无仓库权限",
+    "en": "No Warehouse Permissions",
+    "ru": "Нет разрешений для складов",
+    "kk": "Қойма рұқсаттары жоқ",
+    "uz": "Ombor ruxsatlari yo'q"
+  },
+  "go_to_settings": {
+    "zh": "前往设置",
+    "en": "Go to Settings",
+    "ru": "Перейти к настройкам",
+    "kk": "Параметрлерге өту",
+    "uz": "Sozlamalarga o'tish"
+  },
   "outbound_order_created_description": {
     "zh": "新的出库单已添加到系统",
     "en": "New outbound order has been added to the system",
