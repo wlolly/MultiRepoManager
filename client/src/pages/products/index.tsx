@@ -88,7 +88,56 @@ interface ProductStats {
 }
 
 export default function ProductsPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  
+  // 确保关键翻译键已加载
+  useEffect(() => {
+    // 添加一些关键的翻译（兜底方案，确保UI有文字显示）
+    const criticalTranslations = {
+      'zh': {
+        'product_categories': '产品类别',
+        'low_stock_products': '低库存产品',
+        'stock_value': '库存价值',
+        'search_products': '搜索产品',
+        'all_categories': '所有分类',
+        'all_warehouses': '所有仓库',
+        'view_options': '视图选项',
+        'grid_view': '网格视图',
+        'list_view': '列表视图',
+        'showing': '显示',
+        'of': '共',
+        'category': '分类',
+        'warehouse': '仓库',
+        'excel_operations': 'Excel操作',
+        'export_products': '导出产品',
+        'import_products': '导入产品',
+        'download_template': '下载模板',
+        'products_page_description': '管理仓库中的所有商品，包括库存追踪和分类'
+      }
+    };
+    
+    // 当前语言代码
+    const currentLang = i18n.language || 'zh';
+    
+    // 如果当前语言有兜底翻译，则添加
+    if (criticalTranslations[currentLang as keyof typeof criticalTranslations]) {
+      const translations = criticalTranslations[currentLang as keyof typeof criticalTranslations];
+      Object.keys(translations).forEach(key => {
+        // 检查翻译是否已存在，如果不存在或为空，则添加兜底翻译
+        if (!i18n.exists(key) || !i18n.t(key)) {
+          i18n.addResource(
+            currentLang, 
+            'translation', 
+            key, 
+            translations[key as keyof typeof translations]
+          );
+        }
+      });
+    }
+    
+    // 强制更新（确保UI能显示翻译）
+    i18n.changeLanguage(currentLang);
+  }, [i18n]);
   const [viewMode, setViewMode] = useState<"list" | "grid">("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
