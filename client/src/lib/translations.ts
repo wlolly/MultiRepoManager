@@ -44,6 +44,21 @@ export const warehouseTransferKeys = {
   confirmCancel: 'confirm_cancel_transfer',
   executeSuccess: 'transfer_executed_successfully',
   cancelSuccess: 'transfer_cancelled_successfully',
+  
+  // 以下是在optimized-index.tsx中用到的额外键
+  statusPending: 'status_pending',
+  statusInTransit: 'status_processing', // 使用处理中作为运输中状态
+  statusCompleted: 'status_completed',
+  statusCancelled: 'status_cancelled',
+  recent: 'recent_transfers',
+  newTransfer: 'new_transfer',
+  exportExcel: 'export_excel',
+  filterByStatus: 'filter_by_status',
+  allStatuses: 'all_statuses',
+  noTransfersFound: 'no_transfers_found',
+  fromWarehouse: 'from_warehouse',
+  toWarehouse: 'to_warehouse',
+  actions: 'actions'
 };
 
 /**

@@ -4264,5 +4264,306 @@
     "ru": "Или продолжить с",
     "kk": "Немесе жалғастыру",
     "uz": "Yoki davom eting"
+  },
+  "warehouse_transfers_title": {
+    "zh": "仓库调拨",
+    "en": "Warehouse Transfers",
+    "ru": "Складские перемещения",
+    "kk": "Қойма аударымдары",
+    "uz": "Ombor o'tkazmalari"
+  },
+  "create_transfer": {
+    "zh": "创建调拨单",
+    "en": "Create Transfer",
+    "ru": "Создать перемещение",
+    "kk": "Аударымды құру",
+    "uz": "O'tkazma yaratish"
+  },
+  "transfer_detail": {
+    "zh": "调拨单详情",
+    "en": "Transfer Detail",
+    "ru": "Детали перемещения",
+    "kk": "Аударым мәліметтері",
+    "uz": "O'tkazma tafsilotlari"
+  },
+  "transfer_status": {
+    "zh": "调拨状态",
+    "en": "Transfer Status",
+    "ru": "Статус перемещения",
+    "kk": "Аударым күйі",
+    "uz": "O'tkazma holati"
+  },
+  "source_warehouse": {
+    "zh": "源仓库",
+    "en": "Source Warehouse",
+    "ru": "Исходный склад",
+    "kk": "Бастапқы қойма",
+    "uz": "Manba ombori"
+  },
+  "target_warehouse": {
+    "zh": "目标仓库",
+    "en": "Target Warehouse",
+    "ru": "Целевой склад",
+    "kk": "Мақсатты қойма",
+    "uz": "Maqsad ombori"
+  },
+  "transfer_items": {
+    "zh": "调拨物品",
+    "en": "Transfer Items",
+    "ru": "Перемещаемые товары",
+    "kk": "Аударым заттары",
+    "uz": "O'tkazma elementlari"
+  },
+  "total_items": {
+    "zh": "总物品数",
+    "en": "Total Items",
+    "ru": "Всего товаров",
+    "kk": "Барлық заттар",
+    "uz": "Jami elementlar"
+  },
+  "total_weight": {
+    "zh": "总重量",
+    "en": "Total Weight",
+    "ru": "Общий вес",
+    "kk": "Жалпы салмақ",
+    "uz": "Umumiy vazn"
+  },
+  "total_volume": {
+    "zh": "总体积",
+    "en": "Total Volume",
+    "ru": "Общий объем",
+    "kk": "Жалпы көлем",
+    "uz": "Umumiy hajm"
+  },
+  "total_packages": {
+    "zh": "总包装数",
+    "en": "Total Packages",
+    "ru": "Всего упаковок",
+    "kk": "Барлық орамалар",
+    "uz": "Jami paketlar"
+  },
+  "reference_number": {
+    "zh": "参考编号",
+    "en": "Reference Number",
+    "ru": "Номер ссылки",
+    "kk": "Сілтеме нөмірі",
+    "uz": "Ma'lumotnoma raqami"
+  },
+  "status_pending": {
+    "zh": "待处理",
+    "en": "Pending",
+    "ru": "В ожидании",
+    "kk": "Күтуде",
+    "uz": "Kutilmoqda"
+  },
+  "status_processing": {
+    "zh": "处理中",
+    "en": "Processing",
+    "ru": "Обработка",
+    "kk": "Өңделуде",
+    "uz": "Qayta ishlanmoqda"
+  },
+  "status_completed": {
+    "zh": "已完成",
+    "en": "Completed",
+    "ru": "Завершено",
+    "kk": "Аяқталды",
+    "uz": "Tugallangan"
+  },
+  "status_cancelled": {
+    "zh": "已取消",
+    "en": "Cancelled",
+    "ru": "Отменено",
+    "kk": "Бас тартылды",
+    "uz": "Bekor qilindi"
+  },
+  "execute_transfer": {
+    "zh": "执行调拨",
+    "en": "Execute Transfer",
+    "ru": "Выполнить перемещение",
+    "kk": "Аударымды орындау",
+    "uz": "O'tkazmani amalga oshirish"
+  },
+  "cancel_transfer": {
+    "zh": "取消调拨",
+    "en": "Cancel Transfer",
+    "ru": "Отменить перемещение",
+    "kk": "Аударымды болдырмау",
+    "uz": "O'tkazmani bekor qilish"
+  },
+  "quantity": {
+    "zh": "数量",
+    "en": "Quantity",
+    "ru": "Количество",
+    "kk": "Саны",
+    "uz": "Miqdori"
+  },
+  "weight": {
+    "zh": "重量",
+    "en": "Weight",
+    "ru": "Вес",
+    "kk": "Салмақ",
+    "uz": "Vazn"
+  },
+  "volume": {
+    "zh": "体积",
+    "en": "Volume",
+    "ru": "Объем",
+    "kk": "Көлем",
+    "uz": "Hajm"
+  },
+  "created_by": {
+    "zh": "创建人",
+    "en": "Created By",
+    "ru": "Создано",
+    "kk": "Құрушы",
+    "uz": "Yaratuvchi"
+  },
+  "created_at": {
+    "zh": "创建时间",
+    "en": "Created At",
+    "ru": "Время создания",
+    "kk": "Құрылған уақыты",
+    "uz": "Yaratilgan vaqt"
+  },
+  "notes": {
+    "zh": "备注",
+    "en": "Notes",
+    "ru": "Примечания",
+    "kk": "Ескертпелер",
+    "uz": "Eslatmalar"
+  },
+  "total_transfers": {
+    "zh": "总调拨数",
+    "en": "Total Transfers",
+    "ru": "Всего перемещений",
+    "kk": "Барлық аударымдар",
+    "uz": "Jami o'tkazmalar"
+  },
+  "pending_transfers": {
+    "zh": "待处理调拨",
+    "en": "Pending Transfers",
+    "ru": "Ожидающие перемещения",
+    "kk": "Күтудегі аударымдар",
+    "uz": "Kutilayotgan o'tkazmalar"
+  },
+  "completed_transfers": {
+    "zh": "已完成调拨",
+    "en": "Completed Transfers",
+    "ru": "Завершенные перемещения",
+    "kk": "Аяқталған аударымдар",
+    "uz": "Tugallangan o'tkazmalar"
+  },
+  "filter_by_warehouse": {
+    "zh": "按仓库筛选",
+    "en": "Filter by Warehouse",
+    "ru": "Фильтр по складу",
+    "kk": "Қойма бойынша сүзу",
+    "uz": "Ombor bo'yicha filtrlash"
+  },
+  "all_warehouses": {
+    "zh": "所有仓库",
+    "en": "All Warehouses",
+    "ru": "Все склады",
+    "kk": "Барлық қоймалар",
+    "uz": "Barcha omborlar"
+  },
+  "transfer_history": {
+    "zh": "调拨历史",
+    "en": "Transfer History",
+    "ru": "История перемещений",
+    "kk": "Аударымдар тарихы",
+    "uz": "O'tkazmalar tarixi"
+  },
+  "confirm_execute_transfer": {
+    "zh": "确认执行调拨？",
+    "en": "Confirm Execute Transfer?",
+    "ru": "Подтвердить выполнение перемещения?",
+    "kk": "Аударымды орындауды растайсыз ба?",
+    "uz": "O'tkazmani amalga oshirishni tasdiqlaysizmi?"
+  },
+  "confirm_cancel_transfer": {
+    "zh": "确认取消调拨？",
+    "en": "Confirm Cancel Transfer?",
+    "ru": "Подтвердить отмену перемещения?",
+    "kk": "Аударымды болдырмауды растайсыз ба?",
+    "uz": "O'tkazmani bekor qilishni tasdiqlaysizmi?"
+  },
+  "transfer_executed_successfully": {
+    "zh": "调拨执行成功",
+    "en": "Transfer Executed Successfully",
+    "ru": "Перемещение выполнено успешно",
+    "kk": "Аударым сәтті орындалды",
+    "uz": "O'tkazma muvaffaqiyatli amalga oshirildi"
+  },
+  "transfer_cancelled_successfully": {
+    "zh": "调拨已成功取消",
+    "en": "Transfer Cancelled Successfully",
+    "ru": "Перемещение успешно отменено",
+    "kk": "Аударым сәтті болдырылмады",
+    "uz": "O'tkazma muvaffaqiyatli bekor qilindi"
+  },
+  "recent_transfers": {
+    "zh": "最近调拨",
+    "en": "Recent Transfers",
+    "ru": "Недавние перемещения",
+    "kk": "Соңғы аударымдар",
+    "uz": "So'nggi o'tkazmalar"
+  },
+  "new_transfer": {
+    "zh": "新建调拨",
+    "en": "New Transfer",
+    "ru": "Новое перемещение",
+    "kk": "Жаңа аударым",
+    "uz": "Yangi o'tkazma"
+  },
+  "export_excel": {
+    "zh": "导出Excel",
+    "en": "Export Excel",
+    "ru": "Экспорт в Excel",
+    "kk": "Excel-ге экспорттау",
+    "uz": "Excel-ga eksport"
+  },
+  "filter_by_status": {
+    "zh": "按状态筛选",
+    "en": "Filter by Status",
+    "ru": "Фильтр по статусу",
+    "kk": "Күй бойынша сүзу",
+    "uz": "Holat bo'yicha filtrlash"
+  },
+  "all_statuses": {
+    "zh": "所有状态",
+    "en": "All Statuses",
+    "ru": "Все статусы",
+    "kk": "Барлық күйлер",
+    "uz": "Barcha holatlar"
+  },
+  "no_transfers_found": {
+    "zh": "未找到调拨记录",
+    "en": "No Transfers Found",
+    "ru": "Перемещения не найдены",
+    "kk": "Аударымдар табылмады",
+    "uz": "O'tkazmalar topilmadi"
+  },
+  "from_warehouse": {
+    "zh": "来源仓库",
+    "en": "From Warehouse",
+    "ru": "Из склада",
+    "kk": "Қоймадан",
+    "uz": "Ombordan"
+  },
+  "to_warehouse": {
+    "zh": "目标仓库",
+    "en": "To Warehouse",
+    "ru": "На склад",
+    "kk": "Қоймаға",
+    "uz": "Omborga"
+  },
+  "actions": {
+    "zh": "操作",
+    "en": "Actions",
+    "ru": "Действия",
+    "kk": "Әрекеттер",
+    "uz": "Harakatlar"
   }
 }
