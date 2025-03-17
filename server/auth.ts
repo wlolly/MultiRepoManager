@@ -568,7 +568,7 @@ export async function completeLogin(req: Request, res: Response) {
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30天
       httpOnly: false, // 允许JavaScript访问
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       path: '/'
     });
 
@@ -736,7 +736,7 @@ export async function loginUser(req: Request, res: Response) {
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30天
       httpOnly: false, // 允许JavaScript访问
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       path: '/'
     });
 
