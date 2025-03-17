@@ -342,8 +342,48 @@ export function usePermissions(): PermissionsHook {
   };
 
   // 刷新权限
-  const refreshPermissions = () => {
-    fetchPermissions();
+  const refreshPermissions = async () => {
+    try {
+      // 先调用服务器端权限刷新API
+      const refreshResponse = await fetch('/api/permissions/refresh', {
+        method: 'POST',
+        credentials: 'include'
+      });
+      
+      if (refreshResponse.ok) {
+        const result = await refreshResponse.json();
+        console.log('权限刷新API响应:', result);
+        
+        // 成功刷新后，重新获取最新的权限数据
+        await fetchPermissions();
+        
+        // 返回成功消息
+        return {
+          success: true,
+          message: result.message || '权限刷新成功'
+        };
+      } else {
+        console.error('权限刷新API请求失败:', refreshResponse.status);
+        
+        // 即使API请求失败，也尝试重新获取权限数据
+        fetchPermissions();
+        
+        return {
+          success: false,
+          message: '权限刷新请求失败'
+        };
+      }
+    } catch (error) {
+      console.error('权限刷新过程中出错:', error);
+      
+      // 出错时也尝试重新获取权限数据
+      fetchPermissions();
+      
+      return {
+        success: false,
+        message: '权限刷新过程中发生错误'
+      };
+    }
   };
 
   return {
