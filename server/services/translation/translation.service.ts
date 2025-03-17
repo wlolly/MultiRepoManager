@@ -44,19 +44,34 @@ export class TranslationService {
    * @returns 翻译对象
    */
   async getAllTranslations(): Promise<TranslationObject> {
+    // 引入监控工具
+    const { translationMonitor, RequestType } = await import('./translation-monitor');
+    const requestStartTime = translationMonitor.startRequest(RequestType.GET_ALL);
+    
     try {
       // 尝试从数据库获取翻译
       const dbTranslations = await this.getAllTranslationsFromDB();
       if (dbTranslations && Object.keys(dbTranslations).length > 0) {
         console.log('[翻译服务] 从数据库获取到翻译数据，共', Object.keys(dbTranslations).length, '个键');
+        translationMonitor.endRequest(RequestType.GET_ALL, requestStartTime, true);
         return dbTranslations;
       }
       
       // 如果数据库没有翻译或出错，从文件获取
       console.log('[翻译服务] 数据库没有翻译数据，尝试从文件加载');
-      return this.getAllTranslationsFromFile();
+      const fileTranslations = this.getAllTranslationsFromFile();
+      translationMonitor.endRequest(RequestType.GET_ALL, requestStartTime, true);
+      return fileTranslations;
     } catch (error) {
       console.error('[翻译服务] 获取所有翻译出错:', error);
+      
+      // 记录错误
+      translationMonitor.endRequest(
+        RequestType.GET_ALL,
+        requestStartTime,
+        false,
+        (error as Error).message || '获取翻译数据失败'
+      );
       
       // 出错时尝试从文件获取
       return this.getAllTranslationsFromFile();
@@ -125,6 +140,10 @@ export class TranslationService {
    * @returns 翻译对象 {key: value}
    */
   async getTranslationsByLanguage(language: SupportedLanguage): Promise<Record<string, string>> {
+    // 引入监控工具
+    const { translationMonitor, RequestType } = await import('./translation-monitor');
+    const requestStartTime = translationMonitor.startRequest(RequestType.GET_BY_LANGUAGE);
+    
     try {
       // 获取所有翻译
       const translations = await this.getAllTranslations();
@@ -137,9 +156,19 @@ export class TranslationService {
         }
       });
       
+      translationMonitor.endRequest(RequestType.GET_BY_LANGUAGE, requestStartTime, true);
       return result;
     } catch (error) {
       console.error(`[翻译服务] 获取${language}语言翻译出错:`, error);
+      
+      // 记录错误
+      translationMonitor.endRequest(
+        RequestType.GET_BY_LANGUAGE,
+        requestStartTime,
+        false,
+        (error as Error).message || `获取${language}语言翻译失败`
+      );
+      
       return {};
     }
   }
@@ -217,6 +246,10 @@ export class TranslationService {
    * @returns 成功与否，失败时包含错误信息
    */
   async upsertTranslation(key: string, language: SupportedLanguage, value: string): Promise<{success: boolean, errors?: string[]}> {
+    // 引入监控工具
+    const { translationMonitor, RequestType } = await import('./translation-monitor');
+    const requestStartTime = translationMonitor.startRequest(RequestType.UPSERT);
+    
     try {
       // 引入严格的输入验证
       const { validateTranslation, formatValidationErrors } = await import('./translation-validator');
@@ -225,6 +258,15 @@ export class TranslationService {
       if (!validationResult.success) {
         const errorMessages = formatValidationErrors(validationResult.errors);
         console.error('[翻译服务] 验证失败:', errorMessages);
+        
+        // 记录验证错误
+        translationMonitor.endRequest(
+          RequestType.UPSERT,
+          requestStartTime,
+          false,
+          `验证失败: ${errorMessages.join(', ')}`
+        );
+        
         return { 
           success: false, 
           errors: errorMessages 
@@ -253,9 +295,20 @@ export class TranslationService {
       // 同步到文件
       await this.syncTranslationsToFile();
       
+      // 记录成功
+      translationMonitor.endRequest(RequestType.UPSERT, requestStartTime, true);
       return { success: true };
     } catch (error) {
       console.error('[翻译服务] 添加/更新翻译出错:', error);
+      
+      // 记录错误
+      translationMonitor.endRequest(
+        RequestType.UPSERT,
+        requestStartTime,
+        false,
+        (error as Error).message || '添加/更新翻译失败'
+      );
+      
       return { 
         success: false,
         errors: [(error as Error).message || '未知错误'] 

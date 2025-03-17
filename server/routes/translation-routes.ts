@@ -8,16 +8,20 @@ import { TranslationService, SupportedLanguage, SUPPORTED_LANGUAGES } from '../s
 import { IStorage } from '../storage';
 import { verifySession, isAdmin } from '../auth';
 
+// 定义语言枚举值
+const SupportedLanguagesEnum = z.enum(['zh', 'en', 'ru', 'kk', 'uz']);
+type SupportedLanguagesType = z.infer<typeof SupportedLanguagesEnum>;
+
 // 翻译操作验证模式
 const TranslationUpsertSchema = z.object({
   key: z.string().min(1, "翻译键不能为空"),
-  language: z.enum(SUPPORTED_LANGUAGES as [SupportedLanguage, ...SupportedLanguage[]]),
+  language: SupportedLanguagesEnum,
   value: z.string().min(1, "翻译值不能为空")
 });
 
 const TranslationDeleteSchema = z.object({
   key: z.string().min(1, "翻译键不能为空"),
-  language: z.enum(SUPPORTED_LANGUAGES as [SupportedLanguage, ...SupportedLanguage[]]).optional()
+  language: SupportedLanguagesEnum.optional()
 });
 
 // 创建翻译路由
@@ -73,12 +77,16 @@ export function createTranslationRoutes(storage: IStorage) {
       }
       
       const { key, language, value } = result.data;
-      const success = await translationService.upsertTranslation(key, language, value);
+      const { success, errors } = await translationService.upsertTranslation(key, language, value);
       
       if (success) {
         res.json({ success: true, message: '翻译已更新' });
       } else {
-        res.status(500).json({ error: '更新翻译失败' });
+        res.status(400).json({ 
+          success: false, 
+          error: '更新翻译失败', 
+          details: errors || ['未知错误'] 
+        });
       }
     } catch (error) {
       console.error('[翻译路由] 添加/更新翻译出错:', error);
