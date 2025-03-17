@@ -296,9 +296,13 @@ export default function ProductsPage() {
           <h1 className="text-2xl font-bold text-gray-900">{t('products')}</h1>
           <p className="mt-1 text-gray-500 text-sm">{t('products_page_description')}</p>
         </div>
-        {/* 仅显示Excel操作按钮，移除新增产品按钮 */}
+        {/* 显示操作按钮和Excel工具 */}
         {isRealAuthenticated && (
           <div className="flex items-center space-x-3">
+            {/* 添加产品按钮 */}
+            <ProductActions />
+            
+            {/* Excel操作下拉菜单 */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="flex items-center">

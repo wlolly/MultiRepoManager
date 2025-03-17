@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "wouter";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -589,7 +589,13 @@ export function DeleteProductDialog({ isOpen, onClose, product, onConfirm }: any
 // 产品操作按钮组
 export function ProductActions() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { data: warehouses = [] } = useQuery({ queryKey: ["/api/warehouses"] });
+  const queryClient = useQueryClient();
+  // 获取默认仓库列表（如果没有查询数据就使用默认仓库）
+  const warehouses = queryClient.getQueryData(["/api/warehouses"]) || [
+    { id: 1, name: "主仓库(北京)" },
+    { id: 2, name: "南方仓库(广州)" },
+    { id: 3, name: "西北仓库(西安)" }
+  ];
   
   return (
     <>
