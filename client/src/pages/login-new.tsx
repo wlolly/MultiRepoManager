@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Link } from 'wouter';
 import { saveSessionId } from '@/lib/sessionManager';
 import { LanguageSwitcher } from '@/components/language-switcher';
+import { useAuth } from '@/contexts/AuthContext';
 
 // 登录表单验证模式
 const loginSchema = z.object({
@@ -30,6 +31,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const [_, navigate] = useLocation();
   const { toast } = useToast();
   const { t } = useTranslation();
+  const { initiateLogin } = useAuth();
 
   // 登录表单
   const form = useForm<LoginFormValues>({
@@ -40,14 +42,14 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     },
   });
 
-  // 处理表单提交 - 标准登录策略
+  // 处理表单提交 - 双重验证登录策略
   const onSubmit = async (values: LoginFormValues) => {
     setIsLoading(true);
     
     try {
       // 显示登录中提示
       toast({ 
-        title: t('auth.logging_in'),
+        title: t('auth.initiating_login'),
         description: t('auth.please_wait'),
         type: "success"
       });
@@ -55,109 +57,34 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       // 在登录前设置防重复提交标记
       sessionStorage.setItem('login_in_progress', 'true');
       
-      // 使用fetch进行API请求，确保能正确处理cookie和会话
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Login-Flow': 'true', // 标记这是登录流程请求
-          'X-From-Login-Page': 'true', // 标记来源
-          'Cache-Control': 'no-cache, no-store, must-revalidate'
-        },
-        body: JSON.stringify(values),
-        credentials: 'include' // 确保包含cookie
-      });
+      // 使用AuthContext中的initiateLogin方法开始第一阶段验证
+      const result = await initiateLogin(values.username, values.password);
       
-      // 检查响应状态和头信息，帮助调试
-      console.log(`登录响应状态: ${response.status} ${response.statusText}`);
-      console.log('响应头:', {
-        'x-session-authenticated': response.headers.get('x-session-authenticated'),
-        'x-original-session-id': response.headers.get('x-original-session-id'),
-        'x-session-id': response.headers.get('x-session-id')
-      });
+      console.log('第一阶段验证结果:', result);
       
-      const data = await response.json();
-      console.log('登录响应数据:', data);
-      
-      // 记录登录结果，无需为特定用户做特殊处理
-      console.log('用户登录结果：', {
-        success: data.success,
-        realAuthenticated: data.realAuthenticated,
-        userInfo: data.user
-      });
-      
-      // 保存用户数据和会话ID（如果有）
-      if (data.user) {
-        // 检查是否是真实认证用户或假阳性登录用户
-        if (data.realAuthenticated === true) {
-          console.log('用户真实认证成功:', data.user);
-          // 真实认证用户，确保添加realAuthenticated标记
-          const authUser = {
-            ...data.user,
-            realAuthenticated: true,
-            fakePositive: false
-          };
-          sessionStorage.setItem('currentUser', JSON.stringify(authUser));
-          localStorage.setItem('currentUser', JSON.stringify(authUser));
-          toast({
-            title: t('auth.login_success'),
-            description: t('auth.redirecting'),
-            type: "success"
-          });
-        } else if (data.fallbackMode || data.authenticated === false) {
-          // 假阳性登录或访客用户 - 使用全小写字段名
-          const guestUser = {
-            id: data.user?.id || -1,
-            username: data.user?.username || values.username || t('auth.guest_user'),
-            fullname: data.user?.fullname || values.username || t('auth.guest_user'), // 全小写
-            role: 'anonymous',
-            usersource: 'local', // 全小写
-            isactive: true, // 全小写
-            avatarurl: null, // 全小写
-            fakePositive: true,
-            realAuthenticated: false,
-            accessLevel: 'limited'
-          };
-          console.log('创建假阳性登录用户:', guestUser);
-          sessionStorage.setItem('currentUser', JSON.stringify(guestUser));
-          localStorage.setItem('currentUser', JSON.stringify(guestUser));
-          toast({
-            title: t('auth.limited_mode_login'),
-            description: t('auth.some_features_unavailable'),
-            type: "warning"
-          });
-        } else {
-          // 常规用户（确保包含realAuthenticated标志）
-          // 注意：直接使用data.user，因为后端已经使用全小写字段名
-          // 确保关键字段不为空
-          const normalUser = {
-            ...data.user,
-            isactive: data.user?.isactive !== undefined ? data.user.isactive : true,
-            avatarurl: data.user?.avatarurl || null,
-            realAuthenticated: data.realAuthenticated || false
-          };
-          sessionStorage.setItem('currentUser', JSON.stringify(normalUser));
-          localStorage.setItem('currentUser', JSON.stringify(normalUser));
-          toast({
-            title: t('auth.login_success'),
-            description: t('auth.redirecting'),
-            type: "success"
-          });
+      if (result.success) {
+        // 第一阶段验证成功，跳转到第二阶段验证页面
+        toast({
+          title: t('auth.verification_required'),
+          description: t('auth.please_enter_verification_code'),
+          type: "success"
+        });
+        
+        // 记录验证ID，将在two-step-login页面使用
+        if (result.verificationId) {
+          sessionStorage.setItem('verification_id', result.verificationId);
         }
+        
+        // 导航到两步验证页面
+        navigate('/login/two-step');
+      } else {
+        // 验证失败
+        toast({
+          title: t('auth.login_failed'),
+          description: result.message || t('auth.invalid_credentials'),
+          type: "error"
+        });
       }
-      
-      if (data.sessionId) {
-        saveSessionId(data.sessionId);
-      }
-      
-      // 登录成功，转到登录重定向页面
-      if (onLoginSuccess) {
-        onLoginSuccess();
-      }
-      
-      // 使用重定向页面处理会话，而不是直接跳转到首页
-      console.log('登录成功，重定向到登录重定向页面');
-      window.location.href = '/login-redirect';
       
     } catch (error) {
       console.error('登录请求错误:', error);

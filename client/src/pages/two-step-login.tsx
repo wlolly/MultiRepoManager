@@ -44,20 +44,30 @@ export default function TwoStepLoginPage() {
     }
   });
 
-  // 从URL获取验证ID
+  // 从sessionStorage获取验证ID
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const vid = params.get('verificationId');
+    const vid = sessionStorage.getItem('verification_id');
     if (vid) {
       setVerificationId(vid);
+      console.log('从sessionStorage获取的验证ID:', vid);
     } else {
-      // 如果没有验证ID，返回登录页
-      navigate('/login');
-      toast({
-        title: t('error'),
-        description: t('invalid_verification_session'),
-        variant: "destructive",
-      });
+      // 尝试从URL获取验证ID（向后兼容）
+      const params = new URLSearchParams(window.location.search);
+      const urlVid = params.get('verificationId');
+      
+      if (urlVid) {
+        setVerificationId(urlVid);
+        console.log('从URL获取的验证ID:', urlVid);
+      } else {
+        // 如果没有验证ID，返回登录页
+        console.log('未找到验证ID，返回登录页');
+        navigate('/login');
+        toast({
+          title: t('error'),
+          description: t('invalid_verification_session'),
+          variant: "destructive",
+        });
+      }
     }
   }, [location, navigate, toast, t]);
 
