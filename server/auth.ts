@@ -424,14 +424,28 @@ export async function completeLogin(req: Request, res: Response) {
 
     // 获取验证记录
     const verification = await db.getLoginVerification(verificationId);
+    
+    // 详细的验证检查
+    const checks = {
+      exists: !!verification,
+      notUsed: verification ? !verification.used : false,
+      notExpired: verification ? new Date() <= new Date(verification.expires) : false,
+      codeMatch: verification ? verification.code === code : false,
+      hasUserId: verification ? !!verification.userId : false,
+      validStatus: verification ? verification.status !== 'invalid' : false
+    };
 
-    // 验证流程检查 - 统一错误响应，不泄露具体问题
-    const verificationCheckFailed = !verification || 
-                                    verification.used || 
-                                    new Date() > new Date(verification.expires) ||
-                                    verification.code !== code || 
-                                    !verification.userId || // 关键检查：必须有关联用户ID
-                                    verification.status === 'invalid';
+    const verificationCheckFailed = !checks.exists || 
+                                  !checks.notUsed || 
+                                  !checks.notExpired || 
+                                  !checks.codeMatch || 
+                                  !checks.hasUserId || 
+                                  !checks.validStatus;
+
+    // 记录详细的验证失败原因
+    if (verificationCheckFailed) {
+      console.log('[认证系统] 验证失败详情:', checks);
+    }
 
     if (verificationCheckFailed) {
       console.log('[认证系统] 验证检查失败，原因:', 
