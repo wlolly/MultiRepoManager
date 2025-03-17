@@ -210,7 +210,28 @@ export async function getUserPagePermissions(userId: number, role?: string): Pro
     
     // 如果是超级管理员或管理员，可以访问所有页面
     if (role === 'super_admin' || role === 'admin') {
-      return pageNameEnum.enumValues;
+      // 返回系统中所有定义的页面，确保管理员有完整权限
+      // 这个列表应包含所有可能的页面，与前端导航项匹配
+      return [
+        "dashboard",
+        "products",
+        "warehouse-products", 
+        "users",
+        "teams",
+        "warehouses",
+        "inbound-orders",
+        "outbound-orders",
+        "order-audit",
+        "warehouse-transfers",
+        "create-warehouse-transfer",
+        "warehouse-reports",
+        "settings",
+        "api-configurations",
+        "team-permissions",
+        "new-product",
+        "create-outbound-order",
+        "create-inbound-order"
+      ];
     }
     
     // 查询用户所属的团队
