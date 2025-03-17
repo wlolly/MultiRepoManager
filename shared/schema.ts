@@ -108,6 +108,39 @@ export const insertUserSchema = createInsertSchema(users).pick({
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
+// 用户会话表定义 - 用于存储用户登录会话信息
+export const userSessions = pgTable("user_sessions", {
+  id: serial("id").primaryKey(),
+  sessionId: varchar("session_id", { length: 255 }).notNull().unique(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  ipAddress: varchar("ip_address", { length: 50 }),
+  userAgent: text("user_agent"),
+  isValid: boolean("is_valid").default(true),
+  lastActivity: timestamp("last_activity").defaultNow(),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  data: json("data")
+}, (table) => {
+  return {
+    sessionIdIdx: index("user_sessions_session_id_idx").on(table.sessionId),
+    userIdIdx: index("user_sessions_user_id_idx").on(table.userId)
+  };
+});
+
+export const insertUserSessionSchema = createInsertSchema(userSessions).pick({
+  sessionId: true,
+  userId: true,
+  ipAddress: true,
+  userAgent: true,
+  isValid: true,
+  lastActivity: true,
+  expiresAt: true,
+  data: true
+});
+
+export type InsertUserSession = z.infer<typeof insertUserSessionSchema>;
+export type UserSession = typeof userSessions.$inferSelect;
+
 // Repositories table
 export const repositories = pgTable("repositories", {
   id: serial("id").primaryKey(),
@@ -955,34 +988,3 @@ export const insertUniqueCodeHistorySchema = createInsertSchema(uniqueCodeHistor
 export type InsertUniqueCodeHistory = z.infer<typeof insertUniqueCodeHistorySchema>;
 export type UniqueCodeHistory = typeof uniqueCodeHistory.$inferSelect;
 
-// 会话表 - 用于存储用户会话
-export const userSessions = pgTable("user_sessions", {
-  id: serial("id").primaryKey(),
-  sessionId: varchar("session_id", { length: 255 }).notNull().unique(), // 会话ID
-  userId: integer("user_id").notNull().references(() => users.id), // 用户ID
-  ipAddress: varchar("ip_address", { length: 50 }), // IP地址
-  userAgent: text("user_agent"), // 用户代理
-  isValid: boolean("is_valid").default(true), // 会话是否有效
-  lastActivity: timestamp("last_activity").defaultNow(), // 最后活动时间
-  expiresAt: timestamp("expires_at"), // 过期时间
-  createdAt: timestamp("created_at").defaultNow(), // 创建时间
-  data: json("data") // 会话数据（JSON格式）
-}, (table) => {
-  return {
-    sessionIdIdx: index("user_sessions_session_id_idx").on(table.sessionId),
-    userIdIdx: index("user_sessions_user_id_idx").on(table.userId),
-  };
-});
-
-export const insertUserSessionSchema = createInsertSchema(userSessions).pick({
-  sessionId: true,
-  userId: true,
-  ipAddress: true,
-  userAgent: true,
-  isValid: true,
-  expiresAt: true,
-  data: true
-});
-
-export type InsertUserSession = z.infer<typeof insertUserSessionSchema>;
-export type UserSession = typeof userSessions.$inferSelect;
