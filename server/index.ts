@@ -129,15 +129,6 @@ import { initializeUserIDTable } from './database/userID';
     try {
       await initializeUserIDTable();
       log('内部用户ID表初始化成功，有效期为2天', 'mysql');
-      
-      // 在服务器启动时执行一次过期验证记录和会话的清理
-      log('正在执行初始清理过期验证记录和会话', 'mysql');
-      try {
-        const result = await cleanupAuthRecords(app);
-        log(`初始清理完成：移除了 ${result.verificationsRemoved} 条验证记录和 ${result.sessionsRemoved} 条会话`, 'mysql');
-      } catch (cleanupError) {
-        console.error('初始验证记录清理失败:', cleanupError);
-      }
     } catch (error) {
       console.error('初始化内部用户ID表失败:', error);
       // 继续启动服务器，即使ID表初始化失败
@@ -148,6 +139,19 @@ import { initializeUserIDTable } from './database/userID';
   
   // 即使没有数据库连接，也继续启动服务器 - 确保应用的高可用性
   const server = await registerRoutes(app);
+  
+  // 在路由注册完成后，进行初始清理
+  // 此时app.locals.storage已经被正确初始化
+  if (dbConnectionStatus) {
+    // 在服务器启动时执行一次过期验证记录和会话的清理
+    log('正在执行初始清理过期验证记录和会话', 'mysql');
+    try {
+      const result = await cleanupAuthRecords(app);
+      log(`初始清理完成：移除了 ${result.verificationsRemoved} 条验证记录和 ${result.sessionsRemoved} 条会话`, 'mysql');
+    } catch (cleanupError) {
+      console.error('初始验证记录清理失败:', cleanupError);
+    }
+  }
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
