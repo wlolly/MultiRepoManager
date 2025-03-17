@@ -328,12 +328,12 @@ export async function getCurrentUser(req: Request, res: Response) {
           id: user.id,
           username: user.username,
           role: user.role,
-          fullName: user.fullname,
-          avatarUrl: user.avatarurl,
+          fullName: user.full_name,
+          avatarUrl: user.avatar_url,
           language: user.language || 'zh',
-          isActive: user.isactive,
-          isSocialUser: user.usersource !== 'local',
-          userSource: user.usersource
+          isActive: user.is_active,
+          isSocialUser: user.user_source !== 'local',
+          userSource: user.user_source
         },
         permissions: {
           pages: pagePermissions,
