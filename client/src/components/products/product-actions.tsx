@@ -102,34 +102,37 @@ interface ProductFormProps {
   isOpen: boolean;
   onClose: () => void;
   product?: any; // 编辑模式下的产品数据
+  productToEdit?: any; // 用于兼容列表和网格组件的传参
   warehouses: any[]; // 仓库列表
 }
 
-export function ProductForm({ isOpen, onClose, product, warehouses }: ProductFormProps) {
+export function ProductForm({ isOpen, onClose, product, productToEdit, warehouses }: ProductFormProps) {
+  // 合并product和productToEdit以兼容两种参数传递方式
+  const productData = product || productToEdit;
   const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const isEditMode = !!product?.id;
+  const isEditMode = !!productData?.id;
   
   // 表单初始值设置
   const form = useForm<z.infer<typeof productFormSchema>>({
     resolver: zodResolver(productFormSchema),
     defaultValues: isEditMode ? {
-      ...product,
+      ...productData,
       // 确保数字字段正确转换
-      stock: Number(product.stock || 0),
-      price: Number(product.price || 0),
-      cost: Number(product.cost || 0),
-      singleLengthCm: Number(product.singleLengthCm || 0),
-      singleWidthCm: Number(product.singleWidthCm || 0),
-      singleHeightCm: Number(product.singleHeightCm || 0),
-      singleWeightKg: Number(product.singleWeightKg || 0),
-      bulkLengthCm: Number(product.bulkLengthCm || 0),
-      bulkWidthCm: Number(product.bulkWidthCm || 0),
-      bulkHeightCm: Number(product.bulkHeightCm || 0),
-      bulkWeightKg: Number(product.bulkWeightKg || 0),
-      bulkQuantity: Number(product.bulkQuantity || 1),
-      warehouseId: Number(product.warehouseId || warehouses[0]?.id || 1),
+      stock: Number(productData.stock || 0),
+      price: Number(productData.price || 0),
+      cost: Number(productData.cost || 0),
+      singleLengthCm: Number(productData.singleLengthCm || 0),
+      singleWidthCm: Number(productData.singleWidthCm || 0),
+      singleHeightCm: Number(productData.singleHeightCm || 0),
+      singleWeightKg: Number(productData.singleWeightKg || 0),
+      bulkLengthCm: Number(productData.bulkLengthCm || 0),
+      bulkWidthCm: Number(productData.bulkWidthCm || 0),
+      bulkHeightCm: Number(productData.bulkHeightCm || 0),
+      bulkWeightKg: Number(productData.bulkWeightKg || 0),
+      bulkQuantity: Number(productData.bulkQuantity || 1),
+      warehouseId: Number(productData.warehouseId || warehouses[0]?.id || 1),
     } : defaultProduct,
   });
   
@@ -141,6 +144,9 @@ export function ProductForm({ isOpen, onClose, product, warehouses }: ProductFor
       createProductMutation.mutate(data);
     }
   };
+  
+  // 获取路由导航函数
+  const [_, navigate] = useLocation();
   
   // 创建产品
   const createProductMutation = useMutation({
@@ -159,11 +165,20 @@ export function ProductForm({ isOpen, onClose, product, warehouses }: ProductFor
         }),
       });
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
       toast.success("产品创建成功");
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
       form.reset(defaultProduct);
       onClose();
+      
+      // 如果API返回了新创建的产品数据，自动跳转到产品详情页
+      try {
+        if (response && response.id) {
+          navigate(`/products/${response.id}`);
+        }
+      } catch (error) {
+        console.error("导航到新产品详情页失败:", error);
+      }
     },
     onError: (error: any) => {
       toast.error(`创建失败: ${error.message}`);
@@ -173,14 +188,14 @@ export function ProductForm({ isOpen, onClose, product, warehouses }: ProductFor
   // 更新产品
   const updateProductMutation = useMutation({
     mutationFn: async (data: z.infer<typeof productFormSchema>) => {
-      if (!product?.id) throw new Error("产品ID不存在");
+      if (!productData?.id) throw new Error("产品ID不存在");
       
       // 自动计算体积
       const singleVolumeM3 = (data.singleLengthCm * data.singleWidthCm * data.singleHeightCm) / 1000000;
       const bulkVolumeM3 = data.bulkLengthCm && data.bulkWidthCm && data.bulkHeightCm ? 
         (data.bulkLengthCm * data.bulkWidthCm * data.bulkHeightCm) / 1000000 : 0;
       
-      return await apiRequest(`/api/products/${product.id}`, {
+      return await apiRequest(`/api/products/${productData.id}`, {
         method: "PATCH",
         body: JSON.stringify({
           ...data,
@@ -192,7 +207,7 @@ export function ProductForm({ isOpen, onClose, product, warehouses }: ProductFor
     onSuccess: () => {
       toast.success("产品更新成功");
       queryClient.invalidateQueries({ queryKey: ["/api/products"] });
-      queryClient.invalidateQueries({ queryKey: [`/api/products/${product.id}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/products/${productData.id}`] });
       onClose();
     },
     onError: (error: any) => {
