@@ -77,6 +77,7 @@ export function generateVerificationId(): string {
 /**
  * 用户登录验证第一阶段
  * 验证用户凭据并生成验证ID，需要用户进行第二阶段验证
+ * 根据新的设计，即使用户不存在也会生成验证ID，只是该ID不关联有效用户
  */
 export async function initiateLogin(req: Request, res: Response) {
   const { username, password } = req.body;
@@ -86,41 +87,36 @@ export async function initiateLogin(req: Request, res: Response) {
     const db = req.app.locals.storage;
     const user = await db.getUserByUsername(username);
     
-    // 用户不存在或密码不匹配
-    if (!user || !verifyPassword(user.password || '', password)) {
-      return res.status(401).json({
-        success: false,
-        message: '用户名或密码错误',
-        authenticated: false
-      });
-    }
-    
-    // 用户账号未激活
-    if (user.is_active === false) {
-      return res.status(401).json({
-        success: false,
-        authenticated: false,
-        message: '账号未激活，请联系管理员'
-      });
-    }
-    
-    console.log('[认证系统] 登录验证第一阶段成功: 用户ID:', user.id, '角色:', user.role);
-    
-    // 生成随机验证ID
+    // 生成随机验证ID - 无论用户是否存在
     const verificationId = generateVerificationId();
     console.log('[认证系统] 生成验证ID:', verificationId);
     
     // 生成随机6位验证码
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
     
-    // 验证记录有效期 (10分钟)
-    const expirationTime = new Date(Date.now() + 10 * 60 * 1000);
+    // 验证记录有效期 (15分钟)
+    const expirationTime = new Date(Date.now() + 15 * 60 * 1000);
     
-    // 创建验证记录
+    // 确定用户是否有效
+    let isValidUser = false;
+    let userId = null;
+    
+    if (user && verifyPassword(user.password || '', password) && user.is_active !== false) {
+      // 有效用户
+      userId = user.id;
+      isValidUser = true;
+      console.log('[认证系统] 登录验证第一阶段成功: 用户ID:', user.id, '角色:', user.role);
+    } else {
+      // 用户不存在、密码错误或未激活
+      console.log('[认证系统] 登录验证第一阶段：无效用户或凭据');
+      // 这里不返回错误，而是继续处理，统一流程
+    }
+    
+    // 创建验证记录 - 无论用户是否有效
     const verificationData = {
       verificationId,
-      userId: user.id,
-      status: 'pending',
+      userId: userId, // 无效用户为null
+      status: isValidUser ? 'pending' : 'invalid',
       ipAddress: req.ip,
       userAgent: req.get('user-agent') || '',
       created: new Date(),
@@ -134,19 +130,19 @@ export async function initiateLogin(req: Request, res: Response) {
     // 存储验证记录
     await db.createLoginVerification(verificationData);
     
-    // 实际系统中，这里会发送验证码到用户手机或邮箱
-    // 这里简化处理，直接在控制台打印验证码(仅供测试)
-    console.log(`[认证系统][测试] 用户 ${username} 的验证码是: ${verificationCode}`);
+    // 如果是有效用户，发送验证码；简化处理，直接在控制台打印
+    if (isValidUser) {
+      console.log(`[认证系统][测试] 用户 ${username} 的验证码是: ${verificationCode}`);
+    } else {
+      console.log(`[认证系统][测试] 无效登录尝试的验证码: ${verificationCode} (不会实际发送)`);
+    }
     
-    // 返回成功响应，包含验证ID（不包含验证码）
+    // 统一的成功响应 - 对于有效/无效用户都返回相同结构
     return res.status(200).json({
       success: true,
       message: '验证码已发送',
       requireVerification: true,
-      verificationId,
-      user: {
-        username: user.username
-      }
+      verificationId
     });
   } catch (error) {
     console.error('[认证系统] 登录验证处理错误:', error);
@@ -161,6 +157,7 @@ export async function initiateLogin(req: Request, res: Response) {
 /**
  * 用户登录验证第二阶段 - 验证码验证
  * 验证用户提供的验证码，如果正确则建立会话
+ * 根据新设计，验证ID必须关联到有效用户才能通过验证
  */
 export async function completeLogin(req: Request, res: Response) {
   const { verificationId, code } = req.body;
@@ -180,48 +177,39 @@ export async function completeLogin(req: Request, res: Response) {
     // 获取验证记录
     const verification = await db.getLoginVerification(verificationId);
     
-    // 验证记录不存在
-    if (!verification) {
+    // 验证流程检查 - 统一错误响应，不泄露具体问题
+    const verificationCheckFailed = !verification || 
+                                    verification.used || 
+                                    new Date() > new Date(verification.expires) ||
+                                    verification.code !== code || 
+                                    !verification.userId || // 关键检查：必须有关联用户ID
+                                    verification.status === 'invalid';
+    
+    if (verificationCheckFailed) {
+      console.log('[认证系统] 验证检查失败，原因:', 
+                !verification ? '验证ID不存在' : 
+                verification.used ? '验证码已使用' :
+                new Date() > new Date(verification.expires) ? '验证码已过期' :
+                verification.code !== code ? '验证码错误' :
+                !verification.userId ? '非有效用户' :
+                verification.status === 'invalid' ? '无效状态' : '未知原因');
+                
+      // 统一的错误响应，不提供具体原因
       return res.status(401).json({
         success: false,
-        message: '无效的验证ID',
+        message: '验证失败，请重新登录',
         authenticated: false
       });
     }
     
-    // 验证记录已使用
-    if (verification.used) {
-      return res.status(401).json({
-        success: false,
-        message: '此验证码已使用',
-        authenticated: false
-      });
-    }
-    
-    // 验证记录已过期
-    if (new Date() > new Date(verification.expires)) {
-      return res.status(401).json({
-        success: false,
-        message: '验证码已过期',
-        authenticated: false
-      });
-    }
-    
-    // 验证码不匹配
-    if (verification.code !== code) {
-      return res.status(401).json({
-        success: false,
-        message: '验证码错误',
-        authenticated: false
-      });
-    }
-    
-    // 获取用户信息
-    const user = await db.getUser(verification.userId);
+    // 获取用户信息 (此时已确认用户ID存在)
+    const user = await db.getUser(verification.userId!);
     if (!user) {
-      return res.status(404).json({
+      // 理论上不会执行到这里，因为前面已经验证了userId存在
+      console.error('[认证系统] 严重错误：验证通过但用户不存在, userId:', verification.userId);
+      return res.status(500).json({
         success: false,
-        message: '用户不存在',
+        message: '系统错误，请联系管理员',
         authenticated: false
       });
     }
