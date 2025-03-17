@@ -474,13 +474,51 @@ export async function completeLogin(req: Request, res: Response) {
 export async function loginUser(req: Request, res: Response) {
   const { username, password } = req.body;
   
+  console.log(`[认证系统] 尝试登录: 用户名=${username}, 密码长度=${password ? password.length : 0}`);
+  console.log(`[认证系统] 强制使用数据库存储验证`);
+  
   try {
     // 获取用户数据
     const db = req.app.locals.storage;
-    const user = await db.getUserByUsername(username);
+    console.log(`[认证系统] 存储接口类型: ${db.constructor.name}`);
+    console.log(`[认证系统] 查询数据库中用户: ${username}`);
     
-    // 用户不存在或密码不匹配
-    if (!user || !verifyPassword(user.password || '', password)) {
+    // 执行数据库查询
+    const user = await db.getUserByUsername(username);
+    console.log(`[认证系统] 数据库查询结果: ${user ? '用户存在' : '用户不存在'}`);
+    
+    // 如果用户存在，输出用户信息（不包括敏感数据）
+    if (user) {
+      console.log(`[认证系统] 用户详情:`, {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        is_active: user.is_active,
+        has_password: !!user.password,
+        password_length: user.password ? user.password.length : 0
+      });
+    }
+    
+    // 用户不存在情况
+    if (!user) {
+      console.log(`[认证系统] 登录失败：用户 ${username} 不存在`);
+      return res.status(401).json({
+        success: false,
+        message: '用户名或密码错误',
+        authenticated: false
+      });
+    }
+    
+    // 检查密码
+    console.log(`[认证系统] 验证密码: 存储密码类型=${typeof user.password}, 提供密码类型=${typeof password}`);
+    console.log(`[认证系统] 存储密码格式: ${user.password ? (user.password.includes(':') ? '哈希:盐' : '纯文本') : '无密码'}`);
+    
+    const passwordValid = verifyPassword(user.password || '', password);
+    console.log(`[认证系统] 密码验证结果: ${passwordValid ? '成功' : '失败'}`);
+    
+    // 密码不匹配
+    if (!passwordValid) {
+      console.log(`[认证系统] 登录失败：用户 ${username} 密码不正确`);
       return res.status(401).json({
         success: false,
         message: '用户名或密码错误',
@@ -490,6 +528,7 @@ export async function loginUser(req: Request, res: Response) {
     
     // 用户账号未激活
     if (user.is_active === false) {
+      console.log(`[认证系统] 登录失败：用户 ${username} 未激活`);
       return res.status(401).json({
         success: false,
         authenticated: false,
