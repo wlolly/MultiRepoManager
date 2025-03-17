@@ -20,7 +20,7 @@ async function createAdminUser() {
       throw new Error('无法连接到数据库');
     }
     
-    const { client } = connection;
+    const { client } = connection as { client: any, db: any };
     console.log('[数据库] 连接测试成功!');
     console.log('✅ 正在使用PostgreSQL数据库存储模式运行');
     

@@ -15,6 +15,11 @@ declare module 'express-session' {
     testUser?: boolean;
     fakePositive?: boolean;
     
+    // 用户信息字段
+    role?: string;
+    username?: string;
+    language?: string;
+    
     // 会话同步中间件新增字段 - 明确类型提高类型安全性
     clientOrigin?: boolean;
     sessionSource?: string;

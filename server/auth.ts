@@ -421,7 +421,7 @@ export async function activateUser(req: Request, res: Response) {
     // 更新用户状态
     const db = req.app.locals.storage;
     const updatedUser = await db.updateUser(userId, {
-      isactive: active
+      is_active: active
     });
     
     if (!updatedUser) {
@@ -437,7 +437,7 @@ export async function activateUser(req: Request, res: Response) {
       user: {
         id: updatedUser.id,
         username: updatedUser.username,
-        isActive: updatedUser.isactive
+        isActive: updatedUser.is_active
       }
     });
   } catch (error) {
