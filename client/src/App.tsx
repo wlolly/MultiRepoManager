@@ -30,6 +30,7 @@ import Users from "./pages/users";
 import ApiConfigurations from "./pages/api-configurations";
 import TeamPermissions from "./pages/team-permissions";
 import LoginPage from "./pages/login-new"; // 使用新版登录页面
+import TwoStepLoginPage from "./pages/two-step-login"; // 双重验证登录页面
 import LoginRedirect from "./pages/login-redirect"; // 新增登录重定向页面
 import RegisterPage from "./pages/register";
 import SessionTestPage from "./pages/session-test"; // 会话同步测试页面
@@ -384,7 +385,7 @@ export default function App() {
   const [authenticated, setAuthenticated] = useState(false);
   const [pathname] = useLocation();
   // 无需布局的路径（登录、重定向和注册页面）
-  const noLayoutPaths = ['/login', '/login-redirect', '/register'];
+  const noLayoutPaths = ['/login', '/login/two-step', '/login-redirect', '/register'];
   const { t } = useTranslation();
   
   // 从本地存储加载用户首选语言
@@ -482,6 +483,9 @@ export default function App() {
             <Switch>
               <Route path="/login">
                 <LoginPage onLoginSuccess={() => updateAuthState(true)} />
+              </Route>
+              <Route path="/login/two-step">
+                <TwoStepLoginPage />
               </Route>
               <Route path="/login-redirect">
                 <LoginRedirect />
