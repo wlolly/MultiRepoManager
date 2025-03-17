@@ -284,7 +284,7 @@ export async function getUserPagePermissions(userId: number, role?: string | nul
  * @param role 用户角色 (可选，如果未提供则会从数据库中读取)
  * @returns 用户仓库权限映射 {仓库ID: {view: 是否可查看, manage: 是否可管理}}
  */
-export async function getUserWarehousePermissions(userId: number, role?: string): Promise<Record<string, { view: boolean, manage: boolean }>> {
+export async function getUserWarehousePermissions(userId: number, role?: string | null): Promise<Record<string, { view: boolean, manage: boolean }>> {
   try {
     // 如果没有提供角色，从数据库中获取用户角色
     if (!role && userId > 0) {
@@ -371,7 +371,7 @@ export async function getUserWarehousePermissions(userId: number, role?: string)
  * @param pageName 页面名称
  * @returns 是否有权限访问
  */
-export async function hasPagePermission(userId: number, role?: string, pageName?: string): Promise<boolean> {
+export async function hasPagePermission(userId: number, role?: string | null, pageName?: string): Promise<boolean> {
   try {
     // 如果没有提供页面名称，默认返回true
     if (!pageName) return true;
@@ -421,7 +421,7 @@ export async function hasPagePermission(userId: number, role?: string, pageName?
  */
 export async function checkSpecificPagePermissionResult(
   userId: number, 
-  role?: string, 
+  role?: string | null, 
   pageName?: string
 ): Promise<{ 
   hasPermission: boolean;
@@ -495,7 +495,7 @@ export async function checkSpecificPagePermissionResult(
 export async function loadUserPermissions(
   userId: number, 
   req: Request,
-  role?: string
+  role?: string | null
 ): Promise<{
   pages: string[],
   actions: string[],
