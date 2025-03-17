@@ -2,7 +2,8 @@
  * 认证系统缓存工具函数
  * 提供权限缓存清理和预加载功能
  */
-import { clearPermissionCache, loadUserPermissions } from './permission-utils';
+import { getPermissionCache, setPermissionCache, clearPermissionCache } from './permission-utils';
+import { loadUserPermissions } from './permission-utils';
 
 /**
  * 清除用户权限缓存并记录日志
@@ -13,11 +14,11 @@ import { clearPermissionCache, loadUserPermissions } from './permission-utils';
  */
 export function clearUserPermissionCache(userId: number): boolean {
   try {
-    console.log(`[认证系统] 清除用户${userId}的权限缓存`);
+    console.log(`[权限缓存] 清理用户ID=${userId}的权限缓存`);
     clearPermissionCache(userId);
     return true;
-  } catch (cacheError) {
-    console.error(`[认证系统] 清除权限缓存失败:`, cacheError);
+  } catch (error) {
+    console.error(`[权限缓存] 清理用户ID=${userId}的权限缓存时出错:`, error);
     return false;
   }
 }
@@ -32,16 +33,23 @@ export function clearUserPermissionCache(userId: number): boolean {
  */
 export async function preloadUserPermissions(
   userId: number, 
-  userRole: string, 
+  userRole: string,
   sessionId?: string
-): Promise<void> {
+): Promise<boolean> {
   try {
-    console.log(`[认证系统] 预加载用户${userId}的权限数据 (角色: ${userRole})`);
-    await loadUserPermissions(userId, sessionId, userRole);
-    console.log(`[认证系统] 用户权限数据已预加载`);
+    console.log(`[权限缓存] 预加载用户ID=${userId}, 角色=${userRole}的权限数据`);
+
+    // 从数据库加载用户权限
+    const permissions = await loadUserPermissions(userId, sessionId, userRole);
+    
+    // 保存到缓存
+    setPermissionCache(userId, permissions);
+    
+    console.log(`[权限缓存] 成功预加载用户权限到缓存: 用户ID=${userId}`);
+    return true;
   } catch (error) {
-    console.error(`[认证系统] 预加载权限数据失败:`, error);
-    // 预加载失败不阻止后续流程，用户可在访问需要权限的资源时动态加载
+    console.error(`[权限缓存] 预加载用户权限时出错: 用户ID=${userId}`, error);
+    return false;
   }
 }
 
@@ -57,10 +65,17 @@ export async function handleLoginPermissions(
   userId: number,
   userRole: string,
   sessionId?: string
-): Promise<void> {
-  // 1. 首先清除旧缓存
-  clearUserPermissionCache(userId);
-  
-  // 2. 预加载新的权限数据
-  await preloadUserPermissions(userId, userRole, sessionId);
+): Promise<boolean> {
+  try {
+    // 先清除旧的权限缓存
+    clearUserPermissionCache(userId);
+    
+    // 然后预加载新的权限数据
+    await preloadUserPermissions(userId, userRole, sessionId);
+    
+    return true;
+  } catch (error) {
+    console.error(`[权限缓存] 处理登录权限时出错: 用户ID=${userId}`, error);
+    return false;
+  }
 }

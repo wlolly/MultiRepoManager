@@ -415,6 +415,19 @@ export async function initiateLogin(req: Request, res: Response) {
 
     // 返回成功响应
     console.log('[认证系统] 登录成功，返回用户ID:', user.id);
+    
+    // 预加载用户权限到缓存
+    try {
+      // 导入权限缓存工具函数
+      const { handleLoginPermissions } = require('./utils/auth-cache-utils');
+      
+      // 处理权限缓存
+      await handleLoginPermissions(user.id, user.role, sessionId);
+      console.log(`[认证系统] 已更新用户${user.id}的权限缓存`);
+    } catch (cacheError) {
+      console.error('[认证系统] 预加载权限缓存时出错:', cacheError);
+      // 不阻断登录流程
+    }
 
     return res.status(200).json({
       success: true,
@@ -519,9 +532,6 @@ export async function completeLogin(req: Request, res: Response) {
 
     console.log('[认证系统] 登录验证第二阶段成功: 用户ID:', user.id);
     
-    // 处理用户权限缓存 - completeLogin成功验证后
-    await handleLoginPermissions(user.id, user.role, sessionId);
-
     // 标记验证记录为已使用
     await db.updateLoginVerification(verificationId, {
       used: true,
@@ -532,6 +542,9 @@ export async function completeLogin(req: Request, res: Response) {
     // 生成随机会话ID
     const sessionId = generateSessionId();
     console.log('[认证系统] 生成新会话ID:', sessionId);
+    
+    // 处理用户权限缓存 - completeLogin成功验证后
+    await handleLoginPermissions(user.id, user.role, sessionId);
 
     // 创建数据库会话记录
     const userSessionData = {
@@ -700,6 +713,9 @@ export async function loginUser(req: Request, res: Response) {
     // 生成随机会话ID
     const sessionId = generateSessionId();
     console.log('[认证系统] 生成新会话ID:', sessionId);
+    
+    // 处理用户权限缓存 - loginUser成功验证后
+    await handleLoginPermissions(user.id, user.role, sessionId);
 
     // 创建数据库会话记录
     const userSessionData = {
@@ -1179,6 +1195,9 @@ export async function logout(req: Request, res: Response) {
     const sessionId = req.sessionID;
     console.log('[认证系统] 开始注销会话:', sessionId);
 
+    // 获取用户ID (用于清理权限缓存)
+    const userId = req.session?.userId;
+    
     // 获取存储接口
     const db = req.app.locals.storage;
 
@@ -1186,6 +1205,21 @@ export async function logout(req: Request, res: Response) {
     if (sessionId && db) {
       await db.invalidateUserSession(sessionId);
       console.log('[认证系统] 已使数据库中的会话失效:', sessionId);
+    }
+    
+    // 如果有用户ID，清理用户的权限缓存
+    if (userId) {
+      try {
+        // 导入权限缓存工具函数
+        const { clearUserPermissionCache } = require('./utils/auth-cache-utils');
+        
+        // 清理权限缓存
+        clearUserPermissionCache(userId);
+        console.log(`[认证系统] 已清理用户${userId}的权限缓存`);
+      } catch (cacheError) {
+        console.error('[认证系统] 清理权限缓存时出错:', cacheError);
+        // 不阻断注销流程
+      }
     }
 
     // 清除会话信息
@@ -1286,6 +1320,19 @@ export async function updateUserRole(req: Request, res: Response) {
         success: false,
         message: '用户不存在'
       });
+    }
+    
+    // 清理用户的权限缓存
+    try {
+      // 导入权限缓存工具函数
+      const { clearUserPermissionCache } = require('./utils/auth-cache-utils');
+      
+      // 清理权限缓存
+      clearUserPermissionCache(userId);
+      console.log(`[认证系统] 已清理用户${userId}的权限缓存（角色更新）`);
+    } catch (cacheError) {
+      console.error('[认证系统] 清理权限缓存时出错:', cacheError);
+      // 不阻断流程
     }
 
     return res.status(200).json({
@@ -1519,8 +1566,10 @@ export function isAdmin(req: Request, res: Response, next: NextFunction) {
 
   // 验证用户是否有admin权限
   const isAdminRole = 
-    req.session.role === 'admin' || role === 'super_admin' || role === 'super_admin' || 
-    req.session.role === 'super_admin' || 
+    typeof req.session.role === 'string' && (
+      req.session.role === 'admin' || 
+      req.session.role === 'super_admin'
+    ) || 
     req.session.isAdmin === true || 
     req.session.hasSuperAccess === true;
 
