@@ -1,18 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
 import { generateSessionId } from '../auth';
 
-/**
- * 简单的认证中间件
- * 
- * 直接从数据库检查会话ID是否有效，不做额外复杂的同步处理
- */
 export async function authMiddleware(req: Request, res: Response, next: NextFunction) {
   try {
-    if (!req.sessionID) {
-      console.log('[认证中间件] 没有会话ID，将创建新会话');
-      // 如果没有会话ID，创建一个新的会话ID（Express会在cookie中为我们设置它）
-      next();
-      return;
+    // 检查请求头中的会话ID
+    const clientSessionId = req.headers['x-session-id'] as string;
+
+    if (clientSessionId) {
+      console.log(`[认证中间件] 使用客户端提供的会话ID: ${clientSessionId}`);
+      req.sessionID = clientSessionId;
     }
 
     // 获取存储接口
@@ -23,47 +19,27 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
       return;
     }
 
-    // 从数据库检查会话ID，使用之前实现的数据库方法
-    const session = await storage.getUserSessionById(req.sessionID);
-    
-    // 会话ID存在但不在数据库中，则视为未认证
-    if (!session) {
-      console.log(`[认证中间件] 会话ID ${req.sessionID} 在数据库中不存在`);
-      req.session.isAuthenticated = false;
-      req.session.authenticated = false;
-      req.session.userId = null;
-      next();
-      return;
-    }
+    // 从数据库检查会话
+    if (req.sessionID) {
+      const session = await storage.getUserSessionById(req.sessionID);
 
-    // 会话ID在数据库中存在，检查是否有效
-    if (!session.isValid) {
-      console.log(`[认证中间件] 会话ID ${req.sessionID} 已失效`);
-      req.session.isAuthenticated = false;
-      req.session.authenticated = false;
-      req.session.userId = null;
-      next();
-      return;
-    }
+      if (session && session.isValid && session.userId) {
+        console.log(`[认证中间件] 找到有效会话: ${req.sessionID}`);
+        req.session.authenticated = true;
+        req.session.isAuthenticated = true;
+        req.session.userId = session.userId;
 
-    // 会话ID有效，则设置认证状态和用户ID
-    console.log(`[认证中间件] 会话ID ${req.sessionID} 有效，用户ID: ${session.userId}`);
-    
-    // 防止会话固定攻击，如果是新会话请求但已有有效会话ID，更新会话ID
-    if (!req.session.userId && session.userId) {
-      console.log(`[认证中间件] 首次认证，正在更新会话状态`);
+        // 更新会话活动时间
+        await storage.updateUserSession(req.sessionID, {
+          lastActivity: new Date()
+        });
+      } else {
+        console.log(`[认证中间件] 会话无效或不存在: ${req.sessionID}`);
+        req.session.authenticated = false;
+        req.session.isAuthenticated = false;
+        req.session.userId = null;
+      }
     }
-    
-    // 更新会话状态
-    req.session.isAuthenticated = true;
-    req.session.authenticated = true;
-    req.session.userId = session.userId;
-    req.session.lastActivity = Date.now();
-    
-    // 更新数据库中的会话活动时间
-    await storage.updateUserSession(req.sessionID, {
-      lastActivity: new Date()
-    });
 
     next();
   } catch (error) {

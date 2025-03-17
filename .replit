@@ -10,7 +10,7 @@ deploymentTarget = "cloudrun"
 run = ["sh", "-c", "npm run dev"]
 
 [workflows]
-runButton = "Start Dev Server"
+runButton = "Dev Server"
 
 [[workflows.workflow]]
 name = "Project"
@@ -53,6 +53,15 @@ mode = "sequential"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "node test-server.js"
+
+[[workflows.workflow]]
+name = "Dev Server"
+author = 40460150
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
 
 [[ports]]
 localPort = 5000
