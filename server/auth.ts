@@ -1023,11 +1023,30 @@ export async function getCurrentUser(req: Request, res: Response) {
             console.error('[认证系统] 更新会话活动时间失败:', updateError);
           }
 
+          // 获取数据库中的会话记录用于验证真实用户
+          const dbSession = await db.getUserSessionById(req.sessionID);
+          
+          // 在开发/测试环境中，始终将用户视为真实用户
+          let isRealUser = false;
+          if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+            isRealUser = true;
+            console.log(`[认证系统] 开发环境中始终将用户标记为真实用户`);
+          } else {
+            // 只需要验证会话在数据库中存在并且有效，不需要检查用户ID匹配（因为可能是测试账号）
+            isRealUser = !!dbSession && dbSession.isValid === true;
+          }
+          
+          // 在会话中记录真实用户状态，这样其他请求也能使用
+          req.session.realAuthenticated = isRealUser;
+          req.session.save(() => {});
+          
+          console.log(`[认证系统] 真实用户验证: isRealUser=${isRealUser}, 会话ID=${req.sessionID}, 用户ID=${user.id}, dbSession存在=${!!dbSession}, 会话有效=${dbSession?.isValid}`);
+          
           // 返回成功响应
           console.log('[认证系统] 返回已认证用户信息, 用户ID:', user.id);
           return res.status(200).json({
             authenticated: true,
-            realAuthenticated: true, // 添加真实用户标志
+            realAuthenticated: isRealUser, // 基于数据库会话状态
             testUser: true, // 添加测试用户标志
             message: "登录有效",
             user: {
@@ -1150,10 +1169,28 @@ export async function getCurrentUser(req: Request, res: Response) {
         // 继续处理，不影响响应
       }
 
+      // 验证是否为真实用户
+      let isRealUser = false;
+      
+      // 在开发/测试环境中，始终将用户视为真实用户
+      if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+        isRealUser = true;
+        console.log(`[认证系统] 开发环境中始终将用户标记为真实用户`);
+      } else {
+        // 直接使用session对象验证是否存在且有效
+        isRealUser = !!session && session.isValid === true;
+      }
+      
+      // 在会话中记录真实用户状态，这样其他请求也能使用
+      req.session.realAuthenticated = isRealUser;
+      req.session.save(() => {});
+      
+      console.log(`[认证系统] 验证真实用户: isRealUser=${isRealUser}, 会话ID=${req.sessionID}, 数据库会话存在=${!!session}, 会话有效=${session?.isValid}`);
+
       // 返回用户信息
       return res.status(200).json({
         authenticated: true,
-        realAuthenticated: true, // 添加真实用户标志
+        realAuthenticated: isRealUser, // 基于数据库会话存在
         testUser: true, // 添加测试用户标志
         user: {
           id: user.id,

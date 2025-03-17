@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { memStorage, useFallbackStorage, db } from "./db";
 import { hasPageAccess, hasWarehouseAccess, loadUserPermissions, requireAdmin, requirePageAccess, requireActionPermission, requireWarehouseAccess, getUserPagePermissions, getUserWarehousePermissions, checkSpecificPagePermissionResult } from "./middleware/permission-middleware";
+import { requireRealUser } from "./middleware/real-user.middleware";
 import { permissionRefreshMiddleware, refreshUserPermissions, getUserPermissions } from "./middleware/permission-refresh-middleware";
 import { translations } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
@@ -532,6 +533,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 获取当前用户信息
   apiRouter.get("/auth/me", verifySession, getCurrentUser);
   apiRouter.get("/auth/current-user", getCurrentUser); // 不加验证，允许检查会话状态
+  
+  // 新增：真实用户权限和认证状态检查API
+  apiRouter.get("/auth/status", (req, res) => {
+    // 获取会话ID和用户ID
+    const sessionId = req.sessionID;
+    const userId = req.session?.userId || -1;
+    const userRole = req.session?.userRole || 'anonymous';
+    
+    // 检查真实认证状态
+    const realAuthenticated = req.session?.realAuthenticated === true;
+    const authenticated = req.session?.authenticated === true || req.session?.isAuthenticated === true;
+    
+    // 检查是否为测试用户
+    const testUser = req.session?.testUser === true;
+    
+    // 返回权限状态信息
+    res.json({
+      sessionId,
+      userId,
+      userRole,
+      authenticated,
+      realAuthenticated,
+      testUser,
+      isGuest: userId === -1,
+      isAdmin: userRole === 'admin' || userRole === 'super_admin',
+      
+      // 添加时间戳，避免浏览器缓存
+      timestamp: Date.now()
+    });
+  });
   
   // 登出接口
   apiRouter.post("/auth/logout", verifySession, logout);
@@ -1686,7 +1717,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Warehouse routes
-  apiRouter.get("/warehouses", async (req, res) => {
+  apiRouter.get("/warehouses", verifySession, async (req, res) => {
     try {
       // 确保使用当前活动的存储实现
       const currentStorage = useFallbackStorage ? memStorage : storage;
@@ -3241,7 +3272,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // 仓库调拨相关路由
-  apiRouter.get("/warehouse-transfers", async (req, res) => {
+  apiRouter.get("/warehouse-transfers", verifySession, requireRealUser, async (req, res) => {
     try {
       // 获取查询参数
       const sourceWarehouseId = req.query.sourceWarehouseId ? parseInt(req.query.sourceWarehouseId as string) : undefined;
