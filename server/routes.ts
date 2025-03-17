@@ -4891,6 +4891,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // 唯一码跟踪逻辑继续
+
+  // 权限管理相关API端点 - 开始
+  
+  // 手动刷新用户权限的API端点
+  apiRouter.post("/permissions/refresh", async (req, res) => {
+    const { refreshUserPermissions } = require('./middleware/permission-refresh-middleware');
+    return refreshUserPermissions(req, res);
+  });
+  
+  // 获取用户当前权限的API端点
+  apiRouter.get("/permissions/current", async (req, res) => {
+    const { getUserPermissions } = require('./middleware/permission-refresh-middleware');
+    return getUserPermissions(req, res);
+  });
   
   // 检查用户是否有特定页面权限
   apiRouter.get("/permissions/check-page/:pageName", async (req, res) => {
