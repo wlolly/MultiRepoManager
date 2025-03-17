@@ -779,10 +779,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 获取用户权限（包括访客用户权限）
       // 检查用户是否是管理员或超级管理员，并传递角色信息以便获得完整权限
       let userRole = '';
+      let isAdminOrSuperAdmin = false;
+      
       if (req.user) {
         userRole = (req.user as any).role || '';
+        // 确定用户是否为管理员或超级管理员
+        isAdminOrSuperAdmin = userRole === 'admin' || userRole === 'super_admin';
         // 输出角色信息用于调试
-        console.log(`用户角色: ${userRole}`);
+        console.log(`用户角色: ${userRole}, 是否管理员: ${isAdminOrSuperAdmin}`);
+      }
+      
+      // 如果用户是管理员/超级管理员，直接返回管理员权限
+      if (isAdminOrSuperAdmin) {
+        // 定义所有页面的列表
+        const allPages = [
+          "dashboard",
+          "products",
+          "warehouse-products",
+          "users",
+          "teams",
+          "warehouses",
+          "inbound-orders",
+          "outbound-orders",
+          "order-audit",
+          "warehouse-transfers",
+          "create-warehouse-transfer",
+          "warehouse-reports",
+          "settings",
+          "api-configurations",
+          "team-permissions",
+          "new-product",
+          "create-outbound-order",
+          "create-inbound-order"
+        ];
+        
+        // 直接返回管理员权限
+        const adminPermissions = {
+          pages: allPages,
+          actions: ['view', 'create', 'edit', 'delete', 'export', 'import'],
+          isAdmin: true,
+          isSuperAdmin: userRole === 'super_admin'
+        };
+        
+        console.log(`管理员用户(${userRole})，返回完整权限`);
+        res.json(adminPermissions);
+        return;
       }
       
       // 获取新的权限结构 (包含页面列表和操作列表)
@@ -797,6 +838,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 检查是否返回的是新格式（对象）还是旧格式（字符串数组）
       if (permissionData && typeof permissionData === 'object' && !Array.isArray(permissionData) && 'pages' in permissionData) {
         // 新格式 - 直接返回完整权限对象
+        // 确保管理员标志正确设置
+        (permissionData as any).isAdmin = isAdminOrSuperAdmin;
         console.log('返回新格式权限数据，包含管理员状态:', (permissionData as any).isAdmin);
         res.json(permissionData);
       } else {
@@ -806,7 +849,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json({
           pages: pageList,
           actions: ['view'],
-          isAdmin: userRole === 'admin' || userRole === 'super_admin'
+          isAdmin: isAdminOrSuperAdmin
         });
       }
     } catch (error) {

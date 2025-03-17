@@ -187,17 +187,46 @@ export function Sidebar() {
             const { hasPagePermission, pagePermissions } = usePermissions();
             
             // 获取AuthContext以检查用户是否为管理员
-            const authContext = useAuth ? useAuth() : { isAdmin: false, role: null };
+            // 创建一个默认的上下文值，包含必要的空属性
+            const defaultContext = { 
+              isAdmin: false, 
+              role: null, 
+              user: null,
+              isAuthenticated: false
+            };
+            const authContext = useAuth ? useAuth() : defaultContext;
             
             // 管理员用户检查 - 管理员可以访问所有页面
             // 增强管理员检测 - 检查多个管理员标志
-            if (isAuthenticated && (
+            // 1. 首先检查AuthContext中的isAdmin标志
+            // 2. 然后检查本地存储中的用户数据
+            // 3. 最后检查localStorage中的管理员标志
+            
+            // 检查当前用户是否为管理员
+            const isCurrentUserAdmin = isAuthenticated && (
               authContext.isAdmin === true || 
+              authContext.user?.role === 'admin' || 
+              authContext.user?.role === 'super_admin' ||
               authContext.role === 'admin' || 
-              authContext.role === 'super_admin' ||
-              localStorage.getItem('isAdminUser') === 'true'
-            )) {
-              console.log(`管理员用户检测通过，角色:${authContext.role}，允许访问所有导航项: ${item.keyName}`);
+              authContext.role === 'super_admin'
+            );
+            
+            // 检查本地存储的用户数据
+            let isLocalStorageUserAdmin = false;
+            try {
+              const localUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+              if (localUser && (localUser.role === 'admin' || localUser.role === 'super_admin')) {
+                isLocalStorageUserAdmin = true;
+              }
+            } catch (e) {
+              console.error('解析localStorage用户数据出错:', e);
+            }
+            
+            // 明确设置管理员标志
+            if (isCurrentUserAdmin || isLocalStorageUserAdmin || localStorage.getItem('isAdminUser') === 'true') {
+              // 确保本地存储也标记为管理员用户
+              localStorage.setItem('isAdminUser', 'true');
+              console.log(`管理员用户检测通过，角色:${authContext.role || authContext.user?.role}，允许访问所有导航项: ${item.keyName}`);
               return true;
             }
             

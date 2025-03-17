@@ -35,6 +35,7 @@ interface AuthContextType {
   isRealUser: boolean;
   isAdmin: boolean;
   isVisitor: boolean;
+  role?: string; // 用户角色 - 增加此字段以便侧边栏可以使用
   pagePermissions: Record<string, boolean>;
   warehousePermissions: Record<number, { canView: boolean; canManage: boolean }>;
   login: (username: string, password: string) => Promise<void>;
@@ -371,10 +372,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       state.user?.id > 0 && 
       state.user?.role !== 'anonymous'
     ),
-    // 管理员判断简化，只检查角色是否为admin，并确保已认证
+    // 管理员判断简化，只检查角色是否为admin或super_admin，并确保已认证
     isAdmin: Boolean(
       state.user?.authenticated &&
-      state.user?.role === 'admin'
+      (state.user?.role === 'admin' || state.user?.role === 'super_admin')
     ),
     // 访客判断简化，检查是否有有效用户和认证状态
     isVisitor: !state.user || 
@@ -382,6 +383,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               !state.user.id || 
               state.user.id <= 0 || 
               state.user.role === 'anonymous',
+    // 添加角色属性 - 用于侧边栏检查
+    role: state.user?.role,
     pagePermissions: state.pagePermissions,
     warehousePermissions: state.warehousePermissions,
     login,
