@@ -135,30 +135,77 @@ export async function initializeSessionSync(): Promise<void> {
   const localSessionId = getSessionId();
   const cookieSessionId = getSessionIdFromCookie();
   
-  if (localSessionId && (!cookieSessionId || localSessionId !== cookieSessionId)) {
-    console.log(`本地会话ID (${localSessionId}) 与Cookie会话ID (${cookieSessionId}) 不匹配，同步会话...`);
+  // 始终尝试同步会话，确保前后端会话一致
+  console.log(`会话同步：本地会话ID (${localSessionId}), Cookie会话ID (${cookieSessionId || 'null'})`);
+  
+  try {
+    // 发送请求同步会话，使用会话ID作为URL参数，确保服务器能接收到
+    const response = await fetch(`/api/sync-session?sessionId=${localSessionId}`, {
+      method: 'GET',
+      headers: {
+        ...addSessionHeaders(),
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'SessionSync'
+      },
+      credentials: 'include',
+    });
     
-    try {
-      // 发送请求同步会话，使用会话ID作为URL参数，确保服务器能接收到
-      const response = await fetch(`/api/sync-session?sessionId=${localSessionId}`, {
-        method: 'GET',
-        headers: addSessionHeaders(),
-        credentials: 'include',
+    if (response.ok) {
+      // 检查响应头中是否有新的会话ID
+      const newSessionId = response.headers.get('X-New-Session-ID');
+      const syncStatus = response.headers.get('X-Session-Synchronized');
+      
+      console.log('会话同步响应:', {
+        status: response.status,
+        newSessionId: newSessionId || '未返回新ID',
+        synchronized: syncStatus || '未返回同步状态'
       });
       
-      if (response.ok) {
-        console.log('会话同步成功');
-      } else {
-        console.warn('会话同步失败:', response.status, response.statusText);
+      if (newSessionId && newSessionId !== localSessionId) {
+        // 如果服务器返回了不同的会话ID，更新本地存储
+        console.log(`服务器返回新会话ID: ${newSessionId}，更新本地存储`);
+        saveSessionId(newSessionId);
       }
-    } catch (error) {
-      console.error('会话同步请求出错:', error);
+      
+      // 从响应中获取会话状态
+      try {
+        const responseData = await response.json();
+        console.log('会话同步成功:', responseData);
+        
+        // 在会话状态有变化时触发事件
+        window.dispatchEvent(new CustomEvent('session-sync-complete', {
+          detail: {
+            success: true,
+            sessionId: newSessionId || localSessionId,
+            message: responseData.message
+          }
+        }));
+      } catch (jsonError) {
+        console.warn('解析会话同步响应失败:', jsonError);
+      }
+    } else {
+      console.warn('会话同步失败:', response.status, response.statusText);
+      
+      // 触发同步失败事件
+      window.dispatchEvent(new CustomEvent('session-sync-complete', {
+        detail: {
+          success: false,
+          sessionId: localSessionId,
+          error: `${response.status}: ${response.statusText}`
+        }
+      }));
     }
-  } else {
-    console.log('会话ID已同步，无需额外操作', {
-      localSessionId,
-      cookieSessionId
-    });
+  } catch (error) {
+    console.error('会话同步请求出错:', error);
+    
+    // 触发同步失败事件
+    window.dispatchEvent(new CustomEvent('session-sync-complete', {
+      detail: {
+        success: false,
+        sessionId: localSessionId,
+        error: error instanceof Error ? error.message : '未知错误'
+      }
+    }));
   }
 }
 

@@ -11,7 +11,7 @@ export function createSessionSyncRoutes() {
    * 会话同步接口
    * 允许前端传递会话ID以便后端采用相同的会话标识
    */
-  router.get('/sync-session', (req: Request, res: Response) => {
+  router.get('/sync-session', async (req: Request, res: Response) => {
     try {
       // 从查询参数或请求头中获取客户端会话ID
       const clientSessionId = req.query.sessionId as string || 
@@ -43,8 +43,55 @@ export function createSessionSyncRoutes() {
             req.session.originalSessionID = req.sessionID;
           }
           
-          // 注意: 这里我们通过设置cookie来同步会话ID
-          // 实际的会话ID替换需要在sessionMiddleware中处理
+          // 获取存储接口
+          const db = req.app.locals.storage;
+          
+          // 先检查数据库是否存在该会话
+          if (db) {
+            try {
+              const existingSession = await db.getUserSessionById(clientSessionId);
+              
+              if (!existingSession) {
+                console.log(`[会话同步] 数据库中不存在会话ID: ${clientSessionId}，创建新会话记录`);
+                
+                try {
+                  // 创建匿名会话记录
+                  await db.createUserSession({
+                    sessionId: clientSessionId,
+                    userId: null,  // 匿名会话，没有用户关联
+                    ipAddress: req.ip || '',
+                    userAgent: req.get('user-agent') || '',
+                    isValid: true,
+                    lastActivity: new Date(),
+                    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30天过期
+                  });
+                } catch (createError) {
+                  console.error('[会话同步] 创建数据库会话记录失败:', createError);
+                  // 继续执行，即使数据库会话创建失败也应返回成功响应
+                }
+              } else {
+                console.log(`[会话同步] 数据库中存在会话ID: ${clientSessionId}，用户ID: ${existingSession.userId || '未关联'}`);
+                
+                // 如果是有效的用户会话，设置 req.session.userId
+                if (existingSession.userId && existingSession.isValid) {
+                  req.session.userId = existingSession.userId;
+                  req.session.authenticated = true;
+                  req.session.isAuthenticated = true;
+                }
+                
+                // 更新会话最后活动时间
+                try {
+                  await db.updateUserSession(clientSessionId, {
+                    lastActivity: new Date()
+                  });
+                } catch (updateError) {
+                  console.warn('[会话同步] 更新会话活动时间失败:', updateError);
+                }
+              }
+            } catch (dbError) {
+              console.error('[会话同步] 查询数据库会话出错:', dbError);
+            }
+          }
           
           // 设置会话Cookie
           res.cookie('sessionId', clientSessionId, {
@@ -58,6 +105,18 @@ export function createSessionSyncRoutes() {
           req.session.clientOrigin = true;
           req.session.sessionSource = sessionSource as string;
           req.session.lastSync = new Date().toISOString();
+          
+          // 保存会话以确保状态被持久化
+          await new Promise<void>((resolve) => {
+            req.session.save((err) => {
+              if (err) {
+                console.error('[会话同步] 保存会话状态失败:', err);
+              } else {
+                console.log('[会话同步] 会话状态已保存');
+              }
+              resolve();
+            });
+          });
         } else {
           console.log(`[会话同步] 会话ID已匹配: ${clientSessionId}`);
         }
