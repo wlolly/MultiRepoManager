@@ -136,42 +136,27 @@ export async function initiateLogin(req: Request, res: Response) {
     // 用户验证成功，直接创建会话
     console.log('[认证系统] 登录验证成功: 用户ID:', user.id, '角色:', user.role);
     
-    // 生成随机会话ID
-    const sessionId = generateSessionId();
-    console.log('[认证系统] 生成新会话ID:', sessionId);
+    // 首先检查客户端请求中是否已有会话ID
+    let sessionId = req.sessionID;
     
-    // 更新会话对象
-    req.session.authenticated = true;
-    req.session.isAuthenticated = true; // 同时设置两个属性以确保兼容性
-    req.session.userId = user.id;
-    req.session.role = user.role;
-    req.session.language = user.language || 'zh';
-    req.session.username = user.username;
+    // 如果前端发送了客户端会话ID，优先使用它
+    const clientSessionId = req.headers['x-session-id'] as string;
+    if (clientSessionId && clientSessionId.length > 10) {
+      console.log('[认证系统] 使用客户端提供的会话ID:', clientSessionId);
+      sessionId = clientSessionId;
+    } else {
+      // 没有客户端会话ID，生成新的
+      sessionId = generateSessionId();
+      console.log('[认证系统] 生成新会话ID:', sessionId);
+    }
     
-    // 设置新会话ID 
-    req.sessionID = sessionId;
+    // 确保全局会话存储被更新 (在会话对象更新之前)
+    if (global.customSessionStorage && req.ip && typeof req.ip === 'string') {
+      global.customSessionStorage[req.ip] = sessionId;
+      console.log('[认证系统] 会话ID已保存到全局存储:', sessionId);
+    }
     
-    // 保存会话以确保状态被持久化
-    await new Promise<void>((resolve) => {
-      req.session.save((err) => {
-        if (err) {
-          console.error('[认证系统] 保存会话状态失败:', err);
-        }
-        resolve();
-      });
-    });
-    
-    // 保存会话以确保状态被持久化
-    await new Promise<void>((resolve) => {
-      req.session.save((err) => {
-        if (err) {
-          console.error('[认证系统] 保存会话状态失败:', err);
-        }
-        resolve();
-      });
-    });
-    
-    // 创建数据库会话记录
+    // 1. 先创建数据库会话记录
     const userSessionData = {
       sessionId,
       userId: user.id,
@@ -184,8 +169,9 @@ export async function initiateLogin(req: Request, res: Response) {
     
     // 存储会话到数据库
     await db.createUserSession(userSessionData);
+    console.log('[认证系统] 数据库会话记录已创建');
     
-    // 设置cookie，确保新会话ID在客户端可用
+    // 2. 设置cookie (先于会话对象更新)
     res.cookie('sessionId', sessionId, {
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30天
       httpOnly: false, // 允许JavaScript访问
@@ -194,13 +180,52 @@ export async function initiateLogin(req: Request, res: Response) {
       path: '/'
     });
     
-    // 确保全局会话存储也被更新
-    if (global.customSessionStorage && req.ip && typeof req.ip === 'string') {
-      global.customSessionStorage[req.ip] = sessionId;
-      console.log('[认证系统] 会话ID已保存到全局存储:', sessionId);
+    // 3. 更新会话对象 (最后执行，因为它会重置一些状态)
+    if (req.session) {
+      // 保存当前会话ID以便于调试
+      const originalSessionId = req.sessionID;
+      console.log(`[认证系统] 原始会话ID: ${originalSessionId}, 新会话ID: ${sessionId}`);
+      
+      // 更新会话状态
+      req.session.authenticated = true;
+      req.session.isAuthenticated = true; // 同时设置两个属性以确保兼容性
+      req.session.userId = user.id;
+      req.session.role = user.role;
+      req.session.language = user.language || 'zh';
+      req.session.username = user.username;
+      req.session.lastActivity = Date.now();
+      
+      // 添加会话安全信息
+      req.session.sessionCreatedAt = Date.now();
+      req.session.sessionExpiration = Date.now() + 30 * 24 * 60 * 60 * 1000;
+      req.session.sessionIPAddress = req.ip;
+      req.session.sessionUserAgent = req.get('user-agent') || '';
+      
+      // 保存会话以确保状态被持久化
+      await new Promise<void>((resolve) => {
+        req.session.save((err) => {
+          if (err) {
+            console.error('[认证系统] 保存会话状态失败:', err);
+          } else {
+            console.log('[认证系统] 会话状态已保存');
+          }
+          resolve();
+        });
+      });
+    } else {
+      console.error('[认证系统] 错误：req.session对象不存在');
     }
     
     // 返回带用户数据的成功响应
+    console.log('[认证系统] 登录成功，返回会话ID:', sessionId);
+    
+    // 增加客户端权限信息
+    const permissions = {
+      pages: user.role === 'admin' ? ['all'] : ['dashboard', 'profile'],
+      actions: user.role === 'admin' ? ['all'] : ['read'],
+      warehouses: user.role === 'admin' ? { all: { canView: true, canManage: true } } : {}
+    };
+    
     return res.status(200).json({
       success: true,
       authenticated: true,
@@ -212,7 +237,9 @@ export async function initiateLogin(req: Request, res: Response) {
         username: user.username,
         role: user.role,
         fullName: user.full_name,
-        language: user.language || 'zh'
+        language: user.language || 'zh',
+        isactive: user.is_active, // 使用前端要求的字段名
+        permissions
       }
     });
   } catch (error) {
@@ -542,6 +569,22 @@ export async function registerUser(req: Request, res: Response) {
  */
 export async function getCurrentUser(req: Request, res: Response) {
   try {
+    // 记录请求信息便于调试
+    console.log(`[认证系统] 获取当前用户, 会话ID: ${req.sessionID}, IP: ${req.ip}`);
+    console.log(`[认证系统] 请求头信息: ${JSON.stringify({
+      'x-session-id': req.headers['x-session-id'],
+      'cookie': req.headers.cookie?.substring(0, 50) + '...',
+      'user-agent': req.headers['user-agent']?.substring(0, 50) + '...',
+    })}`);
+    
+    // 检查会话状态
+    console.log(`[认证系统] 会话状态: ${JSON.stringify({
+      id: req.sessionID,
+      authenticated: req.session.authenticated,
+      isAuthenticated: req.session.isAuthenticated,
+      userId: req.session.userId,
+    })}`);
+    
     // 确保存储接口存在
     if (!req.app || !req.app.locals || !req.app.locals.storage) {
       console.error('[认证系统] 存储接口未初始化');
@@ -560,7 +603,53 @@ export async function getCurrentUser(req: Request, res: Response) {
     }
 
     const db = req.app.locals.storage;
-
+    
+    // 检查Express会话状态是否已认证（内存中）
+    if (req.session && (req.session.authenticated || req.session.isAuthenticated) && req.session.userId) {
+      console.log('[认证系统] Express会话中已认证，尝试获取用户:', req.session.userId);
+      
+      try {
+        // 从数据库获取用户信息
+        const user = await db.getUser(req.session.userId);
+        if (user) {
+          console.log('[认证系统] 从Express会话中找到有效用户');
+          
+          // 构建权限对象
+          const pagePermissions = ['dashboard', 'products', 'warehouse-products'];
+          if (user.role === 'admin' || user.role === 'super_admin') {
+            pagePermissions.push(
+              'users', 'teams', 'warehouses', 'inbound-orders',
+              'outbound-orders', 'order-audit', 'warehouse-transfers',
+              'create-warehouse-transfer', 'warehouse-reports', 'settings'
+            );
+          }
+          
+          // 返回用户信息
+          return res.status(200).json({
+            authenticated: true,
+            user: {
+              id: user.id,
+              username: user.username,
+              role: user.role,
+              fullName: user.full_name,
+              avatarUrl: user.avatar_url,
+              language: user.language || 'zh',
+              isactive: user.is_active,
+              usersource: user.user_source
+            },
+            permissions: {
+              pages: pagePermissions,
+              actions: user.role === 'admin' ? ['all'] : ['read'],
+              warehouses: {}
+            }
+          });
+        }
+      } catch (userError) {
+        console.error('[认证系统] 获取用户信息错误:', userError);
+      }
+    }
+    
+    // 如果Express会话未认证，检查数据库会话
     // 检查会话ID是否存在
     if (!req.sessionID) {
       console.log('[认证系统] 会话ID不存在');
@@ -581,6 +670,7 @@ export async function getCurrentUser(req: Request, res: Response) {
     try {
       // 检查数据库中会话记录的有效性
       const session = await db.getUserSessionById(req.sessionID);
+      console.log('[认证系统] 数据库会话查询结果:', session ? `找到会话, 用户ID: ${session.userId}` : '未找到会话');
       
       // 会话不存在、已失效或已过期，返回访客
       if (!session || !session.isValid || (session.expiresAt && new Date() > new Date(session.expiresAt))) {
