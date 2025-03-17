@@ -14,11 +14,66 @@ import { z } from 'zod';
  */
 export async function getCurrentUser(req: Request, res: Response) {
   try {
-    // 基本请求信息记录
-    console.log(`[认证系统] 获取当前用户, 会话ID: ${req.sessionID}, IP: ${req.ip}`);
-    
-    // 打印会话状态
-    console.log(`[认证系统] 会话状态:`, {
+    // 获取数据库访问
+    const db = req.app.locals.storage;
+    if (!db) {
+      console.error('[认证系统] 错误：存储接口未初始化');
+      return res.status(500).json({
+        authenticated: false,
+        message: '系统错误',
+        guestAccess: true
+      });
+    }
+
+    // 获取会话ID
+    const sessionId = req.sessionID;
+    console.log('[认证系统] 当前会话信息:', {
+      id: sessionId,
+      authenticated: req.session?.authenticated,
+      userId: req.session?.userId
+    });
+
+    // 检查数据库会话
+    if (sessionId) {
+      const dbSession = await db.getUserSessionById(sessionId);
+      
+      // 如果数据库会话有效
+      if (dbSession?.isValid && dbSession?.userId) {
+        const user = await db.getUser(dbSession.userId);
+        if (user?.is_active) {
+          return res.status(200).json({
+            authenticated: true,
+            user: {
+              id: user.id,
+              username: user.username,
+              role: user.role,
+              fullName: user.full_name,
+              language: user.language || 'zh',
+              isactive: user.is_active
+            },
+            permissions: {
+              pages: ['dashboard'],
+              actions: ['view'],
+              warehouses: {}
+            }
+          });
+        }
+      }
+    }
+
+    // 返回访客访问权限
+    return res.status(401).json({
+      authenticated: false,
+      message: '用户未登录',
+      guestAccess: true,
+      sessionId: sessionId,
+      allowedPages: ['dashboard'],
+      permissions: {
+        pages: ['dashboard'],
+        actions: ['view'],
+        warehouses: {}
+      }
+    });:`, {
       id: req.sessionID,
       authenticated: req.session?.authenticated || false,
       isAuthenticated: req.session?.isAuthenticated || false,

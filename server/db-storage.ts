@@ -36,17 +36,17 @@ import { log } from './vite';
 export class DbStorage implements IStorage {
   private db: any;
   private client: any;
-  
+
   constructor() {
     console.log('[存储] 初始化PostgreSQL数据库存储');
-    
+
     // 检查环境变量
     const connectionString = process.env.DATABASE_URL;
     if (!connectionString) {
       console.error('[DbStorage错误] DATABASE_URL环境变量未设置！');
       throw new Error('缺少数据库连接信息，请确保设置了DATABASE_URL');
     }
-    
+
     // 创建PostgreSQL客户端连接
     this.client = postgres(connectionString, {
       max: 10, // 设置合理的最大连接数
@@ -54,35 +54,35 @@ export class DbStorage implements IStorage {
       connect_timeout: 10, // 连接超时时间 (秒)
       prepare: false // 禁用准备好的语句，避免与某些查询不兼容
     });
-    
+
     // 创建drizzle实例
     this.db = drizzle(this.client, { schema });
-    
+
     // 测试连接
     this.testConnection();
   }
-  
+
   // 测试数据库连接
   private async testConnection() {
     try {
       // 进行简单查询测试连接
       const result = await this.db.execute(sql`SELECT 1 as test`);
-      
+
       if (result && result.length > 0) {
         console.log('[DbStorage] 数据库连接测试成功!');
       }
     } catch (error) {
       console.error('[DbStorage] 数据库连接测试失败:', error);
       console.error('[DbStorage] 请检查数据库配置和网络连接');
-      
+
       // 设置定期重试逻辑
       const retryInterval = setInterval(async () => {
         try {
           console.log('[DbStorage] 尝试重新连接数据库...');
           const result = await this.db.execute(sql`SELECT version()`);
-          
+
           console.log('[DbStorage] 成功重新连接到数据库!');
-          
+
           // 成功后清除重试间隔
           clearInterval(retryInterval);
         } catch (retryErr) {
@@ -196,11 +196,11 @@ export class DbStorage implements IStorage {
     try {
       // 清理过期的验证记录 (30分钟前)
       const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
-      
+
       const result = await this.db.delete(schema.loginVerifications)
         .where(sql`${schema.loginVerifications.created} <= ${thirtyMinutesAgo.toISOString()}`)
         .returning();
-        
+
       return result.length;
     } catch (error) {
       console.error('[DbStorage] cleanupExpiredVerifications错误:', error);
@@ -223,8 +223,18 @@ export class DbStorage implements IStorage {
   async getUserSessionById(sessionId: string): Promise<UserSession | undefined> {
     try {
       const sessions = await this.db.select().from(schema.userSessions)
-        .where(eq(schema.userSessions.sessionId, sessionId));
-      return sessions[0];
+        .where(and(
+          eq(schema.userSessions.sessionId, sessionId),
+          eq(schema.userSessions.isValid, true),
+          sql`${schema.userSessions.expiresAt} > NOW()`
+        ));
+      const session = sessions[0];
+      if (session) {
+        await this.db.update(schema.userSessions)
+          .set({ lastActivity: new Date() })
+          .where(eq(schema.userSessions.sessionId, sessionId));
+      }
+      return session;
     } catch (error) {
       console.error('[DbStorage] getUserSessionById错误:', error);
       return undefined;
@@ -284,14 +294,14 @@ export class DbStorage implements IStorage {
     try {
       // 清理过期的会话记录 (7天前)
       const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-      
+
       const result = await this.db.delete(schema.userSessions)
         .where(or(
           sql`${schema.userSessions.expiresAt} <= ${new Date().toISOString()}`,
           sql`${schema.userSessions.createdAt} <= ${sevenDaysAgo.toISOString()}`
         ))
         .returning();
-        
+
       return result.length;
     } catch (error) {
       console.error('[DbStorage] cleanupExpiredSessions错误:', error);
@@ -347,27 +357,27 @@ export class DbStorage implements IStorage {
   async getRepositories(filters?: { ownerId?: number, language?: string, visibility?: string }): Promise<Repository[]> {
     try {
       let query = this.db.select().from(schema.repositories);
-      
+
       if (filters) {
         const conditions = [];
-        
+
         if (filters.ownerId !== undefined) {
           conditions.push(eq(schema.repositories.ownerId, filters.ownerId));
         }
-        
+
         if (filters.language) {
           conditions.push(eq(schema.repositories.language, filters.language));
         }
-        
+
         if (filters.visibility) {
           conditions.push(eq(schema.repositories.visibility, filters.visibility as any));
         }
-        
+
         if (conditions.length > 0) {
           query = query.where(and(...conditions));
         }
       }
-      
+
       return await query;
     } catch (error) {
       console.error('[DbStorage] getRepositories错误:', error);
@@ -551,15 +561,15 @@ export class DbStorage implements IStorage {
   async getActivities(repositoryId?: number, limit?: number): Promise<Activity[]> {
     try {
       let query = this.db.select().from(schema.activities).orderBy(desc(schema.activities.createdAt));
-      
+
       if (repositoryId !== undefined) {
         query = query.where(eq(schema.activities.repositoryId, repositoryId));
       }
-      
+
       if (limit !== undefined) {
         query = query.limit(limit);
       }
-      
+
       return await query;
     } catch (error) {
       console.error('[DbStorage] getActivities错误:', error);
@@ -581,7 +591,7 @@ export class DbStorage implements IStorage {
         GROUP BY language
         ORDER BY count DESC
       `);
-      
+
       return result.map(row => ({
         language: row.language,
         count: Number(row.count),
@@ -597,13 +607,13 @@ export class DbStorage implements IStorage {
     try {
       // 获取仓库总数
       const repoCount = await this.db.select({ count: sql`COUNT(*)` }).from(schema.repositories);
-      
+
       // 获取用户总数
       const userCount = await this.db.select({ count: sql`COUNT(*)` }).from(schema.users);
-      
+
       // 获取不同语言数量
       const languageCount = await this.db.select({ count: sql`COUNT(DISTINCT language)` }).from(schema.repositories);
-      
+
       // 获取最近一周提交数
       const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
       const commitCount = await this.db.select({ count: sql`COUNT(*)` })
@@ -612,7 +622,7 @@ export class DbStorage implements IStorage {
           eq(schema.activities.type, 'commit' as any),
           sql`${schema.activities.createdAt} >= ${oneWeekAgo.toISOString()}`
         ));
-      
+
       return {
         totalRepositories: Number(repoCount[0]?.count || 0),
         totalUsers: Number(userCount[0]?.count || 0),
@@ -771,35 +781,35 @@ export class DbStorage implements IStorage {
     try {
       // 基本查询不考虑仓库过滤，直接从产品表查询
       let query = this.db.select().from(schema.products);
-      
+
       // 如果指定了分类，添加过滤条件
       if (filter?.category) {
         query = query.where(eq(schema.products.category, filter.category));
       }
-      
+
       // 获取产品列表
       const products = await query;
-      
+
       // 如果指定了仓库ID，需要进一步过滤
       if (filter?.warehouseId) {
         // 获取指定仓库的库存记录
         const inventories = await this.db.select()
           .from(schema.productInventory)
           .where(eq(schema.productInventory.warehouseId, filter.warehouseId));
-        
+
         // 创建产品ID到库存数量的映射
         const inventoryMap = new Map<number, number>();
         inventories.forEach(inv => {
           inventoryMap.set(inv.productId, inv.quantity);
         });
-        
+
         // 只返回在指定仓库有库存的产品
         return products.filter(product => {
           const quantity = inventoryMap.get(product.id) || 0;
           return quantity > 0;
         });
       }
-      
+
       return products;
     } catch (error) {
       console.error('[DbStorage] getProducts错误:', error);
@@ -820,15 +830,15 @@ export class DbStorage implements IStorage {
     try {
       // 获取产品总数
       const productCount = await this.db.select({ count: sql`COUNT(*)` }).from(schema.products);
-      
+
       // 获取不同分类数量
       const categoryCount = await this.db.select({ count: sql`COUNT(DISTINCT category)` }).from(schema.products);
-      
+
       // 获取低库存产品数量 (设定阈值为5)
       const lowStockCount = await this.db.select({ count: sql`COUNT(*)` })
         .from(schema.products)
         .where(lte(schema.products.stockQuantity, 5));
-      
+
       // 获取总价值、平均价格、总数量、总重量和总体积
       const aggregates = await this.db.select({
         totalValue: sql`SUM(price * stock_quantity)`,
@@ -837,7 +847,7 @@ export class DbStorage implements IStorage {
         totalWeight: sql`SUM(weight * stock_quantity)`,
         totalVolume: sql`SUM(volume * stock_quantity)`
       }).from(schema.products);
-      
+
       return {
         totalProducts: Number(productCount[0]?.count || 0),
         totalCategories: Number(categoryCount[0]?.count || 0),
