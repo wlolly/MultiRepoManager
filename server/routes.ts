@@ -1940,10 +1940,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   apiRouter.post("/products", async (req, res) => {
     try {
+      console.log("[ProductAPI] 收到创建产品请求, 请求体:", JSON.stringify(req.body));
       const productData = insertProductSchema.parse(req.body);
+      console.log("[ProductAPI] 验证通过, 产品数据:", JSON.stringify(productData));
       const product = await storage.createProduct(productData);
       res.status(201).json(product);
     } catch (err) {
+      console.error("[ProductAPI] 创建产品验证失败:", err);
       handleZodError(err, res);
     }
   });

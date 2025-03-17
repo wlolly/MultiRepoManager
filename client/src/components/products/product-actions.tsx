@@ -156,13 +156,29 @@ export function ProductForm({ isOpen, onClose, product, productToEdit, warehouse
       const bulkVolumeM3 = data.bulkLengthCm && data.bulkWidthCm && data.bulkHeightCm ? 
         (data.bulkLengthCm * data.bulkWidthCm * data.bulkHeightCm) / 1000000 : 0;
       
+      // 确保转换为字符串类型，与数据库模型匹配
+      const productData = {
+        ...data,
+        singleVolumeM3: String(singleVolumeM3.toFixed(6)),
+        bulkVolumeM3: String(bulkVolumeM3.toFixed(6)),
+        // 确保数字类型字段转换为字符串
+        price: String(data.price),
+        cost: String(data.cost),
+        singleLengthCm: String(data.singleLengthCm),
+        singleWidthCm: String(data.singleWidthCm),
+        singleHeightCm: String(data.singleHeightCm),
+        singleWeightKg: String(data.singleWeightKg),
+        bulkLengthCm: data.bulkLengthCm ? String(data.bulkLengthCm) : "0",
+        bulkWidthCm: data.bulkWidthCm ? String(data.bulkWidthCm) : "0",
+        bulkHeightCm: data.bulkHeightCm ? String(data.bulkHeightCm) : "0",
+        bulkWeightKg: data.bulkWeightKg ? String(data.bulkWeightKg) : "0",
+      };
+      
+      console.log("提交产品数据:", productData);
+      
       return await apiRequest("/api/products", {
         method: "POST",
-        body: JSON.stringify({
-          ...data,
-          singleVolumeM3,
-          bulkVolumeM3,
-        }),
+        body: JSON.stringify(productData),
       });
     },
     onSuccess: (response) => {
@@ -174,7 +190,7 @@ export function ProductForm({ isOpen, onClose, product, productToEdit, warehouse
       // 如果API返回了新创建的产品数据，自动跳转到产品详情页
       try {
         if (response && response.id) {
-          navigate(`/products/${response.id}`);
+          navigate(`/products/product-detail/${response.id}`);
         }
       } catch (error) {
         console.error("导航到新产品详情页失败:", error);
