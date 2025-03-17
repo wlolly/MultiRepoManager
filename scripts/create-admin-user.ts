@@ -29,15 +29,15 @@ async function createAdminUser() {
     const result = await db.insert(users).values({
       username: username,
       password: hashedPassword,
-      fullName: '系统管理员',
+      full_name: '系统管理员',
       role: 'admin',
-      userSource: 'local',
-      isActive: true,
+      user_source: 'local',
+      is_active: true,
       email: null,
-      phoneNumber: null,
-      avatarUrl: null,
-      socialId: null,
-      socialData: null,
+      phone_number: null,
+      avatar_url: null,
+      social_id: null,
+      social_data: null,
     });
     
     console.log(`管理员用户创建成功！用户名: ${username}, 密码: ${password}`);
