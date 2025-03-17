@@ -11,7 +11,7 @@ import { configurePassport } from './passport-local';
 import { sql } from 'drizzle-orm';
 import { configureSession } from './middleware/session';
 import { cleanupAuthRecords } from './auth';
-import { refreshPermissionsMiddleware, initPermissionCleanupTask } from './middleware/permission-refresh-middleware';
+import { permissionRefreshMiddleware, setupPermissionCacheCleanup } from './middleware/permission-refresh-middleware';
 
 const app = express();
 app.use(express.json());
@@ -24,10 +24,10 @@ console.log("[系统] 初始化Express应用中间件...");
 configureSession(app);
 
 // 添加权限刷新中间件 - 在每个请求上自动检查并刷新权限
-app.use(refreshPermissionsMiddleware);
+app.use(permissionRefreshMiddleware);
 
 // 初始化权限缓存清理任务
-initPermissionCleanupTask();
+setupPermissionCacheCleanup();
 
 // 简单的请求日志中间件
 app.use((req, res, next) => {

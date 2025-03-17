@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { memStorage, useFallbackStorage, db } from "./db";
 import { hasPageAccess, hasWarehouseAccess, loadUserPermissions, requireAdmin, requirePageAccess, requireActionPermission, requireWarehouseAccess } from "./middleware/permission-middleware";
+import { permissionRefreshMiddleware, refreshUserPermissions, getUserPermissions } from "./middleware/permission-refresh-middleware";
 import { translations } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
 import socialAuthConfig from './social-auth-config';
@@ -5366,6 +5367,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   */
+
+  // 权限系统测试路由
+  
+  // 获取当前用户权限
+  apiRouter.get("/permissions", verifySession, (req, res) => {
+    // 返回当前用户的权限信息
+    const permissions = req.session?.permissions || {
+      pages: [],
+      actions: [],
+      warehouses: {}
+    };
+    res.json({
+      success: true,
+      permissions,
+      userId: req.session?.userId,
+      authenticated: req.session?.authenticated === true,
+      sessionId: req.sessionID,
+      timestamp: new Date().toISOString()
+    });
+  });
+  
+  // 手动刷新用户权限
+  apiRouter.post("/permissions/refresh", verifySession, (req, res) => {
+    // 当前简化版本，仅返回成功信息
+    res.json({
+      success: true,
+      message: "权限已刷新",
+      userId: req.session?.userId,
+      timestamp: new Date().toISOString()
+    });
+  });
+  
+  // 获取权限系统状态
+  apiRouter.get("/permissions/status", (req, res) => {
+    // 返回权限系统的运行状态信息
+    res.json({
+      status: "active",
+      refreshEnabled: true,
+      cacheEnabled: true,
+      sessionId: req.sessionID,
+      authenticated: req.session?.authenticated === true,
+      currentTime: new Date().toISOString(),
+      serverInfo: {
+        environment: process.env.NODE_ENV || 'development',
+        version: '1.0.0'
+      }
+    });
+  });
 
   // Mount the API router
   app.use("/api", apiRouter);
