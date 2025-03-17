@@ -359,18 +359,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const contextValue: AuthContextType = {
     user: state.user,
     isLoading: state.isLoading,
-    // 认证状态基于服务器认证结果，必须有效用户ID且已认证
+    // 认证状态基于服务器认证结果，必须有效用户ID、已认证且是活跃账户
     isAuthenticated: Boolean(
       state.user?.authenticated && 
       state.user?.id && 
-      state.user?.id > 0 
+      state.user?.id > 0 &&
+      state.user?.isactive !== false // 确保用户账户是活跃的
     ),
-    // 真实用户判断不再检查realAuthenticated
+    // 真实用户判断加入isactive状态检查，与后端保持一致
     isRealUser: Boolean(
       state.user?.authenticated &&
       state.user?.id && 
       state.user?.id > 0 && 
-      state.user?.role !== 'anonymous'
+      state.user?.role !== 'anonymous' &&
+      state.user?.isactive !== false // 确保用户账户是活跃的
     ),
     // 管理员判断简化，只检查角色是否为admin或super_admin，并确保已认证
     isAdmin: Boolean(
