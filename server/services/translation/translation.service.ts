@@ -284,7 +284,9 @@ export class TranslationService {
     
     try {
       // 引入严格的输入验证
-      const { validateTranslation, formatValidationErrors } = await import('./translation-validator');
+      const { validateTranslation, formatValidationErrors, getLanguageValidationSchema } = await import('./translation-validator');
+      
+      // 执行一般验证
       const validationResult = validateTranslation(key, language, value);
       
       if (!validationResult.success) {
@@ -303,6 +305,34 @@ export class TranslationService {
           success: false, 
           errors: errorMessages 
         };
+      }
+      
+      // 特定语言验证 (已在validateTranslation中包含，但这里额外记录更详细信息)
+      try {
+        // 获取语言特定的验证模式
+        const languageSchema = getLanguageValidationSchema(language);
+        const languageResult = languageSchema.safeParse(value);
+        
+        if (!languageResult.success) {
+          const errorMessages = formatValidationErrors(languageResult.error.issues);
+          console.error(`[翻译服务] ${language}语言特定验证失败:`, errorMessages);
+          
+          // 记录验证错误
+          translationMonitor.endRequest(
+            RequestType.UPSERT,
+            requestStartTime,
+            false,
+            `${language}语言特定验证失败: ${errorMessages.join(', ')}`
+          );
+          
+          return { 
+            success: false, 
+            errors: errorMessages 
+          };
+        }
+      } catch (validationError) {
+        console.warn(`[翻译服务] 执行${language}语言特定验证时出错:`, validationError);
+        // 继续执行，因为主验证已经通过
       }
       
       // 先查找是否已有此翻译
@@ -461,6 +491,170 @@ export class TranslationService {
       },
       recentErrors: translationMonitor.getRecentErrors()
     };
+  }
+
+  /**
+   * 验证翻译数据完整性
+   * 检查所有必需键是否在所有语言中都有翻译
+   * @param requiredKeys 必需的键列表（如果不提供，则使用所有键）
+   * @returns 验证结果，包含缺失翻译的详细信息
+   */
+  async validateTranslationsIntegrity(requiredKeys?: string[]): Promise<{
+    valid: boolean;
+    missingTranslations?: Record<string, string[]>;
+    untranslatedLanguages?: Record<string, number>;
+    totalKeys: number;
+    requiredKeys: number;
+  }> {
+    try {
+      // 获取所有翻译
+      const translations = await this.getAllTranslations();
+      const allKeys = Object.keys(translations);
+      const keysToCheck = requiredKeys || allKeys;
+      
+      // 统计每种语言缺失的翻译
+      const missingTranslations: Record<string, string[]> = {};
+      const untranslatedLanguages: Record<string, number> = {};
+      
+      // 对每种支持的语言进行检查
+      for (const language of SUPPORTED_LANGUAGES) {
+        const missingKeys: string[] = [];
+        
+        // 检查每个必需键
+        for (const key of keysToCheck) {
+          if (!translations[key] || !translations[key][language]) {
+            missingKeys.push(key);
+          }
+        }
+        
+        // 记录缺失的键
+        if (missingKeys.length > 0) {
+          missingTranslations[language] = missingKeys;
+          untranslatedLanguages[language] = missingKeys.length;
+        }
+      }
+      
+      return {
+        valid: Object.keys(missingTranslations).length === 0,
+        missingTranslations: Object.keys(missingTranslations).length > 0 ? missingTranslations : undefined,
+        untranslatedLanguages: Object.keys(untranslatedLanguages).length > 0 ? untranslatedLanguages : undefined,
+        totalKeys: allKeys.length,
+        requiredKeys: keysToCheck.length
+      };
+    } catch (error) {
+      console.error('[翻译服务] 验证翻译完整性出错:', error);
+      return {
+        valid: false,
+        totalKeys: 0,
+        requiredKeys: 0
+      };
+    }
+  }
+  
+  /**
+   * 批量导入翻译
+   * @param translations 要导入的翻译数据
+   * @returns 导入结果
+   */
+  async importTranslations(translations: TranslationObject): Promise<{
+    success: boolean;
+    imported: number;
+    failed: number;
+    errors?: string[];
+  }> {
+    // 引入监控工具
+    const { translationMonitor, RequestType } = await import('./translation-monitor');
+    const requestStartTime = translationMonitor.startRequest(RequestType.UPSERT);
+    
+    try {
+      console.log('[翻译服务] 开始批量导入翻译');
+      
+      // 引入验证工具
+      const { validateTranslationJson } = await import('./translation-validator');
+      
+      // 验证导入的翻译数据结构
+      const validationResult = validateTranslationJson(translations);
+      if (!validationResult.valid) {
+        console.error('[翻译服务] 导入数据验证失败:', validationResult.errors);
+        
+        translationMonitor.endRequest(
+          RequestType.UPSERT, 
+          requestStartTime, 
+          false, 
+          `导入数据验证失败: ${validationResult.errors?.join(', ')}`
+        );
+        
+        return {
+          success: false,
+          imported: 0,
+          failed: 0,
+          errors: validationResult.errors
+        };
+      }
+      
+      // 统计成功和失败的数量
+      let imported = 0;
+      let failed = 0;
+      const errors: string[] = [];
+      
+      // 遍历所有键和语言
+      for (const key of Object.keys(translations)) {
+        for (const language of SUPPORTED_LANGUAGES) {
+          // 只导入存在的翻译
+          if (translations[key][language]) {
+            const upsertResult = await this.upsertTranslation(
+              key, 
+              language as SupportedLanguage, 
+              translations[key][language] as string
+            );
+            
+            if (upsertResult.success) {
+              imported++;
+            } else {
+              failed++;
+              errors.push(`键 "${key}" 的 ${language} 翻译导入失败: ${upsertResult.errors?.join(', ') || '未知错误'}`);
+            }
+          }
+        }
+      }
+      
+      // 同步到文件
+      await this.syncTranslationsToFile();
+      
+      console.log(`[翻译服务] 批量导入完成，成功: ${imported}, 失败: ${failed}`);
+      
+      // 记录结果
+      translationMonitor.endRequest(
+        RequestType.UPSERT, 
+        requestStartTime, 
+        failed === 0,
+        failed > 0 ? `导入部分失败: ${failed}/${imported + failed}` : undefined
+      );
+      
+      return {
+        success: failed === 0,
+        imported,
+        failed,
+        errors: errors.length > 0 ? errors : undefined
+      };
+    } catch (error) {
+      console.error('[翻译服务] 批量导入翻译出错:', error);
+      
+      // 记录错误
+      translationMonitor.endRequest(
+        RequestType.UPSERT,
+        requestStartTime,
+        false,
+        (error as Error).message || '批量导入翻译失败'
+      );
+      
+      return {
+        success: false,
+        imported: 0,
+        failed: 0,
+        errors: [(error as Error).message || '未知错误']
+      };
+    }
   }
 }
 

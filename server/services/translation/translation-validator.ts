@@ -116,15 +116,31 @@ export function validateTranslation(key: string, language: string, value: string
   success: boolean;
   errors?: z.ZodIssue[];
 } {
-  const result = translationEntrySchema.safeParse({ key, language, value });
+  // 第一步：基本验证（键、语言代码和一般性验证）
+  const baseResult = translationEntrySchema.safeParse({ key, language, value });
   
-  if (!result.success) {
+  if (!baseResult.success) {
     return {
       success: false,
-      errors: result.error.issues
+      errors: baseResult.error.issues
     };
   }
   
+  // 第二步：特定语言验证
+  if (SUPPORTED_LANGUAGES.includes(language as SupportedLanguage)) {
+    const languageSchema = getLanguageValidationSchema(language);
+    const languageResult = languageSchema.safeParse(value);
+    
+    if (!languageResult.success) {
+      console.log(`[翻译验证] 特定语言验证失败: ${language}, 键: ${key}`);
+      return {
+        success: false,
+        errors: languageResult.error.issues
+      };
+    }
+  }
+  
+  // 所有验证通过
   return { success: true };
 }
 
@@ -136,16 +152,38 @@ export function validateTranslation(key: string, language: string, value: string
 export function validateTranslationBatch(translations: { key: string; language: string; value: string }[]): {
   success: boolean;
   errors?: z.ZodIssue[];
+  errorItem?: number; // 错误项的索引
 } {
-  const result = translationBatchSchema.safeParse(translations);
+  // 第一步：基本验证所有项目
+  const baseResult = translationBatchSchema.safeParse(translations);
   
-  if (!result.success) {
+  if (!baseResult.success) {
     return {
       success: false,
-      errors: result.error.issues
+      errors: baseResult.error.issues
     };
   }
   
+  // 第二步：逐项进行特定语言验证
+  for (let i = 0; i < translations.length; i++) {
+    const { key, language, value } = translations[i];
+    
+    if (SUPPORTED_LANGUAGES.includes(language as SupportedLanguage)) {
+      const languageSchema = getLanguageValidationSchema(language);
+      const languageResult = languageSchema.safeParse(value);
+      
+      if (!languageResult.success) {
+        console.log(`[批量翻译验证] 项目 #${i+1} 语言验证失败: ${language}, 键: ${key}`);
+        return {
+          success: false,
+          errors: languageResult.error.issues,
+          errorItem: i
+        };
+      }
+    }
+  }
+  
+  // 所有验证通过
   return { success: true };
 }
 
@@ -164,4 +202,109 @@ export function formatValidationErrors(errors?: z.ZodIssue[]): string[] {
     const prefix = path ? `${path}: ` : '';
     return `${prefix}${error.message}`;
   });
+}
+
+/**
+ * 验证JSON格式的翻译数据结构
+ * 检查结构是否符合预期格式，确保每个语言的所有翻译键都存在
+ * @param translationJson JSON格式的翻译数据
+ * @param requiredKeys 必需的翻译键列表（可选）
+ * @returns 验证结果对象
+ */
+export function validateTranslationJson(
+  translationJson: any, 
+  requiredKeys: string[] = []
+): { 
+  valid: boolean; 
+  missingKeys?: Record<string, string[]>; 
+  invalidStructure?: boolean;
+  errors?: string[];
+} {
+  // 定义JSON结构验证模式
+  const translationJsonSchema = z.record(
+    z.string(), // 键: 字符串
+    z.record(
+      translationLanguageSchema, // 语言: 语言枚举
+      z.string().min(1) // 值: 非空字符串
+    )
+  );
+  
+  // 验证结构
+  const structureResult = translationJsonSchema.safeParse(translationJson);
+  if (!structureResult.success) {
+    return {
+      valid: false,
+      invalidStructure: true,
+      errors: formatValidationErrors(structureResult.error.issues)
+    };
+  }
+  
+  // 如果提供了必需键，则检查每个语言是否包含所有必需键
+  if (requiredKeys.length > 0) {
+    const missingKeys: Record<string, string[]> = {};
+    
+    // 检查每个语言
+    for (const lang of SUPPORTED_LANGUAGES) {
+      const missingForLang: string[] = [];
+      
+      // 检查每个必需键
+      for (const key of requiredKeys) {
+        const hasTranslation = translationJson[key] && 
+                              translationJson[key][lang] && 
+                              translationJson[key][lang].trim() !== '';
+        
+        if (!hasTranslation) {
+          missingForLang.push(key);
+        }
+      }
+      
+      if (missingForLang.length > 0) {
+        missingKeys[lang] = missingForLang;
+      }
+    }
+    
+    if (Object.keys(missingKeys).length > 0) {
+      return {
+        valid: false,
+        missingKeys
+      };
+    }
+  }
+  
+  // 所有验证通过
+  return { valid: true };
+}
+
+/**
+ * 验证特定语言的翻译集合是否符合语言特性验证规则
+ * @param translations 键值对形式的翻译集合
+ * @param language 语言代码
+ * @returns 验证结果，包含无效键列表
+ */
+export function validateLanguageTranslations(
+  translations: Record<string, string>,
+  language: SupportedLanguage
+): {
+  valid: boolean;
+  invalidKeys?: string[];
+  errors?: string[];
+} {
+  const languageSchema = getLanguageValidationSchema(language);
+  const invalidKeys: string[] = [];
+  const errors: string[] = [];
+  
+  // 验证每个翻译值是否符合语言特性要求
+  for (const [key, value] of Object.entries(translations)) {
+    const result = languageSchema.safeParse(value);
+    if (!result.success) {
+      invalidKeys.push(key);
+      errors.push(`键 "${key}" 的 ${language} 翻译无效: ${result.error.message}`);
+    }
+  }
+  
+  return {
+    valid: invalidKeys.length === 0,
+    invalidKeys: invalidKeys.length > 0 ? invalidKeys : undefined,
+    errors: errors.length > 0 ? errors : undefined
+  };
 }
