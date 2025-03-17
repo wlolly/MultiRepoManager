@@ -299,36 +299,36 @@ export class DbStorage implements IStorage {
       console.log(`[DbStorage] 使用direct SQL更新user_sessions表, sessionId=${sessionId}`, updates);
       
       // 转换驼峰命名为下划线命名
-      const dbUpdates: any = {};
+      const dbUpdates: Record<string, any> = {
+        updated_at: new Date().toISOString() // 所有更新都添加更新时间
+      };
+      
       if (updates.isValid !== undefined) dbUpdates.is_valid = updates.isValid;
-      if (updates.lastActivity !== undefined) dbUpdates.last_activity = updates.lastActivity;
-      if (updates.expiresAt !== undefined) dbUpdates.expires_at = updates.expiresAt;
+      if (updates.lastActivity !== undefined) dbUpdates.last_activity = updates.lastActivity instanceof Date 
+        ? updates.lastActivity.toISOString() 
+        : updates.lastActivity;
+      if (updates.expiresAt !== undefined) dbUpdates.expires_at = updates.expiresAt instanceof Date 
+        ? updates.expiresAt.toISOString() 
+        : updates.expiresAt;
       if (updates.data !== undefined) dbUpdates.data = updates.data;
+     
+      // 使用标签模板语法构建动态 SQL
+      // 创建SET子句
+      const setClauses = Object.entries(dbUpdates)
+        .map(([key, value]) => `${key} = ${sql.raw("'" + value + "'")}`);
+        
+      const setClause = setClauses.join(", ");
       
-      // 所有更新都添加更新时间
-      dbUpdates.updated_at = new Date();
-      
-      const updateFields = Object.keys(dbUpdates).map(key => `${key} = ${typeof dbUpdates[key] === 'object' ? 'CAST(${JSON.stringify(dbUpdates[key])} AS JSON)' : '${dbUpdates[key]}'}`).join(', ');
-      
-      const queryString = `
+      // 使用postgres标签模板执行更新
+      const result = await this.client`
         UPDATE user_sessions 
-        SET ${Object.entries(dbUpdates).map(([key, value]) => 
-          typeof value === 'object' && value !== null 
-            ? `${key} = $${key}::jsonb` 
-            : `${key} = $${key}`
-        ).join(', ')} 
-        WHERE session_id = $sessionId
+        SET ${sql.raw(setClause)}
+        WHERE session_id = ${sessionId}
         RETURNING *
       `;
       
-      // 参数对象
-      const params: any = { sessionId, ...dbUpdates };
-      
-      // 执行查询
-      const result = await this.client.query(queryString, params);
-      const session = result.rows[0];
-      
-      if (session) {
+      if (result && result.length > 0) {
+        const session = result[0];
         // 将数据库结果转换为符合UserSession类型的对象
         return {
           id: session.id,
@@ -356,10 +356,12 @@ export class DbStorage implements IStorage {
       
       // 使用直接SQL查询确保字段名称正确，使用ISO字符串而非Date对象
       const now = new Date().toISOString();
-      const result = await this.client.query(
-        'UPDATE user_sessions SET is_valid = false, updated_at = $1 WHERE session_id = $2 RETURNING *',
-        [now, sessionId]
-      );
+      const result = await this.client`
+        UPDATE user_sessions 
+        SET is_valid = false, updated_at = ${now} 
+        WHERE session_id = ${sessionId} 
+        RETURNING *
+      `;
       
       return result.count > 0;
     } catch (error) {
@@ -374,10 +376,12 @@ export class DbStorage implements IStorage {
       
       // 使用直接SQL查询确保字段名称正确，使用ISO字符串而非Date对象
       const now = new Date().toISOString();
-      const result = await this.client.query(
-        'UPDATE user_sessions SET is_valid = false, updated_at = $1 WHERE user_id = $2 RETURNING *',
-        [now, userId]
-      );
+      const result = await this.client`
+        UPDATE user_sessions 
+        SET is_valid = false, updated_at = ${now} 
+        WHERE user_id = ${userId} 
+        RETURNING *
+      `;
       
       return result.count;
     } catch (error) {
