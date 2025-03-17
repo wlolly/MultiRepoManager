@@ -2181,6 +2181,143 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
+  // 会话管理方法
+  async getUserSessionById(sessionId: string): Promise<UserSession | undefined> {
+    try {
+      // 查询会话记录
+      const [session] = await this.db.select().from(userSessions).where(eq(userSessions.sessionId, sessionId));
+      
+      // 检查会话是否过期
+      if (session && session.expiresAt && new Date() > new Date(session.expiresAt)) {
+        // 自动清理过期会话
+        await this.db.update(userSessions)
+          .set({ isValid: false })
+          .where(eq(userSessions.sessionId, sessionId));
+        console.log(`[会话管理] 会话已过期: ${sessionId}`);
+        return undefined;
+      }
+      
+      // 返回有效会话
+      return session || undefined;
+    } catch (error) {
+      console.error(`[会话管理] 获取会话失败: ${error}`);
+      return undefined;
+    }
+  }
+  
+  async getUserSessionsByUserId(userId: number): Promise<UserSession[]> {
+    try {
+      // 查询用户的所有会话
+      const sessions = await this.db.select()
+        .from(userSessions)
+        .where(eq(userSessions.userId, userId))
+        .orderBy(desc(userSessions.lastActivity));
+      return sessions;
+    } catch (error) {
+      console.error(`[会话管理] 获取用户会话失败: ${error}`);
+      return [];
+    }
+  }
+  
+  async createUserSession(sessionData: InsertUserSession): Promise<UserSession> {
+    try {
+      // 获取当前时间作为创建时间
+      const lastActivity = new Date();
+      const expiresAt = sessionData.expiresAt || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 默认30天有效期
+      
+      // 插入会话记录
+      await this.db.insert(userSessions).values({
+        ...sessionData,
+        lastActivity,
+        expiresAt
+      });
+      
+      // 返回刚创建的会话
+      const session = await this.getUserSessionById(sessionData.sessionId);
+      if (!session) {
+        throw new Error('会话创建失败');
+      }
+      
+      console.log(`[会话管理] 会话已创建: ${sessionData.sessionId}`);
+      return session;
+    } catch (error) {
+      console.error(`[会话管理] 创建会话失败: ${error}`);
+      // 失败时返回一个临时会话对象，避免系统崩溃
+      return {
+        id: 0,
+        sessionId: sessionData.sessionId,
+        userId: sessionData.userId,
+        isValid: true,
+        lastActivity: new Date(),
+        createdAt: new Date(),
+        expiresAt: sessionData.expiresAt || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      };
+    }
+  }
+  
+  async updateUserSession(sessionId: string, updates: Partial<UserSession>): Promise<UserSession | undefined> {
+    try {
+      // 更新会话信息
+      await this.db.update(userSessions)
+        .set({ ...updates, lastActivity: new Date() })
+        .where(eq(userSessions.sessionId, sessionId));
+      
+      // 返回更新后的会话
+      return await this.getUserSessionById(sessionId);
+    } catch (error) {
+      console.error(`[会话管理] 更新会话失败: ${error}`);
+      return undefined;
+    }
+  }
+  
+  async invalidateUserSession(sessionId: string): Promise<boolean> {
+    try {
+      // 使会话失效
+      await this.db.update(userSessions)
+        .set({ isValid: false })
+        .where(eq(userSessions.sessionId, sessionId));
+        
+      console.log(`[会话管理] 会话已失效: ${sessionId}`);
+      return true;
+    } catch (error) {
+      console.error(`[会话管理] 使会话失效失败: ${error}`);
+      return false;
+    }
+  }
+  
+  async invalidateAllUserSessions(userId: number): Promise<number> {
+    try {
+      // 使用户的所有会话失效
+      const result = await this.db.update(userSessions)
+        .set({ isValid: false })
+        .where(eq(userSessions.userId, userId));
+      
+      const count = result.rowsAffected || 0;
+      console.log(`[会话管理] 已使${count}个会话失效，用户ID: ${userId}`);
+      return count;
+    } catch (error) {
+      console.error(`[会话管理] 使用户会话失效失败: ${error}`);
+      return 0;
+    }
+  }
+  
+  async cleanupExpiredSessions(): Promise<number> {
+    try {
+      // 清理所有过期会话
+      const result = await this.db.update(userSessions)
+        .set({ isValid: false })
+        .where(lt(userSessions.expiresAt, new Date()));
+      
+      const count = result.rowsAffected || 0;
+      console.log(`[会话管理] 已清理${count}个过期会话`);
+      return count;
+    } catch (error) {
+      console.error(`[会话管理] 清理过期会话失败: ${error}`);
+      return 0;
+    }
+  }
+  
+  // 用户相关方法
   async createUser(insertUser: InsertUser): Promise<User> {
     // MySQL不直接支持returning，所以我们需要先插入然后查询
     const result = await this.db.insert(users).values(insertUser);
