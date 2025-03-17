@@ -68,9 +68,18 @@ import {
 export async function registerRoutes(app: Express): Promise<Server> {
   const apiRouter = express.Router();
   
-  // 初始化存储接口 - 根据系统配置选择合适的存储实现
-  app.locals.storage = useFallbackStorage ? memStorage : storage;
-  console.log(`[系统] 初始化存储接口：使用${useFallbackStorage ? '内存存储' : '数据库存储'}模式`);
+  // 初始化存储接口 - 强制使用数据库存储
+  // 临时修复：忽略useFallbackStorage标志，始终使用数据库存储
+  app.locals.storage = storage;
+  
+  // 添加详细日志，帮助诊断可能的存储选择问题
+  console.log(`[系统] 初始化存储接口：强制使用数据库存储模式`);
+  console.log('[系统] 存储详细信息:', {
+    'useFallbackStorage标志': useFallbackStorage,
+    '数据库存储可用': !!storage,
+    '内存存储可用': !!memStorage,
+    '实际使用': '数据库存储(已强制)'
+  });
   
   // 配置multer用于文件上传
   // 确保上传目录存在

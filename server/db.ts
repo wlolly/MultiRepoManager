@@ -46,6 +46,10 @@ process.on('unhandledRejection', (reason, promise) => {
 // 这个标志始终为false，确保系统只使用数据库存储，没有降级选项
 export let useFallbackStorage = false;
 
+// 记录内存存储的使用状态
+console.log('[数据库] 当前存储模式: ' + (useFallbackStorage ? '内存存储(memStorage)' : '数据库存储(PostgreSQL)'));
+console.log('[数据库] 内存存储状态:', { enabled: useFallbackStorage, ready: !!memStorage });
+
 // 获取数据库连接详细信息（使用Replit提供的PostgreSQL）
 const connectionString = process.env.DATABASE_URL;
 
