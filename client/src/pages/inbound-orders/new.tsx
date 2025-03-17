@@ -298,3 +298,66 @@ export default function NewInboundOrder() {
     </div>
   );
 }
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
+import { Select } from '@/components/ui/select';
+
+export default function NewInboundOrder() {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { register, handleSubmit } = useForm();
+
+  const onSubmit = async (data) => {
+    try {
+      const response = await fetch('/api/inbound-orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "创建成功",
+          description: "入库单已成功创建"
+        });
+        navigate('/inbound-orders');
+      }
+    } catch (error) {
+      toast({
+        title: "创建失败",
+        description: "请检查输入并重试",
+        variant: "destructive"
+      });
+    }
+  };
+
+  return (
+    <div className="container mx-auto p-6">
+      <h1 className="text-2xl font-bold mb-6">新建入库单</h1>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 max-w-2xl">
+        <div>
+          <label>入库单号</label>
+          <Input {...register('orderNumber')} required />
+        </div>
+        <div>
+          <label>仓库</label>
+          <Select {...register('warehouseId')} required>
+            <option value="1">上海仓库</option>
+            <option value="2">北京仓库</option>
+          </Select>
+        </div>
+        <div>
+          <label>备注</label>
+          <Input {...register('notes')} />
+        </div>
+        <Button type="submit">创建入库单</Button>
+      </form>
+    </div>
+  );
+}
