@@ -47,15 +47,31 @@ export function checkPagePermission(pageName: string) {
       });
     }
 
-    // 如果是admin或super_admin角色，直接放行
-    if (req.session.role === 'admin' || req.session.role === 'super_admin') {
+    // 如果是admin或super_admin角色，或者isAdmin/hasSuperAccess标记为true，直接放行
+    if (
+      req.session.role === 'admin' || 
+      req.session.role === 'super_admin' ||
+      req.session.isAdmin === true ||
+      req.session.hasSuperAccess === true
+    ) {
+      console.log(`[权限中间件] 用户${req.session.userId}具有管理员权限，允许访问${pageName}页面`);
       return next();
     }
 
-    // 获取用户的页面权限
-    const hasPermission = req.session.pagePermissions 
-      && Array.isArray(req.session.pagePermissions) 
-      && req.session.pagePermissions.includes(pageName);
+    // 获取用户的页面权限 - 支持旧版和新版权限结构
+    let hasPermission = false;
+    
+    // 旧版权限结构
+    if (req.session.pagePermissions && Array.isArray(req.session.pagePermissions)) {
+      hasPermission = req.session.pagePermissions.includes(pageName);
+    } 
+    
+    // 新版权限结构 - permissions.pages数组
+    if (!hasPermission && req.session.permissions && req.session.permissions.pages) {
+      if (Array.isArray(req.session.permissions.pages)) {
+        hasPermission = req.session.permissions.pages.includes(pageName);
+      }
+    }
 
     if (!hasPermission) {
       return res.status(403).json({
@@ -84,15 +100,31 @@ export function checkActionPermission(actionName: string) {
       });
     }
 
-    // 如果是admin或super_admin角色，直接放行
-    if (req.session.role === 'admin' || req.session.role === 'super_admin') {
+    // 如果是admin或super_admin角色，或者isAdmin/hasSuperAccess标记为true，直接放行
+    if (
+      req.session.role === 'admin' || 
+      req.session.role === 'super_admin' ||
+      req.session.isAdmin === true ||
+      req.session.hasSuperAccess === true
+    ) {
+      console.log(`[权限中间件] 用户${req.session.userId}具有管理员权限，允许执行${actionName}操作`);
       return next();
     }
 
-    // 获取用户的操作权限
-    const hasPermission = req.session.actionPermissions 
-      && Array.isArray(req.session.actionPermissions) 
-      && req.session.actionPermissions.includes(actionName);
+    // 获取用户的操作权限 - 支持旧版和新版权限结构
+    let hasPermission = false;
+    
+    // 旧版权限结构
+    if (req.session.actionPermissions && Array.isArray(req.session.actionPermissions)) {
+      hasPermission = req.session.actionPermissions.includes(actionName);
+    } 
+    
+    // 新版权限结构 - permissions.actions数组
+    if (!hasPermission && req.session.permissions && req.session.permissions.actions) {
+      if (Array.isArray(req.session.permissions.actions)) {
+        hasPermission = req.session.permissions.actions.includes(actionName);
+      }
+    }
 
     if (!hasPermission) {
       return res.status(403).json({
@@ -120,8 +152,14 @@ export function checkWarehouseViewPermission(warehouseIdParam: string = 'warehou
       });
     }
 
-    // 如果是admin或super_admin角色，直接放行
-    if (req.session.role === 'admin' || req.session.role === 'super_admin') {
+    // 如果是admin或super_admin角色，或者isAdmin/hasSuperAccess标记为true，直接放行
+    if (
+      req.session.role === 'admin' || 
+      req.session.role === 'super_admin' ||
+      req.session.isAdmin === true ||
+      req.session.hasSuperAccess === true
+    ) {
+      console.log(`[权限中间件] 用户${req.session.userId}具有管理员权限，允许访问仓库`);
       return next();
     }
 
@@ -133,9 +171,18 @@ export function checkWarehouseViewPermission(warehouseIdParam: string = 'warehou
       return next();
     }
 
-    // 检查用户是否有查看该仓库的权限
+    // 检查用户是否有查看该仓库的权限 - 支持旧版和新版权限结构
+    let hasPermission = false;
+    
+    // 旧版权限结构
     const warehousePermissions = req.session.warehousePermissions || {};
-    const hasPermission = warehousePermissions[warehouseId] && warehousePermissions[warehouseId].view;
+    hasPermission = warehousePermissions[warehouseId] && warehousePermissions[warehouseId].view;
+    
+    // 新版权限结构 - permissions.warehouses对象
+    if (!hasPermission && req.session.permissions && req.session.permissions.warehouses) {
+      const newWarehousePermissions = req.session.permissions.warehouses || {};
+      hasPermission = newWarehousePermissions[warehouseId] && newWarehousePermissions[warehouseId].canView;
+    }
 
     if (!hasPermission) {
       return res.status(403).json({
@@ -163,8 +210,14 @@ export function checkWarehouseManagePermission(warehouseIdParam: string = 'wareh
       });
     }
 
-    // 如果是admin或super_admin角色，直接放行
-    if (req.session.role === 'admin' || req.session.role === 'super_admin') {
+    // 如果是admin或super_admin角色，或者isAdmin/hasSuperAccess标记为true，直接放行
+    if (
+      req.session.role === 'admin' || 
+      req.session.role === 'super_admin' ||
+      req.session.isAdmin === true ||
+      req.session.hasSuperAccess === true
+    ) {
+      console.log(`[权限中间件] 用户${req.session.userId}具有管理员权限，允许管理仓库`);
       return next();
     }
 
@@ -176,9 +229,18 @@ export function checkWarehouseManagePermission(warehouseIdParam: string = 'wareh
       return next();
     }
 
-    // 检查用户是否有管理该仓库的权限
+    // 检查用户是否有管理该仓库的权限 - 支持旧版和新版权限结构
+    let hasPermission = false;
+    
+    // 旧版权限结构
     const warehousePermissions = req.session.warehousePermissions || {};
-    const hasPermission = warehousePermissions[warehouseId] && warehousePermissions[warehouseId].manage;
+    hasPermission = warehousePermissions[warehouseId] && warehousePermissions[warehouseId].manage;
+    
+    // 新版权限结构 - permissions.warehouses对象
+    if (!hasPermission && req.session.permissions && req.session.permissions.warehouses) {
+      const newWarehousePermissions = req.session.permissions.warehouses || {};
+      hasPermission = newWarehousePermissions[warehouseId] && newWarehousePermissions[warehouseId].canManage;
+    }
 
     if (!hasPermission) {
       return res.status(403).json({
@@ -517,11 +579,28 @@ export async function loadUserPermissions(userId: number, role?: string, req: Re
     // 首先获取基于角色的默认权限
     const defaultPermissions = getDefaultPermissionsByRole(role);
     
-    // 如果是超级管理员或管理员，可以跳过其他权限检查
-    if (role === 'super_admin' || role === 'admin') {
-      // 将权限保存到会话
+    // 如果是超级管理员或管理员，或者具有isAdmin/hasSuperAccess标记，赋予完整权限
+    if (
+      role === 'super_admin' || 
+      role === 'admin' || 
+      req.session.isAdmin === true || 
+      req.session.hasSuperAccess === true
+    ) {
+      // 将权限保存到会话 - 旧版格式
       req.session.pagePermissions = defaultPermissions.pages;
       req.session.actionPermissions = defaultPermissions.actions;
+      
+      // 新版格式 - 权限对象
+      req.session.permissions = {
+        pages: defaultPermissions.pages,
+        actions: defaultPermissions.actions,
+        isAdmin: true,
+        isSuperAdmin: role === 'super_admin' || req.session.hasSuperAccess === true
+      };
+      
+      // 设置角色标志 
+      req.session.isAdmin = true;
+      req.session.hasSuperAccess = role === 'super_admin' || req.session.hasSuperAccess === true;
       
       // 为管理员加载所有仓库权限
       const allWarehouses = await db.query('SELECT id FROM warehouses');
@@ -533,7 +612,16 @@ export async function loadUserPermissions(userId: number, role?: string, req: Re
         });
       }
       
+      // 同时设置旧版和新版格式
       req.session.warehousePermissions = warehousePermissions;
+      
+      if (!req.session.permissions) {
+        req.session.permissions = { pages: [], actions: [], warehouses: {} };
+      }
+      req.session.permissions.warehouses = warehousePermissions;
+      
+      console.log(`[权限加载] 用户${req.session.userId}具有管理员权限，已设置完整权限`);
+      
       return {
         pages: defaultPermissions.pages,
         actions: defaultPermissions.actions,
@@ -590,10 +678,26 @@ export async function loadUserPermissions(userId: number, role?: string, req: Re
       if (row.can_manage) warehouses[warehouseId].manage = true;
     });
     
-    // 保存到会话
+    // 保存到会话 - 兼容旧版和新版格式
+    // 旧版格式
     req.session.pagePermissions = pages;
     req.session.actionPermissions = defaultPermissions.actions;
     req.session.warehousePermissions = warehouses;
+    
+    // 新版格式
+    req.session.permissions = {
+      pages: pages,
+      actions: defaultPermissions.actions,
+      warehouses: warehouses,
+      isAdmin: false,
+      isSuperAdmin: false
+    };
+    
+    // 确保角色标志一致
+    req.session.isAdmin = false;
+    req.session.hasSuperAccess = false;
+    
+    console.log(`[权限加载] 用户${req.session.userId}加载了普通权限`);
     
     return {
       pages,

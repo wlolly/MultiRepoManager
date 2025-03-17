@@ -39,5 +39,19 @@ declare module 'express-session' {
     // 用于验证和同步
     validatedAt?: number; // 上次验证时间
     validatedSource?: string; // 验证来源
+    
+    // 权限相关字段
+    pagePermissions?: string[];
+    actionPermissions?: string[];
+    warehousePermissions?: Record<string, { view: boolean, manage: boolean }>;
+    
+    // 新版权限结构
+    permissions?: {
+      pages: string[];
+      actions: string[];
+      warehouses?: Record<string, { view: boolean, manage: boolean } | { canView: boolean, canManage: boolean }>;
+      isAdmin?: boolean;
+      isSuperAdmin?: boolean;
+    };
   }
 }
