@@ -161,6 +161,16 @@ export async function initiateLogin(req: Request, res: Response) {
       });
     });
     
+    // 保存会话以确保状态被持久化
+    await new Promise<void>((resolve) => {
+      req.session.save((err) => {
+        if (err) {
+          console.error('[认证系统] 保存会话状态失败:', err);
+        }
+        resolve();
+      });
+    });
+    
     // 创建数据库会话记录
     const userSessionData = {
       sessionId,
@@ -304,6 +314,7 @@ export async function completeLogin(req: Request, res: Response) {
     
     // 更新会话对象
     req.session.authenticated = true;
+    req.session.isAuthenticated = true; // 同时设置两个属性以确保兼容性
     req.session.userId = user.id;
     req.session.role = user.role;
     req.session.language = user.language || 'zh';
@@ -311,6 +322,16 @@ export async function completeLogin(req: Request, res: Response) {
     
     // 设置新会话ID 
     req.sessionID = sessionId;
+    
+    // 保存会话以确保状态被持久化
+    await new Promise<void>((resolve) => {
+      req.session.save((err) => {
+        if (err) {
+          console.error('[认证系统] 保存会话状态失败:', err);
+        }
+        resolve();
+      });
+    });
     
     // 设置cookie，确保新会话ID在客户端可用
     res.cookie('sessionId', sessionId, {
@@ -397,6 +418,7 @@ export async function loginUser(req: Request, res: Response) {
     
     // 更新会话对象
     req.session.authenticated = true;
+    req.session.isAuthenticated = true; // 同时设置两个属性以确保兼容性
     req.session.userId = user.id;
     req.session.role = user.role;
     req.session.language = user.language || 'zh';
@@ -404,6 +426,16 @@ export async function loginUser(req: Request, res: Response) {
     
     // 设置新会话ID 
     req.sessionID = sessionId;
+    
+    // 保存会话以确保状态被持久化
+    await new Promise<void>((resolve) => {
+      req.session.save((err) => {
+        if (err) {
+          console.error('[认证系统] 保存会话状态失败:', err);
+        }
+        resolve();
+      });
+    });
     
     // 设置cookie，确保新会话ID在客户端可用
     res.cookie('sessionId', sessionId, {
