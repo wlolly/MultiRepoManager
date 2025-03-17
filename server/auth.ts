@@ -24,6 +24,12 @@ export const loginSchema = z.object({
   rememberMe: z.boolean().optional(),
 });
 
+// 验证码验证模式
+export const verificationSchema = z.object({
+  verificationId: z.string(),
+  code: z.string().length(6, '验证码必须是6位数字'),
+});
+
 // 哈希密码
 export function hashPassword(password: string): string {
   // 使用SHA-256和32位随机盐
@@ -53,6 +59,15 @@ export function verifyPassword(storedPassword: string, suppliedPassword: string)
 // 生成会话ID
 export function generateSessionId(): string {
   return crypto.randomBytes(32).toString('hex');
+}
+
+/**
+ * 生成登录验证ID
+ * 用于双重验证流程的第一阶段
+ */
+export function generateVerificationId(): string {
+  // 使用随机字节生成验证ID
+  return crypto.randomBytes(24).toString('hex');
 }
 
 /**
