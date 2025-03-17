@@ -28,7 +28,7 @@ export function processQueryResult(result: any): any[] {
     if (Array.isArray(result.data)) {
       return result.data;
     }
-    // MySQL返回格式
+    // 旧版驱动返回格式 - 兼容处理
     if (Array.isArray(result[0])) {
       return result[0];
     }
