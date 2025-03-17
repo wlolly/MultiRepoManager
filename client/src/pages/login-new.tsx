@@ -42,7 +42,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     },
   });
 
-  // 处理表单提交 - 双重验证登录策略
+  // 处理表单提交 - 直接登录模式
   const onSubmit = async (values: LoginFormValues) => {
     setIsLoading(true);
     
@@ -57,31 +57,31 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       // 在登录前设置防重复提交标记
       sessionStorage.setItem('login_in_progress', 'true');
       
-      // 使用AuthContext中的initiateLogin方法开始第一阶段验证
+      // 使用AuthContext中的initiateLogin方法直接登录
       const result = await initiateLogin(values.username, values.password);
       
-      console.log('第一阶段验证结果:', result);
+      console.log('登录结果:', result);
       
       if (result.success) {
-        // 第一阶段验证成功，跳转到第二阶段验证页面
+        // 登录成功，直接跳转到首页
         toast({
-          title: t('auth.verification_required'),
-          description: t('auth.please_enter_verification_code'),
+          title: t('auth.login_success'),
+          description: t('auth.welcome_back'),
           type: "success"
         });
         
-        // 记录验证ID，将在two-step-login页面使用
-        if (result.verificationId) {
-          sessionStorage.setItem('verification_id', result.verificationId);
+        // 执行登录成功回调
+        if (onLoginSuccess) {
+          onLoginSuccess();
         }
         
-        // 导航到两步验证页面
-        navigate('/login/two-step');
+        // 导航到首页
+        navigate('/');
       } else {
         // 验证失败
         toast({
           title: t('auth.login_failed'),
-          description: result.message || t('auth.invalid_credentials'),
+          description: t('auth.invalid_credentials'),
           type: "error"
         });
       }
