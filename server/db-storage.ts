@@ -198,7 +198,7 @@ export class DbStorage implements IStorage {
       const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
       
       const result = await this.db.delete(schema.loginVerifications)
-        .where(lte(schema.loginVerifications.createdAt, thirtyMinutesAgo))
+        .where(sql`${schema.loginVerifications.created} <= ${thirtyMinutesAgo.toISOString()}`)
         .returning();
         
       return result.length;
@@ -287,8 +287,8 @@ export class DbStorage implements IStorage {
       
       const result = await this.db.delete(schema.userSessions)
         .where(or(
-          lte(schema.userSessions.expiresAt, new Date()),
-          lte(schema.userSessions.createdAt, sevenDaysAgo)
+          sql`${schema.userSessions.expiresAt} <= ${new Date().toISOString()}`,
+          sql`${schema.userSessions.createdAt} <= ${sevenDaysAgo.toISOString()}`
         ))
         .returning();
         
@@ -610,7 +610,7 @@ export class DbStorage implements IStorage {
         .from(schema.activities)
         .where(and(
           eq(schema.activities.type, 'commit' as any),
-          gte(schema.activities.createdAt, oneWeekAgo)
+          sql`${schema.activities.createdAt} >= ${oneWeekAgo.toISOString()}`
         ));
       
       return {
