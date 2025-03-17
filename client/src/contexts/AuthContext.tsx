@@ -242,7 +242,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     fetchUserAndPermissions();
   }, []);
 
-  // 双重验证第一阶段 - 发起登录
+  // 直接登录 - 不需要验证码
   const initiateLogin = async (username: string, password: string): Promise<{ success: boolean, requireVerification: boolean, verificationId?: string }> => {
     try {
       const response = await fetch('/api/auth/initiate-login', {
@@ -253,25 +253,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       const data = await response.json();
-      console.log('发起登录响应:', data);
+      console.log('登录响应:', data);
       
       if (response.ok) {
-        if (data.requireVerification && data.verificationId) {
-          // 需要进行双重验证
-          return { 
-            success: true, 
-            requireVerification: true, 
-            verificationId: data.verificationId 
+        if (data.authenticated && data.user) {
+          // 登录成功，保存用户数据
+          // 更新本地存储
+          const userToSave = {
+            ...data.user,
+            isactive: data.user?.isactive !== undefined ? data.user.isactive : true,
+            avatarurl: data.user?.avatarurl || null,
+            realAuthenticated: true,
+            authenticated: true
           };
-        } else if (data.user) {
-          // 无需验证，直接登录成功
-          await fetchUserAndPermissions();
+          
+          sessionStorage.setItem('currentUser', JSON.stringify(userToSave));
+          localStorage.setItem('currentUser', JSON.stringify(userToSave));
+          
+          // 更新状态
+          setState(prev => ({
+            ...prev,
+            user: userToSave,
+            isLoading: false,
+            pagePermissions: userToSave.permissions?.pages.reduce((acc: Record<string, boolean>, page: string) => {
+              acc[page] = true;
+              return acc;
+            }, {}) || {},
+            warehousePermissions: userToSave.permissions?.warehouses || {}
+          }));
+          
           addToast({
             title: '登录成功',
             description: '欢迎回来！',
             type: 'success'
           });
-          return { success: true, requireVerification: false };
+          
+          return { 
+            success: true, 
+            requireVerification: false 
+          };
         }
       }
       

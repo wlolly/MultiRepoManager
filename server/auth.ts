@@ -76,8 +76,8 @@ export function generateVerificationId(): string {
  */
 /**
  * 用户登录验证第一阶段
- * 验证用户凭据并生成验证ID，需要用户进行第二阶段验证
- * 根据新的设计，即使用户不存在也会生成验证ID，只是该ID不关联有效用户
+ * 验证用户凭据，如果验证成功则直接登录，无需二次验证
+ * 如果用户不存在或凭据错误，返回错误信息
  */
 export async function initiateLogin(req: Request, res: Response) {
   const { username, password } = req.body;
@@ -87,62 +87,71 @@ export async function initiateLogin(req: Request, res: Response) {
     const db = req.app.locals.storage;
     const user = await db.getUserByUsername(username);
     
-    // 生成随机验证ID - 无论用户是否存在
-    const verificationId = generateVerificationId();
-    console.log('[认证系统] 生成验证ID:', verificationId);
-    
-    // 生成随机6位验证码
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-    
-    // 验证记录有效期 (15分钟)
-    const expirationTime = new Date(Date.now() + 15 * 60 * 1000);
-    
-    // 确定用户是否有效
-    let isValidUser = false;
-    let userId = null;
-    
-    if (user && verifyPassword(user.password || '', password) && user.is_active !== false) {
-      // 有效用户
-      userId = user.id;
-      isValidUser = true;
-      console.log('[认证系统] 登录验证第一阶段成功: 用户ID:', user.id, '角色:', user.role);
-    } else {
+    // 检查用户存在性和密码正确性
+    if (!user || !verifyPassword(user.password || '', password) || user.is_active === false) {
       // 用户不存在、密码错误或未激活
-      console.log('[认证系统] 登录验证第一阶段：无效用户或凭据');
-      // 这里不返回错误，而是继续处理，统一流程
+      console.log('[认证系统] 登录失败：无效用户或凭据');
+      return res.status(401).json({
+        success: false,
+        message: '用户名或密码错误',
+        authenticated: false
+      });
     }
     
-    // 创建验证记录 - 无论用户是否有效
-    const verificationData = {
-      verificationId,
-      userId: userId, // 无效用户为null
-      status: isValidUser ? 'pending' : 'invalid',
+    // 用户验证成功，直接创建会话
+    console.log('[认证系统] 登录验证成功: 用户ID:', user.id, '角色:', user.role);
+    
+    // 生成随机会话ID
+    const sessionId = generateSessionId();
+    console.log('[认证系统] 生成新会话ID:', sessionId);
+    
+    // 创建数据库会话记录
+    const userSessionData = {
+      sessionId,
+      userId: user.id,
       ipAddress: req.ip,
       userAgent: req.get('user-agent') || '',
-      created: new Date(),
-      expires: expirationTime,
-      used: false,
-      usedAt: null,
-      // 在实际应用中，验证码会通过短信、邮件等方式发送给用户
-      code: verificationCode
+      isValid: true,
+      lastActivity: new Date(),
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30天过期
     };
     
-    // 存储验证记录
-    await db.createLoginVerification(verificationData);
+    // 存储会话到数据库
+    await db.createUserSession(userSessionData);
     
-    // 如果是有效用户，发送验证码；简化处理，直接在控制台打印
-    if (isValidUser) {
-      console.log(`[认证系统][测试] 用户 ${username} 的验证码是: ${verificationCode}`);
-    } else {
-      console.log(`[认证系统][测试] 无效登录尝试的验证码: ${verificationCode} (不会实际发送)`);
-    }
+    // 更新会话对象
+    req.session.authenticated = true;
+    req.session.userId = user.id;
+    req.session.role = user.role;
+    req.session.language = user.language || 'zh';
+    req.session.username = user.username;
     
-    // 统一的成功响应 - 对于有效/无效用户都返回相同结构
+    // 设置新会话ID 
+    req.sessionID = sessionId;
+    
+    // 设置cookie，确保新会话ID在客户端可用
+    res.cookie('sessionId', sessionId, {
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30天
+      httpOnly: false, // 允许JavaScript访问
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/'
+    });
+    
+    // 返回带用户数据的成功响应
     return res.status(200).json({
       success: true,
-      message: '验证码已发送',
-      requireVerification: true,
-      verificationId
+      authenticated: true,
+      message: '登录成功',
+      sessionId,
+      requireVerification: false,
+      user: {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        fullName: user.full_name,
+        language: user.language || 'zh'
+      }
     });
   } catch (error) {
     console.error('[认证系统] 登录验证处理错误:', error);
