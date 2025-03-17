@@ -223,7 +223,51 @@ export class DbStorage implements IStorage {
         ? sessionData.expiresAt.toISOString() 
         : new Date(sessionData.expiresAt).toISOString();
       
-      // 使用sql标签模板进行查询而不是原始SQL
+      // 先检查会话ID是否已存在
+      console.log(`[DbStorage] 检查会话ID是否已存在: ${sessionData.sessionId}`);
+      const existingSession = await this.db.execute(sql`
+        SELECT * FROM user_sessions 
+        WHERE session_id = ${sessionData.sessionId}
+      `);
+      
+      if (existingSession && existingSession.length > 0) {
+        console.log(`[DbStorage] 会话ID已存在，执行更新操作: ${sessionData.sessionId}`);
+        
+        // 更新现有会话
+        const updateResult = await this.db.execute(sql`
+          UPDATE user_sessions 
+          SET 
+            user_id = ${sessionData.userId},
+            ip_address = ${sessionData.ipAddress || null},
+            user_agent = ${sessionData.userAgent || null},
+            is_valid = ${sessionData.isValid},
+            last_activity = ${lastActivity},
+            expires_at = ${expiresAt},
+            data = ${sessionData.data ? JSON.stringify(sessionData.data) : null}
+          WHERE session_id = ${sessionData.sessionId}
+          RETURNING *
+        `);
+        
+        const updatedSession = updateResult[0];
+        console.log(`[DbStorage] 会话更新结果:`, updatedSession);
+        
+        // 将数据库结果转换为符合UserSession类型的对象
+        return {
+          id: updatedSession.id,
+          sessionId: updatedSession.session_id,
+          userId: updatedSession.user_id,
+          ipAddress: updatedSession.ip_address,
+          userAgent: updatedSession.user_agent,
+          isValid: updatedSession.is_valid,
+          lastActivity: updatedSession.last_activity,
+          expiresAt: updatedSession.expires_at,
+          createdAt: updatedSession.created_at,
+          data: updatedSession.data
+        };
+      }
+      
+      // 如果会话不存在，创建新会话
+      console.log(`[DbStorage] 创建新会话: ${sessionData.sessionId}`);
       const result = await this.db.execute(sql`
         INSERT INTO user_sessions (
           session_id, 
