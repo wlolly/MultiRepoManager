@@ -44,7 +44,9 @@ import {
   logout,
   activateUser,
   updateUserRole,
-  loginUser
+  loginUser,
+  initiateLogin,
+  completeLogin
 } from "./auth";
 import { 
   createTransferImportTemplate, 
@@ -508,6 +510,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       })(req, res, next);
   });
 
+  // 双重验证登录流程 - 第一阶段 (验证凭据，获取验证ID)
+  apiRouter.post("/auth/login/initiate", initiateLogin);
+  
+  // 双重验证登录流程 - 第二阶段 (验证码验证)
+  apiRouter.post("/auth/login/complete", completeLogin);
+  
   // 注册接口
   apiRouter.post("/auth/register", registerUser);
   
