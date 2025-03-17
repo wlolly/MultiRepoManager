@@ -3818,36 +3818,91 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateTranslation(id: number, translation: Partial<Translation>): Promise<Translation | undefined> {
-    const existingTranslation = this.translationsMap.get(id);
-    if (!existingTranslation) return undefined;
-    
-    const updatedTranslation: Translation = {
-      ...existingTranslation,
-      ...translation,
-      updatedAt: new Date()
-    };
-    
-    this.translationsMap.set(id, updatedTranslation);
-    return updatedTranslation;
+    if (this instanceof MemStorage) {
+      const existingTranslation = this.translationsMap.get(id);
+      if (!existingTranslation) return undefined;
+      
+      const updatedTranslation: Translation = {
+        ...existingTranslation,
+        ...translation,
+        updatedAt: new Date()
+      };
+      
+      this.translationsMap.set(id, updatedTranslation);
+      return updatedTranslation;
+    } else {
+      // DatabaseStorage
+      const { db } = await import('./db');
+      const { eq } = await import('drizzle-orm');
+      
+      const updatedAt = new Date();
+      
+      // 先检查翻译是否存在
+      const existingTranslations = await db.select()
+        .from(translations)
+        .where(eq(translations.id, id));
+      
+      if (existingTranslations.length === 0) {
+        return undefined;
+      }
+      
+      const existingTranslation = existingTranslations[0];
+      
+      // 执行更新
+      const [result] = await db.update(translations)
+        .set({
+          ...translation,
+          updatedAt
+        })
+        .where(eq(translations.id, id))
+        .returning();
+      
+      return {
+        ...result,
+        createdAt: result.createdAt || existingTranslation.createdAt || new Date(),
+        updatedAt: result.updatedAt || updatedAt
+      };
+    }
   }
 
   async deleteTranslationByKeyAndLanguage(key: string, language: string): Promise<void> {
-    const translation = Array.from(this.translationsMap.values()).find(
-      t => t.key === key && t.language === language
-    );
-    
-    if (translation) {
-      this.translationsMap.delete(translation.id);
+    if (this instanceof MemStorage) {
+      const translation = Array.from(this.translationsMap.values()).find(
+        t => t.key === key && t.language === language
+      );
+      
+      if (translation) {
+        this.translationsMap.delete(translation.id);
+      }
+    } else {
+      // DatabaseStorage
+      const { db } = await import('./db');
+      const { and, eq } = await import('drizzle-orm');
+      
+      await db.delete(translations)
+        .where(and(
+          eq(translations.key, key),
+          eq(translations.language, language)
+        ));
     }
   }
 
   async deleteTranslationByKey(key: string): Promise<void> {
-    const translations = Array.from(this.translationsMap.values()).filter(
-      t => t.key === key
-    );
-    
-    for (const translation of translations) {
-      this.translationsMap.delete(translation.id);
+    if (this instanceof MemStorage) {
+      const translations = Array.from(this.translationsMap.values()).filter(
+        t => t.key === key
+      );
+      
+      for (const translation of translations) {
+        this.translationsMap.delete(translation.id);
+      }
+    } else {
+      // DatabaseStorage
+      const { db } = await import('./db');
+      const { eq } = await import('drizzle-orm');
+      
+      await db.delete(translations)
+        .where(eq(translations.key, key));
     }
   }
 }
