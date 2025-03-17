@@ -56,6 +56,9 @@ export function usePermissions(): PermissionsHook {
   const [pagePermissions, setPagePermissions] = useState<PagePermissions>({});
   const [warehousePermissions, setWarehousePermissions] = useState<WarehousePermissions>({});
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isRealAuthenticated, setIsRealAuthenticated] = useState(false);
+  const [isActive, setIsActive] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const { toast } = useToast();
   const [, navigate] = useLocation();
 
@@ -83,10 +86,28 @@ export function usePermissions(): PermissionsHook {
           console.log('检测到访客用户，id=-1 或 realAuthenticated=false');
           // 访客用户(假阳性登录) - 设置为未认证状态，但允许查看公开内容
           setIsAuthenticated(false);
+          setIsRealAuthenticated(false);
+          setIsActive(false);
+          setIsAdmin(false);
         } else {
           // 真实用户 - 设置为已认证状态
           console.log('检测到真实登录用户');
           setIsAuthenticated(true);
+          setIsRealAuthenticated(true);
+          
+          // 设置用户活跃状态
+          setIsActive(userData.user?.isActive || true);
+          
+          // 设置管理员状态
+          const userRole = userData.user?.role || '';
+          const isAdminRole = userRole === 'admin' || userRole === 'super_admin';
+          setIsAdmin(isAdminRole);
+          
+          console.log('用户角色信息:', {
+            role: userRole,
+            isAdmin: isAdminRole,
+            isActive: userData.user?.isActive
+          });
         }
       } else if (currentUserResponse.status === 401) {
         // 服务器回复未认证，设置为未认证状态
@@ -336,6 +357,9 @@ export function usePermissions(): PermissionsHook {
     canManageWarehouse,
     refreshPermissions,
     isAuthenticated,
+    isRealAuthenticated,
+    isActive,
+    isAdmin,
     setIsAuthenticated
   };
 }

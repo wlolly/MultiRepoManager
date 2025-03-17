@@ -39,14 +39,18 @@ export const ProtectedRoute: FC<ProtectedRouteProps> = ({
   const { 
     user, 
     isLoading, 
-    isAuthenticated, 
-    isRealUser,
+    isAuthenticated,
+    isRealAuthenticated, // 使用新的权限状态字段 
+    isActive,
     isAdmin,
-    isVisitor,
     hasPagePermission, 
     canViewWarehouse, 
     canManageWarehouse 
   } = useAuth();
+  
+  // 定义访客状态
+  const isRealUser = isRealAuthenticated && isActive;
+  const isVisitor = !isRealAuthenticated || !isActive;
   
   const [, navigate] = useLocation();
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);

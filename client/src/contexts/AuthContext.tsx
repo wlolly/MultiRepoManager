@@ -32,6 +32,8 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  isRealAuthenticated: boolean; // 新增：真实认证状态
+  isActive: boolean; // 新增：账户活跃状态
   isRealUser: boolean;
   isAdmin: boolean;
   isVisitor: boolean;
@@ -359,13 +361,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const contextValue: AuthContextType = {
     user: state.user,
     isLoading: state.isLoading,
-    // 认证状态基于服务器认证结果，必须有效用户ID、已认证且是活跃账户
+    // 认证状态基于服务器认证结果，必须有效用户ID、已认证
     isAuthenticated: Boolean(
       state.user?.authenticated && 
       state.user?.id && 
-      state.user?.id > 0 &&
-      state.user?.isactive !== false // 确保用户账户是活跃的
+      state.user?.id > 0
     ),
+    // 真实认证状态（区别于访客模式的自动认证），确保真实用户登录
+    isRealAuthenticated: Boolean(
+      state.user?.authenticated &&
+      state.user?.id && 
+      state.user?.id > 0 && 
+      state.user?.role !== 'anonymous'
+    ),
+    // 账户活跃状态
+    isActive: Boolean(state.user?.isactive !== false),
     // 真实用户判断加入isactive状态检查，与后端保持一致
     isRealUser: Boolean(
       state.user?.authenticated &&
