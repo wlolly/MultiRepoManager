@@ -29,7 +29,7 @@ import Settings from "./pages/settings";
 import Users from "./pages/users";
 import ApiConfigurations from "./pages/api-configurations";
 import TeamPermissions from "./pages/team-permissions";
-import LoginPage from "./pages/login";
+import LoginPage from "./pages/login-new"; // 使用新版登录页面
 import LoginRedirect from "./pages/login-redirect"; // 新增登录重定向页面
 import RegisterPage from "./pages/register";
 import AdminSocialAuthConfig from "./pages/admin-social-auth";
@@ -87,7 +87,7 @@ function Sidebar() {
     user?: {
       id: number;
       username: string;
-      fullName: string;
+      fullname: string;
     };
     repository?: {
       id: number;
@@ -343,7 +343,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
                   <span>{user?.username?.charAt(0).toUpperCase() || 'U'}</span>
                 </div>
                 <span className="ml-2 text-sm font-medium text-gray-700 hidden md:inline-block">
-                  {user?.fullName || user?.username || '用户'}
+                  {user?.fullname || user?.username || '用户'}
                 </span>
                 <button 
                   onClick={() => {

@@ -23,8 +23,8 @@ declare global {
 }
 
 // 初始化全局会话存储
-if (!global.sessionStorage) {
-  global.sessionStorage = {};
+if (!global.customSessionStorage) {
+  global.customSessionStorage = {};
 }
 
 export async function sessionMiddleware(req: Request, res: Response, next: NextFunction) {
@@ -33,14 +33,14 @@ export async function sessionMiddleware(req: Request, res: Response, next: NextF
     res.setHeader('X-Session-ID', req.sessionID);
 
     // 检查是否存在持久化的会话ID
-    if (global.sessionStorage && req.ip && typeof req.ip === 'string' && global.sessionStorage[req.ip]) {
-      console.log(`[会话中间件] 发现持久化会话ID: ${global.sessionStorage[req.ip]}`);
-      req.sessionID = global.sessionStorage[req.ip];
+    if (global.customSessionStorage && req.ip && typeof req.ip === 'string' && global.customSessionStorage[req.ip]) {
+      console.log(`[会话中间件] 发现持久化会话ID: ${global.customSessionStorage[req.ip]}`);
+      req.sessionID = global.customSessionStorage[req.ip];
       res.setHeader('X-Persistent-Session-ID', req.sessionID);
     } else {
       console.log(`[会话中间件] 未找到持久化会话ID, 当前会话ID: ${req.sessionID}`);
-      if (global.sessionStorage && req.ip && typeof req.ip === 'string') {
-        global.sessionStorage[req.ip] = req.sessionID;
+      if (global.customSessionStorage && req.ip && typeof req.ip === 'string') {
+        global.customSessionStorage[req.ip] = req.sessionID;
       }
     }
 
@@ -86,16 +86,16 @@ export function configureSession(app: any) {
     saveUninitialized: false,
     genid: (req: any) => {
       // 如果已存在持久化会话ID，优先使用它
-      if (global.sessionStorage && req.ip && typeof req.ip === 'string' && global.sessionStorage[req.ip]) {
-        console.log(`[会话] 使用持久化会话ID: ${global.sessionStorage[req.ip]}`);
-        return global.sessionStorage[req.ip];
+      if (global.customSessionStorage && req.ip && typeof req.ip === 'string' && global.customSessionStorage[req.ip]) {
+        console.log(`[会话] 使用持久化会话ID: ${global.customSessionStorage[req.ip]}`);
+        return global.customSessionStorage[req.ip];
       }
       
       // 否则生成新ID - 使用顶层导入的crypto
       const sessionId = crypto.randomBytes(16).toString('hex');
       console.log(`[会话] 生成新会话ID: ${sessionId}`);
-      if (global.sessionStorage && req.ip && typeof req.ip === 'string') {
-        global.sessionStorage[req.ip] = sessionId;
+      if (global.customSessionStorage && req.ip && typeof req.ip === 'string') {
+        global.customSessionStorage[req.ip] = sessionId;
       }
       return sessionId;
     },
@@ -169,8 +169,8 @@ export function configureSession(app: any) {
     };
     
     // 确保每次请求都将当前会话ID保存到持久存储中
-    if (global.sessionStorage && req.ip && typeof req.ip === 'string') {
-      global.sessionStorage[req.ip] = req.sessionID;
+    if (global.customSessionStorage && req.ip && typeof req.ip === 'string') {
+      global.customSessionStorage[req.ip] = req.sessionID;
     }
     
     next();
