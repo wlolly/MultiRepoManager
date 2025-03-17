@@ -86,7 +86,7 @@ export default function TwoStepLoginForm({ onLoginSuccess }: TwoStepLoginFormPro
       console.log('提交用户凭据进行第一阶段验证');
       
       // 使用新的API端点进行第一阶段验证
-      const response = await fetch('/api/auth/login/initiate', {
+      const response = await fetch('/api/auth/initiate-login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -147,7 +147,7 @@ export default function TwoStepLoginForm({ onLoginSuccess }: TwoStepLoginFormPro
       console.log('提交验证码进行第二阶段验证');
       
       // 使用新的API端点进行第二阶段验证
-      const response = await fetch('/api/auth/login/complete', {
+      const response = await fetch('/api/auth/complete-login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
