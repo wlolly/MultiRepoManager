@@ -802,6 +802,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(guestPermissions);
     }
   });
+  
+  // 权限管理接口 - 检查特定页面权限
+  apiRouter.get('/permissions/check-page/:pageName', verifySession, async (req, res) => {
+    try {
+      const userId = req.session.userId || -1;
+      const role = req.session.role;
+      const pageName = req.params.pageName;
+      
+      if (!pageName) {
+        return res.status(400).json({ 
+          error: '参数错误', 
+          message: '请提供页面名称',
+          success: false
+        });
+      }
+      
+      console.log(`检查用户ID=${userId}, 角色=${role}的页面[${pageName}]权限`);
+      
+      // 如果是管理员，直接返回有权限
+      if (role === 'admin' || role === 'super_admin') {
+        return res.json({ 
+          hasPermission: true,
+          isAdmin: true,
+          pageName,
+          success: true
+        });
+      }
+      
+      // 使用hasPagePermission函数检查权限
+      const hasPermission = await hasPagePermission(userId, role, pageName);
+      
+      res.json({ 
+        hasPermission,
+        isAdmin: false,
+        pageName,
+        success: true
+      });
+    } catch (error) {
+      console.error('检查页面权限失败:', error);
+      res.status(500).json({ 
+        error: '权限检查失败',
+        message: '系统无法验证您的页面访问权限',
+        success: false
+      });
+    }
+  });
 
   // 权限管理接口 - 获取仓库权限
   apiRouter.get('/permissions/warehouses', async (req, res) => {
