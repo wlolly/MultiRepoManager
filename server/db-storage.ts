@@ -236,12 +236,12 @@ export class DbStorage implements IStorage {
       
       const session = sessions[0];
       if (session) {
-        // 更新最后活动时间
-        await this.client`
-          UPDATE user_sessions 
-          SET last_activity = ${new Date()} 
-          WHERE session_id = ${sessionId}
-        `;
+        // 更新最后活动时间 - 使用ISO字符串而非Date对象
+        const now = new Date().toISOString();
+        await this.client.query(
+          'UPDATE user_sessions SET last_activity = $1 WHERE session_id = $2',
+          [now, sessionId]
+        );
         
         // 将数据库结果转换为符合UserSession类型的对象
         return {
@@ -353,15 +353,14 @@ export class DbStorage implements IStorage {
     try {
       console.log(`[DbStorage] 使用direct SQL失效会话, sessionId=${sessionId}`);
       
-      // 使用直接SQL查询确保字段名称正确
-      const result = await this.client`
-        UPDATE user_sessions 
-        SET is_valid = false, updated_at = ${new Date()} 
-        WHERE session_id = ${sessionId}
-        RETURNING *
-      `;
+      // 使用直接SQL查询确保字段名称正确，使用ISO字符串而非Date对象
+      const now = new Date().toISOString();
+      const result = await this.client.query(
+        'UPDATE user_sessions SET is_valid = false, updated_at = $1 WHERE session_id = $2 RETURNING *',
+        [now, sessionId]
+      );
       
-      return result.length > 0;
+      return result.count > 0;
     } catch (error) {
       console.error('[DbStorage] invalidateUserSession错误:', error);
       return false;
@@ -370,11 +369,16 @@ export class DbStorage implements IStorage {
 
   async invalidateAllUserSessions(userId: number): Promise<number> {
     try {
-      const result = await this.db.update(schema.userSessions)
-        .set({ isValid: false, updatedAt: new Date() })
-        .where(eq(schema.userSessions.userId, userId))
-        .returning();
-      return result.length;
+      console.log(`[DbStorage] 使用direct SQL失效用户所有会话, userId=${userId}`);
+      
+      // 使用直接SQL查询确保字段名称正确，使用ISO字符串而非Date对象
+      const now = new Date().toISOString();
+      const result = await this.client.query(
+        'UPDATE user_sessions SET is_valid = false, updated_at = $1 WHERE user_id = $2 RETURNING *',
+        [now, userId]
+      );
+      
+      return result.count;
     } catch (error) {
       console.error('[DbStorage] invalidateAllUserSessions错误:', error);
       return 0;
@@ -383,17 +387,20 @@ export class DbStorage implements IStorage {
 
   async cleanupExpiredSessions(): Promise<number> {
     try {
+      console.log('[DbStorage] 使用direct SQL清理过期会话');
+      
       // 清理过期的会话记录 (7天前)
-      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const now = new Date().toISOString();
 
-      const result = await this.db.delete(schema.userSessions)
-        .where(or(
-          sql`${schema.userSessions.expiresAt} <= ${new Date().toISOString()}`,
-          sql`${schema.userSessions.createdAt} <= ${sevenDaysAgo.toISOString()}`
-        ))
-        .returning();
-
-      return result.length;
+      // 使用直接SQL查询确保字段名称正确，使用ISO字符串而非Date对象
+      const result = await this.client.query(
+        'DELETE FROM user_sessions WHERE expires_at <= $1 OR created_at <= $2 RETURNING *',
+        [now, sevenDaysAgo]
+      );
+      
+      console.log(`[DbStorage] 成功清理 ${result.count} 个过期会话`);
+      return result.count;
     } catch (error) {
       console.error('[DbStorage] cleanupExpiredSessions错误:', error);
       return 0;
