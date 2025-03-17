@@ -224,29 +224,27 @@ export class DbStorage implements IStorage {
     try {
       console.log(`[DbStorage] 使用direct SQL查询user_sessions表, sessionId=${sessionId}`);
       
-      // 使用直接SQL查询确保字段名称正确
-      const queryText = `
+      // 使用sql标签模板进行查询而不是原始SQL
+      const result = await this.db.execute(sql`
         SELECT * FROM user_sessions 
-        WHERE session_id = $1 
+        WHERE session_id = ${sessionId}
         AND is_valid = true 
         AND expires_at > NOW()
-      `;
+      `);
       
-      const sessions = await this.db.execute(sql.raw(queryText), [sessionId]);
+      console.log(`[DbStorage] SQL查询结果:`, result);
       
-      console.log(`[DbStorage] SQL查询结果:`, sessions);
-      
-      const session = sessions[0];
+      const session = result[0];
       if (session) {
         // 更新最后活动时间 - 使用ISO字符串而非Date对象
-        const now = new Date().toISOString();
-        const updateQuery = `
-          UPDATE user_sessions 
-          SET last_activity = $1 
-          WHERE session_id = $2
-        `;
+        const now = new Date();
         
-        await this.db.execute(sql.raw(updateQuery), [now, sessionId]);
+        // 同样使用sql标签模板进行更新
+        await this.db.execute(sql`
+          UPDATE user_sessions 
+          SET last_activity = ${now.toISOString()}
+          WHERE session_id = ${sessionId}
+        `);
         
         // 将数据库结果转换为符合UserSession类型的对象
         return {
@@ -273,13 +271,11 @@ export class DbStorage implements IStorage {
     try {
       console.log(`[DbStorage] 使用direct SQL查询user_sessions表, userId=${userId}`);
       
-      // 使用直接SQL查询确保字段名称正确
-      const queryText = `
+      // 使用sql标签模板进行查询而不是原始SQL
+      const sessions = await this.db.execute(sql`
         SELECT * FROM user_sessions 
-        WHERE user_id = $1
-      `;
-      
-      const sessions = await this.db.execute(sql.raw(queryText), [userId]);
+        WHERE user_id = ${userId}
+      `);
       
       // 将数据库结果转换为符合UserSession类型的对象
       return sessions.map(session => ({
@@ -302,65 +298,82 @@ export class DbStorage implements IStorage {
 
   async updateUserSession(sessionId: string, updates: Partial<UserSession>): Promise<UserSession | undefined> {
     try {
-      console.log(`[DbStorage] 使用direct SQL更新user_sessions表, sessionId=${sessionId}`, updates);
+      console.log(`[DbStorage] 使用sql标签模板更新user_sessions表, sessionId=${sessionId}`, updates);
       
-      // 创建更新集合
-      const updateSet: Record<string, any> = {
-        updated_at: new Date().toISOString()
-      };
+      // 使用sql标签模板语法进行动态更新
+      // 避免拼接SQL字符串，防止SQL注入
+      let query = this.db.update(schema.userSessions)
+        .set({
+          updated_at: new Date()
+        })
+        .where(eq(schema.userSessions.sessionId, sessionId))
+        .returning();
       
       // 添加需要更新的字段
       if (updates.isValid !== undefined) {
-        updateSet.is_valid = updates.isValid;
+        query = this.db.update(schema.userSessions)
+          .set({
+            is_valid: updates.isValid,
+            updated_at: new Date()
+          })
+          .where(eq(schema.userSessions.sessionId, sessionId))
+          .returning();
       }
       
       if (updates.lastActivity !== undefined) {
-        updateSet.last_activity = updates.lastActivity instanceof Date 
-          ? updates.lastActivity.toISOString() 
-          : updates.lastActivity;
+        const lastActivity = updates.lastActivity instanceof Date 
+          ? updates.lastActivity 
+          : new Date(updates.lastActivity);
+        
+        query = this.db.update(schema.userSessions)
+          .set({
+            last_activity: lastActivity,
+            updated_at: new Date()
+          })
+          .where(eq(schema.userSessions.sessionId, sessionId))
+          .returning();
       }
       
       if (updates.expiresAt !== undefined) {
-        updateSet.expires_at = updates.expiresAt instanceof Date 
-          ? updates.expiresAt.toISOString() 
-          : updates.expiresAt;
+        const expiresAt = updates.expiresAt instanceof Date 
+          ? updates.expiresAt 
+          : new Date(updates.expiresAt);
+        
+        query = this.db.update(schema.userSessions)
+          .set({
+            expires_at: expiresAt,
+            updated_at: new Date()
+          })
+          .where(eq(schema.userSessions.sessionId, sessionId))
+          .returning();
       }
       
       if (updates.data !== undefined) {
-        updateSet.data = JSON.stringify(updates.data);
+        query = this.db.update(schema.userSessions)
+          .set({
+            data: JSON.stringify(updates.data),
+            updated_at: new Date()
+          })
+          .where(eq(schema.userSessions.sessionId, sessionId))
+          .returning();
       }
       
-      // 构建简化的更新查询
-      const setClause = Object.keys(updateSet)
-        .map((key, index) => `${key} = $${index + 1}`)
-        .join(', ');
-      
-      const queryText = `
-        UPDATE user_sessions 
-        SET ${setClause}
-        WHERE session_id = $${Object.keys(updateSet).length + 1}
-        RETURNING *
-      `;
-      
-      // 构建参数数组
-      const params = [...Object.values(updateSet), sessionId];
-      
       // 执行查询
-      const result = await this.db.execute(sql.raw(queryText), params);
+      const result = await query;
       
       if (result && result.length > 0) {
         const session = result[0];
         // 将数据库结果转换为符合UserSession类型的对象
         return {
           id: session.id,
-          sessionId: session.session_id,
-          userId: session.user_id,
-          ipAddress: session.ip_address,
-          userAgent: session.user_agent,
-          isValid: session.is_valid,
-          lastActivity: session.last_activity,
-          expiresAt: session.expires_at,
-          createdAt: session.created_at,
+          sessionId: session.sessionId,
+          userId: session.userId,
+          ipAddress: session.ipAddress,
+          userAgent: session.userAgent,
+          isValid: session.isValid,
+          lastActivity: session.lastActivity,
+          expiresAt: session.expiresAt,
+          createdAt: session.createdAt,
           data: session.data
         };
       }
@@ -373,18 +386,17 @@ export class DbStorage implements IStorage {
 
   async invalidateUserSession(sessionId: string): Promise<boolean> {
     try {
-      console.log(`[DbStorage] 使用direct SQL失效会话, sessionId=${sessionId}`);
+      console.log(`[DbStorage] 使用sql标签模板失效会话, sessionId=${sessionId}`);
       
-      // 使用直接SQL查询确保字段名称正确，使用ISO字符串而非Date对象
-      const now = new Date().toISOString();
-      const queryText = `
+      // 使用sql标签模板而非原始SQL
+      const now = new Date();
+      
+      const result = await this.db.execute(sql`
         UPDATE user_sessions 
-        SET is_valid = false, updated_at = $1 
-        WHERE session_id = $2 
+        SET is_valid = false, updated_at = ${now.toISOString()}
+        WHERE session_id = ${sessionId}
         RETURNING *
-      `;
-      
-      const result = await this.db.execute(sql.raw(queryText), [now, sessionId]);
+      `);
       
       return result.length > 0;
     } catch (error) {
@@ -395,18 +407,17 @@ export class DbStorage implements IStorage {
 
   async invalidateAllUserSessions(userId: number): Promise<number> {
     try {
-      console.log(`[DbStorage] 使用direct SQL失效用户所有会话, userId=${userId}`);
+      console.log(`[DbStorage] 使用sql标签模板失效用户所有会话, userId=${userId}`);
       
-      // 使用直接SQL查询确保字段名称正确，使用ISO字符串而非Date对象
-      const now = new Date().toISOString();
-      const queryText = `
+      // 使用sql标签模板查询而非原始SQL
+      const now = new Date();
+      
+      const result = await this.db.execute(sql`
         UPDATE user_sessions 
-        SET is_valid = false, updated_at = $1 
-        WHERE user_id = $2 
+        SET is_valid = false, updated_at = ${now.toISOString()}
+        WHERE user_id = ${userId}
         RETURNING *
-      `;
-      
-      const result = await this.db.execute(sql.raw(queryText), [now, userId]);
+      `);
       
       return result.length;
     } catch (error) {
@@ -417,7 +428,7 @@ export class DbStorage implements IStorage {
 
   async cleanupExpiredSessions(): Promise<number> {
     try {
-      console.log('[DbStorage] 使用direct SQL清理过期会话');
+      console.log('[DbStorage] 使用sql标签模板清理过期会话');
       
       // 清理过期的会话记录 (7天前)
       const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
