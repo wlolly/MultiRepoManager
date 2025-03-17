@@ -46,7 +46,7 @@ export function Sidebar() {
         if (response.ok) {
           const userData = await response.json();
           // 仅当服务器确认这是一个真实用户时才设置为真实用户
-          if (userData.realAuthenticated === true || userData.username === '222' || userData.testUser === true) {
+          if (userData.realAuthenticated === true || userData.testUser === true) {
             console.log("Sidebar - 确认为真实登录用户:", userData.username);
             setIsRealUser(true);
             return;
@@ -60,7 +60,6 @@ export function Sidebar() {
             const currentUser = JSON.parse(currentUserStr);
             // 仅当本地存储确认这是一个真实用户时才设置为真实用户
             if ((currentUser.realAuthenticated === true) || 
-                (currentUser.username === '222') || 
                 (currentUser.testUser === true) || 
                 (!currentUser.fakePositive && currentUser.id !== -1)) {
               console.log("Sidebar - 本地存储确认为真实用户:", currentUser.username);
