@@ -2,7 +2,7 @@ import express, { type Express, Request, Response, NextFunction } from "express"
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { memStorage, useFallbackStorage, db } from "./db";
-import { getUserPagePermissions, getUserWarehousePermissions, checkSpecificPagePermissionResult } from "./middleware/permission-middleware";
+import { hasPageAccess, hasWarehouseAccess, loadUserPermissions, requireAdmin, requirePageAccess, requireActionPermission, requireWarehouseAccess } from "./middleware/permission-middleware";
 import { translations } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
 import socialAuthConfig from './social-auth-config';

@@ -374,17 +374,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       state.user?.role !== 'anonymous' &&
       state.user?.isactive !== false // 确保用户账户是活跃的
     ),
-    // 管理员判断简化，只检查角色是否为admin或super_admin，并确保已认证
+    // 管理员判断，检查角色是否为admin或super_admin，同时确保已认证且账户处于活跃状态
     isAdmin: Boolean(
       state.user?.authenticated &&
-      (state.user?.role === 'admin' || state.user?.role === 'super_admin')
+      (state.user?.role === 'admin' || state.user?.role === 'super_admin') &&
+      state.user?.isactive !== false // 确保管理员账户是活跃的
     ),
-    // 访客判断简化，检查是否有有效用户和认证状态
+    // 访客判断，检查是否有有效用户、认证状态，以及账户活跃状态
     isVisitor: !state.user || 
               !state.user.authenticated ||
               !state.user.id || 
               state.user.id <= 0 || 
-              state.user.role === 'anonymous',
+              state.user.role === 'anonymous' ||
+              state.user.isactive === false, // 非活跃账户也视为访客
     // 添加角色属性 - 用于侧边栏检查
     role: state.user?.role,
     pagePermissions: state.pagePermissions,

@@ -41,6 +41,9 @@ interface PermissionsHook {
   refreshPermissions: () => void;
   // 认证状态
   isAuthenticated: boolean;
+  isRealAuthenticated: boolean; // 真实认证状态
+  isActive: boolean; // 账户活跃状态
+  isAdmin: boolean; // 管理员状态
   setIsAuthenticated: (value: boolean) => void;
 }
 
