@@ -214,14 +214,21 @@ export class TranslationService {
    * @param key 翻译键
    * @param language 语言
    * @param value 翻译值
-   * @returns 成功与否
+   * @returns 成功与否，失败时包含错误信息
    */
-  async upsertTranslation(key: string, language: SupportedLanguage, value: string): Promise<boolean> {
+  async upsertTranslation(key: string, language: SupportedLanguage, value: string): Promise<{success: boolean, errors?: string[]}> {
     try {
-      // 检查参数有效性
-      if (!key || !language || !value) {
-        console.error('[翻译服务] 添加/更新翻译参数无效');
-        return false;
+      // 引入严格的输入验证
+      const { validateTranslation, formatValidationErrors } = await import('./translation-validator');
+      const validationResult = validateTranslation(key, language, value);
+      
+      if (!validationResult.success) {
+        const errorMessages = formatValidationErrors(validationResult.errors);
+        console.error('[翻译服务] 验证失败:', errorMessages);
+        return { 
+          success: false, 
+          errors: errorMessages 
+        };
       }
       
       // 先查找是否已有此翻译
@@ -232,6 +239,7 @@ export class TranslationService {
         await this.storage.updateTranslation(existingTranslation.id, {
           value
         });
+        console.log(`[翻译服务] 更新翻译: ${key} (${language})`);
       } else {
         // 添加新翻译
         await this.storage.createTranslation({
@@ -239,15 +247,19 @@ export class TranslationService {
           language,
           value
         });
+        console.log(`[翻译服务] 添加新翻译: ${key} (${language})`);
       }
       
       // 同步到文件
       await this.syncTranslationsToFile();
       
-      return true;
+      return { success: true };
     } catch (error) {
       console.error('[翻译服务] 添加/更新翻译出错:', error);
-      return false;
+      return { 
+        success: false,
+        errors: [(error as Error).message || '未知错误'] 
+      };
     }
   }
   
