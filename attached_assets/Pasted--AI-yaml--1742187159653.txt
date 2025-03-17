@@ -1,0 +1,252 @@
+以下是可提交给AI的系统性数据一致性验证规范，包含多层级检查点和示例代码：
+
+---
+
+### **数据一致性验证规范**
+
+#### **一、数据库关系验证**
+```yaml
+# 必须检查的数据库约束
+database_checks:
+  - 类型: 外键验证
+    规则: |
+      SELECT 
+        tc.table_name, 
+        kcu.column_name, 
+        ccu.table_name AS foreign_table,
+        ccu.column_name AS foreign_column 
+      FROM 
+        information_schema.table_constraints AS tc 
+        JOIN information_schema.key_column_usage AS kcu
+          ON tc.constraint_name = kcu.constraint_name
+        JOIN information_schema.constraint_column_usage AS ccu
+          ON ccu.constraint_name = tc.constraint_name
+      WHERE 
+        tc.constraint_type = 'FOREIGN KEY'
+        
+  - 类型: ORM映射验证
+    示例代码: 
+      ```python
+      # Django示例：检查模型与数据库一致性
+      python manage.py check --deploy --fail-level WARNING
+      # SQLAlchemy示例
+      from alembic import command
+      from alembic.config import Config
+      alembic_cfg = Config("alembic.ini")
+      command.check(alembic_cfg)
+      ```
+
+#### **二、跨层命名一致性检查**
+```typescript
+// 自动验证三端命名规则的脚本示例
+interface NamingRules {
+  dbPattern: 'snake_case';
+  apiPattern: 'camelCase';
+  uiPattern: 'PascalCase';
+}
+
+const verifyNaming = (layer: 'db'|'api'|'ui', key: string) => {
+  const patterns = {
+    db: /^[a-z]+(_[a-z]+)*$/,
+    api: /^[a-z]+([A-Z][a-z]*)*$/,
+    ui: /^[A-Z][a-zA-Z]*$/
+  };
+  
+  if (!patterns[layer].test(key)) {
+    throw new Error(`命名规范违反：${layer}层键名 ${key}`);
+  }
+}
+
+// 自动生成对应关系表
+const generateMapping = (dbName: string) => {
+  return {
+    db: dbName,
+    api: _.camelCase(dbName),
+    ui: _.upperFirst(_.camelCase(dbName))
+  };
+}
+```
+
+#### **三、翻译键全链路验证**
+```mermaid
+graph LR
+    DB[数据库配置表] --同步--> BE[后端缓存]
+    BE --API返回--> FE[前端i18n]
+    FE --埋点上报--> Monitor[监控系统]
+    
+    style DB fill:#f9f,stroke:#333
+    style BE fill:#ccf,stroke:#333
+    style FE fill:#fcf,stroke:#333
+```
+
+**验证步骤**：
+1. **数据库扫描**
+```sql
+-- 检查翻译键唯一性
+SELECT key_name, COUNT(*) 
+FROM translation_keys 
+GROUP BY key_name 
+HAVING COUNT(*) > 1;
+```
+
+2. **后端API校验中间件**
+```java
+// Spring Boot示例：响应体字段翻译键检查
+@Aspect
+@Component
+public class TranslationCheckAspect {
+  
+  @Around("@annotation(org.springframework.web.bind.annotation.GetMapping)")
+  public Object checkKeys(ProceedingJoinPoint joinPoint) throws Throwable {
+    Object result = joinPoint.proceed();
+    
+    new ObjectMapper().acceptJsonFormatVisitor(result.getClass(), new JsonFormatVisitorWrapper() {
+      @Override
+      public void expectStringFormat(JavaType type) {
+        String value = (String) result;
+        if (!translationService.existsKey(value)) {
+          throw new MissingTranslationException(value);
+        }
+      }
+    });
+    
+    return result;
+  }
+}
+```
+
+3. **前端静态检测**
+```javascript
+// ESLint插件规则示例
+module.exports = {
+  create(context) {
+    return {
+      CallExpression(node) {
+        if (node.callee.name === 't') {
+          const key = node.arguments[0].value;
+          if (!/^[a-z]+(\.[a-z]+)*$/.test(key)) {
+            context.report({
+              node,
+              message: '翻译键格式错误'
+            });
+          }
+        }
+      }
+    };
+  }
+};
+```
+
+#### **四、破坏性变更防御**
+```yaml
+# 数据库迁移检查清单
+migration_checks:
+  - 禁止删除已存在的外键约束
+  - 字段类型变更必须包含转换逻辑
+  - 新索引必须包含并发构建模式
+  - 废弃字段需保留至少两个版本周期
+
+# API版本控制策略
+api_versioning:
+  path_version: "/v1/orders"
+  header_version: "X-API-Version: 2024-03"
+  sunset_policy: 
+    - 旧版本保留30天
+    - 提前15天通知
+```
+
+#### **五、自动化验证流水线**
+```bash
+# 每日自动运行的验证脚本
+#!/bin/bash
+
+# 阶段1：数据库完整性检查
+psql -c "CHECKPOINT; pg_diagnose"
+
+# 阶段2：API契约测试
+npx openapi-validator --spec api.yaml --server http://api:3000
+
+# 阶段3：前端i18n覆盖率
+npx i18next-scanner --config ./i18n.config.js
+
+# 阶段4：三方命名映射报告
+python generate_mapping_report.py --output naming-audit.html
+```
+
+#### **六、异常处理规范**
+```typescript
+// 统一不一致处理策略
+class ConsistencyErrorHandler {
+  static handle(errorType: 'NAMING'|'RELATION'|'TRANSLATION') {
+    switch(errorType) {
+      case 'NAMING':
+        Sentry.captureException(new NamingError());
+        return Response.error(409, '命名冲突');
+        
+      case 'RELATION':
+        Database.rollback();
+        Alert.sms('DBA紧急通知');
+        return Response.error(500);
+        
+      case 'TRANSLATION':
+        Cache.fallbackToDefaultLang();
+        return Response.retryAfter(300);
+    }
+  }
+}
+```
+
+---
+
+### **给AI的关键指令**
+
+1. **必须生成的检查报告**
+```markdown
+## 数据一致性审计报告
+- 数据库关系完整性 ✅/❌ 
+  - 缺失外键：table1.field1 → table2.id
+- 命名规范符合度：92%
+  - 前端违规：UserInfo → 应使用userInfo
+- 翻译键覆盖率：87% 
+  - 缺失键：order.status.pending
+```
+
+2. **优先修复顺序**
+```yaml
+critical:
+  - 外键约束缺失
+  - 主键冲突
+  - 事务隔离级别错误
+  
+high:
+  - 翻译键不匹配
+  - 字段大小写不一致
+  - 索引缺失
+  
+normal: 
+  - 命名风格差异
+  - 注释缺失
+```
+
+3. **验证规则例外清单**
+```sql
+-- 允许的特殊例外
+CREATE TABLE exception_rules (
+  id SERIAL PRIMARY KEY,
+  rule_type VARCHAR(50) CHECK(rule_type IN ('CASE_EXCEPTION','LEGACY_CODE')),
+  pattern VARCHAR(255) NOT NULL,
+  expire_date DATE NOT NULL,
+  reason TEXT
+);
+
+INSERT INTO exception_rules VALUES
+('CaseException', 'order[Oo]rder', '2025-01-01', '历史数据兼容');
+```
+
+通过以上规范，AI可系统性地检查并确保：
+1. 数据库关系拓扑完整
+2. 三端数据标识一致
+3. 翻译键全链路同步
+4. 变更过程可追溯
+
+建议要求AI生成可视化关系图谱，并自动创建JIRA修复任务，同时输出SQL修补脚本和单元测试用例。
