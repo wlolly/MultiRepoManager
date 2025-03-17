@@ -66,6 +66,10 @@ import {
 export async function registerRoutes(app: Express): Promise<Server> {
   const apiRouter = express.Router();
   
+  // 初始化存储接口 - 根据系统配置选择合适的存储实现
+  app.locals.storage = useFallbackStorage ? memStorage : storage;
+  console.log(`[系统] 初始化存储接口：使用${useFallbackStorage ? '内存存储' : '数据库存储'}模式`);
+  
   // 配置multer用于文件上传
   // 确保上传目录存在
   if (!fs.existsSync('./public/uploads')) {
