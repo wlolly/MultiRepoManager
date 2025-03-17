@@ -220,15 +220,16 @@ export async function initiateLogin(req: Request, res: Response) {
     console.log('[认证系统] 登录成功，返回会话ID:', sessionId);
     console.log('[认证系统] 登录用户ID:', user.id, '用户名:', user.username);
     
-    // 增加客户端权限信息
+    // 构建权限信息
     const permissions = {
       pages: user.role === 'admin' ? ['all'] : ['dashboard', 'profile'],
       actions: user.role === 'admin' ? ['all'] : ['read'],
       warehouses: user.role === 'admin' ? { all: { canView: true, canManage: true } } : {}
     };
     
-    // 确保前端收到正确的用户ID
-    // 修复ID不匹配问题：确保前端收到的ID与数据库匹配
+    // 返回成功响应
+    console.log('[认证系统] 登录成功，返回用户ID:', user.id);
+    
     return res.status(200).json({
       success: true,
       authenticated: true,
@@ -236,14 +237,14 @@ export async function initiateLogin(req: Request, res: Response) {
       sessionId,
       requireVerification: false,
       user: {
-        id: user.id, // 使用真实的用户ID
+        id: user.id, // 确保使用真实的用户ID
         username: user.username,
         role: user.role,
         fullName: user.full_name,
         language: user.language || 'zh',
         isactive: user.is_active, // 使用前端要求的字段名
         isSocialUser: !!user.social_id, // 社交账号标识
-        permissions
+        permissions // 添加权限信息
       }
     });
   } catch (error) {
@@ -373,7 +374,32 @@ export async function completeLogin(req: Request, res: Response) {
       path: '/'
     });
     
-    undefined
+    // 构建权限信息
+    const permissions = {
+      pages: user.role === 'admin' ? ['all'] : ['dashboard', 'profile'],
+      actions: user.role === 'admin' ? ['all'] : ['read'],
+      warehouses: user.role === 'admin' ? { all: { canView: true, canManage: true } } : {}
+    };
+    
+    // 返回成功响应
+    console.log('[认证系统] 验证登录成功，返回用户ID:', user.id);
+    
+    return res.status(200).json({
+      success: true,
+      authenticated: true,
+      message: '登录成功',
+      sessionId,
+      user: {
+        id: user.id, // 确保使用真实的用户ID
+        username: user.username,
+        role: user.role,
+        fullName: user.full_name,
+        language: user.language || 'zh',
+        isactive: user.is_active, // 使用前端要求的字段名
+        isSocialUser: !!user.social_id, // 社交账号标识
+        permissions // 添加权限信息
+      }
+    });
   } catch (error) {
     console.error('[认证系统] 验证完成处理错误:', error);
     return res.status(500).json({
@@ -592,33 +618,28 @@ export async function getCurrentUser(req: Request, res: Response) {
         if (user) {
           console.log('[认证系统] 从Express会话中找到有效用户');
           
-          // 构建权限对象
-          const pagePermissions = ['dashboard', 'products', 'warehouse-products'];
-          if (user.role === 'admin' || user.role === 'super_admin') {
-            pagePermissions.push(
-              'users', 'teams', 'warehouses', 'inbound-orders',
-              'outbound-orders', 'order-audit', 'warehouse-transfers',
-              'create-warehouse-transfer', 'warehouse-reports', 'settings'
-            );
-          }
+          // 构建权限信息 - 新版权限系统
+          const permissions = {
+            pages: user.role === 'admin' ? ['all'] : ['dashboard', 'profile'],
+            actions: user.role === 'admin' ? ['all'] : ['read'],
+            warehouses: user.role === 'admin' ? { all: { canView: true, canManage: true } } : {}
+          };
           
-          // 返回用户信息
+          // 返回成功响应
+          console.log('[认证系统] 获取当前用户信息，用户ID:', user.id);
+          
           return res.status(200).json({
             authenticated: true,
             user: {
-              id: user.id,
+              id: user.id, // 确保使用真实的用户ID
               username: user.username,
               role: user.role,
               fullName: user.full_name,
               avatarUrl: user.avatar_url,
               language: user.language || 'zh',
-              isactive: user.is_active,
-              usersource: user.user_source
-            },
-            permissions: {
-              pages: pagePermissions,
-              actions: user.role === 'admin' ? ['all'] : ['read'],
-              warehouses: {}
+              isactive: user.is_active, // 使用前端要求的字段名
+              isSocialUser: !!user.social_id, // 社交账号标识
+              permissions // 添加权限信息
             }
           });
         }

@@ -11,25 +11,20 @@ const path = require('path');
 const authFilePath = path.join(__dirname, 'server', 'auth.ts');
 let authContent = fs.readFileSync(authFilePath, 'utf8');
 
-// 修复 completeLogin 函数，添加权限信息和返回用户数据
-let lines = authContent.split('\n');
+// 修复 initiateLogin 函数，添加权限信息和返回用户数据
+// 搜索模式：判断用户可以直接登录的情况下，在返回用户数据时添加权限信息
+const initiateFuncRegex = /export async function initiateLogin\(req: Request, res: Response\) \{[\s\S]*?return res\.status\(200\)\.json\(\{[\s\S]*?id: user\.id,[\s\S]*?language: user\.language \|\| 'zh'[\s\S]*?\}\)\;/;
 
-// 定位到 completeLogin 函数中的 undefined 行
-let targetLine = -1;
-for (let i = 0; i < lines.length; i++) {
-  if (lines[i].trim() === 'undefined' && 
-      lines[i-1].trim() === '});' && 
-      lines[i-2].trim().includes('path:')) {
-    targetLine = i;
-    break;
-  }
-}
+// 查找匹配
+const match = authContent.match(initiateFuncRegex);
 
-if (targetLine > 0) {
-  console.log(`找到目标行: ${targetLine}`);
+if (match) {
+  console.log('找到 initiateLogin 函数，准备修复...');
   
-  // 替换为完整的用户返回信息
-  lines[targetLine] = `    // 构建权限信息
+  // 构造替换后的函数内容 - 在用户数据中添加权限信息
+  const replacementCode = match[0].replace(
+    /return res\.status\(200\)\.json\(\{[\s\S]*?user: \{[\s\S]*?id: user\.id,[\s\S]*?language: user\.language \|\| 'zh'[\s\S]*?\}\)/,
+    `// 构建权限信息
     const permissions = {
       pages: user.role === 'admin' ? ['all'] : ['dashboard', 'profile'],
       actions: user.role === 'admin' ? ['all'] : ['read'],
@@ -37,13 +32,14 @@ if (targetLine > 0) {
     };
     
     // 返回成功响应
-    console.log('[认证系统] 验证登录成功，返回用户ID:', user.id);
+    console.log('[认证系统] 登录成功，返回用户ID:', user.id);
     
     return res.status(200).json({
       success: true,
       authenticated: true,
       message: '登录成功',
       sessionId,
+      requireVerification: false,
       user: {
         id: user.id, // 确保使用真实的用户ID
         username: user.username,
@@ -54,13 +50,64 @@ if (targetLine > 0) {
         isSocialUser: !!user.social_id, // 社交账号标识
         permissions // 添加权限信息
       }
-    });`;
+    })`
+  );
+  
+  // 更新文件内容
+  authContent = authContent.replace(initiateFuncRegex, replacementCode);
   
   // 写回文件
-  fs.writeFileSync(authFilePath, lines.join('\n'), 'utf8');
-  console.log('已修复 completeLogin 函数，添加用户ID和权限信息');
+  fs.writeFileSync(authFilePath, authContent, 'utf8');
+  console.log('已修复 initiateLogin 函数，添加了用户ID和权限信息');
 } else {
-  console.error('未找到目标行，请手动修复');
+  console.error('无法找到 initiateLogin 函数，请手动修复');
 }
 
-// 其他修复逻辑可以在这里添加
+// 修复 getCurrentUser 函数，确保返回权限信息
+const getCurrentUserRegex = /export async function getCurrentUser\(req: Request, res: Response\) \{[\s\S]*?return res\.status\(200\)\.json\(\{[\s\S]*?id: user\.id,[\s\S]*?\}\);[\s\S]*?\}/;
+
+const currentUserMatch = authContent.match(getCurrentUserRegex);
+
+if (currentUserMatch) {
+  console.log('找到 getCurrentUser 函数，准备修复...');
+  
+  // 构造替换后的函数内容 - 在用户数据中添加权限信息
+  const replacementCode = currentUserMatch[0].replace(
+    /return res\.status\(200\)\.json\(\{[\s\S]*?user: \{[\s\S]*?id: user\.id,[\s\S]*?\}\);/,
+    `// 构建权限信息
+    const permissions = {
+      pages: user.role === 'admin' ? ['all'] : ['dashboard', 'profile'],
+      actions: user.role === 'admin' ? ['all'] : ['read'],
+      warehouses: user.role === 'admin' ? { all: { canView: true, canManage: true } } : {}
+    };
+    
+    // 返回成功响应
+    console.log('[认证系统] 获取当前用户信息，用户ID:', user.id);
+    
+    return res.status(200).json({
+      authenticated: true,
+      user: {
+        id: user.id, // 确保使用真实的用户ID
+        username: user.username,
+        role: user.role,
+        fullName: user.full_name,
+        avatarUrl: user.avatar_url,
+        language: user.language || 'zh',
+        isactive: user.is_active, // 使用前端要求的字段名
+        isSocialUser: !!user.social_id, // 社交账号标识
+        permissions // 添加权限信息
+      }
+    });`
+  );
+  
+  // 更新文件内容
+  authContent = authContent.replace(getCurrentUserRegex, replacementCode);
+  
+  // 写回文件
+  fs.writeFileSync(authFilePath, authContent, 'utf8');
+  console.log('已修复 getCurrentUser 函数，添加了用户ID和权限信息');
+} else {
+  console.error('无法找到 getCurrentUser 函数，请手动修复');
+}
+
+console.log('修复脚本执行完成');
