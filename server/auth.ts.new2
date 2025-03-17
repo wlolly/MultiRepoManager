@@ -553,15 +553,6 @@ export async function completeLogin(req: Request, res: Response) {
       });
     }
 
-    // 清除用户权限缓存，确保用户重新登录时获取最新权限
-    try {
-      console.log(`[认证系统] 清除用户${user.id}的权限缓存`);
-      clearPermissionCache(user.id);
-    } catch (cacheError) {
-      console.error(`[认证系统] 清除权限缓存失败:`, cacheError);
-      // 继续处理登录，不因缓存清理失败而中断登录流程
-    }
-
     // 更新会话对象
     req.session.authenticated = true;
     req.session.isAuthenticated = true; // 同时设置两个属性以确保兼容性
@@ -718,7 +709,9 @@ export async function loginUser(req: Request, res: Response) {
     try {
       console.log('[认证系统] 准备创建会话数据(传统登录):', JSON.stringify(userSessionData));
       await db.createUserSession(userSessionData);
-
+      console.log('[认证系统] 数据库会话记录已创建(传统登录)');
+    } catch (createSessionError) {
+      console.error('[认证系统] 创建会话记录失败(传统登录):', createSessionError);
       return res.status(500).json({
         success: false,
         message: '服务器错误，请稍后再试',

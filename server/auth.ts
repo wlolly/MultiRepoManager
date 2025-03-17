@@ -6,6 +6,7 @@ import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
 import { z } from 'zod';
 import { clearPermissionCache, loadUserPermissions } from './utils/permission-utils';
+import { handleLoginPermissions, clearUserPermissionCache } from './utils/auth-cache-utils';
 
 // 注册表单验证模式
 export const registerSchema = z.object({
@@ -247,6 +248,9 @@ export async function initiateLogin(req: Request, res: Response) {
     // 优先使用客户端提供的会话ID
     const clientSessionId = req.headers['x-session-id'] as string;
     let sessionId = clientSessionId || req.sessionID;
+    
+    // 处理用户权限缓存 - initiateLogin成功验证后
+    await handleLoginPermissions(user.id, user.role, sessionId);
 
     // 详细的会话信息记录
     console.log('[认证系统] 会话ID处理:', {
@@ -514,6 +518,9 @@ export async function completeLogin(req: Request, res: Response) {
     }
 
     console.log('[认证系统] 登录验证第二阶段成功: 用户ID:', user.id);
+    
+    // 处理用户权限缓存 - completeLogin成功验证后
+    await handleLoginPermissions(user.id, user.role, sessionId);
 
     // 标记验证记录为已使用
     await db.updateLoginVerification(verificationId, {
