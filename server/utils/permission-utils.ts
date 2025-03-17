@@ -166,6 +166,33 @@ export function clearAllPermissionCaches(): void {
 }
 
 /**
+ * 在用户或团队权限变更时触发权限缓存更新
+ * @param affectedUsers 受影响的用户ID列表
+ * @param teamId 可选的团队ID，如果是团队权限变更
+ * @returns 成功清除的缓存数量
+ */
+export function triggerPermissionUpdates(affectedUsers: number[], teamId?: number): number {
+  let clearCount = 0;
+  
+  // 记录操作
+  const operation = teamId ? `团队(ID=${teamId})权限变更` : '用户权限变更';
+  console.log(`[权限系统] ${operation} 触发权限更新，影响用户: ${affectedUsers.join(', ')}`);
+  
+  // 清除指定用户的权限缓存
+  for (const userId of affectedUsers) {
+    if (permissionCacheMap.has(userId)) {
+      clearPermissionCache(userId);
+      clearCount++;
+    }
+  }
+  
+  // 记录结果
+  console.log(`[权限系统] 已清除 ${clearCount}/${affectedUsers.length} 个用户的权限缓存`);
+  
+  return clearCount;
+}
+
+/**
  * 将仓库权限格式统一化
  * 确保所有仓库权限都是标准的view/manage格式
  * @param warehouses 仓库权限映射
