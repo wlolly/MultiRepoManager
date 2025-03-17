@@ -28,11 +28,11 @@ async function createAdminUser() {
       password: hashedPassword,
       role: 'super_admin',
       isactive: true, // 全小写的isactive字段
-      fullname: '系统管理员',
+      full_name: '系统管理员', // 使用下划线命名规则，与数据库一致
       usersource: 'local', // 全小写的usersource字段
       // 使用与schema.ts中定义相匹配的字段名
-      createdAt: new Date(), // 使用驼峰命名，drizzle会自动转换为数据库中的created_at
-      updatedAt: new Date()  // 使用驼峰命名，drizzle会自动转换为数据库中的updated_at
+      created_at: new Date(), // 使用下划线命名，与数据库保持一致
+      updated_at: new Date()  // 使用下划线命名，与数据库保持一致
     }).returning();
     
     console.log('管理员用户创建成功:', insertResult[0]);
