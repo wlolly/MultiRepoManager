@@ -57,16 +57,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     warehousePermissions: {}
   });
 
-  // 获取用户数据和权限
+  // 获取用户数据和权限 - 支持简化登录流程
   const fetchUserAndPermissions = async () => {
     try {
+      // 首先检查本地存储中是否有用户数据（简化登录使用）
+      const storedUser = localStorage.getItem('currentUser') || sessionStorage.getItem('currentUser');
+      
+      // 尝试从服务器获取用户信息
       const response = await fetch('/api/auth/current-user', {
         credentials: 'include'
       });
       
+      console.log('认证检查响应状态:', response.status, response.statusText);
+      
       if (response.ok) {
         const userData = await response.json();
         console.log('权限钩子获取用户数据:', userData);
+        
+        // 服务器返回有效数据
         setState(prev => ({
           ...prev,
           user: userData,
@@ -78,10 +86,74 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           warehousePermissions: userData.permissions?.warehouses || {}
         }));
       } else {
-        setState(prev => ({ ...prev, user: null, isLoading: false }));
+        // 服务器返回错误，检查错误类型
+        const errorData = await response.json();
+        console.log('认证检查响应数据:', errorData);
+        
+        // 如果服务器支持访客模式
+        if (errorData.guestAccess) {
+          console.log('认证已过期，请重新登录');
+          
+          // 检查本地存储的用户数据
+          if (storedUser) {
+            try {
+              const parsedUser = JSON.parse(storedUser);
+              if (parsedUser && (parsedUser.fakePositive || !parsedUser.realAuthenticated)) {
+                // 本地存储有访客用户数据，使用它
+                console.log('使用本地存储的访客用户数据:', parsedUser);
+                setState(prev => ({
+                  ...prev,
+                  user: {
+                    ...parsedUser,
+                    authenticated: false
+                  },
+                  isLoading: false,
+                  // 访客只有仪表盘权限
+                  pagePermissions: { dashboard: true },
+                  warehousePermissions: {}
+                }));
+                return;
+              }
+            } catch (e) {
+              console.error('解析存储的用户数据出错:', e);
+            }
+          }
+          
+          // 没有有效的本地用户数据，设置为未登录状态
+          setState(prev => ({ ...prev, user: null, isLoading: false }));
+        } else {
+          // 服务器不支持访客模式，设置为未登录状态
+          setState(prev => ({ ...prev, user: null, isLoading: false }));
+        }
       }
     } catch (error) {
       console.error('获取用户数据失败:', error);
+      
+      // 发生错误时，尝试从本地存储中获取用户数据
+      if (storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          if (parsedUser && (parsedUser.fakePositive || !parsedUser.realAuthenticated)) {
+            // 使用本地存储的访客用户数据
+            console.log('使用本地存储的访客用户数据:', parsedUser);
+            setState(prev => ({
+              ...prev,
+              user: {
+                ...parsedUser,
+                authenticated: false
+              },
+              isLoading: false,
+              pagePermissions: { dashboard: true }, // 访客只有仪表盘权限
+              warehousePermissions: {}
+            }));
+            return;
+          }
+        } catch (e) {
+          console.error('解析存储的用户数据出错:', e);
+        }
+      }
+      
+      // 没有本地数据或解析失败，设置为未登录状态
       setState(prev => ({ ...prev, user: null, isLoading: false }));
     }
   };
