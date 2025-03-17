@@ -299,33 +299,57 @@ export class DbStorage implements IStorage {
       console.log(`[DbStorage] 使用direct SQL更新user_sessions表, sessionId=${sessionId}`, updates);
       
       // 转换驼峰命名为下划线命名
-      const dbUpdates: Record<string, any> = {
-        updated_at: new Date().toISOString() // 所有更新都添加更新时间
-      };
+      const updateFields = [];
+      const updateValues = [];
       
-      if (updates.isValid !== undefined) dbUpdates.is_valid = updates.isValid;
-      if (updates.lastActivity !== undefined) dbUpdates.last_activity = updates.lastActivity instanceof Date 
-        ? updates.lastActivity.toISOString() 
-        : updates.lastActivity;
-      if (updates.expiresAt !== undefined) dbUpdates.expires_at = updates.expiresAt instanceof Date 
-        ? updates.expiresAt.toISOString() 
-        : updates.expiresAt;
-      if (updates.data !== undefined) dbUpdates.data = updates.data;
-     
-      // 使用标签模板语法构建动态 SQL
-      // 创建SET子句
-      const setClauses = Object.entries(dbUpdates)
-        .map(([key, value]) => `${key} = ${sql.raw("'" + value + "'")}`);
-        
-      const setClause = setClauses.join(", ");
+      // 总是更新更新时间
+      const now = new Date().toISOString();
+      updateFields.push("updated_at");
+      updateValues.push(now);
       
-      // 使用postgres标签模板执行更新
-      const result = await this.client`
-        UPDATE user_sessions 
-        SET ${sql.raw(setClause)}
-        WHERE session_id = ${sessionId}
-        RETURNING *
-      `;
+      if (updates.isValid !== undefined) {
+        updateFields.push("is_valid");
+        updateValues.push(updates.isValid);
+      }
+      
+      if (updates.lastActivity !== undefined) {
+        updateFields.push("last_activity");
+        updateValues.push(updates.lastActivity instanceof Date 
+          ? updates.lastActivity.toISOString() 
+          : updates.lastActivity);
+      }
+      
+      if (updates.expiresAt !== undefined) {
+        updateFields.push("expires_at");
+        updateValues.push(updates.expiresAt instanceof Date 
+          ? updates.expiresAt.toISOString() 
+          : updates.expiresAt);
+      }
+      
+      if (updates.data !== undefined) {
+        updateFields.push("data");
+        updateValues.push(JSON.stringify(updates.data));
+      }
+      
+      // 构建更新查询
+      let queryText = "UPDATE user_sessions SET ";
+      
+      // 添加要更新的字段和占位符
+      for (let i = 0; i < updateFields.length; i++) {
+        queryText += `${updateFields[i]} = $${i + 1}`;
+        if (i < updateFields.length - 1) {
+          queryText += ", ";
+        }
+      }
+      
+      // 添加WHERE子句和RETURNING
+      queryText += ` WHERE session_id = $${updateFields.length + 1} RETURNING *`;
+      
+      // 添加会话ID到值数组
+      updateValues.push(sessionId);
+      
+      // 执行查询
+      const result = await this.db.execute(sql.raw(queryText), updateValues);
       
       if (result && result.length > 0) {
         const session = result[0];
