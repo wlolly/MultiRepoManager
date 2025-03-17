@@ -241,7 +241,7 @@ export async function validateInternalUserID(internalId: string | null, retryCou
     // 结果处理 - 兼容不同格式的查询结果
     let userId = null;
     
-    // MySQL2处理
+    // 旧版数据库驱动处理
     if (result && result[0] && Array.isArray(result[0]) && result[0].length > 0) {
       userId = result[0][0].user_id;
       console.log(`[UserID] 简化验证成功: 发现有效用户ID ${userId}`);
