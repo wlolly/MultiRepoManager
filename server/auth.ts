@@ -243,21 +243,16 @@ export async function initiateLogin(req: Request, res: Response) {
     // 用户验证成功，直接创建会话
     console.log('[认证系统] 登录验证成功: 用户ID:', user.id, '角色:', user.role);
 
-    // 首先检查客户端请求中是否已有会话ID
-    let sessionId = req.sessionID;
-
-    // 如果前端发送了客户端会话ID，优先使用它
+    // 优先使用客户端提供的会话ID
     const clientSessionId = req.headers['x-session-id'] as string;
-    console.log(`[认证系统] 请求中的自定义会话ID: ${clientSessionId || 'none'}`);
+    let sessionId = clientSessionId || req.sessionID;
 
-    if (clientSessionId && clientSessionId.length > 10) {
-      console.log('[认证系统] 使用客户端提供的会话ID:', clientSessionId);
-      sessionId = clientSessionId;
-    } else {
-      // 没有客户端会话ID，生成新的
-      sessionId = generateSessionId();
-      console.log('[认证系统] 生成新会话ID:', sessionId);
-    }
+    // 详细的会话信息记录
+    console.log('[认证系统] 会话ID处理:', {
+      client: clientSessionId,
+      express: req.sessionID,
+      final: sessionId
+    });
 
     // 确保全局会话存储被更新 (在会话对象更新之前)
     if (global.customSessionStorage && req.ip && typeof req.ip === 'string') {
@@ -424,7 +419,7 @@ export async function completeLogin(req: Request, res: Response) {
 
     // 获取验证记录
     const verification = await db.getLoginVerification(verificationId);
-    
+
     // 详细的验证检查
     const checks = {
       exists: !!verification,
@@ -865,7 +860,7 @@ export async function getCurrentUser(req: Request, res: Response) {
     const sessionValid = req.session && 
                         (req.session.authenticated || req.session.isAuthenticated) && 
                         req.session.userId;
-    
+
     console.log('[认证系统] 会话状态检查:', {
       hasSession: !!req.session,
       authenticated: req.session?.authenticated,

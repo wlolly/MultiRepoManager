@@ -5,6 +5,19 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
   try {
     // 记录请求信息
     console.log(`[认证中间件] 请求: ${req.method} ${req.path}`);
+
+    // 获取客户端会话ID
+    const clientSessionId = req.headers['x-session-id'] as string;
+
+    // 验证信息记录
+    console.log(`[验证] 请求: ${req.path}, 会话ID: ${clientSessionId || req.sessionID}`);
+    console.log(`[验证] 会话状态:`, {
+      sessionId: req.sessionID,
+      clientSessionId,
+      authenticated: req.session?.authenticated,
+      userId: req.session?.userId
+    });
+
     console.log(`[认证中间件] 会话状态:`, {
       id: req.sessionID,
       clientId: req.headers['x-session-id'],
@@ -12,7 +25,6 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
     });
 
     // 会话ID处理逻辑
-    const clientSessionId = req.headers['x-session-id'] as string;
     const cookieSessionId = req.cookies.sessionId;
 
     console.log(`[认证中间件] 会话ID来源检查:`, {

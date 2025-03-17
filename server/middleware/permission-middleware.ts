@@ -14,7 +14,7 @@ function getDefaultPermissionsByRole(role?: string | null) {
   // 基础页面权限（所有已认证用户）
   const basePages = ['dashboard', 'profile', 'products'];
   const baseActions = ['view'];
-  
+
   // 基于角色的权限
   switch (role) {
     case 'super_admin':
@@ -122,21 +122,21 @@ export async function loadUserPermissions(
     // 使用权限工具类中的loadUserPermissions函数，它已经包含了缓存机制
     // 由于两个模块位于不同位置，调用外部工具类函数
     const utils = await import('../utils/permission-utils');
-    
+
     // 首先尝试从缓存获取权限数据
     const sessionId = req.sessionID || null;
-    
+
     // 使用外部工具类加载权限，它会处理缓存逻辑
     const permissions = await utils.loadUserPermissions(userId, sessionId, role);
-    
+
     // 将权限保存到会话
     utils.savePermissionsToSession(req, permissions);
-    
+
     // 返回加载的权限数据
     return permissions;
   } catch (error) {
     console.error('[权限加载] 加载用户权限失败:', error);
-    
+
     // 出错时返回基本权限
     return getDefaultPermissionsByRole(null);
   }
@@ -147,12 +147,12 @@ export async function loadUserPermissions(
  */
 export function hasPageAccess(req: Request, pageName: string): boolean {
   const permissions = req.session?.permissions || { pages: [], isAdmin: false };
-  
+
   // 管理员拥有所有页面权限
   if (permissions.isAdmin) {
     return true;
   }
-  
+
   // 检查是否有'all'权限或特定页面权限
   return permissions.pages.includes('all') || permissions.pages.includes(pageName);
 }
@@ -162,12 +162,12 @@ export function hasPageAccess(req: Request, pageName: string): boolean {
  */
 export function hasActionPermission(req: Request, actionName: string): boolean {
   const permissions = req.session?.permissions || { actions: [], isAdmin: false };
-  
+
   // 管理员拥有所有操作权限
   if (permissions.isAdmin) {
     return true;
   }
-  
+
   // 检查是否有'all'权限或特定操作权限
   return permissions.actions.includes('all') || permissions.actions.includes(actionName);
 }
@@ -186,44 +186,44 @@ export function hasWarehouseAccess(
     console.log(`[权限验证] 仓库权限检查失败：会话无效或未认证，仓库ID=${warehouseId}`);
     return false;
   }
-  
+
   // 验证用户活跃状态 - 如果会话中有isActive标记且为false，则拒绝访问
   if (req.session.isActive === false) {
     console.log(`[权限验证] 仓库权限检查失败：用户账户未激活，用户ID=${req.session.userId}`);
     return false;
   }
-  
+
   const permissions = req.session?.permissions || { warehouses: {}, isAdmin: false, isSuperAdmin: false };
-  
+
   // 严格的管理员权限验证 - 确保管理员状态一致性
   const isAdminUser = permissions.isAdmin === true || permissions.isSuperAdmin === true;
   const hasAdminRole = req.session.role === 'admin' || req.session.role === 'super_admin';
-  
+
   // 管理员拥有所有仓库的完整权限，但必须确保角色和权限标记一致
   if (isAdminUser && hasAdminRole) {
     console.log(`[权限验证] 管理员权限验证通过，允许访问仓库ID=${warehouseId}`);
     return true;
   }
-  
+
   // 检查是否有全局仓库权限
   if (permissions.warehouses && permissions.warehouses.all) {
     return permissions.warehouses.all[accessType] === true;
   }
-  
+
   // 防止warehouses为undefined
   if (!permissions.warehouses) {
     console.log(`[权限验证] 仓库权限检查失败：权限数据不完整，仓库ID=${warehouseId}`);
     return false;
   }
-  
+
   // 检查特定仓库权限
   const warehousePermissions = permissions.warehouses[warehouseId.toString()];
   const hasPermission = warehousePermissions ? warehousePermissions[accessType] === true : false;
-  
+
   if (!hasPermission) {
     console.log(`[权限验证] 仓库权限检查失败：无${accessType}权限，仓库ID=${warehouseId}，用户ID=${req.session.userId}`);
   }
-  
+
   return hasPermission;
 }
 
@@ -237,7 +237,7 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction) {
       message: '未登录'
     });
   }
-  
+
   verifyAdminAccess(req.session.userId, req)
     .then(hasAccess => {
       if (hasAccess) {
@@ -298,7 +298,7 @@ export function requireWarehouseAccess(accessType: 'view' | 'manage' = 'view') {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       const warehouseId = req.params.warehouseId || req.body.warehouseId;
-      
+
       // 1. 验证仓库ID是否存在
       if (!warehouseId) {
         return res.status(400).json({
@@ -307,7 +307,7 @@ export function requireWarehouseAccess(accessType: 'view' | 'manage' = 'view') {
           error: 'MISSING_WAREHOUSE_ID'
         });
       }
-      
+
       // 2. 验证用户会话状态
       if (!req.session || !req.session.userId) {
         return res.status(401).json({
@@ -316,7 +316,7 @@ export function requireWarehouseAccess(accessType: 'view' | 'manage' = 'view') {
           error: 'USER_NOT_AUTHENTICATED'
         });
       }
-      
+
       // 3. 验证用户活跃状态
       if (req.session.isActive === false) {
         return res.status(403).json({
@@ -325,13 +325,13 @@ export function requireWarehouseAccess(accessType: 'view' | 'manage' = 'view') {
           error: 'USER_NOT_ACTIVE'
         });
       }
-      
+
       // 4. 验证仓库是否存在
       try {
         const warehouse = await db.query.warehouses.findFirst({
           where: eq(schema.warehouses.id, parseInt(warehouseId.toString()))
         });
-        
+
         if (!warehouse) {
           console.log(`[权限中间件] 仓库不存在，ID: ${warehouseId}`);
           return res.status(404).json({
@@ -344,7 +344,7 @@ export function requireWarehouseAccess(accessType: 'view' | 'manage' = 'view') {
         console.error(`[权限中间件] 查询仓库时出错:`, dbError);
         // 继续执行，因为可能是临时数据库错误，不应影响权限检查
       }
-      
+
       // 5. 检查用户是否有仓库权限
       if (hasWarehouseAccess(req, warehouseId, accessType)) {
         // 权限验证通过，记录访问日志
@@ -442,7 +442,7 @@ export async function checkSpecificPagePermissionResult(
   try {
     // 检查用户是否是管理员
     const isAdminRole = role === 'admin' || role === 'super_admin';
-    
+
     // 管理员拥有所有页面权限
     if (isAdminRole) {
       return {
@@ -452,13 +452,13 @@ export async function checkSpecificPagePermissionResult(
         success: true
       };
     }
-    
+
     // 获取用户页面权限
     const pagePermissions = await getUserPagePermissions(userId, role);
-    
+
     // 检查是否有特定页面权限
     const hasPermission = pagePermissions.includes('all') || pagePermissions.includes(pageName);
-    
+
     return {
       hasPermission,
       isAdmin: false,
