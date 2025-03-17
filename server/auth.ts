@@ -692,11 +692,29 @@ export async function getCurrentUser(req: Request, res: Response) {
       // 检查会话是否包含用户ID
       if (!session.userId) {
         console.log('[认证系统] 会话不包含用户ID');
+        
+        // 更新会话的最后活动时间，避免会话过早失效
+        try {
+          await db.updateUserSession(req.sessionID, {
+            lastActivity: new Date(),
+            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 延长过期时间
+          });
+          console.log('[认证系统] 已更新会话最后活动时间');
+        } catch (err) {
+          console.error('[认证系统] 更新会话活动时间失败:', err);
+        }
+        
         return res.status(401).json({
           authenticated: false,
-          message: '会话无效',
+          message: '会话未关联用户，请登录',
           guestAccess: true,
-          sessionId: req.sessionID
+          sessionId: req.sessionID,
+          allowedPages: ['dashboard'],
+          permissions: {
+            pages: ['dashboard'],
+            actions: ['view'],
+            warehouses: {}
+          }
         });
       }
 
