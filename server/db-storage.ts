@@ -473,9 +473,22 @@ export class DbStorage implements IStorage {
 
   async getTeamPagePermissions(teamId: number): Promise<TeamPagePermission[]> {
     try {
-      return await this.db.select().from(schema.teamPagePermissions).where(eq(schema.teamPagePermissions.teamId, teamId));
+      if (!teamId) {
+        console.log('[权限] 团队ID未提供，返回空权限列表');
+        return [];
+      }
+
+      const permissions = await this.db.select()
+        .from(schema.teamPagePermissions)
+        .where(eq(schema.teamPagePermissions.teamId, teamId));
+
+      if (!permissions.length) {
+        console.log(`[权限] 团队 ${teamId} 没有页面权限配置`);
+      }
+
+      return permissions;
     } catch (error) {
-      console.error('[DbStorage] getTeamPagePermissions错误:', error);
+      console.error('[权限] 获取页面权限失败:', error);
       return [];
     }
   }

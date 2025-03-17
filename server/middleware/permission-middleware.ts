@@ -315,7 +315,7 @@ export function requireWarehouseAccess(accessType: 'view' | 'manage' = 'view') {
 
       const db = req.app.locals.storage;
       const user = await db.getUser(userId);
-      
+
       if (!user?.primary_team_id) {
         return res.status(403).json({
           success: false,
