@@ -3,19 +3,33 @@
  * 用于测试登录功能和权限管理
  */
 
-import { db } from '../server/db';
-import { users, userRoleEnum } from '../shared/schema';
+import { createPostgresConnection } from '../server/database';
 import { hashPassword } from '../server/auth';
-import { eq } from 'drizzle-orm';
+import dotenv from 'dotenv';
+
+// 加载环境变量
+dotenv.config();
 
 async function createAdminUser() {
   try {
     console.log('开始创建测试管理员用户...');
     
-    // 检查用户是否已存在
-    const existingAdmin = await db.select().from(users).where(eq(users.username, 'admin')).limit(1);
+    // 创建数据库连接
+    const connection = await createPostgresConnection();
+    if (!connection) {
+      throw new Error('无法连接到数据库');
+    }
     
-    if (existingAdmin.length > 0) {
+    const { client } = connection;
+    console.log('[数据库] 连接测试成功!');
+    console.log('✅ 正在使用PostgreSQL数据库存储模式运行');
+    
+    // 检查用户是否已存在
+    const existingAdmin = await client`
+      SELECT * FROM users WHERE username = 'admin' LIMIT 1
+    `;
+    
+    if (existingAdmin && existingAdmin.length > 0) {
       console.log('管理员用户已存在，无需创建');
       return existingAdmin[0];
     }
@@ -23,17 +37,12 @@ async function createAdminUser() {
     // 创建管理员用户
     const hashedPassword = hashPassword('admin123');
     
-    const insertResult = await db.insert(users).values({
-      username: 'admin',
-      password: hashedPassword,
-      role: 'super_admin',
-      isactive: true, // 全小写的isactive字段
-      full_name: '系统管理员', // 使用下划线命名规则，与数据库一致
-      usersource: 'local', // 全小写的usersource字段
-      // 使用与schema.ts中定义相匹配的字段名
-      created_at: new Date(), // 使用下划线命名，与数据库保持一致
-      updated_at: new Date()  // 使用下划线命名，与数据库保持一致
-    }).returning();
+    // 直接使用SQL插入，以规避schema.ts与数据库结构不一致的问题
+    const insertResult = await client`
+      INSERT INTO users (username, password, role, is_active, full_name, user_source, created_at, updated_at)
+      VALUES ('admin', ${hashedPassword}, 'super_admin', true, '系统管理员', 'local', ${new Date()}, ${new Date()})
+      RETURNING *
+    `;
     
     console.log('管理员用户创建成功:', insertResult[0]);
     return insertResult[0];
