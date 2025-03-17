@@ -56,38 +56,74 @@ export function generateSessionId(): string {
 }
 
 // 统一认证检查函数 - 系统唯一的认证状态检查方法
-export function isAuthenticated(req: Request): boolean {
-  if (!req.session) {
+// 根据新需求修改：只检查会话ID是否在数据库中存在
+export async function isAuthenticated(req: Request): Promise<boolean> {
+  if (!req.session || !req.sessionID) {
+    console.log('[认证系统] 无会话ID，验证失败');
     return false;
   }
   
-  // 统一使用authenticated作为主要认证标记，其他标记作为兼容
-  return Boolean(
-    // 主要标准认证标记
-    (req.session.authenticated === true) ||
-    // 备用认证标记，提供向后兼容性
-    (req.session.isAuthenticated === true) ||
-    // 数据验证 - 用户ID存在且大于0
-    (req.session.userId && req.session.userId > 0)
-  );
+  try {
+    // 直接从数据库中查询会话ID是否存在
+    const db = req.app.locals.storage;
+    const session = await db.getUserSessionById(req.sessionID);
+    
+    // 只要会话存在且有效，就认为是已认证的
+    const authenticated = Boolean(session && session.isValid);
+    
+    console.log(`[认证系统] 会话ID ${req.sessionID.substring(0, 8)}... 验证结果: ${authenticated ? '成功' : '失败'}`);
+    
+    // 更新会话对象，确保客户端和服务器的认证状态一致
+    if (authenticated && session) {
+      // 如果数据库中的会话有效，但当前会话对象标记为未认证，则更新会话对象
+      if (!req.session.authenticated) {
+        req.session.authenticated = true;
+        req.session.isAuthenticated = true;
+        req.session.userId = session.userId;
+        req.session.lastActivity = Date.now();
+        
+        // 立即保存会话变更
+        await new Promise<void>((resolve, reject) => {
+          req.session.save((err) => {
+            if (err) {
+              console.error('[认证系统] 保存会话状态失败:', err);
+              reject(err);
+            } else {
+              resolve();
+            }
+          });
+        });
+      }
+    }
+    
+    return authenticated;
+  } catch (error) {
+    console.error('[认证系统] 验证会话时出错:', error);
+    return false;
+  }
 }
 
 // 验证会话中间件
-export function verifySession(req: Request, res: Response, next: NextFunction) {
-  // 简化日志，只记录关键信息
-  console.log('[认证] 验证会话:', {
-    sessionID: req.sessionID,
-    authenticated: isAuthenticated(req),
-    userId: req.session?.userId
-  });
-  
+export async function verifySession(req: Request, res: Response, next: NextFunction) {
   try {
-    // 使用统一认证检查函数
-    const authenticated = isAuthenticated(req);
+    // 简化日志，只记录关键信息
+    console.log('[认证] 验证会话开始:', {
+      sessionID: req.sessionID,
+      path: req.path
+    });
+    
+    // 使用异步的统一认证检查函数
+    const authenticated = await isAuthenticated(req);
     
     // 检查是否来自登录流程或明确要求绕过
     const isFromLoginFlow = req.headers['x-login-flow'] === 'true';
     const isBypassAuth = req.headers['x-bypass-auth'] === 'true';
+
+    console.log('[认证] 验证会话结果:', {
+      authenticated,
+      isFromLoginFlow,
+      isBypassAuth
+    });
 
     if (authenticated || isFromLoginFlow || isBypassAuth) {
       // 用户已登录或特殊请求 - 正常设置用户对象
@@ -101,13 +137,31 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
 
       // 只有确实已登录时才设置会话标记
       if (authenticated || isFromLoginFlow) {
-        // 设置会话标记（如果未设置）
+        // 如果会话中没有用户ID，尝试从数据库中的会话记录获取
         if (!req.session.userId) {
-          req.session.userId = 1;
-          req.session.authenticated = true;
-          req.session.realAuthenticated = true;
-          req.session.userRole = 'admin';
-          req.session.lastActivity = Date.now();
+          try {
+            const db = req.app.locals.storage;
+            const sessionRecord = await db.getUserSessionById(req.sessionID);
+            if (sessionRecord) {
+              console.log(`[认证系统] 从数据库会话记录中获取用户ID: ${sessionRecord.userId}`);
+              req.session.userId = sessionRecord.userId;
+              req.session.authenticated = true;
+              req.session.isAuthenticated = true;
+              req.session.realAuthenticated = true;
+              
+              // 获取用户信息，包括角色
+              const user = await db.getUser(sessionRecord.userId);
+              if (user) {
+                req.session.userRole = user.role;
+              } else {
+                console.log('[认证系统] 警告: 会话有效但找不到对应的用户');
+              }
+              
+              req.session.lastActivity = Date.now();
+            }
+          } catch (dbError) {
+            console.error('[认证系统] 从数据库获取会话信息时出错:', dbError);
+          }
         }
       }
 
@@ -123,10 +177,11 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
         console.log('[认证系统] 团队API - 设置特殊访问标记');
         (req.session as any).teamApiAuthorized = true;
       }
+      
       // 处理会话ID一致性问题
       let sessionId = req.headers['sessionid'] || 
-                    req.headers['x-session-id'] || 
-                    req.cookies?.sessionId;
+                     req.headers['x-session-id'] || 
+                     req.cookies?.sessionId;
 
       if (sessionId && typeof sessionId === 'string' && sessionId.length > 10) {
         // 如果发现客户端提供的会话ID与当前会话ID不同，使用客户端的会话ID
@@ -137,27 +192,32 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
       }
 
       // 确保立即保存会话（如果已认证）
-      req.session.save((err) => {
-        if (err) {
-          console.error('[认证系统] 保存会话出错:', err);
-        } else {
-          console.log('[认证系统] 会话已保存，sessionID:', req.sessionID);
-
-          // 同步设置Cookie，确保客户端和服务器使用相同的会话ID
-          res.cookie('sessionId', req.sessionID, {
-            maxAge: 30 * 24 * 60 * 60 * 1000, // 30天
-            httpOnly: false, // 允许客户端JavaScript读取
-            path: '/'
-          });
-
-          // 设置会话响应头，标记为已认证
-          res.header('X-Session-ID', req.sessionID);
-          res.header('X-Real-Authenticated', 'true');
-          res.header('X-Session-Authenticated', 'true');
-          res.header('X-User-ID', '1');
-        }
-        next();
+      await new Promise<void>((resolve) => {
+        req.session.save((err) => {
+          if (err) {
+            console.error('[认证系统] 保存会话出错:', err);
+          } else {
+            console.log('[认证系统] 会话已保存，sessionID:', req.sessionID);
+  
+            // 同步设置Cookie，确保客户端和服务器使用相同的会话ID
+            res.cookie('sessionId', req.sessionID, {
+              maxAge: 30 * 24 * 60 * 60 * 1000, // 30天
+              httpOnly: false, // 允许客户端JavaScript读取
+              path: '/',
+              sameSite: 'lax' // 提高安全性但允许在链接跳转时发送
+            });
+  
+            // 设置会话响应头，标记为已认证
+            res.header('X-Session-ID', req.sessionID);
+            res.header('X-Real-Authenticated', 'true');
+            res.header('X-Session-Authenticated', 'true');
+            res.header('X-User-ID', req.session.userId ? req.session.userId.toString() : '1');
+          }
+          resolve();
+        });
       });
+      
+      next();
     } else {
       // 用户未登录，设置未认证的响应头
       if (req.sessionID) {
@@ -165,6 +225,17 @@ export function verifySession(req: Request, res: Response, next: NextFunction) {
       }
       res.header('X-Real-Authenticated', 'false');
       res.header('X-Session-Authenticated', 'false');
+      
+      // 同步设置Cookie，确保客户端和服务器使用相同的会话ID（即使未认证）
+      if (req.sessionID) {
+        res.cookie('sessionId', req.sessionID, {
+          maxAge: 30 * 24 * 60 * 60 * 1000, // 30天
+          httpOnly: false, // 允许客户端JavaScript读取
+          path: '/',
+          sameSite: 'lax' // 提高安全性但允许在链接跳转时发送
+        });
+      }
+      
       next();
     }
   } catch (error) {
@@ -396,8 +467,9 @@ export async function registerUser(req: Request, res: Response) {
  */
 export async function getCurrentUser(req: Request, res: Response) {
   try {
-    // 使用统一的认证检查函数
-    const authenticated = isAuthenticated(req);
+    // 使用异步的统一认证检查函数
+    const authenticated = await isAuthenticated(req);
+    console.log('[认证系统] getCurrentUser 验证结果:', authenticated);
 
     // 如果已登录，从数据库获取最新的用户信息
     if (authenticated) {
@@ -405,9 +477,48 @@ export async function getCurrentUser(req: Request, res: Response) {
       
       try {
         const db = req.app.locals.storage;
+        let userId = req.session.userId;
+        
+        // 如果会话中没有userId，尝试从会话记录中获取
+        if (!userId) {
+          const sessionRecord = await db.getUserSessionById(req.sessionID);
+          if (sessionRecord) {
+            userId = sessionRecord.userId;
+            req.session.userId = userId; // 更新会话
+            
+            // 保存会话变更
+            await new Promise<void>((resolve, reject) => {
+              req.session.save((err) => {
+                if (err) {
+                  console.error('[认证系统] 保存会话状态失败:', err);
+                  reject(err);
+                } else {
+                  resolve();
+                }
+              });
+            });
+          }
+        }
+        
+        if (!userId) {
+          // 没有有效的用户ID，返回访客状态
+          console.log('[认证系统] 警告: 会话验证成功但没有用户ID');
+          return res.status(401).json({
+            authenticated: false,
+            message: '会话用户无效，请重新登录',
+            guestAccess: true,
+            sessionId: req.sessionID,
+            allowedPages: ['dashboard'],
+            permissions: {
+              pages: ['dashboard'],
+              actions: ['view'],
+              warehouses: {}
+            }
+          });
+        }
         
         // 从数据库获取用户信息
-        const user = await db.getUser(req.session.userId);
+        const user = await db.getUser(userId);
         
         if (user) {
           console.log('[认证系统] 获取到用户数据:', user.username);
@@ -420,6 +531,7 @@ export async function getCurrentUser(req: Request, res: Response) {
             fullname: user.fullname,
             isactive: user.isactive,
             authenticated: true,
+            sessionId: req.sessionID, // 始终包含会话ID
             permissions: {
               pages: ['dashboard', 'products', 'warehouses', 'team', 'admin'],
               actions: ['view', 'create', 'edit', 'delete'],
@@ -436,6 +548,7 @@ export async function getCurrentUser(req: Request, res: Response) {
             authenticated: false,
             message: '会话用户无效，请重新登录',
             guestAccess: true,
+            sessionId: req.sessionID,
             allowedPages: ['dashboard'],
             permissions: {
               pages: ['dashboard'],
@@ -449,7 +562,8 @@ export async function getCurrentUser(req: Request, res: Response) {
         // 数据库错误但不销毁会话，返回通用错误
         return res.status(500).json({ 
           message: '获取用户信息失败，请稍后再试',
-          authenticated: false
+          authenticated: false,
+          sessionId: req.sessionID
         });
       }
     } else {
@@ -479,7 +593,8 @@ export async function getCurrentUser(req: Request, res: Response) {
     console.error('[认证系统] 获取当前用户出错:', error);
     res.status(500).json({ 
       message: '获取用户信息失败',
-      authenticated: false
+      authenticated: false,
+      sessionId: req.sessionID
     });
   }
 }
