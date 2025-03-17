@@ -220,18 +220,14 @@ export async function registerUser(req: Request, res: Response) {
  */
 export async function getCurrentUser(req: Request, res: Response) {
   try {
-    // 检查数据库中会话记录的有效性
-    const db = req.app.locals.storage;
-    const session = req.sessionID ? await db.getUserSessionById(req.sessionID) : null;
-    
-    // 会话不存在、已失效或已过期，返回访客
-    if (!session || !session.isValid || (session.expiresAt && new Date() > new Date(session.expiresAt))) {
-      console.log('[认证系统] 当前用户未认证或会话已失效');
+    // 确保存储接口存在
+    if (!req.app || !req.app.locals || !req.app.locals.storage) {
+      console.error('[认证系统] 存储接口未初始化');
       return res.status(401).json({
         authenticated: false,
-        message: '用户未登录',
+        message: '系统未准备好，请稍后再试',
         guestAccess: true,
-        sessionId: req.sessionID,
+        sessionId: req.sessionID || null,
         allowedPages: ['dashboard'],
         permissions: {
           pages: ['dashboard'],
@@ -240,55 +236,120 @@ export async function getCurrentUser(req: Request, res: Response) {
         }
       });
     }
-    
-    // 会话有效，获取用户信息
-    const user = session.userId ? await db.getUser(session.userId) : null;
-    if (!user) {
-      console.log('[认证系统] 找不到会话对应的用户');
+
+    const db = req.app.locals.storage;
+
+    // 检查会话ID是否存在
+    if (!req.sessionID) {
+      console.log('[认证系统] 会话ID不存在');
       return res.status(401).json({
         authenticated: false,
-        message: '用户不存在',
-        guestAccess: true
+        message: '无效会话',
+        guestAccess: true,
+        sessionId: null,
+        allowedPages: ['dashboard'],
+        permissions: {
+          pages: ['dashboard'],
+          actions: ['view'],
+          warehouses: {}
+        }
       });
     }
-    
-    // 获取用户的页面权限 (简化)
-    const pagePermissions = ['dashboard', 'products', 'warehouse-products'];
-    
-    // 如果是管理员，添加更多权限
-    if (user.role === 'admin' || user.role === 'super_admin') {
-      pagePermissions.push(
-        'users', 'teams', 'warehouses', 'inbound-orders',
-        'outbound-orders', 'order-audit', 'warehouse-transfers',
-        'create-warehouse-transfer', 'warehouse-reports', 'settings'
-      );
-    }
-    
-    // 更新会话最后活动时间
-    await db.updateUserSession(req.sessionID, {
-      lastActivity: new Date()
-    });
-    
-    // 返回用户信息
-    return res.status(200).json({
-      authenticated: true,
-      user: {
-        id: user.id,
-        username: user.username,
-        role: user.role,
-        fullName: user.fullname,
-        avatarUrl: user.avatarurl,
-        language: user.language || 'zh',
-        isActive: user.isactive,
-        isSocialUser: user.usersource !== 'local',
-        userSource: user.usersource
-      },
-      permissions: {
-        pages: pagePermissions,
-        actions: ['view', 'edit', 'create', 'delete'],
-        warehouses: {} // 简化，实际项目中应该动态加载用户的仓库权限
+
+    try {
+      // 检查数据库中会话记录的有效性
+      const session = await db.getUserSessionById(req.sessionID);
+      
+      // 会话不存在、已失效或已过期，返回访客
+      if (!session || !session.isValid || (session.expiresAt && new Date() > new Date(session.expiresAt))) {
+        console.log('[认证系统] 当前用户未认证或会话已失效');
+        return res.status(401).json({
+          authenticated: false,
+          message: '用户未登录',
+          guestAccess: true,
+          sessionId: req.sessionID,
+          allowedPages: ['dashboard'],
+          permissions: {
+            pages: ['dashboard'],
+            actions: ['view'],
+            warehouses: {}
+          }
+        });
       }
-    });
+      
+      // 检查会话是否包含用户ID
+      if (!session.userId) {
+        console.log('[认证系统] 会话不包含用户ID');
+        return res.status(401).json({
+          authenticated: false,
+          message: '会话无效',
+          guestAccess: true,
+          sessionId: req.sessionID
+        });
+      }
+
+      // 会话有效，获取用户信息
+      const user = await db.getUser(session.userId);
+      if (!user) {
+        console.log('[认证系统] 找不到会话对应的用户');
+        return res.status(401).json({
+          authenticated: false,
+          message: '用户不存在',
+          guestAccess: true
+        });
+      }
+      
+      // 获取用户的页面权限 (简化)
+      const pagePermissions = ['dashboard', 'products', 'warehouse-products'];
+      
+      // 如果是管理员，添加更多权限
+      if (user.role === 'admin' || user.role === 'super_admin') {
+        pagePermissions.push(
+          'users', 'teams', 'warehouses', 'inbound-orders',
+          'outbound-orders', 'order-audit', 'warehouse-transfers',
+          'create-warehouse-transfer', 'warehouse-reports', 'settings'
+        );
+      }
+      
+      // 尝试更新会话最后活动时间，但不阻塞响应
+      try {
+        await db.updateUserSession(req.sessionID, {
+          lastActivity: new Date()
+        });
+      } catch (updateError) {
+        console.warn('[认证系统] 更新会话活动时间失败:', updateError);
+        // 继续处理，不影响响应
+      }
+      
+      // 返回用户信息
+      return res.status(200).json({
+        authenticated: true,
+        user: {
+          id: user.id,
+          username: user.username,
+          role: user.role,
+          fullName: user.fullname,
+          avatarUrl: user.avatarurl,
+          language: user.language || 'zh',
+          isActive: user.isactive,
+          isSocialUser: user.usersource !== 'local',
+          userSource: user.usersource
+        },
+        permissions: {
+          pages: pagePermissions,
+          actions: ['view', 'edit', 'create', 'delete'],
+          warehouses: {} // 简化，实际项目中应该动态加载用户的仓库权限
+        }
+      });
+    } catch (dbError) {
+      console.error('[认证系统] 数据库操作错误:', dbError);
+      return res.status(401).json({
+        authenticated: false,
+        message: '会话验证失败',
+        guestAccess: true,
+        sessionId: req.sessionID
+      });
+    }
   } catch (error) {
     console.error('[认证系统] 获取当前用户信息错误:', error);
     return res.status(500).json({
