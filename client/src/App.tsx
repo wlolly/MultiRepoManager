@@ -32,6 +32,7 @@ import TeamPermissions from "./pages/team-permissions";
 import LoginPage from "./pages/login-new"; // 使用新版登录页面
 import LoginRedirect from "./pages/login-redirect"; // 新增登录重定向页面
 import RegisterPage from "./pages/register";
+import SessionTestPage from "./pages/session-test"; // 会话同步测试页面
 import AdminSocialAuthConfig from "./pages/admin-social-auth";
 
 // 仓库系统页面
