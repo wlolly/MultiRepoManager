@@ -35,12 +35,12 @@ app.use((req, res, next) => {
   if (req.path.includes('/api/auth/')) {
     console.log(`[请求] ${req.path}, 会话ID: ${req.sessionID}`);
   }
-  
+
   // 简化的会话信息记录
   if (process.env.NODE_ENV !== 'production') {
     console.log(`[会话] 路径: ${req.path}, ID: ${req.sessionID}`);
   }
-  
+
   next();
 });
 
@@ -81,7 +81,7 @@ import { initializeUserIDTable } from './database/userID';
 (async () => {
   // 初始化文件清理调度器，每24小时清理一次过期文件
   scheduleCleanup();
-  
+
   // 设置定期清理过期验证记录和会话的调度器
   // 每4小时运行一次
   const AUTH_CLEANUP_INTERVAL = 4 * 60 * 60 * 1000; // 4小时，单位毫秒
@@ -94,33 +94,33 @@ import { initializeUserIDTable } from './database/userID';
       console.error('[系统] 清理过程中出错:', error);
     }
   }, AUTH_CLEANUP_INTERVAL);
-  
+
   // 不再需要初始化内存存储的演示数据
   // 系统现在使用PostgreSQL数据库，不使用内存存储
   console.log('[系统] 跳过内存存储初始化，使用PostgreSQL数据库');
-  
+
   // 数据库已经通过db.ts初始化 - 但这个过程是异步的，需要进行检查
   log('验证数据库连接状态', 'postgres');
-  
+
   // 给db.ts中的连接测试留出足够时间，等待更长时间
   await new Promise(resolve => setTimeout(resolve, 5000)); // 增加到5秒
-  
+
   // 验证数据库连接池状态
   let dbConnectionStatus = false;
   try {
     log('尝试数据库测试连接...', 'postgres');
-    
+
     // 使用正确的SQL查询方式 - 使用sql模板字符串
     // 这个sql对象是从最上面导入的，不需要使用require
     const testConn = await db.execute(sql`SELECT 1 AS test`);
-    
+
     console.log('数据库测试响应:', JSON.stringify(testConn));
-    
+
     // 安全地访问可能的嵌套结构 - 适配drizzle返回结果格式
     const hasValidResponse = testConn && 
       Array.isArray(testConn) && 
       testConn.length > 0;
-      
+
     if (hasValidResponse) {
       log('数据库连接测试成功', 'postgres');
       dbConnectionStatus = true;
@@ -130,7 +130,7 @@ import { initializeUserIDTable } from './database/userID';
   } catch (e) {
     log(`数据库连接测试失败: ${e}`, 'postgres-error');
   }
-  
+
   // 初始化内部用户ID表（创建并设置定期清理任务）
   if (dbConnectionStatus) {
     try {
@@ -143,10 +143,10 @@ import { initializeUserIDTable } from './database/userID';
   } else {
     log('跳过用户ID表初始化，因为数据库连接不可用', 'postgres-warning');
   }
-  
+
   // 即使没有数据库连接，也继续启动服务器 - 确保应用的高可用性
   const server = await registerRoutes(app);
-  
+
   // 在路由注册完成后，进行初始清理
   // 此时app.locals.storage已经被正确初始化
   if (dbConnectionStatus) {
@@ -171,7 +171,7 @@ import { initializeUserIDTable } from './database/userID';
 
   // 检查是否是仅 API 模式，或者是正常模式
   const apiOnlyMode = process.env.API_ONLY_MODE === 'true';
-  
+
   if (apiOnlyMode) {
     // 在仅 API 模式下，不启动 Vite 前端开发服务器
     log('运行在仅 API 模式，不启动前端开发服务器', 'server');
@@ -190,22 +190,35 @@ import { initializeUserIDTable } from './database/userID';
   // 从环境变量读取端口，如果未设置，则默认使用 5000
   // 这样前端和后端开发服务器可以使用不同的端口
   const port = process.env.PORT ? parseInt(process.env.PORT) : 5000;
-  
+
   // 使用简化的监听方式，避免 ENOTSUP 错误
-  try {
-    server.listen(port, () => {
-      log(`服务器启动成功，监听端口 ${port}`);
+  const PORT = port;
+
+  // 检查端口占用并尝试新端口
+  const tryPort = (port: number): Promise<number> => {
+    return new Promise((resolve, reject) => {
+      const server = app.listen(port, '0.0.0.0')
+        .once('error', (err: any) => {
+          if(err.code === 'EADDRINUSE') {
+            server.close();
+            resolve(tryPort(port + 1));
+          } else {
+            reject(err);
+          }
+        })
+        .once('listening', () => {
+          server.close();
+          resolve(port);
+        });
     });
-  } catch (error) {
-    console.error('服务器启动失败:', error);
-    
-    // 尝试备用启动方式
-    try {
-      server.listen(port, '127.0.0.1', () => {
-        log(`服务器启动成功 (备用模式)，监听端口 ${port}`);
-      });
-    } catch (fallbackError) {
-      console.error('备用服务器启动也失败:', fallbackError);
-    }
-  }
+  };
+
+  tryPort(PORT).then(availablePort => {
+    server.listen(availablePort, '0.0.0.0', () => {
+      console.log(`[server] 运行在开发模式，端口: ${availablePort}`);
+    });
+  }).catch(err => {
+    console.error('[server] 启动失败:', err);
+    process.exit(1);
+  });
 })();
