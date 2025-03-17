@@ -1,12 +1,11 @@
 import { QueryClient, QueryFunction, QueryCache } from "@tanstack/react-query";
 import { 
-  getSessionId, 
-  saveSessionId, 
-  attachSessionToRequest, 
-  processResponseHeaders,
-  debounceHttpRequests,
-  unlockRequest
-} from "./sessionManager";
+  getSessionId,
+  saveSessionId,
+  attachSessionToRequest,
+  getSessionIdFromCookie,
+  addSessionHeaders
+} from "./sessionSyncHelper";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -35,7 +34,9 @@ function handleSessionInfo(res: Response, data?: any): void {
   }
 
   // 1. 尝试从响应头获取会话ID (服务器通过X-Original-Session-ID设置)
-  const sessionIdFromHeaders = processResponseHeaders(res.headers);
+  const sessionIdFromHeaders = res.headers.get('X-New-Session-ID') || 
+                              res.headers.get('X-Original-Session-ID') || 
+                              res.headers.get('X-Session-ID');
   
   // 2. 如果响应头中没有会话ID，但响应体中有会话ID
   if (!sessionIdFromHeaders && data && data.sessionId) {
@@ -172,7 +173,12 @@ export async function apiRequest<T = any>(
     }
     
     // 先处理响应头中的会话信息，确保会话ID得到更新
-    processResponseHeaders(res.headers);
+    const newSessionId = res.headers.get('X-New-Session-ID') || 
+                         res.headers.get('X-Original-Session-ID') || 
+                         res.headers.get('X-Session-ID');
+    if (newSessionId) {
+      saveSessionId(newSessionId);
+    }
     
     // 解析响应体
     let data: T;

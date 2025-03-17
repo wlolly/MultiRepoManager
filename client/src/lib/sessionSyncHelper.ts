@@ -3,6 +3,11 @@
  * 提供统一的会话ID获取和设置方法，确保前后端会话一致性
  */
 
+import { 
+  loadSessionId, 
+  saveSessionId as saveSessionToStorage
+} from './sessionManager';
+
 // 客户端会话存储键
 const SESSION_ID_KEY = 'sessionId';
 // 附加到所有请求头部的会话头部
@@ -13,57 +18,6 @@ const SESSION_SOURCE_HEADER = 'X-Session-Source';
 const CLIENT_SOURCE = 'client_session';
 
 /**
- * 从localStorage获取会话ID
- * 如果不存在，则生成一个新的会话ID
- * @returns 会话ID
- */
-export function getSessionId(): string {
-  let sessionId = localStorage.getItem(SESSION_ID_KEY);
-  if (!sessionId) {
-    sessionId = generateSessionId();
-    saveSessionId(sessionId);
-  }
-  return sessionId;
-}
-
-/**
- * 保存会话ID到localStorage和sessionStorage
- * @param sessionId 要保存的会话ID
- */
-export function saveSessionId(sessionId: string): void {
-  if (!sessionId) return;
-  
-  try {
-    localStorage.setItem(SESSION_ID_KEY, sessionId);
-    sessionStorage.setItem(SESSION_ID_KEY, sessionId);
-    console.log(`会话ID已保存: ${sessionId}, 过期时间: 30天, SameSite=Lax`);
-    
-    // 触发会话状态更新事件
-    const previousId = getSessionIdFromCookie() || 'none';
-    const timestamp = new Date().toISOString();
-    
-    // 发布会话状态更新事件
-    window.dispatchEvent(new CustomEvent('session-state-update', {
-      detail: {
-        current: sessionId,
-        previous: previousId,
-        timestamp,
-        authStatus: 'logged_in'
-      }
-    }));
-    
-    console.log('Session state updated:', {
-      current: sessionId,
-      previous: previousId,
-      timestamp,
-      authStatus: 'logged_in'
-    });
-  } catch (e) {
-    console.error('保存会话ID时出错:', e);
-  }
-}
-
-/**
  * 生成随机会话ID
  * @returns 新生成的会话ID
  */
@@ -71,6 +25,45 @@ export function generateSessionId(): string {
   return Array.from(crypto.getRandomValues(new Uint8Array(16)))
     .map(b => b.toString(16).padStart(2, '0'))
     .join('');
+}
+
+/**
+ * 保存会话ID
+ * @param sessionId 要保存的会话ID
+ */
+export function saveSessionId(sessionId: string): void {
+  if (!sessionId) return;
+  
+  try {
+    saveSessionToStorage(sessionId);
+    
+    // 触发会话状态更新事件
+    const timestamp = new Date().toISOString();
+    
+    // 发布会话状态更新事件
+    window.dispatchEvent(new CustomEvent('session-state-update', {
+      detail: {
+        current: sessionId,
+        previous: 'unknown',
+        timestamp,
+        authStatus: 'logged_in'
+      }
+    }));
+  } catch (e) {
+    console.error('保存会话ID时出错:', e);
+  }
+}
+
+/**
+ * 获取会话ID函数
+ */
+export function getSessionId(): string {
+  let sessionId = loadSessionId();
+  if (!sessionId) {
+    sessionId = generateSessionId();
+    saveSessionId(sessionId);
+  }
+  return sessionId;
 }
 
 /**
@@ -93,10 +86,8 @@ export function getSessionIdFromCookie(): string | null {
  * @param headers 原始请求头对象
  * @returns 添加会话ID后的请求头对象
  */
-export function addSessionHeaders(headers: HeadersInit = {}): HeadersInit {
-  const headersObj = headers instanceof Headers ? 
-    Object.fromEntries([...headers.entries()]) : 
-    (typeof headers === 'object' ? {...headers} : {});
+export function addSessionHeaders(headers: Record<string, string> = {}): Record<string, string> {
+  const headersObj = typeof headers === 'object' ? {...headers} : {};
   
   const sessionId = getSessionId();
   
@@ -114,7 +105,7 @@ export function addSessionHeaders(headers: HeadersInit = {}): HeadersInit {
  * @returns fetch响应
  */
 export function fetchWithSession(url: string, options: RequestInit = {}): Promise<Response> {
-  const headers = addSessionHeaders(options.headers || {});
+  const headers = addSessionHeaders(options.headers as Record<string, string> || {});
   return fetch(url, {
     ...options,
     headers,
@@ -189,6 +180,32 @@ export function setupSessionSyncListeners(): void {
 // 自动设置会话同步监听器
 setupSessionSyncListeners();
 
+/**
+ * 附加会话信息到请求URL和头部
+ * 用于替代原有的attachSessionToRequest函数，保持与旧代码兼容性
+ * @param url 原始请求URL
+ * @param headers 原始请求头
+ * @returns 包含处理后URL和头部的对象
+ */
+export function attachSessionToRequest(url: string, headers: Record<string, string> = {}): {
+  url: string;
+  headers: Record<string, string>;
+} {
+  // 获取当前会话ID
+  const sessionId = getSessionId();
+  
+  // 创建URL对象
+  const urlObj = new URL(url, window.location.origin);
+  
+  // 添加会话ID到请求头
+  const enhancedHeaders = addSessionHeaders(headers);
+  
+  return {
+    url: urlObj.toString(),
+    headers: enhancedHeaders
+  };
+}
+
 // 导出默认对象
 export default {
   getSessionId,
@@ -197,4 +214,5 @@ export default {
   fetchWithSession,
   checkAndUpdateSessionFromResponse,
   initializeSessionSync,
+  attachSessionToRequest,
 };

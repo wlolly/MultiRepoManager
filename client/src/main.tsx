@@ -3,7 +3,7 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
 import "./checkLoading.js";
-import { getSessionId, attachSessionToRequest } from './lib/sessionManager';
+import { loadSessionId } from './lib/sessionManager';
 import { initializeSessionSync } from './lib/sessionSyncHelper';
 
 // 渲染应用，确保加载指示器显示足够的时间

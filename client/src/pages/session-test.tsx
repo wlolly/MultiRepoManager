@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { getSessionId, saveSessionId } from '@/lib/sessionSyncHelper';
+import { getSessionId, saveSessionId, generateSessionId } from '@/lib/sessionSyncHelper';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -103,7 +103,7 @@ export default function SessionTestPage() {
 
   // 生成新会话
   const generateNewSession = () => {
-    const newSessionId = generateRandomSessionId();
+    const newSessionId = generateSessionId();
     setCustomSessionId(newSessionId);
     
     toast({
@@ -113,13 +113,6 @@ export default function SessionTestPage() {
     });
     
     addToHistory(`[${new Date().toLocaleTimeString()}] 生成新会话: ${newSessionId}`);
-  };
-
-  // 生成随机会话ID
-  const generateRandomSessionId = () => {
-    return Array.from({ length: 32 }, () => 
-      Math.floor(Math.random() * 16).toString(16)
-    ).join('');
   };
 
   // 添加到历史记录
