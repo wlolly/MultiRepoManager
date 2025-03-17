@@ -65,13 +65,13 @@ async function verifyAdminAccess(userId: number, req: Request): Promise<boolean>
     const user = await db.select({
       id: schema.users.id,
       role: schema.users.role,
-      isactive: schema.users.isactive
+      isActive: schema.users.is_active
     })
     .from(schema.users)
     .where(eq(schema.users.id, userId))
     .limit(1);
 
-    if (!user || user.length === 0 || !user[0].isactive) {
+    if (!user || user.length === 0 || !user[0].isActive) {
       console.log(`[权限验证] 用户${userId}不存在或未激活`);
       return false;
     }
@@ -535,7 +535,7 @@ export async function checkSpecificPagePermissionResult(
   }
 }
 
-export async function hasPageAccess(userId: number, pageName: string): Promise<boolean> {
+export async function checkUserPageAccess(userId: number, pageName: string): Promise<boolean> {
   // 获取用户信息
   const user = await db.getUser(userId);
 

@@ -187,38 +187,80 @@ import { initializeUserIDTable } from './database/userID';
     serveStatic(app);
   }
 
-  // 从环境变量读取端口，如果未设置，则默认使用 5000
-  // 这样前端和后端开发服务器可以使用不同的端口
-  const port = process.env.PORT ? parseInt(process.env.PORT) : 5000;
-
+  // 强制使用端口5000以匹配Replit工作流期望
+  // 忽略环境变量中的端口设置，确保与工作流配置一致
   // 使用简化的监听方式，避免 ENOTSUP 错误
-  const PORT = port;
+  // 明确使用5000端口以满足Replit工作流要求
+  const PORT = 5000; // 使用固定端口号5000，忽略传入的port参数
 
-  // 检查端口占用并尝试新端口
-  const tryPort = (port: number): Promise<number> => {
-    return new Promise((resolve, reject) => {
-      const server = app.listen(port, '0.0.0.0')
-        .once('error', (err: any) => {
-          if(err.code === 'EADDRINUSE') {
-            server.close();
-            resolve(tryPort(port + 1));
-          } else {
-            reject(err);
-          }
-        })
-        .once('listening', () => {
-          server.close();
-          resolve(port);
-        });
+  // 添加端口连续尝试的逻辑，从5000开始尝试
+  console.log(`准备启动应用服务器，优先尝试端口${PORT}...`);
+  
+  // 优先尝试指定端口
+  let currentPort = PORT;
+  let maxRetries = 3;
+  let retryCount = 0;
+  
+  // 这是用于延时的辅助函数
+  const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+  
+  // 递归尝试启动服务器
+  const tryStartServer = async (port: number) => {
+    // 使用标准的Node.js http模块
+    const http = await import('http');
+    const testServer = http.createServer();
+    
+    console.log(`尝试测试端口${port}可用性...`);
+    
+    // 设置测试服务器事件
+    testServer.on('error', async (e: NodeJS.ErrnoException) => {
+      if (e.code === 'EADDRINUSE') {
+        console.log(`端口${port}已被占用，尝试等待1秒后重试...`);
+        testServer.close();
+        
+        // 增加重试计数
+        retryCount++;
+        
+        if (retryCount < maxRetries) {
+          // 等待一秒后在同一端口重试
+          await sleep(1000);
+          await tryStartServer(port);
+        } else {
+          console.log(`端口${port}在${maxRetries}次尝试后仍然被占用，改用端口${port+1}`);
+          // 超过重试次数，递增端口并重置重试计数
+          currentPort = port + 1;
+          retryCount = 0;
+          await tryStartServer(currentPort);
+        }
+      } else {
+        console.error(`测试端口${port}时发生错误:`, e);
+        process.exit(1);
+      }
+    });
+    
+    testServer.listen(port, '0.0.0.0', () => {
+      console.log(`端口${port}可用，准备启动实际服务器`);
+      testServer.close();
+      
+      // 端口可用，启动实际服务器
+      server.listen(port, '0.0.0.0', () => {
+        console.log(`[server] 成功在端口${port}上启动应用`);
+        
+        // 如果不是预期的端口，记录警告
+        if (port !== PORT) {
+          console.warn(`注意：应用使用了替代端口${port}，而不是预期的${PORT}端口`);
+          console.warn(`这可能导致工作流监测失败，建议手动重启工作流`);
+        }
+      });
+      
+      // 为实际服务器添加错误处理
+      server.on('error', (err: NodeJS.ErrnoException) => {
+        console.error(`启动实际服务器时发生错误:`, err);
+        process.exit(1);
+      });
     });
   };
-
-  tryPort(PORT).then(availablePort => {
-    server.listen(availablePort, '0.0.0.0', () => {
-      console.log(`[server] 运行在开发模式，端口: ${availablePort}`);
-    });
-  }).catch(err => {
-    console.error('[server] 启动失败:', err);
-    process.exit(1);
-  });
+  
+  // 开始尝试启动服务器
+  await tryStartServer(currentPort);
 })();

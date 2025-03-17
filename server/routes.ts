@@ -2,7 +2,7 @@ import express, { type Express, Request, Response, NextFunction } from "express"
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { memStorage, useFallbackStorage, db } from "./db";
-import { hasPageAccess, hasWarehouseAccess, loadUserPermissions, requireAdmin, requirePageAccess, requireActionPermission, requireWarehouseAccess } from "./middleware/permission-middleware";
+import { hasPageAccess, hasWarehouseAccess, loadUserPermissions, requireAdmin, requirePageAccess, requireActionPermission, requireWarehouseAccess, getUserPagePermissions, getUserWarehousePermissions, checkSpecificPagePermissionResult } from "./middleware/permission-middleware";
 import { permissionRefreshMiddleware, refreshUserPermissions, getUserPermissions } from "./middleware/permission-refresh-middleware";
 import { translations } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
@@ -908,8 +908,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`检查用户ID=${userId}, 角色=${role}的页面[${pageName}]权限`);
       
-      // 使用新的checkSpecificPagePermissionResult函数检查权限
-      const permissionResult = await checkSpecificPagePermissionResult(userId, role, pageName);
+      // 使用checkSpecificPagePermissionResult函数检查权限
+      const permissionResult = await checkSpecificPagePermissionResult(userId, role as string, pageName);
       
       res.json(permissionResult);
     } catch (error) {
