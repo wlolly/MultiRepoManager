@@ -12,6 +12,7 @@ import { sql } from 'drizzle-orm';
 import { configureSession } from './middleware/session';
 import { cleanupAuthRecords } from './auth';
 import { permissionRefreshMiddleware, setupPermissionCacheCleanup } from './middleware/permission-refresh-middleware';
+import { schedulePermissionAudit } from './services/team-permission-audit.service';
 
 const app = express();
 app.use(express.json());
@@ -28,6 +29,9 @@ app.use(permissionRefreshMiddleware);
 
 // 初始化权限缓存清理任务
 setupPermissionCacheCleanup();
+
+// 初始化团队权限审计任务，每24小时自动执行一次，并自动修复问题
+schedulePermissionAudit(24, true);
 
 // 简单的请求日志中间件
 app.use((req, res, next) => {

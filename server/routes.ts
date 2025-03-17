@@ -778,12 +778,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let userId = -1; // 默认为访客用户ID
       let isGuest = true;
       
-      if (req.user) {
+      // 首先尝试从会话中获取用户信息
+      if (req.session && req.session.userId) {
+        userId = req.session.userId;
+        isGuest = false;
+        console.log(`[权限API] 从会话获取用户ID=${userId}的页面权限，是否访客: ${isGuest}`);
+      } 
+      // 如果会话中没有，再尝试从req.user获取
+      else if (req.user) {
         userId = (req.user as any).id;
         isGuest = userId === -1;
-        console.log(`获取用户ID=${userId}的页面权限，是否访客: ${isGuest}`);
+        console.log(`[权限API] 从req.user获取用户ID=${userId}的页面权限，是否访客: ${isGuest}`);
       } else {
-        console.log('用户未登录，使用访客权限');
+        console.log('[权限API] 用户未登录，使用访客权限');
       }
       
       // 获取用户权限（包括访客用户权限）
@@ -791,12 +798,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let userRole = '';
       let isAdminOrSuperAdmin = false;
       
-      if (req.user) {
-        userRole = (req.user as any).role || '';
-        // 确定用户是否为管理员或超级管理员
+      // 首先尝试从会话中获取角色信息
+      if (req.session && req.session.role) {
+        userRole = req.session.role;
         isAdminOrSuperAdmin = userRole === 'admin' || userRole === 'super_admin';
-        // 输出角色信息用于调试
-        console.log(`用户角色: ${userRole}, 是否管理员: ${isAdminOrSuperAdmin}`);
+        console.log(`[权限API] 从会话获取用户角色: ${userRole}, 是否管理员: ${isAdminOrSuperAdmin}`);
+      }
+      // 如果会话中没有，再尝试从req.user获取
+      else if (req.user) {
+        userRole = (req.user as any).role || '';
+        isAdminOrSuperAdmin = userRole === 'admin' || userRole === 'super_admin';
+        console.log(`[权限API] 从req.user获取用户角色: ${userRole}, 是否管理员: ${isAdminOrSuperAdmin}`);
       }
       
       // 如果用户是管理员/超级管理员，直接返回管理员权限
@@ -932,53 +944,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const currentStorage = useFallbackStorage ? memStorage : storage;
       console.log(`仓库权限检查使用${useFallbackStorage ? '内存存储' : '数据库存储'}模式`);
       
-      // 对于简化版验证，我们需要将请求视为管理员用户
-      // 设置会话信息来简化权限处理
-      if (!req.session.authenticated) {
-        console.log('[简化验证] 设置权限API会话为管理员');
-        req.session.userId = 1; // 管理员ID
-        req.session.authenticated = true;
-        req.session.userRole = 'admin';
+      // 检查用户是否已登录
+      let userId = -1; // 默认为访客用户ID
+      let userRole = '';
+      let isAdminOrSuperAdmin = false;
+      let isGuest = true;
+      
+      // 首先尝试从会话中获取用户信息
+      if (req.session && req.session.userId) {
+        userId = req.session.userId;
+        isGuest = false;
         
-        // 创建临时用户对象
-        (req as any).user = {
-          id: 1,
-          username: 'admin',
-          role: 'admin'
-        };
-      }
-      
-      // 检查用户状态 - 支持假阳性登录策略，访客用户ID为-1
-      let userId = 1; // 默认为管理员ID，简化权限验证
-      let isGuest = false;
-      
-      if (req.user) {
+        // 获取角色信息
+        userRole = req.session.role || '';
+        isAdminOrSuperAdmin = userRole === 'admin' || userRole === 'super_admin';
+        
+        console.log(`[权限API] 从会话获取用户ID=${userId}, 角色=${userRole}的仓库权限，是否管理员: ${isAdminOrSuperAdmin}`);
+      } 
+      // 如果会话中没有，再尝试从req.user获取
+      else if (req.user) {
         userId = (req.user as any).id;
+        userRole = (req.user as any).role || '';
+        isAdminOrSuperAdmin = userRole === 'admin' || userRole === 'super_admin';
         isGuest = userId === -1;
-        console.log(`获取用户ID=${userId}的仓库权限，是否访客: ${isGuest}`);
+        
+        console.log(`[权限API] 从req.user获取用户ID=${userId}, 角色=${userRole}的仓库权限，是否管理员: ${isAdminOrSuperAdmin}`);
       } else {
-        console.log('用户未登录，使用管理员仓库权限');
+        console.log('[权限API] 用户未登录，使用访客权限');
       }
       
-      // 强制管理员访问权限
-      // 获取所有仓库并赋予完全权限
-      const warehouses = await currentStorage.getWarehouses();
-      // 使用字符串键以确保前端兼容性
-      const adminPermissions: {[key: string]: {canView: boolean, canManage: boolean}} = {};
+      // 针对不同用户角色返回不同的权限
+      let warehousePermissions: {[key: string]: {canView: boolean, canManage: boolean}} = {};
       
-      // 为每个仓库设置完全权限，确保使用字符串ID作为键
-      warehouses.forEach(warehouse => {
-        adminPermissions[warehouse.id.toString()] = { 
-          canView: true, 
-          canManage: true 
-        };
-      });
+      // 如果是管理员或超级管理员，给予所有仓库的完全权限
+      if (isAdminOrSuperAdmin) {
+        // 添加特殊标记
+        res.setHeader('X-Admin-Access', 'true');
+        
+        // 获取所有仓库并赋予完全权限
+        const warehouses = await currentStorage.getWarehouses();
+        
+        // 为每个仓库设置完全权限，确保使用字符串ID作为键
+        warehouses.forEach(warehouse => {
+          warehousePermissions[warehouse.id.toString()] = { 
+            canView: true, 
+            canManage: true 
+          };
+        });
+        
+        console.log(`[权限API] 超级管理员/管理员(${userRole})获取到 ${Object.keys(warehousePermissions).length} 个仓库的完全权限`);
+      } 
+      // 普通用户和访客只能获取有限权限
+      else {
+        // 获取用户的仓库权限 (基于团队权限)
+        try {
+          // 获取基础仓库列表
+          const warehouses = await currentStorage.getWarehouses();
+          
+          // 为访客用户只提供第一个仓库的查看权限
+          if (isGuest) {
+            if (warehouses.length > 0) {
+              warehousePermissions[warehouses[0].id.toString()] = {
+                canView: true,
+                canManage: false
+              };
+            }
+            console.log(`[权限API] 访客用户获取到 1 个仓库的查看权限`);
+          } 
+          // 普通登录用户获取团队权限
+          else {
+            // 这里简化实现，为所有仓库提供查看权限，但不提供管理权限
+            warehouses.forEach(warehouse => {
+              warehousePermissions[warehouse.id.toString()] = {
+                canView: true,
+                canManage: false
+              };
+            });
+            console.log(`[权限API] 普通用户(ID=${userId})获取到 ${warehouses.length} 个仓库的查看权限`);
+          }
+        } catch (permError) {
+          console.error('[权限API] 获取用户仓库权限失败:', permError);
+          // 失败时提供安全的默认权限
+          warehousePermissions = {
+            "1": { canView: true, canManage: false }
+          };
+        }
+      }
       
-      // 添加特殊标记
-      res.setHeader('X-Admin-Access', 'true');
-      
-      console.log(`仓库权限API返回 ${Object.keys(adminPermissions).length} 个仓库的权限数据`);
-      return res.json(adminPermissions);
+      // 返回权限数据
+      return res.json(warehousePermissions);
     } catch (error) {
       console.error('获取仓库权限错误:', error);
       
@@ -1332,16 +1386,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  apiRouter.post("/teams", async (req, res) => {
+  apiRouter.post("/teams", verifySession, async (req, res) => {
     try {
       // 确保使用当前活动的存储实现
       const currentStorage = useFallbackStorage ? memStorage : storage;
       console.log(`创建团队使用${useFallbackStorage ? '内存存储' : '数据库存储'}模式`);
       
+      // 验证用户是否真实登录
+      if (!req.session.realAuthenticated) {
+        return res.status(403).json({
+          error: "需要真实用户认证",
+          message: "创建团队需要用户真实登录，不支持访客模式"
+        });
+      }
+      
+      // 解析和验证团队数据
       const teamData = insertTeamSchema.parse(req.body);
+      
+      // 创建团队记录
       const team = await currentStorage.createTeam(teamData);
-      res.status(201).json(team);
+      
+      // 导入权限初始化服务
+      const { initializeTeamPermissions } = require('./services/team-permission.service');
+      
+      // 确定团队类型
+      let teamType = 'general';
+      if (teamData.name) {
+        const name = teamData.name.toLowerCase();
+        if (name.includes('admin') || name.includes('管理')) {
+          teamType = 'admin';
+        } else if (name.includes('sales') || name.includes('销售')) {
+          teamType = 'sales';
+        } else if (name.includes('warehouse') || name.includes('仓库')) {
+          teamType = 'warehouse';
+        }
+      }
+      
+      // 初始化团队权限
+      console.log(`[团队API] 为新创建的团队(ID=${team.id})初始化权限，类型: ${teamType}`);
+      const initResult = await initializeTeamPermissions(team.id, teamType as any);
+      
+      // 添加当前用户作为团队成员和管理员
+      if (req.user && (req.user as any).id) {
+        const currentUserId = (req.user as any).id;
+        await currentStorage.addTeamMember({
+          teamId: team.id,
+          userId: currentUserId,
+          isAdmin: true // 创建团队的用户默认为团队管理员
+        });
+        console.log(`[团队API] 已将用户(ID=${currentUserId})添加为团队(ID=${team.id})的管理员`);
+      }
+      
+      // 返回创建结果，包含权限初始化状态
+      res.status(201).json({
+        team,
+        permissions: {
+          initialized: initResult.success,
+          pagePermissions: initResult.pagePermissions,
+          warehousePermissions: initResult.warehousePermissions
+        }
+      });
     } catch (err) {
+      console.error('[团队API] 创建团队错误:', err);
       handleZodError(err, res);
     }
   });

@@ -211,6 +211,86 @@ export function normalizeWarehousePermissions(
 }
 
 /**
+ * 合并多个权限集合，处理权限冲突
+ * 当用户属于多个团队时，合并所有团队的权限
+ * 权限合并规则：
+ * 1. 页面权限取并集
+ * 2. 操作权限取并集
+ * 3. 仓库权限优先级：manage > view
+ * 
+ * @param permissionSets 权限集合数组
+ * @returns 合并后的权限集合
+ */
+export function mergePermissions(permissionSets: PermissionSet[]): PermissionSet {
+  // 如果没有权限集合，返回空权限
+  if (permissionSets.length === 0) {
+    return {
+      pages: [],
+      actions: [],
+      warehouses: {},
+      isAdmin: false,
+      isSuperAdmin: false
+    };
+  }
+  
+  // 如果只有一个权限集合，直接返回
+  if (permissionSets.length === 1) {
+    return permissionSets[0];
+  }
+  
+  // 合并多个权限集合
+  const result: PermissionSet = {
+    pages: [],
+    actions: [],
+    warehouses: {},
+    isAdmin: false,
+    isSuperAdmin: false
+  };
+  
+  // 页面和操作权限使用Set取并集
+  const pageSet = new Set<string>();
+  const actionSet = new Set<string>();
+  
+  // 仓库权限合并
+  const warehouseMap: Record<string, { view: boolean, manage: boolean }> = {};
+  
+  // 遍历所有权限集合
+  for (const permissions of permissionSets) {
+    // 合并Admin和SuperAdmin标志
+    result.isAdmin = result.isAdmin || permissions.isAdmin === true;
+    result.isSuperAdmin = result.isSuperAdmin || permissions.isSuperAdmin === true;
+    
+    // 合并页面权限
+    for (const page of permissions.pages) {
+      pageSet.add(page);
+    }
+    
+    // 合并操作权限
+    for (const action of permissions.actions) {
+      actionSet.add(action);
+    }
+    
+    // 合并仓库权限
+    for (const [warehouseId, permission] of Object.entries(permissions.warehouses)) {
+      if (!warehouseMap[warehouseId]) {
+        warehouseMap[warehouseId] = { view: false, manage: false };
+      }
+      
+      // 使用或操作合并权限
+      warehouseMap[warehouseId].view = warehouseMap[warehouseId].view || permission.view;
+      warehouseMap[warehouseId].manage = warehouseMap[warehouseId].manage || permission.manage;
+    }
+  }
+  
+  // 转换Set为数组
+  result.pages = Array.from(pageSet);
+  result.actions = Array.from(actionSet);
+  result.warehouses = warehouseMap;
+  
+  return result;
+}
+
+/**
  * 保存权限到请求会话，同时保存新旧两种格式
  * @param req Express请求对象
  * @param permissions 权限集合
@@ -408,61 +488,86 @@ export async function loadUserPermissions(
       return permissions;
     }
     
-    // 2. 查询团队页面权限
-    // 使用直接SQL查询，确保字段名正确
-    console.log(`[权限加载] 直接使用SQL查询团队页面权限，团队IDs: ${teamIds.join(', ')}`);
-    const pagePermissionsResult = await db.$client`
-      SELECT teamid, page_name, can_access FROM team_page_permissions 
-      WHERE teamid IN ${db.$client(teamIds)}
-    `;
+    // 如果用户在多个团队中，我们需要为每个团队计算权限并合并
+    console.log(`[权限加载] 用户${userId}属于${teamIds.length}个团队，构建合并权限`);
     
-    // 输出调试信息，确认查询执行是否成功
-    console.log(`[权限加载] SQL查询结果: `, pagePermissionsResult);
+    // 为每个团队创建独立的权限对象
+    const teamPermissions: PermissionSet[] = [];
     
-    // 收集有权限的页面
-    const pageSet = new Set<string>();
-    for (const permission of pagePermissionsResult) {
-      if (permission.can_access) {
-        pageSet.add(permission.page_name);
-      }
-    }
-    permissions.pages = Array.from(pageSet);
-    
-    // 3. 查询团队仓库权限
-    // 使用直接SQL查询，确保字段名正确
-    console.log(`[权限加载] 直接使用SQL查询团队仓库权限，团队IDs: ${teamIds.join(', ')}`);
-    const warehousePermissionsResult = await db.$client`
-      SELECT teamid, warehouseid, can_view, can_manage FROM team_warehouse_permissions 
-      WHERE teamid IN ${db.$client(teamIds)}
-    `;
-    
-    // 输出调试信息，确认查询执行是否成功
-    console.log(`[权限加载] SQL查询结果: `, warehousePermissionsResult);
-    
-    // 收集仓库权限
-    for (const permission of warehousePermissionsResult) {
-      const warehouseId = permission.warehouseid.toString();
+    // 为每个团队查询权限
+    for (const teamId of teamIds) {
+      // 检查用户在该团队的角色
+      const isTeamAdmin = teamMembersResult.find(member => member.teamid === teamId)?.isadmin || false;
       
-      // 如果这个仓库已经有更高级别的权限，不覆盖
-      if (permissions.warehouses[warehouseId]) {
-        const existing = permissions.warehouses[warehouseId];
-        permissions.warehouses[warehouseId] = {
-          view: existing.view || !!permission.can_view,
-          manage: existing.manage || !!permission.can_manage
-        };
-      } else {
-        permissions.warehouses[warehouseId] = {
+      // 创建团队特定的权限对象
+      const teamPermission: PermissionSet = {
+        pages: [],
+        actions: isTeamAdmin ? ['view', 'edit'] : ['view'],
+        warehouses: {},
+        isAdmin: false,
+        isSuperAdmin: false
+      };
+      
+      // 2. 查询团队页面权限
+      console.log(`[权限加载] 查询团队${teamId}的页面权限`);
+      const pagePermissionsResult = await db.$client`
+        SELECT page_name, can_access FROM team_page_permissions 
+        WHERE teamid = ${teamId}
+      `;
+      
+      // 收集有权限的页面
+      for (const permission of pagePermissionsResult) {
+        if (permission.can_access) {
+          teamPermission.pages.push(permission.page_name);
+        }
+      }
+      
+      // 3. 查询团队仓库权限
+      console.log(`[权限加载] 查询团队${teamId}的仓库权限`);
+      const warehousePermissionsResult = await db.$client`
+        SELECT warehouseid, can_view, can_manage FROM team_warehouse_permissions 
+        WHERE teamid = ${teamId}
+      `;
+      
+      // 收集仓库权限
+      for (const permission of warehousePermissionsResult) {
+        const warehouseId = permission.warehouseid.toString();
+        teamPermission.warehouses[warehouseId] = {
           view: !!permission.can_view,
           manage: !!permission.can_manage
         };
       }
+      
+      // 将团队权限添加到权限集合
+      teamPermissions.push(teamPermission);
     }
     
-    // 4. 设置基本操作权限
-    permissions.actions = ['view'];
+    // 使用高级合并策略合并多个团队权限
+    if (teamPermissions.length > 0) {
+      let mergedPermissions = teamPermissions[0];
+      
+      // 从第二个团队开始合并
+      for (let i = 1; i < teamPermissions.length; i++) {
+        // 使用最高权限策略合并权限
+        mergedPermissions = resolvePermissionConflicts(
+          mergedPermissions,
+          teamPermissions[i],
+          'higher_privilege'
+        );
+      }
+      
+      // 将合并后的权限应用到用户权限
+      permissions.pages = mergedPermissions.pages;
+      permissions.actions = mergedPermissions.actions;
+      permissions.warehouses = mergedPermissions.warehouses;
+    } else {
+      // 如果计算权限失败，设置基本权限
+      permissions.pages = ['dashboard'];
+      permissions.actions = ['view'];
+    }
     
-    // 如果用户在任一团队中是管理员，给予编辑权限
-    if (teamMembersResult.some(member => member.isadmin)) {
+    // 特别处理: 如果用户在任一团队中是管理员，确保拥有编辑权限
+    if (teamMembersResult.some(member => member.isadmin) && !permissions.actions.includes('edit')) {
       permissions.actions.push('edit');
     }
     
@@ -482,6 +587,126 @@ export async function loadUserPermissions(
       isSuperAdmin: false
     };
   }
+}
+
+/**
+ * 解决多团队权限冲突的高级合并策略
+ * 处理特殊场景下的权限合并需求，支持角色优先级和权限优先级
+ * 
+ * @param basePermissions 基础权限集合
+ * @param newPermissions 新权限集合
+ * @param mergeStrategy 合并策略 (默认为'higher_privilege')
+ * @returns 合并后的权限集合
+ */
+export function resolvePermissionConflicts(
+  basePermissions: PermissionSet, 
+  newPermissions: PermissionSet,
+  mergeStrategy: 'higher_privilege' | 'role_based' | 'explicit_deny' = 'higher_privilege'
+): PermissionSet {
+  console.log(`[权限冲突] 开始解决权限冲突，策略: ${mergeStrategy}`);
+  console.log(`[权限冲突] 基础权限: ${JSON.stringify(basePermissions)}`);
+  console.log(`[权限冲突] 新权限: ${JSON.stringify(newPermissions)}`);
+  
+  // 创建结果副本
+  const result: PermissionSet = {
+    pages: [...basePermissions.pages],
+    actions: [...basePermissions.actions],
+    warehouses: { ...basePermissions.warehouses },
+    isAdmin: basePermissions.isAdmin || false,
+    isSuperAdmin: basePermissions.isSuperAdmin || false
+  };
+  
+  // 根据不同策略合并权限
+  switch (mergeStrategy) {
+    case 'higher_privilege':
+      // 权限优先级策略：取最高权限
+      // Admin和SuperAdmin状态取或
+      result.isAdmin = result.isAdmin || newPermissions.isAdmin || false;
+      result.isSuperAdmin = result.isSuperAdmin || newPermissions.isSuperAdmin || false;
+      
+      // 页面和操作权限取并集
+      result.pages = Array.from(new Set([...result.pages, ...newPermissions.pages]));
+      result.actions = Array.from(new Set([...result.actions, ...newPermissions.actions]));
+      
+      // 仓库权限取最高权限
+      for (const [warehouseId, permission] of Object.entries(newPermissions.warehouses)) {
+        if (!result.warehouses[warehouseId]) {
+          result.warehouses[warehouseId] = { view: false, manage: false };
+        }
+        
+        // 使用或操作取最高权限
+        result.warehouses[warehouseId].view = result.warehouses[warehouseId].view || permission.view;
+        result.warehouses[warehouseId].manage = result.warehouses[warehouseId].manage || permission.manage;
+      }
+      break;
+      
+    case 'role_based':
+      // 角色优先级策略：高角色权限覆盖低角色权限
+      // 如果新权限来自更高角色，完全覆盖基础权限
+      if ((newPermissions.isSuperAdmin && !result.isSuperAdmin) || 
+          (newPermissions.isAdmin && !result.isAdmin && !result.isSuperAdmin)) {
+        result.pages = [...newPermissions.pages];
+        result.actions = [...newPermissions.actions];
+        result.warehouses = { ...newPermissions.warehouses };
+        result.isAdmin = newPermissions.isAdmin || false;
+        result.isSuperAdmin = newPermissions.isSuperAdmin || false;
+      } 
+      // 如果同级角色，合并权限
+      else if ((newPermissions.isSuperAdmin && result.isSuperAdmin) ||
+              (newPermissions.isAdmin && result.isAdmin) ||
+              (!newPermissions.isAdmin && !result.isAdmin)) {
+        // 页面和操作权限取并集
+        result.pages = Array.from(new Set([...result.pages, ...newPermissions.pages]));
+        result.actions = Array.from(new Set([...result.actions, ...newPermissions.actions]));
+        
+        // 仓库权限取最高权限
+        for (const [warehouseId, permission] of Object.entries(newPermissions.warehouses)) {
+          if (!result.warehouses[warehouseId]) {
+            result.warehouses[warehouseId] = { view: false, manage: false };
+          }
+          
+          // 使用或操作取最高权限
+          result.warehouses[warehouseId].view = result.warehouses[warehouseId].view || permission.view;
+          result.warehouses[warehouseId].manage = result.warehouses[warehouseId].manage || permission.manage;
+        }
+      }
+      break;
+      
+    case 'explicit_deny':
+      // 显式拒绝策略：明确的拒绝权限优先级最高
+      // Admin和SuperAdmin状态取或
+      result.isAdmin = result.isAdmin || newPermissions.isAdmin || false;
+      result.isSuperAdmin = result.isSuperAdmin || newPermissions.isSuperAdmin || false;
+      
+      // 页面和操作权限取并集
+      result.pages = Array.from(new Set([...result.pages, ...newPermissions.pages]));
+      result.actions = Array.from(new Set([...result.actions, ...newPermissions.actions]));
+      
+      // 仓库权限处理：明确的拒绝优先
+      for (const [warehouseId, permission] of Object.entries(newPermissions.warehouses)) {
+        if (!result.warehouses[warehouseId]) {
+          result.warehouses[warehouseId] = { view: false, manage: false };
+        }
+        
+        // 如果新权限明确拒绝查看，则覆盖基础权限
+        if (permission.view === false) {
+          result.warehouses[warehouseId].view = false;
+        } else if (permission.view === true) {
+          result.warehouses[warehouseId].view = true;
+        }
+        
+        // 如果新权限明确拒绝管理，则覆盖基础权限
+        if (permission.manage === false) {
+          result.warehouses[warehouseId].manage = false;
+        } else if (permission.manage === true) {
+          result.warehouses[warehouseId].manage = true;
+        }
+      }
+      break;
+  }
+  
+  console.log(`[权限冲突] 合并后权限: ${JSON.stringify(result)}`);
+  return result;
 }
 
 /**
