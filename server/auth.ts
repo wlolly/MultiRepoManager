@@ -360,10 +360,11 @@ export async function initiateLogin(req: Request, res: Response) {
       req.session.language = user.language || 'zh';
       req.session.username = user.username;
       // 写入用户权限
+      const isAdminRole = user.role === 'admin' || user.role === 'super_admin';
       req.session.permissions = {
-        pages: user.role === 'admin' ? ['all'] : ['dashboard', 'profile'],
-        actions: user.role === 'admin' ? ['all'] : ['read'],
-        warehouses: user.role === 'admin' ? { all: { canView: true, canManage: true } } : {}
+        pages: isAdminRole ? ['all'] : ['dashboard', 'profile'],
+        actions: isAdminRole ? ['all'] : ['read'],
+        warehouses: isAdminRole ? { all: { canView: true, canManage: true } } : {}
       };
 
       // 添加会话安全信息
