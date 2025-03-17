@@ -752,21 +752,40 @@ export async function registerUser(req: Request, res: Response) {
  */
 export async function getCurrentUser(req: Request, res: Response) {
   try {
-    // 记录请求信息便于调试
+    // 详细记录请求信息，用于调试会话问题
+    console.log(`[认证系统] ========== 获取当前用户信息 ==========`);
     console.log(`[认证系统] 获取当前用户, 会话ID: ${req.sessionID}, IP: ${req.ip}`);
-    console.log(`[认证系统] 请求头信息: ${JSON.stringify({
-      'x-session-id': req.headers['x-session-id'],
-      'cookie': req.headers.cookie?.substring(0, 50) + '...',
+    console.log(`[认证系统] 请求头信息:`, {
+      cookie: req.headers.cookie?.substring(0, 50) + '...',
       'user-agent': req.headers['user-agent']?.substring(0, 50) + '...',
-    })}`);
+      'x-session-id': req.headers['x-session-id'],
+      host: req.headers.host,
+      referer: req.headers.referer
+    });
+    console.log(`[认证系统] 请求类型: ${req.method} ${req.path}`);
+    console.log(`[认证系统] 会话ID来源:`, req.headers['x-session-id'] || 'Express默认');
     
-    // 检查会话状态
-    console.log(`[认证系统] 会话状态: ${JSON.stringify({
+    // 打印会话状态
+    console.log(`[认证系统] 会话状态:`, {
       id: req.sessionID,
-      authenticated: req.session.authenticated,
-      isAuthenticated: req.session.isAuthenticated,
-      userId: req.session.userId,
-    })}`);
+      // 只打印安全的会话数据
+      authenticated: req.session?.authenticated || false,
+      isAuthenticated: req.session?.isAuthenticated || false,
+      userId: req.session?.userId || null,
+      role: req.session?.role || null,
+      lastActivity: req.session?.lastActivity ? new Date(req.session.lastActivity).toISOString() : null
+    });
+    
+    // 检查localStorage/sessionStorage中的会话ID
+    const clientSessionId = req.headers['x-session-id'] as string;
+    if (clientSessionId) {
+      console.log(`[认证系统] 客户端提供的会话ID: ${clientSessionId}`);
+      
+      // 如果客户端提供的会话ID与当前不同，记录下来
+      if (clientSessionId !== req.sessionID) {
+        console.log(`[认证系统] ⚠️ 会话ID不匹配! 客户端: ${clientSessionId}, 服务器: ${req.sessionID}`);
+      }
+    }
     
     // 确保存储接口存在
     if (!req.app || !req.app.locals || !req.app.locals.storage) {
@@ -787,6 +806,42 @@ export async function getCurrentUser(req: Request, res: Response) {
 
     const db = req.app.locals.storage;
     
+    // 获取数据库中的会话记录
+    const dbSession = await db.getUserSessionById(req.sessionID);
+    console.log(`[认证系统] 数据库会话查询结果: ${dbSession ? '找到会话, 用户ID: ' + (dbSession.userId || 'null') : '会话不存在'}`);
+    
+    // 同时检查是否有客户端提供的会话记录
+    let clientDbSession = null;
+    if (clientSessionId && clientSessionId !== req.sessionID) {
+      clientDbSession = await db.getUserSessionById(clientSessionId);
+      console.log(`[认证系统] 客户端会话ID数据库查询结果: ${clientDbSession ? '找到会话, 用户ID: ' + (clientDbSession.userId || 'null') : '会话不存在'}`);
+      
+      // 如果客户端会话有效但当前会话无效，使用客户端会话
+      if (clientDbSession && clientDbSession.userId && (!dbSession || !dbSession.userId)) {
+        console.log(`[认证系统] 使用客户端会话ID替代服务器会话ID`);
+        
+        // 在响应中指示前端应使用的会话ID
+        res.setHeader('X-Valid-Session-ID', clientSessionId);
+        
+        // 更新当前请求的会话
+        req.session.userId = clientDbSession.userId;
+        req.session.authenticated = true;
+        req.session.isAuthenticated = true;
+        
+        // 保存会话状态
+        await new Promise<void>((resolve) => {
+          req.session.save((err) => {
+            if (err) {
+              console.error('[认证系统] 保存会话状态失败:', err);
+            } else {
+              console.log('[认证系统] 会话状态已保存');
+            }
+            resolve();
+          });
+        });
+      }
+    }
+    
     // 检查Express会话状态是否已认证（内存中）
     if (req.session && (req.session.authenticated || req.session.isAuthenticated) && req.session.userId) {
       console.log('[认证系统] Express会话中已认证，尝试获取用户:', req.session.userId);
@@ -804,22 +859,32 @@ export async function getCurrentUser(req: Request, res: Response) {
             warehouses: user.role === 'admin' ? { all: { canView: true, canManage: true } } : {}
           };
           
-          // 返回成功响应
-          console.log('[认证系统] 获取当前用户信息，用户ID:', user.id);
+          // 更新会话最后活动时间
+          try {
+            await db.updateUserSession(req.sessionID, {
+              lastActivity: new Date()
+            });
+            console.log(`[认证系统] 已更新会话最后活动时间`);
+          } catch (updateError) {
+            console.error('[认证系统] 更新会话活动时间失败:', updateError);
+          }
           
+          // 返回成功响应
+          console.log('[认证系统] 返回已认证用户信息, 用户ID:', user.id);
           return res.status(200).json({
             authenticated: true,
+            message: "登录有效",
             user: {
-              id: user.id, // 确保使用真实的用户ID
+              id: user.id,
               username: user.username,
               role: user.role,
-              fullName: user.full_name,
-              avatarUrl: user.avatar_url,
+              fullName: user.full_name || user.username,
               language: user.language || 'zh',
               isactive: user.is_active, // 使用前端要求的字段名
               isSocialUser: !!user.social_id, // 社交账号标识
-              permissions // 添加权限信息
-            }
+            },
+            permissions, // 包含权限信息
+            sessionId: req.sessionID
           });
         }
       } catch (userError) {
