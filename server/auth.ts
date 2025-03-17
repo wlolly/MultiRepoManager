@@ -74,6 +74,232 @@ export function generateVerificationId(): string {
  * 用户登录处理
  * 验证用户凭据并设置会话状态，创建数据库会话记录
  */
+/**
+ * 用户登录验证第一阶段
+ * 验证用户凭据并生成验证ID，需要用户进行第二阶段验证
+ */
+export async function initiateLogin(req: Request, res: Response) {
+  const { username, password } = req.body;
+  
+  try {
+    // 获取用户数据
+    const db = req.app.locals.storage;
+    const user = await db.getUserByUsername(username);
+    
+    // 用户不存在或密码不匹配
+    if (!user || !verifyPassword(user.password || '', password)) {
+      return res.status(401).json({
+        success: false,
+        message: '用户名或密码错误',
+        authenticated: false
+      });
+    }
+    
+    // 用户账号未激活
+    if (user.is_active === false) {
+      return res.status(401).json({
+        success: false,
+        authenticated: false,
+        message: '账号未激活，请联系管理员'
+      });
+    }
+    
+    console.log('[认证系统] 登录验证第一阶段成功: 用户ID:', user.id, '角色:', user.role);
+    
+    // 生成随机验证ID
+    const verificationId = generateVerificationId();
+    console.log('[认证系统] 生成验证ID:', verificationId);
+    
+    // 生成随机6位验证码
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    // 验证记录有效期 (10分钟)
+    const expirationTime = new Date(Date.now() + 10 * 60 * 1000);
+    
+    // 创建验证记录
+    const verificationData = {
+      verificationId,
+      userId: user.id,
+      status: 'pending',
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent') || '',
+      created: new Date(),
+      expires: expirationTime,
+      used: false,
+      usedAt: null,
+      // 在实际应用中，验证码会通过短信、邮件等方式发送给用户
+      code: verificationCode
+    };
+    
+    // 存储验证记录
+    await db.createLoginVerification(verificationData);
+    
+    // 实际系统中，这里会发送验证码到用户手机或邮箱
+    // 这里简化处理，直接在控制台打印验证码(仅供测试)
+    console.log(`[认证系统][测试] 用户 ${username} 的验证码是: ${verificationCode}`);
+    
+    // 返回成功响应，包含验证ID（不包含验证码）
+    return res.status(200).json({
+      success: true,
+      message: '验证码已发送',
+      requireVerification: true,
+      verificationId,
+      user: {
+        username: user.username
+      }
+    });
+  } catch (error) {
+    console.error('[认证系统] 登录验证处理错误:', error);
+    return res.status(500).json({
+      success: false,
+      authenticated: false,
+      message: '服务器错误，请稍后再试'
+    });
+  }
+}
+
+/**
+ * 用户登录验证第二阶段 - 验证码验证
+ * 验证用户提供的验证码，如果正确则建立会话
+ */
+export async function completeLogin(req: Request, res: Response) {
+  const { verificationId, code } = req.body;
+  
+  try {
+    if (!verificationId || !code) {
+      return res.status(400).json({
+        success: false,
+        message: '缺少验证ID或验证码',
+        authenticated: false
+      });
+    }
+    
+    // 获取存储接口
+    const db = req.app.locals.storage;
+    
+    // 获取验证记录
+    const verification = await db.getLoginVerification(verificationId);
+    
+    // 验证记录不存在
+    if (!verification) {
+      return res.status(401).json({
+        success: false,
+        message: '无效的验证ID',
+        authenticated: false
+      });
+    }
+    
+    // 验证记录已使用
+    if (verification.used) {
+      return res.status(401).json({
+        success: false,
+        message: '此验证码已使用',
+        authenticated: false
+      });
+    }
+    
+    // 验证记录已过期
+    if (new Date() > new Date(verification.expires)) {
+      return res.status(401).json({
+        success: false,
+        message: '验证码已过期',
+        authenticated: false
+      });
+    }
+    
+    // 验证码不匹配
+    if (verification.code !== code) {
+      return res.status(401).json({
+        success: false,
+        message: '验证码错误',
+        authenticated: false
+      });
+    }
+    
+    // 获取用户信息
+    const user = await db.getUser(verification.userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: '用户不存在',
+        authenticated: false
+      });
+    }
+    
+    console.log('[认证系统] 登录验证第二阶段成功: 用户ID:', user.id);
+    
+    // 标记验证记录为已使用
+    await db.updateLoginVerification(verificationId, {
+      used: true,
+      usedAt: new Date(),
+      status: 'used'
+    });
+    
+    // 生成随机会话ID
+    const sessionId = generateSessionId();
+    console.log('[认证系统] 生成新会话ID:', sessionId);
+    
+    // 创建数据库会话记录
+    const userSessionData = {
+      sessionId,
+      userId: user.id,
+      ipAddress: verification.ipAddress,
+      userAgent: verification.userAgent,
+      isValid: true,
+      lastActivity: new Date(),
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30天过期
+    };
+    
+    // 存储会话到数据库
+    await db.createUserSession(userSessionData);
+    
+    // 更新会话对象
+    req.session.authenticated = true;
+    req.session.userId = user.id;
+    req.session.role = user.role;
+    req.session.language = user.language || 'zh';
+    req.session.username = user.username;
+    
+    // 设置新会话ID 
+    req.sessionID = sessionId;
+    
+    // 设置cookie，确保新会话ID在客户端可用
+    res.cookie('sessionId', sessionId, {
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30天
+      httpOnly: false, // 允许JavaScript访问
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/'
+    });
+    
+    // 返回成功响应
+    return res.status(200).json({
+      success: true,
+      authenticated: true,
+      message: '登录成功',
+      sessionId,
+      user: {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        fullName: user.full_name,
+        language: user.language || 'zh'
+      }
+    });
+  } catch (error) {
+    console.error('[认证系统] 验证完成处理错误:', error);
+    return res.status(500).json({
+      success: false,
+      authenticated: false,
+      message: '服务器错误，请稍后再试'
+    });
+  }
+}
+
+/**
+ * 传统登录方法 (兼容之前的代码)
+ * 验证用户凭据并设置会话状态，创建数据库会话记录
+ */
 export async function loginUser(req: Request, res: Response) {
   const { username, password } = req.body;
   
