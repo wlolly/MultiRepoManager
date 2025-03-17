@@ -3,12 +3,26 @@ import { generateSessionId } from '../auth';
 
 export async function authMiddleware(req: Request, res: Response, next: NextFunction) {
   try {
-    // 检查请求头中的会话ID
-    const clientSessionId = req.headers['x-session-id'] as string;
+    // 记录请求信息
+    console.log(`[认证中间件] 请求: ${req.method} ${req.path}`);
+    console.log(`[认证中间件] 会话状态:`, {
+      id: req.sessionID,
+      clientId: req.headers['x-session-id'],
+      authenticated: req.session?.authenticated
+    });
 
-    if (clientSessionId) {
-      console.log(`[认证中间件] 使用客户端提供的会话ID: ${clientSessionId}`);
+    // 优先使用客户端提供的会话ID
+    const clientSessionId = req.headers['x-session-id'] as string;
+    if (clientSessionId && clientSessionId.length > 10) {
       req.sessionID = clientSessionId;
+      console.log(`[认证中间件] 使用客户端会话ID: ${clientSessionId}`);
+    }
+
+    // 如果没有任何会话ID，创建新会话
+    if (!req.sessionID) {
+      console.log('[认证中间件] 没有会话ID，创建新会话');
+      next();
+      return;
     }
 
     // 获取存储接口
@@ -56,14 +70,14 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
   // 检查会话中的认证状态
   const isAuthenticated = req.session && 
     (req.session.authenticated === true || req.session.userId > 0);
-    
+
   if (!isAuthenticated) {
     return res.status(401).json({
       message: '需要登录才能访问',
       authenticated: false
     });
   }
-  
+
   next();
 }
 
@@ -76,7 +90,7 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction) {
     (req.session.authenticated === true || req.session.userId > 0);
   const isAdmin = req.session && 
     (req.session.role === 'admin' || req.session.role === 'super_admin');
-    
+
   if (!isAuthenticated || !isAdmin) {
     return res.status(403).json({
       message: '需要管理员权限才能访问',
@@ -84,6 +98,6 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction) {
       isAdmin: false
     });
   }
-  
+
   next();
 }

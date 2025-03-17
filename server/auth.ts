@@ -847,9 +847,20 @@ export async function getCurrentUser(req: Request, res: Response) {
       }
     }
 
-    // 检查Express会话状态是否已认证（内存中）
-    if (req.session && (req.session.authenticated || req.session.isAuthenticated) && req.session.userId) {
-      console.log('[认证系统] Express会话中已认证，尝试获取用户:', req.session.userId);
+    // 详细的会话状态检查
+    const sessionValid = req.session && 
+                        (req.session.authenticated || req.session.isAuthenticated) && 
+                        req.session.userId;
+    
+    console.log('[认证系统] 会话状态检查:', {
+      hasSession: !!req.session,
+      authenticated: req.session?.authenticated,
+      isAuthenticated: req.session?.isAuthenticated,
+      userId: req.session?.userId
+    });
+
+    if (sessionValid) {
+      console.log('[认证系统] Express会话验证通过，用户ID:', req.session.userId);
 
       try {
         // 从数据库获取用户信息
