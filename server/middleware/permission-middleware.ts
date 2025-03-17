@@ -198,7 +198,12 @@ export function checkWarehouseManagePermission(warehouseIdParam: string = 'wareh
  * @param role 用户角色 (可选，如果未提供则会从数据库中读取)
  * @returns 用户有权限访问的页面列表
  */
-export async function getUserPagePermissions(userId: number, role?: string): Promise<string[]> {
+export async function getUserPagePermissions(userId: number, role?: string): Promise<string[] | { 
+  pages: string[], 
+  actions: string[], 
+  isAdmin?: boolean,
+  isSuperAdmin?: boolean
+}> {
   try {
     // 如果没有提供角色，从数据库中获取用户角色
     if (!role && userId > 0) {
@@ -208,11 +213,12 @@ export async function getUserPagePermissions(userId: number, role?: string): Pro
       }
     }
     
+    console.log(`[权限] 获取用户(ID=${userId})权限, 角色=${role || '未知'}`);
+    
     // 如果是超级管理员或管理员，可以访问所有页面
     if (role === 'super_admin' || role === 'admin') {
-      // 返回系统中所有定义的页面，确保管理员有完整权限
-      // 这个列表应包含所有可能的页面，与前端导航项匹配
-      return [
+      // 为管理员返回完整权限结构，包括是否是管理员的标志
+      const allPages = [
         "dashboard",
         "products",
         "warehouse-products", 
@@ -232,6 +238,14 @@ export async function getUserPagePermissions(userId: number, role?: string): Pro
         "create-outbound-order",
         "create-inbound-order"
       ];
+      
+      // 返回更丰富的权限结构，包括页面权限和操作权限
+      return {
+        pages: allPages,
+        actions: ['view', 'create', 'edit', 'delete', 'export', 'import'],
+        isAdmin: true,
+        isSuperAdmin: role === 'super_admin'
+      };
     }
     
     // 查询用户所属的团队
@@ -244,7 +258,12 @@ export async function getUserPagePermissions(userId: number, role?: string): Pro
     
     // 如果用户不属于任何团队，只返回默认权限
     if (teamIds.length === 0) {
-      return ['dashboard']; // 默认只能访问仪表盘
+      // 对于普通用户，返回具有相同结构的有限权限
+      return {
+        pages: ['dashboard'],
+        actions: ['view'],
+        isAdmin: false
+      };
     }
     
     // 查询团队页面权限
@@ -259,11 +278,20 @@ export async function getUserPagePermissions(userId: number, role?: string): Pro
       ...pagePermissions.rows.map((row: any) => row.page_name)
     ])];
     
-    return pages;
+    // 对于普通用户，也返回结构一致的权限对象
+    return {
+      pages: pages,
+      actions: ['view', 'create', 'edit'],  // 普通用户有基本操作权限
+      isAdmin: false
+    };
   } catch (error) {
     console.error('获取用户页面权限失败:', error);
-    // 出错时返回基本权限
-    return ['dashboard'];
+    // 出错时返回基本权限结构
+    return {
+      pages: ['dashboard'],
+      actions: ['view'],
+      isAdmin: false
+    };
   }
 }
 
@@ -378,9 +406,20 @@ export async function hasPagePermission(userId: number, role?: string, pageName?
       return true;
     }
     
-    // 获取用户页面权限
-    const pagePermissions = await getUserPagePermissions(userId, role);
-    return pagePermissions.includes(pageName);
+    // 获取用户页面权限 (处理新旧两种权限格式)
+    const permissionData = await getUserPagePermissions(userId, role);
+    
+    // 检查是否是新格式（对象）
+    if (permissionData && typeof permissionData === 'object' && !Array.isArray(permissionData) && 'pages' in permissionData) {
+      // 新格式 - 从pages数组中查找
+      return (permissionData as any).pages.includes(pageName);
+    } else if (Array.isArray(permissionData)) {
+      // 旧格式 - 直接检查字符串数组
+      return permissionData.includes(pageName);
+    }
+    
+    // 如果都不是，返回false
+    return false;
   } catch (error) {
     console.error('检查页面权限失败:', error);
     return false;

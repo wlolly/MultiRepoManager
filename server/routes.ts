@@ -757,7 +757,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 管理员接口 - 更改用户角色
   apiRouter.post('/auth/users/:id/role', verifySession, isAdmin, updateUserRole);
 
-  // 权限管理接口 - 获取页面权限
+  // 权限管理接口 - 获取页面权限 (更新适配新的权限结构)
   apiRouter.get('/permissions/pages', async (req, res) => {
     try {
       // 确保使用当前活动的存储实现
@@ -785,7 +785,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`用户角色: ${userRole}`);
       }
       
-      const permissions = await getUserPagePermissions(userId, userRole);
+      // 获取新的权限结构 (包含页面列表和操作列表)
+      const permissionData = await getUserPagePermissions(userId, userRole);
       
       // 如果是访客用户，添加特殊标记
       if (isGuest) {
@@ -793,16 +794,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.setHeader('X-Limited-Access', 'true');
       }
       
-      res.json(permissions);
+      // 检查是否返回的是新格式（对象）还是旧格式（字符串数组）
+      if (permissionData && typeof permissionData === 'object' && !Array.isArray(permissionData) && 'pages' in permissionData) {
+        // 新格式 - 直接返回完整权限对象
+        console.log('返回新格式权限数据，包含管理员状态:', (permissionData as any).isAdmin);
+        res.json(permissionData);
+      } else {
+        // 旧格式 - 转换为新格式
+        const pageList = Array.isArray(permissionData) ? permissionData : ['dashboard'];
+        console.log('返回转换后的权限格式，页面列表:', pageList);
+        res.json({
+          pages: pageList,
+          actions: ['view'],
+          isAdmin: userRole === 'admin' || userRole === 'super_admin'
+        });
+      }
     } catch (error) {
       console.error('获取页面权限错误:', error);
       
       // 即使出错，也返回基本访客权限，确保系统可用性
       const guestPermissions = {
-        'dashboard': true,
-        'products': true,
-        'login': true,
-        'register': true
+        pages: ['dashboard'],
+        actions: ['view'],
+        isAdmin: false
       };
       
       res.setHeader('X-Guest-User', 'true');
