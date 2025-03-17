@@ -1210,10 +1210,7 @@ export async function logout(req: Request, res: Response) {
     // 如果有用户ID，清理用户的权限缓存
     if (userId) {
       try {
-        // 导入权限缓存工具函数
-        const { clearUserPermissionCache } = require('./utils/auth-cache-utils');
-        
-        // 清理权限缓存
+        // 清理权限缓存 (使用顶部导入的函数)
         clearUserPermissionCache(userId);
         console.log(`[认证系统] 已清理用户${userId}的权限缓存`);
       } catch (cacheError) {
@@ -1324,10 +1321,7 @@ export async function updateUserRole(req: Request, res: Response) {
     
     // 清理用户的权限缓存
     try {
-      // 导入权限缓存工具函数
-      const { clearUserPermissionCache } = require('./utils/auth-cache-utils');
-      
-      // 清理权限缓存
+      // 清理权限缓存 (使用顶部导入的函数)
       clearUserPermissionCache(userId);
       console.log(`[认证系统] 已清理用户${userId}的权限缓存（角色更新）`);
     } catch (cacheError) {
