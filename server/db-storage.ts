@@ -225,12 +225,14 @@ export class DbStorage implements IStorage {
       console.log(`[DbStorage] 使用direct SQL查询user_sessions表, sessionId=${sessionId}`);
       
       // 使用直接SQL查询确保字段名称正确
-      const sessions = await this.client`
+      const queryText = `
         SELECT * FROM user_sessions 
-        WHERE session_id = ${sessionId} 
+        WHERE session_id = $1 
         AND is_valid = true 
         AND expires_at > NOW()
       `;
+      
+      const sessions = await this.db.execute(sql.raw(queryText), [sessionId]);
       
       console.log(`[DbStorage] SQL查询结果:`, sessions);
       
@@ -238,11 +240,13 @@ export class DbStorage implements IStorage {
       if (session) {
         // 更新最后活动时间 - 使用ISO字符串而非Date对象
         const now = new Date().toISOString();
-        await this.client`
+        const updateQuery = `
           UPDATE user_sessions 
-          SET last_activity = ${now} 
-          WHERE session_id = ${sessionId}
+          SET last_activity = $1 
+          WHERE session_id = $2
         `;
+        
+        await this.db.execute(sql.raw(updateQuery), [now, sessionId]);
         
         // 将数据库结果转换为符合UserSession类型的对象
         return {
@@ -270,10 +274,12 @@ export class DbStorage implements IStorage {
       console.log(`[DbStorage] 使用direct SQL查询user_sessions表, userId=${userId}`);
       
       // 使用直接SQL查询确保字段名称正确
-      const sessions = await this.client`
+      const queryText = `
         SELECT * FROM user_sessions 
-        WHERE user_id = ${userId}
+        WHERE user_id = $1
       `;
+      
+      const sessions = await this.db.execute(sql.raw(queryText), [userId]);
       
       // 将数据库结果转换为符合UserSession类型的对象
       return sessions.map(session => ({
@@ -298,58 +304,49 @@ export class DbStorage implements IStorage {
     try {
       console.log(`[DbStorage] 使用direct SQL更新user_sessions表, sessionId=${sessionId}`, updates);
       
-      // 转换驼峰命名为下划线命名
-      const updateFields = [];
-      const updateValues = [];
+      // 创建更新集合
+      const updateSet: Record<string, any> = {
+        updated_at: new Date().toISOString()
+      };
       
-      // 总是更新更新时间
-      const now = new Date().toISOString();
-      updateFields.push("updated_at");
-      updateValues.push(now);
-      
+      // 添加需要更新的字段
       if (updates.isValid !== undefined) {
-        updateFields.push("is_valid");
-        updateValues.push(updates.isValid);
+        updateSet.is_valid = updates.isValid;
       }
       
       if (updates.lastActivity !== undefined) {
-        updateFields.push("last_activity");
-        updateValues.push(updates.lastActivity instanceof Date 
+        updateSet.last_activity = updates.lastActivity instanceof Date 
           ? updates.lastActivity.toISOString() 
-          : updates.lastActivity);
+          : updates.lastActivity;
       }
       
       if (updates.expiresAt !== undefined) {
-        updateFields.push("expires_at");
-        updateValues.push(updates.expiresAt instanceof Date 
+        updateSet.expires_at = updates.expiresAt instanceof Date 
           ? updates.expiresAt.toISOString() 
-          : updates.expiresAt);
+          : updates.expiresAt;
       }
       
       if (updates.data !== undefined) {
-        updateFields.push("data");
-        updateValues.push(JSON.stringify(updates.data));
+        updateSet.data = JSON.stringify(updates.data);
       }
       
-      // 构建更新查询
-      let queryText = "UPDATE user_sessions SET ";
+      // 构建简化的更新查询
+      const setClause = Object.keys(updateSet)
+        .map((key, index) => `${key} = $${index + 1}`)
+        .join(', ');
       
-      // 添加要更新的字段和占位符
-      for (let i = 0; i < updateFields.length; i++) {
-        queryText += `${updateFields[i]} = $${i + 1}`;
-        if (i < updateFields.length - 1) {
-          queryText += ", ";
-        }
-      }
+      const queryText = `
+        UPDATE user_sessions 
+        SET ${setClause}
+        WHERE session_id = $${Object.keys(updateSet).length + 1}
+        RETURNING *
+      `;
       
-      // 添加WHERE子句和RETURNING
-      queryText += ` WHERE session_id = $${updateFields.length + 1} RETURNING *`;
-      
-      // 添加会话ID到值数组
-      updateValues.push(sessionId);
+      // 构建参数数组
+      const params = [...Object.values(updateSet), sessionId];
       
       // 执行查询
-      const result = await this.db.execute(sql.raw(queryText), updateValues);
+      const result = await this.db.execute(sql.raw(queryText), params);
       
       if (result && result.length > 0) {
         const session = result[0];
@@ -380,14 +377,16 @@ export class DbStorage implements IStorage {
       
       // 使用直接SQL查询确保字段名称正确，使用ISO字符串而非Date对象
       const now = new Date().toISOString();
-      const result = await this.client`
+      const queryText = `
         UPDATE user_sessions 
-        SET is_valid = false, updated_at = ${now} 
-        WHERE session_id = ${sessionId} 
+        SET is_valid = false, updated_at = $1 
+        WHERE session_id = $2 
         RETURNING *
       `;
       
-      return result.count > 0;
+      const result = await this.db.execute(sql.raw(queryText), [now, sessionId]);
+      
+      return result.length > 0;
     } catch (error) {
       console.error('[DbStorage] invalidateUserSession错误:', error);
       return false;
@@ -400,14 +399,16 @@ export class DbStorage implements IStorage {
       
       // 使用直接SQL查询确保字段名称正确，使用ISO字符串而非Date对象
       const now = new Date().toISOString();
-      const result = await this.client`
+      const queryText = `
         UPDATE user_sessions 
-        SET is_valid = false, updated_at = ${now} 
-        WHERE user_id = ${userId} 
+        SET is_valid = false, updated_at = $1 
+        WHERE user_id = $2 
         RETURNING *
       `;
       
-      return result.count;
+      const result = await this.db.execute(sql.raw(queryText), [now, userId]);
+      
+      return result.length;
     } catch (error) {
       console.error('[DbStorage] invalidateAllUserSessions错误:', error);
       return 0;
@@ -419,15 +420,15 @@ export class DbStorage implements IStorage {
       console.log('[DbStorage] 使用direct SQL清理过期会话');
       
       // 清理过期的会话记录 (7天前)
-      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-      const now = new Date().toISOString();
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      const now = new Date();
 
-      // 使用标签模板语法来执行SQL查询 (postgres库的推荐方式)
-      const result = await this.client`
+      // 使用Drizzle的sql标签模板而不是raw SQL
+      const result = await this.db.execute(sql`
         DELETE FROM user_sessions 
-        WHERE expires_at <= ${now} OR created_at <= ${sevenDaysAgo}
+        WHERE expires_at <= ${now.toISOString()} OR created_at <= ${sevenDaysAgo.toISOString()}
         RETURNING *
-      `;
+      `);
       
       console.log(`[DbStorage] 成功清理 ${result.length} 个过期会话`);
       return result.length;
