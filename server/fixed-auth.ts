@@ -155,11 +155,14 @@ export async function getCurrentUser(req: Request, res: Response) {
       userId: req.session?.userId || null
     });
 
-    // 检查客户端传来的会话ID
-    const clientSessionId = req.headers['x-session-id'] as string;
-    if (clientSessionId && clientSessionId !== req.sessionID) {
-      console.log(`[认证系统] 客户端会话ID: ${clientSessionId}, 与服务器会话ID不匹配`);
-    }
+    // 检查会话ID优先级
+    const sessionId = req.headers['x-session-id'] as string || req.cookies?.sessionId || req.sessionID;
+    console.log('[认证系统] 会话ID来源:', {
+      fromHeader: req.headers['x-session-id'],
+      fromCookie: req.cookies?.sessionId,
+      fromSession: req.sessionID,
+      final: sessionId
+    });
     
     // 确保存储接口已初始化
     if (!req.app || !req.app.locals || !req.app.locals.storage) {
@@ -172,11 +175,17 @@ export async function getCurrentUser(req: Request, res: Response) {
     
     const db = req.app.locals.storage;
     
-    // 检查已授权的Express会话
-    if (req.session && (req.session.authenticated || req.session.isAuthenticated) && req.session.userId) {
-      // 从数据库获取用户信息
-      const user = await db.getUser(req.session.userId);
-      if (user) {
+    // 检查已授权的Express会话或数据库会话
+    const dbSession = await db.getUserSessionById(sessionId);
+    const hasValidSession = (req.session?.authenticated || req.session?.isAuthenticated) && req.session?.userId;
+    const hasValidDbSession = dbSession?.isValid && dbSession?.userId;
+
+    if (hasValidSession || hasValidDbSession) {
+      // 优先使用数据库会话中的用户ID
+      const userId = dbSession?.userId || req.session?.userId;
+      const user = await db.getUser(userId);
+      
+      if (user?.is_active) {
         // 更新会话最后活动时间
         try {
           await db.updateUserSession(req.sessionID, {
@@ -284,12 +293,27 @@ export async function getCurrentUser(req: Request, res: Response) {
       }
     }
     
-    // 返回未认证状态
+    // 创建或更新访客会话
+    try {
+      await db.createUserSession({
+        sessionId,
+        userId: null,
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent') || '',
+        isValid: true,
+        lastActivity: new Date(),
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
+      });
+    } catch (error) {
+      console.warn('[认证系统] 创建访客会话失败:', error);
+    }
+
+    // 返回访客状态
     return res.status(401).json({
       authenticated: false,
-      message: "会话未关联用户，请登录",
+      message: "需要登录",
       guestAccess: true,
-      sessionId: req.sessionID,
+      sessionId,
       allowedPages: ['dashboard'], // 访客可访问的页面列表
       permissions: {
         pages: ['dashboard'],
