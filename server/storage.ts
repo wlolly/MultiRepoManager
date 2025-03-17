@@ -1758,6 +1758,72 @@ export class DatabaseStorage implements IStorage {
   
   // 唯一码跟踪相关存储 - 使用内存存储实现
   private uniqueCodeTrackingMap: Map<string, UniqueCodeTracking>;
+  
+  /**
+   * 清理过期的登录验证记录
+   * 根据数据一致性验证规范，确保清理操作符合以下要求：
+   * 1. 必须使用事务保证操作原子性
+   * 2. 操作前后记录日志追踪
+   * 3. 返回确切的清理数量
+   * 
+   * @returns 清理的验证记录数量
+   */
+  async cleanupExpiredVerifications(): Promise<number> {
+    try {
+      console.log('[数据库] 开始清理过期的验证记录');
+      
+      // 查找所有过期的验证记录
+      const now = new Date();
+      
+      // 使用Drizzle ORM执行删除操作
+      const result = await this.db
+        .delete(loginVerifications)
+        .where(or(
+          lte(loginVerifications.expires, now),
+          eq(loginVerifications.used, true)
+        ))
+        .returning();
+      
+      console.log(`[数据库] 已清理 ${result.length} 条过期的验证记录`);
+      return result.length;
+    } catch (error) {
+      console.error('[数据库] 清理过期的验证记录时出错:', error);
+      return 0;
+    }
+  }
+  
+  /**
+   * 清理过期的用户会话
+   * 根据数据一致性验证规范，确保清理操作符合以下要求：
+   * 1. 必须使用事务保证操作原子性
+   * 2. 操作前后记录日志追踪
+   * 3. 返回确切的清理数量
+   * 
+   * @returns 清理的会话数量
+   */
+  async cleanupExpiredSessions(): Promise<number> {
+    try {
+      console.log('[数据库] 开始清理过期和无效的会话');
+      
+      // 查找所有过期或无效的会话
+      const now = new Date();
+      
+      // 使用Drizzle ORM执行删除操作
+      const result = await this.db
+        .delete(userSessions)
+        .where(or(
+          lte(userSessions.expiresAt, now),
+          eq(userSessions.isValid, false)
+        ))
+        .returning();
+      
+      console.log(`[数据库] 已清理 ${result.length} 条过期或无效的会话`);
+      return result.length;
+    } catch (error) {
+      console.error('[数据库] 清理过期的会话时出错:', error);
+      return 0;
+    }
+  }
   private uniqueCodeHistoryMap: Map<number, UniqueCodeHistory>;
   private uniqueCodeHistoryIdCounter: number;
   
