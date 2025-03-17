@@ -3,11 +3,9 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { scheduleCleanup } from "./utils/file-cleanup";
 import session from "express-session";
-import { db, memStorage, useFallbackStorage } from "./db"; // 导入需要的组件
+import { db, memStorage, useFallbackStorage } from "./db";
 import createMemoryStore from "memorystore";
 import crypto from "crypto";
-// 导入修复版本的会话同步中间件
-import { sessionSyncMiddleware } from './middleware/session-sync-fix';
 import passport from 'passport';
 import { configurePassport } from './passport-local';
 import { sql } from 'drizzle-orm';
@@ -18,37 +16,21 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // 添加标准中间件
-console.log("初始化Express应用中间件...");
+console.log("[系统] 初始化Express应用中间件...");
 
-// 配置会话 - 使用从middleware/session导入的专业配置
-// 这将使用PostgreSQL保存会话数据，确保持久性
+// 配置会话 - 使用PostgreSQL保存会话数据
 configureSession(app);
 
-// 使用修复版本的会话同步中间件
-// 解决会话跨域和ID不匹配问题
-app.use(sessionSyncMiddleware);
-
-// 保留会话活动监控和调试日志
+// 简单的请求日志中间件
 app.use((req, res, next) => {
-  // 更新会话活动时间，如果会话存在
-  if (req.session) {
-    req.session.lastActivity = Date.now();
-  }
-  
-  // 记录请求路径和会话ID，便于调试
+  // 仅记录关键API路径
   if (req.path.includes('/api/auth/')) {
-    console.log(`请求路径: ${req.path}, 会话ID: ${req.sessionID}, 已认证: ${!!req.session?.userId}`);
+    console.log(`[请求] ${req.path}, 会话ID: ${req.sessionID}`);
   }
   
-  // 会话调试日志（保留但简化）
+  // 简化的会话信息记录
   if (process.env.NODE_ENV !== 'production') {
-    const sessionInfo = {
-      id: req.sessionID,
-      userId: req.session?.userId,
-      socialBound: req.session?.socialBound,
-      isAuthenticated: !!req.session?.userId
-    };
-    console.log(`[会话调试] 路径: ${req.path}, 会话信息:`, JSON.stringify(sessionInfo, null, 2));
+    console.log(`[会话] 路径: ${req.path}, ID: ${req.sessionID}`);
   }
   
   next();
