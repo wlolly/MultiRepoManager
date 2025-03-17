@@ -20,6 +20,10 @@ declare module 'express-session' {
     username?: string;
     language?: string;
     
+    // 用户权限标记
+    isAdmin?: boolean;           // 用户是否具有管理员权限 (admin/super_admin)
+    hasSuperAccess?: boolean;    // 用户是否具有超级管理员权限
+    
     // 会话同步中间件新增字段 - 明确类型提高类型安全性
     clientOrigin?: boolean;
     sessionSource?: string;

@@ -853,10 +853,19 @@ export async function getCurrentUser(req: Request, res: Response) {
           console.log('[认证系统] 从Express会话中找到有效用户');
           
           // 构建权限信息 - 新版权限系统
+          // 检查用户是否为管理员类型角色 (admin或super_admin)
+          const isAdminRole = user.role === 'admin' || user.role === 'super_admin';
+          console.log(`[认证系统] 当前用户角色: ${user.role}, 是否管理员角色: ${isAdminRole}`);
+          
+          // 根据角色类型分配权限
           const permissions = {
-            pages: user.role === 'admin' ? ['all'] : ['dashboard', 'profile'],
-            actions: user.role === 'admin' ? ['all'] : ['read'],
-            warehouses: user.role === 'admin' ? { all: { canView: true, canManage: true } } : {}
+            pages: isAdminRole ? 
+              ['dashboard', 'products', 'warehouse-products', 'users', 'teams', 'warehouses', 
+              'inbound-orders', 'outbound-orders', 'order-audit', 'warehouse-transfers', 
+              'create-warehouse-transfer', 'warehouse-reports', 'settings'] : 
+              ['dashboard', 'profile'],
+            actions: isAdminRole ? ['view', 'edit', 'create', 'delete'] : ['view'],
+            warehouses: isAdminRole ? { all: { canView: true, canManage: true } } : {}
           };
           
           // 更新会话最后活动时间
@@ -1297,13 +1306,24 @@ export async function verifySession(req: Request, res: Response, next: NextFunct
     }
     
     // 数据库会话验证成功，但Express会话未认证，更新Express会话
+    // 记录用户信息到日志
+    console.log(`[认证] 数据库会话有效用户: ID=${user.id}, 角色=${user.role}, 用户名=${user.username}`);
+    
+    // 存储用户信息到应用程序全局变量
     req.app.locals.currentUser = user;
+    
+    // 更新Express会话
     req.session.userId = user.id;
     req.session.authenticated = true;
     req.session.isAuthenticated = true;
     req.session.role = user.role;
     req.session.language = user.language || 'zh';
     req.session.username = user.username;
+    
+    // 针对admin和super_admin角色用户设置额外权限标记
+    const isAdminRole = user.role === 'admin' || user.role === 'super_admin';
+    req.session.isAdmin = isAdminRole;
+    req.session.hasSuperAccess = isAdminRole;
     
     // 保存Express会话
     await new Promise<void>((resolve) => {
@@ -1338,20 +1358,41 @@ export async function verifySession(req: Request, res: Response, next: NextFunct
 
 // 管理员权限验证中间件
 export function isAdmin(req: Request, res: Response, next: NextFunction) {
+  // 记录请求信息和会话状态
+  console.log(`[权限验证] 管理员权限检查: ${req.path}, 会话ID: ${req.sessionID}`);
+  console.log(`[权限验证] 会话状态: `, {
+    userId: req.session?.userId,
+    role: req.session?.role,
+    isAuthenticated: req.session?.authenticated || req.session?.isAuthenticated,
+    isAdmin: req.session?.isAdmin,
+    hasSuperAccess: req.session?.hasSuperAccess
+  });
+  
+  // 验证用户是否已登录
   if (!req.session || !req.session.userId) {
+    console.log('[权限验证] 未登录用户尝试访问管理员资源');
     return res.status(401).json({
       authenticated: false,
       message: '请先登录'
     });
   }
   
-  if (!req.session.role || (req.session.role !== 'admin' && req.session.role !== 'super_admin')) {
+  // 验证用户是否有admin权限
+  const isAdminRole = 
+    req.session.role === 'admin' || 
+    req.session.role === 'super_admin' || 
+    req.session.isAdmin === true || 
+    req.session.hasSuperAccess === true;
+  
+  if (!isAdminRole) {
+    console.log(`[权限验证] 用户 ${req.session.userId} (${req.session.role}) 尝试访问管理员资源，但权限不足`);
     return res.status(403).json({
       authenticated: true,
       message: '需要管理员权限'
     });
   }
   
+  console.log(`[权限验证] 用户 ${req.session.userId} (${req.session.role}) 管理员权限验证通过`);
   next();
 }
 
