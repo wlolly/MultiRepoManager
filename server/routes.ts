@@ -5388,16 +5388,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
   
-  // 手动刷新用户权限
-  apiRouter.post("/permissions/refresh", verifySession, (req, res) => {
-    // 当前简化版本，仅返回成功信息
-    res.json({
-      success: true,
-      message: "权限已刷新",
-      userId: req.session?.userId,
-      timestamp: new Date().toISOString()
-    });
-  });
+  // 手动刷新用户权限 - 使用新的权限刷新中间件
+  apiRouter.post("/permissions/refresh", verifySession, refreshUserPermissions);
   
   // 获取权限系统状态
   apiRouter.get("/permissions/status", (req, res) => {
