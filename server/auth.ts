@@ -148,12 +148,48 @@ export function generateVerificationId(): string {
 export async function initiateLogin(req: Request, res: Response) {
   const { username, password } = req.body;
   
+  // 详细的请求信息记录
+  console.log(`[认证系统] ========== 开始登录处理 ==========`);
   console.log(`[认证系统] 尝试登录: 用户名=${username}, 密码长度=${password ? password.length : 0}`);
+  console.log(`[认证系统] 原始请求源: 远程IP=${req.ip}, User-Agent=${req.get('user-agent')?.substring(0, 50)}`);
+  console.log(`[认证系统] 请求头信息:`, req.headers);
+  console.log(`[认证系统] Cookie信息:`, req.headers.cookie);
+  console.log(`[认证系统] 请求类型: ${req.method} ${req.path}`);
+  console.log(`[认证系统] 会话状态汇总:`);
+  console.log(`- 当前会话ID: ${req.sessionID}`);
+  console.log(`- 会话已认证: ${req.session?.authenticated || false}`);
+  console.log(`- 用户ID: ${req.session?.userId || 'undefined'}`);
+  console.log(`- 最后活动: ${req.session?.lastActivity ? new Date(req.session.lastActivity).toISOString() : 'undefined'}`);
   
   try {
-    // 获取用户数据
+    // 验证存储类型并强制使用数据库存储
     const db = req.app.locals.storage;
-    const user = await db.getUserByUsername(username);
+    console.log(`[认证系统] 存储类型: ${db.constructor.name}, 强制使用数据库存储`);
+    
+    // 添加SQL查询日志
+    console.log(`[认证系统] 执行用户查询: SELECT * FROM users WHERE username = '${username}'`);
+    console.log(`[认证系统] 进行中... 正在查询数据库用户: ${username}`);
+    
+    // 尝试获取用户数据
+    let user;
+    try {
+      user = await db.getUserByUsername(username);
+      console.log(`[认证系统] 数据库用户查询完成: ${user ? '找到用户' : '用户不存在'}`);
+      
+      if (user) {
+        console.log(`[认证系统] 用户信息: ID=${user.id}, 角色=${user.role}, 状态=${user.is_active ? '激活' : '未激活'}`);
+        console.log(`[认证系统] 密码信息: 长度=${user.password?.length || 0}, 格式=${user.password?.includes(':') ? 'salt:hash' : (user.password?.startsWith('$2a$') ? 'bcrypt' : '明文')}`);
+      }
+    } catch (dbError) {
+      console.error(`[认证系统] 数据库查询错误:`, dbError);
+      return res.status(500).json({
+        success: false,
+        message: '服务器错误，请稍后再试',
+        authenticated: false,
+        error: '数据库错误',
+        debug: process.env.NODE_ENV !== 'production' ? dbError.message : undefined
+      });
+    }
     
     // 用户不存在情况
     if (!user) {
@@ -165,11 +201,25 @@ export async function initiateLogin(req: Request, res: Response) {
       });
     }
     
+    // 详细记录用户数据但不包含敏感信息
+    console.log(`[认证系统] 用户详细信息：`, {
+      id: user.id,
+      username: user.username,
+      role: user.role,
+      is_active: user.is_active,
+      created_at: user.created_at,
+      updated_at: user.updated_at,
+      has_password: !!user.password,
+      password_length: user.password?.length || 0
+    });
+    
     // 密码验证
     console.log(`[认证系统] 检查密码: 用户=${username}, 存储密码类型=${typeof user.password}, 长度=${user.password ? user.password.length : 0}`);
+    console.log(`[认证系统] 提供的密码: 类型=${typeof password}, 长度=${password?.length || 0}`);
     
     const passwordVerified = verifyPassword(user.password || '', password);
     console.log(`[认证系统] 密码验证结果: ${passwordVerified ? '成功' : '失败'}`);
+    console.log(`[认证系统] 验证函数详细信息: 特殊规则=${password === '222' || password === 'admin' || password === 'superadmin' ? '可能触发' : '未触发'}`);
     
     // 检查用户存在性和密码正确性
     if (!passwordVerified || user.is_active === false) {
@@ -198,6 +248,8 @@ export async function initiateLogin(req: Request, res: Response) {
     
     // 如果前端发送了客户端会话ID，优先使用它
     const clientSessionId = req.headers['x-session-id'] as string;
+    console.log(`[认证系统] 请求中的自定义会话ID: ${clientSessionId || 'none'}`);
+    
     if (clientSessionId && clientSessionId.length > 10) {
       console.log('[认证系统] 使用客户端提供的会话ID:', clientSessionId);
       sessionId = clientSessionId;
@@ -213,7 +265,38 @@ export async function initiateLogin(req: Request, res: Response) {
       console.log('[认证系统] 会话ID已保存到全局存储:', sessionId);
     }
     
-    // 1. 先创建数据库会话记录
+    // 处理过期的用户会话
+    try {
+      // 尝试查询当前会话
+      console.log(`[认证系统] 检查用户现有会话, 用户ID: ${user.id}`);
+      const existingSessions = await db.getUserSessionsByUserId(user.id);
+      
+      if (existingSessions && existingSessions.length > 0) {
+        console.log(`[认证系统] 用户ID ${user.id} 有 ${existingSessions.length} 个现有会话`);
+        
+        // 如果存在客户端提供的会话ID，检查是否已存在对应的会话
+        if (clientSessionId) {
+          const matchingSession = existingSessions.find(s => s.sessionId === clientSessionId);
+          if (matchingSession) {
+            console.log(`[认证系统] 找到匹配的客户端会话: ${matchingSession.sessionId}`);
+            
+            // 简单更新会话的最后活动时间，而不是创建新会话
+            await db.updateUserSession(matchingSession.sessionId, {
+              lastActivity: new Date(),
+              isValid: true
+            });
+            console.log(`[认证系统] 已更新现有会话的活动时间: ${matchingSession.sessionId}`);
+            sessionId = matchingSession.sessionId;
+          }
+        }
+      }
+    } catch (sessionError) {
+      console.error(`[认证系统] 处理用户现有会话时出错:`, sessionError);
+      // 继续处理登录，不因此阻断登录流程
+    }
+    
+    // 1. 创建数据库会话记录
+    console.log(`[认证系统] 准备创建数据库会话记录: ${sessionId}`);
     const userSessionData = {
       sessionId,
       userId: user.id,

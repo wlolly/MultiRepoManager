@@ -55,22 +55,34 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       // 在登录前设置防重复提交标记
       sessionStorage.setItem('login_in_progress', 'true');
       
-      // 使用fetch进行API请求，确保能正确处理cookie和会话
-      // 使用新的双重验证API端点
-      const response = await fetch('/api/auth/initiate-login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Login-Flow': 'true', // 标记这是登录流程请求
-          'X-From-Login-Page': 'true', // 标记来源
-          'Cache-Control': 'no-cache, no-store, must-revalidate'
-        },
-        body: JSON.stringify(values),
-        credentials: 'include' // 确保包含cookie
-      });
+      // 输出详细的登录过程日志
+      console.log('开始发送登录请求，用户名:', values.username, '密码长度:', values.password.length);
+      console.log('当前会话ID:', sessionStorage.getItem('sessionId') || localStorage.getItem('sessionId') || '未设置');
+      console.log('当前cookie状态:', document.cookie || '未设置');
       
-      // 响应处理
-      console.log(`登录响应状态: ${response.status} ${response.statusText}`);
+      try {
+        // 使用fetch进行API请求，确保能正确处理cookie和会话
+        // 使用新的双重验证API端点
+        const response = await fetch('/api/auth/initiate-login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Login-Flow': 'true', // 标记这是登录流程请求
+            'X-From-Login-Page': 'true', // 标记来源
+            'X-Session-Id': sessionStorage.getItem('sessionId') || localStorage.getItem('sessionId') || '', // 传递会话ID
+            'Cache-Control': 'no-cache, no-store, must-revalidate'
+          },
+          body: JSON.stringify(values),
+          credentials: 'include' // 确保包含cookie
+        });
+        
+        // 响应处理
+        console.log(`登录响应状态: ${response.status} ${response.statusText}`);
+        console.log('响应头信息:', 
+          Array.from(response.headers.entries())
+            .filter(([key]) => ['set-cookie', 'x-session-id', 'content-type'].includes(key.toLowerCase()))
+            .map(([key, value]) => `${key}: ${value}`)
+        );
       
       const data = await response.json();
       console.log('登录响应数据:', data);
