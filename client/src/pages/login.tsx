@@ -56,7 +56,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       sessionStorage.setItem('login_in_progress', 'true');
       
       // 使用fetch进行API请求，确保能正确处理cookie和会话
-      const response = await fetch('/api/auth/login', {
+      // 使用新的双重验证API端点
+      const response = await fetch('/api/auth/initiate-login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -68,53 +69,75 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         credentials: 'include' // 确保包含cookie
       });
       
-      // 简化的响应处理 - 只进行基本日志记录
+      // 响应处理
       console.log(`登录响应状态: ${response.status} ${response.statusText}`);
       
       const data = await response.json();
       console.log('登录响应数据:', data);
       
-      // 保存用户数据（如果有）
-      if (data.user) {
-        // 简化的用户数据保存逻辑
-        const userToSave = {
-          ...data.user,
-          isactive: data.user?.isactive !== undefined ? data.user.isactive : true,
-          avatarurl: data.user?.avatarurl || null,
-          realAuthenticated: data.realAuthenticated || false
-        };
-        sessionStorage.setItem('currentUser', JSON.stringify(userToSave));
-        localStorage.setItem('currentUser', JSON.stringify(userToSave));
+      if (response.ok) {
+        if (data.requireVerification && data.verificationId) {
+          // 需要进行双重验证
+          toast({
+            title: t('auth.verification_required'),
+            description: t('auth.enter_verification_code'),
+            type: "info"
+          });
+          
+          // 跳转到验证页面，并传递验证ID
+          navigate(`/login/two-step?verificationId=${data.verificationId}`);
+          return;
+        }
+        
+        // 如果不需要双重验证，则处理普通登录
+        if (data.user) {
+          // 用户数据保存逻辑
+          const userToSave = {
+            ...data.user,
+            isactive: data.user?.isactive !== undefined ? data.user.isactive : true,
+            avatarurl: data.user?.avatarurl || null,
+            realAuthenticated: data.realAuthenticated || false
+          };
+          sessionStorage.setItem('currentUser', JSON.stringify(userToSave));
+          localStorage.setItem('currentUser', JSON.stringify(userToSave));
+        } else {
+          // 如果没有用户数据，创建一个默认访客用户
+          const guestUser = {
+            id: -1,
+            username: values.username || t('auth.guest_user'),
+            fullname: values.username || t('auth.guest_user'),
+            role: 'anonymous',
+            usersource: 'local',
+            isactive: true,
+            avatarurl: null,
+            fakePositive: true,
+            realAuthenticated: false,
+            accessLevel: 'limited'
+          };
+          sessionStorage.setItem('currentUser', JSON.stringify(guestUser));
+          localStorage.setItem('currentUser', JSON.stringify(guestUser));
+        }
+        
+        if (data.sessionId) {
+          saveSessionId(data.sessionId);
+        }
+        
+        // 登录回调（如果有）
+        if (onLoginSuccess) {
+          onLoginSuccess();
+        }
+        
+        // 登录成功跳转到首页
+        console.log('登录处理完成，跳转到主页');
+        window.location.href = '/';
       } else {
-        // 如果没有用户数据，创建一个默认访客用户
-        const guestUser = {
-          id: -1,
-          username: values.username || t('auth.guest_user'),
-          fullname: values.username || t('auth.guest_user'),
-          role: 'anonymous',
-          usersource: 'local',
-          isactive: true,
-          avatarurl: null,
-          fakePositive: true,
-          realAuthenticated: false,
-          accessLevel: 'limited'
-        };
-        sessionStorage.setItem('currentUser', JSON.stringify(guestUser));
-        localStorage.setItem('currentUser', JSON.stringify(guestUser));
+        // 登录失败
+        toast({
+          title: t('auth.login_failed'),
+          description: data.message || t('auth.invalid_credentials'),
+          variant: "destructive"
+        });
       }
-      
-      if (data.sessionId) {
-        saveSessionId(data.sessionId);
-      }
-      
-      // 登录回调（如果有）
-      if (onLoginSuccess) {
-        onLoginSuccess();
-      }
-      
-      // 登录后直接跳转到首页 - 无论登录成功与否
-      console.log('登录处理完成，直接跳转到主页');
-      window.location.href = '/';
       
     } catch (error) {
       console.error('登录请求错误:', error);

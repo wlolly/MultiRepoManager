@@ -42,6 +42,9 @@ interface AuthContextType {
   hasPagePermission: (pageName: string) => boolean;
   canViewWarehouse: (warehouseId: number) => boolean;
   canManageWarehouse: (warehouseId: number) => boolean;
+  // 双重验证相关方法
+  initiateLogin: (username: string, password: string) => Promise<{ success: boolean, requireVerification: boolean, verificationId?: string }>;
+  handleLoginComplete: (userData: any) => void;
 }
 
 // 创建上下文
@@ -239,6 +242,92 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     fetchUserAndPermissions();
   }, []);
 
+  // 双重验证第一阶段 - 发起登录
+  const initiateLogin = async (username: string, password: string): Promise<{ success: boolean, requireVerification: boolean, verificationId?: string }> => {
+    try {
+      const response = await fetch('/api/auth/initiate-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await response.json();
+      console.log('发起登录响应:', data);
+      
+      if (response.ok) {
+        if (data.requireVerification && data.verificationId) {
+          // 需要进行双重验证
+          return { 
+            success: true, 
+            requireVerification: true, 
+            verificationId: data.verificationId 
+          };
+        } else if (data.user) {
+          // 无需验证，直接登录成功
+          await fetchUserAndPermissions();
+          addToast({
+            title: '登录成功',
+            description: '欢迎回来！',
+            type: 'success'
+          });
+          return { success: true, requireVerification: false };
+        }
+      }
+      
+      // 登录失败
+      addToast({
+        title: '登录失败',
+        description: data.message || '用户名或密码错误',
+        type: 'error'
+      });
+      return { success: false, requireVerification: false };
+    } catch (error) {
+      console.error('登录请求错误:', error);
+      addToast({
+        title: '登录失败',
+        description: '请求发生错误',
+        type: 'error'
+      });
+      return { success: false, requireVerification: false };
+    }
+  };
+
+  // 处理登录完成
+  const handleLoginComplete = (userData: any) => {
+    if (userData) {
+      // 保存用户数据
+      const userToSave = {
+        ...userData,
+        isactive: userData?.isactive !== undefined ? userData.isactive : true,
+        avatarurl: userData?.avatarurl || null,
+        realAuthenticated: userData.realAuthenticated || true
+      };
+      
+      // 更新本地存储
+      sessionStorage.setItem('currentUser', JSON.stringify(userToSave));
+      localStorage.setItem('currentUser', JSON.stringify(userToSave));
+      
+      // 更新状态
+      setState(prev => ({
+        ...prev,
+        user: userToSave,
+        isLoading: false,
+        pagePermissions: userToSave.permissions?.pages.reduce((acc: Record<string, boolean>, page: string) => {
+          acc[page] = true;
+          return acc;
+        }, {}) || {},
+        warehousePermissions: userToSave.permissions?.warehouses || {}
+      }));
+      
+      addToast({
+        title: '验证成功',
+        description: '登录成功，欢迎回来！',
+        type: 'success'
+      });
+    }
+  };
+
   // 创建上下文值，使用更新后的字段名
   const contextValue: AuthContextType = {
     user: state.user,
@@ -254,7 +343,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logout,
     hasPagePermission,
     canViewWarehouse,
-    canManageWarehouse
+    canManageWarehouse,
+    // 双重验证方法
+    initiateLogin,
+    handleLoginComplete
   };
 
   return (
