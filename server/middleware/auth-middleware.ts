@@ -14,7 +14,7 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
     // 会话ID处理逻辑
     const clientSessionId = req.headers['x-session-id'] as string;
     const cookieSessionId = req.cookies.sessionId;
-    
+
     console.log(`[认证中间件] 会话ID来源检查:`, {
       headers: clientSessionId,
       cookie: cookieSessionId,
@@ -85,7 +85,7 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
  */
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
   // 检查会话中的认证状态
-  const isAuthenticated = req.session && 
+  const isAuthenticated = req.session &&
     (req.session.authenticated === true || req.session.userId > 0);
 
   if (!isAuthenticated) {
@@ -103,9 +103,9 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
  */
 export function requireAdmin(req: Request, res: Response, next: NextFunction) {
   // 检查会话中的认证状态和角色
-  const isAuthenticated = req.session && 
+  const isAuthenticated = req.session &&
     (req.session.authenticated === true || req.session.userId > 0);
-  const isAdmin = req.session && 
+  const isAdmin = req.session &&
     (req.session.role === 'admin' || req.session.role === 'super_admin');
 
   if (!isAuthenticated || !isAdmin) {

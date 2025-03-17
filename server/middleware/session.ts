@@ -134,13 +134,26 @@ export async function sessionMiddleware(req: Request, res: Response, next: NextF
       }
     }
 
-    // 检查会话是否已认证 
-    // 直接从会话中获取认证状态
+    // 检查会话认证状态
     const authenticated = req.session && (
       req.session.authenticated === true || 
       req.session.isAuthenticated === true || 
       (req.session.userId && req.session.userId > 0)
     );
+    
+    // 从数据库验证会话
+    if (authenticated && req.session.userId) {
+      try {
+        const dbSession = await db.getUserSessionById(req.sessionID);
+        if (!dbSession || !dbSession.userId || dbSession.userId !== req.session.userId) {
+          req.session.authenticated = false;
+          req.session.isAuthenticated = false;
+          req.session.userId = null;
+        }
+      } catch (err) {
+        console.error('[会话] 验证数据库会话失败:', err);
+      }
+    }
 
     if (authenticated) {
       res.setHeader('X-Authenticated', 'true');
