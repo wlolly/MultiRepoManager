@@ -64,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchUserAndPermissions = async () => {
     try {
       // 首先检查本地存储中是否有用户数据（简化登录使用）
-      const storedUser = localStorage.getItem('currentUser') || sessionStorage.getItem('currentUser');
+      const localStoredUser = localStorage.getItem('currentUser') || sessionStorage.getItem('currentUser');
       
       // 尝试从服务器获取用户信息
       const response = await fetch('/api/auth/current-user', {
@@ -98,9 +98,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.log('认证已过期，请重新登录');
           
           // 检查本地存储的用户数据
-          if (storedUser) {
+          if (localStoredUser) {
             try {
-              const parsedUser = JSON.parse(storedUser);
+              const parsedUser = JSON.parse(localStoredUser);
               if (parsedUser && (parsedUser.fakePositive || !parsedUser.realAuthenticated)) {
                 // 本地存储有访客用户数据，使用它
                 console.log('使用本地存储的访客用户数据:', parsedUser);
@@ -133,10 +133,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('获取用户数据失败:', error);
       
       // 发生错误时，尝试从本地存储中获取用户数据
-      if (storedUser) {
+      const localStoredUser = localStorage.getItem('currentUser');
+      if (localStoredUser) {
         try {
-          const parsedUser = JSON.parse(storedUser);
-          if (parsedUser && (parsedUser.fakePositive || !parsedUser.realAuthenticated)) {
+          const parsedUser = JSON.parse(localStoredUser);
+          if (parsedUser) {
             // 使用本地存储的访客用户数据
             console.log('使用本地存储的访客用户数据:', parsedUser);
             setState(prev => ({
@@ -353,22 +354,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user: state.user,
     isLoading: state.isLoading,
     // 认证状态基于服务器认证结果，必须有效用户ID且已认证
-    isAuthenticated: Boolean(state.user?.authenticated && state.user?.id && state.user?.id > 0),
-    // 真实用户判断增加realAuthenticated判断
+    isAuthenticated: Boolean(
+      state.user?.authenticated && 
+      state.user?.id && 
+      state.user?.id > 0 
+    ),
+    // 真实用户判断不再检查realAuthenticated
     isRealUser: Boolean(
+      state.user?.authenticated &&
       state.user?.id && 
       state.user?.id > 0 && 
-      (state.user?.realAuthenticated === true || state.user?.role === 'admin')
+      state.user?.role !== 'anonymous'
     ),
-    // 管理员判断增加realAuthenticated条件
-    isAdmin: state.user?.role === 'admin' && state.user?.realAuthenticated === true,
-    // 访客判断增加明确的fakePositive检查
+    // 管理员判断简化，只检查角色是否为admin，并确保已认证
+    isAdmin: Boolean(
+      state.user?.authenticated &&
+      state.user?.role === 'admin'
+    ),
+    // 访客判断简化，检查是否有有效用户和认证状态
     isVisitor: !state.user || 
+              !state.user.authenticated ||
               !state.user.id || 
               state.user.id <= 0 || 
-              state.user.isactive === false || 
-              state.user.fakePositive === true || 
-              state.user.realAuthenticated === false,
+              state.user.role === 'anonymous',
     pagePermissions: state.pagePermissions,
     warehousePermissions: state.warehousePermissions,
     login,

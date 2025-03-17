@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from 'react-i18next';
 import { usePermissions } from "@/hooks/use-permissions";
+import { useAuth } from '@/contexts/AuthContext';
 
 interface NavItem {
   icon: string;
@@ -179,25 +180,26 @@ export function Sidebar() {
             }
             
             // 导航项过滤条件的调试日志
-            console.log(`导航项检查: ${item.keyName}, 实际认证状态: ${isAuthenticated}, 是否真实用户: ${isRealUser}, 访客状态: ${isVisitor}`);
+            console.log(`导航项检查: ${item.keyName}, 实际认证状态: ${isAuthenticated}, 是否真实用户: ${isRealUser}`);
             
-            // 管理员检查 - 使用正确的认证状态判断
-            if (isAuthenticated && isAdmin && !isVisitor) {
+            // 管理员检查 - 使用AuthContext的isAdmin状态
+            const { isAdmin } = useAuth ? useAuth() : { isAdmin: false };
+            if (isAuthenticated && isAdmin) {
               console.log(`管理员用户，允许访问所有导航项: ${item.keyName}`);
               return true;
             }
             
-            // 真实登录用户检查 - 必须同时满足：已认证、是真实用户、非访客
-            if (isAuthenticated && isRealUser && !isVisitor) {
+            // 真实登录用户检查 - 必须同时满足：已认证、是真实用户
+            if (isAuthenticated && isRealUser) {
               console.log(`真实用户，允许访问导航项: ${item.keyName}`);
               return true;
             }
             
-            // 访客用户只显示有限的导航项
-            if (isVisitor) {
+            // 未登录或访客用户只显示有限的导航项
+            if (!isAuthenticated || !isRealUser) {
               // 仅允许访问仪表盘和少数非敏感页面
-              const visitorAllowedPaths = ["/", "/dashboard"];
-              return visitorAllowedPaths.includes(item.href);
+              const guestAllowedPaths = ["/", "/dashboard"];
+              return guestAllowedPaths.includes(item.href);
             }
             
             // 默认不显示
