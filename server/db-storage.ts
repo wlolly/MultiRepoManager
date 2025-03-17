@@ -238,10 +238,11 @@ export class DbStorage implements IStorage {
       if (session) {
         // 更新最后活动时间 - 使用ISO字符串而非Date对象
         const now = new Date().toISOString();
-        await this.client.query(
-          'UPDATE user_sessions SET last_activity = $1 WHERE session_id = $2',
-          [now, sessionId]
-        );
+        await this.client`
+          UPDATE user_sessions 
+          SET last_activity = ${now} 
+          WHERE session_id = ${sessionId}
+        `;
         
         // 将数据库结果转换为符合UserSession类型的对象
         return {
@@ -393,14 +394,15 @@ export class DbStorage implements IStorage {
       const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
       const now = new Date().toISOString();
 
-      // 使用直接SQL查询确保字段名称正确，使用ISO字符串而非Date对象
-      const result = await this.client.query(
-        'DELETE FROM user_sessions WHERE expires_at <= $1 OR created_at <= $2 RETURNING *',
-        [now, sevenDaysAgo]
-      );
+      // 使用标签模板语法来执行SQL查询 (postgres库的推荐方式)
+      const result = await this.client`
+        DELETE FROM user_sessions 
+        WHERE expires_at <= ${now} OR created_at <= ${sevenDaysAgo}
+        RETURNING *
+      `;
       
-      console.log(`[DbStorage] 成功清理 ${result.count} 个过期会话`);
-      return result.count;
+      console.log(`[DbStorage] 成功清理 ${result.length} 个过期会话`);
+      return result.length;
     } catch (error) {
       console.error('[DbStorage] cleanupExpiredSessions错误:', error);
       return 0;
