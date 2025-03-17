@@ -429,6 +429,7 @@ export async function hasPagePermission(userId: number, role?: string, pageName?
 /**
  * 检查用户对特定页面的访问权限 - 用于API端点实时权限验证
  * 支持新的前端checkSpecificPagePermission方法调用
+ * 适配新的权限结构
  * 
  * @param userId 用户ID
  * @param role 用户角色
@@ -476,8 +477,18 @@ export async function checkSpecificPagePermissionResult(
     }
     
     // 对于普通用户，获取其页面权限列表并检查
-    const pagePermissions = await getUserPagePermissions(userId, role);
-    result.hasPermission = pagePermissions.includes(pageName);
+    const permissionData = await getUserPagePermissions(userId, role);
+    
+    // 检查返回值格式，适配新的权限结构
+    if (permissionData && typeof permissionData === 'object' && !Array.isArray(permissionData) && 'pages' in permissionData) {
+      // 新格式 - 从pages数组中查找
+      result.hasPermission = (permissionData as any).pages.includes(pageName);
+      result.isAdmin = !!(permissionData as any).isAdmin;
+    } else if (Array.isArray(permissionData)) {
+      // 旧格式 - 直接检查字符串数组
+      result.hasPermission = permissionData.includes(pageName);
+    }
+    
     return result;
     
   } catch (error) {

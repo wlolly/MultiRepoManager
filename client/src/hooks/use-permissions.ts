@@ -132,7 +132,29 @@ export function usePermissions(): PermissionsHook {
           // 成功获取权限
           const pageData = await pageResponse.json();
           console.log('获取到页面权限:', pageData);
-          setPagePermissions(pageData);
+          
+          // 处理新的权限格式（兼容）
+          if (pageData && typeof pageData === 'object' && !Array.isArray(pageData) && 'pages' in pageData) {
+            // 新格式 - 包含pages数组和其他属性
+            console.log('检测到新的权限格式，页面列表:', pageData.pages);
+            
+            // 转换为老格式的PagePermissions对象
+            const convertedPermissions: PagePermissions = {};
+            
+            // 每个页面名称都设置为true
+            (pageData.pages as string[]).forEach(page => {
+              convertedPermissions[page] = true;
+            });
+            
+            // 保存格式化后的权限
+            setPagePermissions(convertedPermissions);
+            
+            // 保存原始格式用于高级功能
+            localStorage.setItem('rawPermissionsData', JSON.stringify(pageData));
+          } else {
+            // 旧格式 - 直接使用
+            setPagePermissions(pageData);
+          }
         } else {
           // 请求失败，使用空权限
           console.log('页面权限请求失败，设置空权限');
@@ -154,7 +176,43 @@ export function usePermissions(): PermissionsHook {
           // 成功获取权限
           const warehouseData = await warehouseResponse.json();
           console.log('获取到仓库权限:', warehouseData);
-          setWarehousePermissions(warehouseData);
+          
+          // 处理新的权限格式
+          if (warehouseData && 
+              typeof warehouseData === 'object' && 
+              !Array.isArray(warehouseData) && 
+              'warehouses' in warehouseData) {
+            
+            console.log('检测到新的仓库权限格式:', warehouseData.warehouses);
+            
+            // 转换为老格式的WarehousePermissions对象
+            const convertedPermissions: WarehousePermissions = {};
+            
+            // 处理warehouses对象 - 预期格式为: { "1": { view: true, manage: false }, "2": {...} }
+            const warehousesObj = warehouseData.warehouses;
+            
+            // 遍历新权限对象
+            Object.keys(warehousesObj).forEach(warehouseId => {
+              // 确保ID为数值
+              const numericId = parseInt(warehouseId, 10);
+              if (!isNaN(numericId)) {
+                // 兼容格式 - 为老格式中的canView和canManage赋值
+                convertedPermissions[numericId] = {
+                  canView: warehousesObj[warehouseId].view || false,
+                  canManage: warehousesObj[warehouseId].manage || false
+                };
+              }
+            });
+            
+            // 保存转换后的权限
+            setWarehousePermissions(convertedPermissions);
+            
+            // 也保存原始格式，以供高级功能使用
+            localStorage.setItem('rawWarehousePermissionsData', JSON.stringify(warehouseData));
+          } else {
+            // 旧格式 - 直接使用
+            setWarehousePermissions(warehouseData);
+          }
         } else {
           // 请求失败，使用空权限
           console.log('仓库权限请求失败，设置空权限');

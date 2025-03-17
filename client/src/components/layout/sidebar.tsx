@@ -172,37 +172,88 @@ export function Sidebar() {
         {navItems
           // 过滤导航项：严格按照认证状态和权限判断
           // 1. 公共页面总是显示给所有用户
-          // 2. 非公共页面(特别是产品页面)只有真实认证用户才能访问
+          // 2. 非公共页面只有有权限的用户才能访问
           .filter(item => {
             // 公共页面总是显示
             if (item.public) {
+              console.log(`公共导航项: ${item.keyName}, 始终显示`);
               return true;
             }
             
             // 导航项过滤条件的调试日志
             console.log(`导航项检查: ${item.keyName}, 实际认证状态: ${isAuthenticated}, 是否真实用户: ${isRealUser}`);
             
-            // 管理员检查 - 使用AuthContext的isAdmin状态
+            // 获取权限钩子，用于检查页面权限
+            const { hasPagePermission, pagePermissions } = usePermissions();
+            
+            // 获取AuthContext以检查用户是否为管理员
             const { isAdmin } = useAuth ? useAuth() : { isAdmin: false };
+            
+            // 管理员用户检查 - 管理员可以访问所有页面
             if (isAuthenticated && isAdmin) {
               console.log(`管理员用户，允许访问所有导航项: ${item.keyName}`);
               return true;
             }
             
-            // 真实登录用户检查 - 必须同时满足：已认证、是真实用户
+            // 检查是否能找到原始权限数据 - 新格式权限支持
+            const rawPermissions = localStorage.getItem('rawPermissionsData');
+            if (rawPermissions) {
+              try {
+                // 尝试解析原始权限数据
+                const parsedPermissions = JSON.parse(rawPermissions);
+                console.log(`检查项目[${item.keyName}]的原始权限:`, parsedPermissions);
+                
+                // 如果有pages数组，检查当前导航项是否在其中
+                if (parsedPermissions.pages && Array.isArray(parsedPermissions.pages)) {
+                  // 特殊匹配规则 - 将导航名称转换为权限页面名称进行比较
+                  const pageKey = item.keyName.replace(/_/g, '-');
+                  if (parsedPermissions.pages.includes(pageKey) || parsedPermissions.pages.includes(item.keyName)) {
+                    console.log(`新权限格式 - 用户有[${item.keyName}]的访问权限`);
+                    return true;
+                  }
+                  
+                  // 检查以下替代命名
+                  if (item.keyName === 'my_products' && parsedPermissions.pages.includes('products')) {
+                    console.log(`特例 - 用户有[products]的访问权限`);
+                    return true;
+                  }
+                }
+              } catch (error) {
+                console.error('解析权限数据时出错:', error);
+              }
+            }
+            
+            // 使用兼容方式检查页面权限 - 旧格式支持
+            if (hasPagePermission && typeof hasPagePermission === 'function') {
+              // 对应页面的权限键名
+              const pagePermKey = item.keyName.replace(/_/g, '-');
+              if (hasPagePermission(pagePermKey) || hasPagePermission(item.keyName)) {
+                console.log(`旧权限格式 - 用户有[${pagePermKey}]的访问权限`);
+                return true;
+              }
+            }
+            
+            // 真实登录用户检查 - 如果已认证但无明确权限，显示部分基础页面
             if (isAuthenticated && isRealUser) {
-              console.log(`真实用户，允许访问导航项: ${item.keyName}`);
-              return true;
+              const basicPages = ['dashboard', 'settings', 'profile'];
+              if (basicPages.includes(item.keyName)) {
+                console.log(`真实用户基础页面: ${item.keyName}`);
+                return true;
+              }
             }
             
             // 未登录或访客用户只显示有限的导航项
             if (!isAuthenticated || !isRealUser) {
               // 仅允许访问仪表盘和少数非敏感页面
-              const guestAllowedPaths = ["/", "/dashboard"];
-              return guestAllowedPaths.includes(item.href);
+              const guestAllowedPaths = ["/", "/dashboard", "/settings"];
+              if (guestAllowedPaths.includes(item.href)) {
+                console.log(`访客可访问路径: ${item.href}`);
+                return true;
+              }
             }
             
             // 默认不显示
+            console.log(`导航项[${item.keyName}]没有权限，不显示`);
             return false;
           })
           .map((item) => (
