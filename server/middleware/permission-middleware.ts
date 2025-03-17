@@ -534,3 +534,17 @@ export async function checkSpecificPagePermissionResult(
     };
   }
 }
+
+export async function hasPageAccess(userId: number, pageName: string): Promise<boolean> {
+  // 获取用户信息
+  const user = await db.getUser(userId);
+
+  // 如果是管理员，直接返回true
+  if (user && (user.role === 'admin' || user.role === 'super_admin')) {
+    return true;
+  }
+
+  // 检查用户权限
+  const permissions = await getUserPagePermissions(userId);
+  return permissions.includes(pageName);
+}
