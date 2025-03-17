@@ -187,11 +187,17 @@ export function Sidebar() {
             const { hasPagePermission, pagePermissions } = usePermissions();
             
             // 获取AuthContext以检查用户是否为管理员
-            const { isAdmin } = useAuth ? useAuth() : { isAdmin: false };
+            const authContext = useAuth ? useAuth() : { isAdmin: false, role: null };
             
             // 管理员用户检查 - 管理员可以访问所有页面
-            if (isAuthenticated && isAdmin) {
-              console.log(`管理员用户，允许访问所有导航项: ${item.keyName}`);
+            // 增强管理员检测 - 检查多个管理员标志
+            if (isAuthenticated && (
+              authContext.isAdmin === true || 
+              authContext.role === 'admin' || 
+              authContext.role === 'super_admin' ||
+              localStorage.getItem('isAdminUser') === 'true'
+            )) {
+              console.log(`管理员用户检测通过，角色:${authContext.role}，允许访问所有导航项: ${item.keyName}`);
               return true;
             }
             
@@ -245,7 +251,7 @@ export function Sidebar() {
             // 未登录或访客用户只显示有限的导航项
             if (!isAuthenticated || !isRealUser) {
               // 仅允许访问仪表盘和少数非敏感页面
-              const guestAllowedPaths = ["/", "/dashboard", "/settings"];
+              const guestAllowedPaths = ["/", "/dashboard"];
               if (guestAllowedPaths.includes(item.href)) {
                 console.log(`访客可访问路径: ${item.href}`);
                 return true;
