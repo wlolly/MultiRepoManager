@@ -13,7 +13,7 @@ import { hasPagePermission as checkPageAccess, hasActionPermission, hasWarehouse
  * @param role 用户角色
  * @returns 默认权限对象
  */
-function getDefaultPermissionsByRole(role: string): { pages: string[], actions: string[], warehouses: Record<string, { view: boolean, manage: boolean }> } {
+function getDefaultPermissionsByRole(role?: string | null): { pages: string[], actions: string[], warehouses: Record<string, { view: boolean, manage: boolean }> } {
   // 超级管理员拥有所有权限
   if (role === 'super_admin' || role === 'admin') {
     // 获取所有页面名称
@@ -181,7 +181,7 @@ export function checkWarehouseManagePermission(warehouseIdParam: string = 'wareh
  * @param role 用户角色 (可选，如果未提供则会从数据库中读取)
  * @returns 用户有权限访问的页面列表
  */
-export async function getUserPagePermissions(userId: number, role?: string): Promise<string[] | { 
+export async function getUserPagePermissions(userId: number, role?: string | null): Promise<string[] | { 
   pages: string[], 
   actions: string[], 
   isAdmin?: boolean,
@@ -483,7 +483,20 @@ export async function checkSpecificPagePermissionResult(
   }
 }
 
-export async function loadUserPermissions(userId: number, role?: string, req: Request): Promise<{
+/**
+ * 加载用户权限
+ * 从数据库获取用户所属团队和相关权限
+ * 
+ * @param userId 用户ID
+ * @param req Express请求对象
+ * @param role 用户角色（可选）
+ * @returns 用户权限集合
+ */
+export async function loadUserPermissions(
+  userId: number, 
+  req: Request,
+  role?: string
+): Promise<{
   pages: string[],
   actions: string[],
   warehouses: Record<string, { view: boolean, manage: boolean }>
