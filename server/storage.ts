@@ -426,6 +426,7 @@ export class MemStorage implements IStorage {
     
     // 初始化ID计数器
     this.userIdCounter = 1;
+    this.loginVerificationIdCounter = 1; // 初始化登录验证ID计数器
     this.repositoryIdCounter = 1;
     this.teamIdCounter = 1;
     this.teamMemberIdCounter = 1;
@@ -652,6 +653,60 @@ export class MemStorage implements IStorage {
 
   async getUsers(): Promise<User[]> {
     return Array.from(this.usersMap.values());
+  }
+  
+  // 登录验证方法
+  async createLoginVerification(verification: InsertLoginVerification): Promise<LoginVerification> {
+    const id = this.loginVerificationIdCounter++;
+    const created = new Date();
+    const verificationRecord: LoginVerification = {
+      ...verification,
+      id,
+      created,
+      used: false,
+      usedAt: null
+    };
+    
+    this.loginVerificationsMap.set(verification.verificationId, verificationRecord);
+    return verificationRecord;
+  }
+  
+  async getLoginVerification(verificationId: string): Promise<LoginVerification | undefined> {
+    const verification = this.loginVerificationsMap.get(verificationId);
+    
+    // 检查验证记录是否过期
+    if (verification && verification.expires && new Date() > new Date(verification.expires)) {
+      // 如果已过期，自动删除
+      this.loginVerificationsMap.delete(verificationId);
+      return undefined;
+    }
+    
+    return verification;
+  }
+  
+  async updateLoginVerification(verificationId: string, updates: Partial<LoginVerification>): Promise<LoginVerification | undefined> {
+    const verification = this.loginVerificationsMap.get(verificationId);
+    if (!verification) return undefined;
+    
+    const updatedVerification = {
+      ...verification,
+      ...updates
+    };
+    
+    this.loginVerificationsMap.set(verificationId, updatedVerification);
+    return updatedVerification;
+  }
+  
+  async cleanupExpiredVerifications(): Promise<number> {
+    const now = new Date();
+    const expiredVerifications = Array.from(this.loginVerificationsMap.entries())
+      .filter(([_, verification]) => new Date(verification.expires) <= now);
+    
+    expiredVerifications.forEach(([verificationId, _]) => {
+      this.loginVerificationsMap.delete(verificationId);
+    });
+    
+    return expiredVerifications.length;
   }
   
   // 会话管理方法
