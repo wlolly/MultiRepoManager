@@ -386,15 +386,16 @@ export async function loadUserPermissions(
     console.log(`[权限加载] 用户${userId}不是管理员，加载团队权限`);
     
     // 1. 查询用户所在的团队
-    const teamMembers = await db.query.teamMembers.findMany({
-      where: eq(schema.teamMembers.userId, userId),
-      columns: {
-        teamId: true,
-        isAdmin: true
-      }
-    });
+    // 使用直接SQL查询，确保字段名正确
+    console.log(`[权限加载] 直接使用SQL查询团队成员信息，用户ID: ${userId}`);
+    const teamMembersResult = await db.$client`
+      SELECT teamid, isadmin FROM team_members WHERE userid = ${userId}
+    `;
     
-    const teamIds = teamMembers.map(member => member.teamId);
+    console.log(`[权限加载] SQL查询结果: `, teamMembersResult);
+    
+    // 确保正确提取teamId字段
+    const teamIds = teamMembersResult.map(member => member.teamid);
     
     if (teamIds.length === 0) {
       console.log(`[权限加载] 用户${userId}不属于任何团队，仅有基本权限`);
@@ -408,50 +409,51 @@ export async function loadUserPermissions(
     }
     
     // 2. 查询团队页面权限
-    const pagePermissions = await db.query.teamPagePermissions.findMany({
-      where: inArray(schema.teamPagePermissions.teamId, teamIds),
-      columns: {
-        teamId: true,
-        pageName: true,
-        canAccess: true
-      }
-    });
+    // 使用直接SQL查询，确保字段名正确
+    console.log(`[权限加载] 直接使用SQL查询团队页面权限，团队IDs: ${teamIds.join(', ')}`);
+    const pagePermissionsResult = await db.$client`
+      SELECT teamid, page_name, can_access FROM team_page_permissions 
+      WHERE teamid IN ${db.$client(teamIds)}
+    `;
+    
+    // 输出调试信息，确认查询执行是否成功
+    console.log(`[权限加载] SQL查询结果: `, pagePermissionsResult);
     
     // 收集有权限的页面
     const pageSet = new Set<string>();
-    for (const permission of pagePermissions) {
-      if (permission.canAccess) {
-        pageSet.add(permission.pageName);
+    for (const permission of pagePermissionsResult) {
+      if (permission.can_access) {
+        pageSet.add(permission.page_name);
       }
     }
     permissions.pages = Array.from(pageSet);
     
     // 3. 查询团队仓库权限
-    const warehousePermissions = await db.query.teamWarehousePermissions.findMany({
-      where: inArray(schema.teamWarehousePermissions.teamId, teamIds),
-      columns: {
-        teamId: true,
-        warehouseId: true,
-        canView: true,
-        canManage: true
-      }
-    });
+    // 使用直接SQL查询，确保字段名正确
+    console.log(`[权限加载] 直接使用SQL查询团队仓库权限，团队IDs: ${teamIds.join(', ')}`);
+    const warehousePermissionsResult = await db.$client`
+      SELECT teamid, warehouseid, can_view, can_manage FROM team_warehouse_permissions 
+      WHERE teamid IN ${db.$client(teamIds)}
+    `;
+    
+    // 输出调试信息，确认查询执行是否成功
+    console.log(`[权限加载] SQL查询结果: `, warehousePermissionsResult);
     
     // 收集仓库权限
-    for (const permission of warehousePermissions) {
-      const warehouseId = permission.warehouseId.toString();
+    for (const permission of warehousePermissionsResult) {
+      const warehouseId = permission.warehouseid.toString();
       
       // 如果这个仓库已经有更高级别的权限，不覆盖
       if (permissions.warehouses[warehouseId]) {
         const existing = permissions.warehouses[warehouseId];
         permissions.warehouses[warehouseId] = {
-          view: existing.view || !!permission.canView,
-          manage: existing.manage || !!permission.canManage
+          view: existing.view || !!permission.can_view,
+          manage: existing.manage || !!permission.can_manage
         };
       } else {
         permissions.warehouses[warehouseId] = {
-          view: !!permission.canView,
-          manage: !!permission.canManage
+          view: !!permission.can_view,
+          manage: !!permission.can_manage
         };
       }
     }
@@ -460,7 +462,7 @@ export async function loadUserPermissions(
     permissions.actions = ['view'];
     
     // 如果用户在任一团队中是管理员，给予编辑权限
-    if (teamMembers.some(member => member.isAdmin)) {
+    if (teamMembersResult.some(member => member.isadmin)) {
       permissions.actions.push('edit');
     }
     

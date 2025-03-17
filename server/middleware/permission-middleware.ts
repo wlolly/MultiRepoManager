@@ -536,15 +536,32 @@ export async function checkSpecificPagePermissionResult(
 }
 
 export async function checkUserPageAccess(userId: number, pageName: string): Promise<boolean> {
-  // 获取用户信息
-  const user = await db.getUser(userId);
-
-  // 如果是管理员，直接返回true
-  if (user && (user.role === 'admin' || user.role === 'super_admin')) {
-    return true;
+  try {
+    // 使用直接SQL查询获取用户信息
+    console.log(`[权限检查] 检查用户 ${userId} 对页面 ${pageName} 的访问权限`);
+    const userResult = await db.$client`
+      SELECT id, role, is_active FROM users WHERE id = ${userId} LIMIT 1
+    `;
+    
+    if (!userResult || userResult.length === 0 || !userResult[0].is_active) {
+      console.log(`[权限检查] 用户 ${userId} 不存在或未激活`);
+      return false;
+    }
+    
+    // 如果是管理员，直接返回true
+    if (userResult[0].role === 'admin' || userResult[0].role === 'super_admin') {
+      console.log(`[权限检查] 用户 ${userId} 是管理员，允许访问页面 ${pageName}`);
+      return true;
+    }
+    
+    // 检查用户权限
+    const permissions = await getUserPagePermissions(userId);
+    const hasPermission = permissions.includes(pageName);
+    
+    console.log(`[权限检查] 用户 ${userId} ${hasPermission ? '有' : '没有'} 对页面 ${pageName} 的访问权限`);
+    return hasPermission;
+  } catch (error) {
+    console.error(`[权限检查] 检查用户 ${userId} 页面权限时出错:`, error);
+    return false;
   }
-
-  // 检查用户权限
-  const permissions = await getUserPagePermissions(userId);
-  return permissions.includes(pageName);
 }
