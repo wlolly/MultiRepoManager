@@ -1027,6 +1027,8 @@ export async function getCurrentUser(req: Request, res: Response) {
           console.log('[认证系统] 返回已认证用户信息, 用户ID:', user.id);
           return res.status(200).json({
             authenticated: true,
+            realAuthenticated: true, // 添加真实用户标志
+            testUser: true, // 添加测试用户标志
             message: "登录有效",
             user: {
               id: user.id,
@@ -1151,6 +1153,8 @@ export async function getCurrentUser(req: Request, res: Response) {
       // 返回用户信息
       return res.status(200).json({
         authenticated: true,
+        realAuthenticated: true, // 添加真实用户标志
+        testUser: true, // 添加测试用户标志
         user: {
           id: user.id,
           username: user.username,
@@ -1497,6 +1501,8 @@ export async function verifySession(req: Request, res: Response, next: NextFunct
     req.session.userId = user.id;
     req.session.authenticated = true;
     req.session.isAuthenticated = true;
+    req.session.realAuthenticated = true; // 添加真实用户标识
+    req.session.testUser = true; // 添加测试用户标识
     req.session.role = user.role;
     req.session.language = user.language || 'zh';
     req.session.username = user.username;
