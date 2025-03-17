@@ -11,15 +11,20 @@ import crypto from 'crypto';
 
 // 全局session存储，避免模块重新加载时丢失会话
 // 定义自定义类型，避免与内置Storage类型冲突
-type SessionStorageType = Record<string, string>;
+// 创建全局会话存储的自定义类型
+interface ISessionStorage {
+  [key: string]: string;
+}
 
+// 扩展全局类型
 declare global {
-  var sessionStorage: SessionStorageType | undefined;
+  // 不能使用sessionStorage作为名称，因为它是JS的保留类型
+  var customSessionStorage: ISessionStorage;
 }
 
 // 初始化全局会话存储
 if (!global.sessionStorage) {
-  global.sessionStorage = {} as SessionStorageType;
+  global.sessionStorage = {};
 }
 
 export async function sessionMiddleware(req: Request, res: Response, next: NextFunction) {
