@@ -20,7 +20,7 @@ import {
 } from '../../shared/schema';
 import { IStorage } from '../storage';
 import { and, eq, sql, inArray } from 'drizzle-orm';
-import { MySqlTransaction } from 'drizzle-orm/mysql-core';
+import { PgTransaction } from 'drizzle-orm/postgres-js';
 
 // 库存操作类型枚举
 export enum InventoryOperationType {

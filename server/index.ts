@@ -93,7 +93,7 @@ import { initializeUserIDTable } from './database/userID';
   memStorage.initializeDemoData();
   
   // 数据库已经通过db.ts初始化 - 但这个过程是异步的，需要进行检查
-  log('验证数据库连接状态', 'mysql');
+  log('验证数据库连接状态', 'postgres');
   
   // 给db.ts中的连接测试留出足够时间，等待更长时间
   await new Promise(resolve => setTimeout(resolve, 5000)); // 增加到5秒
@@ -101,7 +101,7 @@ import { initializeUserIDTable } from './database/userID';
   // 验证数据库连接池状态
   let dbConnectionStatus = false;
   try {
-    log('尝试数据库测试连接...', 'mysql');
+    log('尝试数据库测试连接...', 'postgres');
     
     // 使用正确的SQL查询方式 - 使用sql模板字符串
     // 这个sql对象是从最上面导入的，不需要使用require
@@ -115,26 +115,26 @@ import { initializeUserIDTable } from './database/userID';
       testConn.length > 0;
       
     if (hasValidResponse) {
-      log('数据库连接测试成功', 'mysql');
+      log('数据库连接测试成功', 'postgres');
       dbConnectionStatus = true;
     } else {
-      log('数据库连接测试失败: 无法获取有效响应，将使用内存存储模式', 'mysql-error');
+      log('数据库连接测试失败: 无法获取有效响应，将使用内存存储模式', 'postgres-error');
     }
   } catch (e) {
-    log(`数据库连接测试失败: ${e}`, 'mysql-error');
+    log(`数据库连接测试失败: ${e}`, 'postgres-error');
   }
   
   // 初始化内部用户ID表（创建并设置定期清理任务）
   if (dbConnectionStatus) {
     try {
       await initializeUserIDTable();
-      log('内部用户ID表初始化成功，有效期为2天', 'mysql');
+      log('内部用户ID表初始化成功，有效期为2天', 'postgres');
     } catch (error) {
       console.error('初始化内部用户ID表失败:', error);
       // 继续启动服务器，即使ID表初始化失败
     }
   } else {
-    log('跳过用户ID表初始化，因为数据库连接不可用', 'mysql-warning');
+    log('跳过用户ID表初始化，因为数据库连接不可用', 'postgres-warning');
   }
   
   // 即使没有数据库连接，也继续启动服务器 - 确保应用的高可用性
@@ -144,10 +144,10 @@ import { initializeUserIDTable } from './database/userID';
   // 此时app.locals.storage已经被正确初始化
   if (dbConnectionStatus) {
     // 在服务器启动时执行一次过期验证记录和会话的清理
-    log('正在执行初始清理过期验证记录和会话', 'mysql');
+    log('正在执行初始清理过期验证记录和会话', 'postgres');
     try {
       const result = await cleanupAuthRecords(app);
-      log(`初始清理完成：移除了 ${result.verificationsRemoved} 条验证记录和 ${result.sessionsRemoved} 条会话`, 'mysql');
+      log(`初始清理完成：移除了 ${result.verificationsRemoved} 条验证记录和 ${result.sessionsRemoved} 条会话`, 'postgres');
     } catch (cleanupError) {
       console.error('初始验证记录清理失败:', cleanupError);
     }

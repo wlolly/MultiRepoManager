@@ -1,11 +1,14 @@
 /**
  * 权限中间件
  * 用于验证用户是否有权限访问特定页面或执行特定操作
+ * 已迁移到PostgreSQL兼容的Drizzle查询
  */
 import { Request, Response, NextFunction } from 'express';
 import { db } from '../db';
+import * as schema from '../../shared/schema';
 import { pageNameEnum } from '../../shared/schema';
 import { z } from 'zod';
+import { eq, inArray, sql } from 'drizzle-orm';
 import { hasPagePermission as checkPageAccess, hasActionPermission, hasWarehousePermission, savePermissionsToSession } from '../utils/permission-utils';
 
 /**
