@@ -6,6 +6,7 @@ import { Request, Response, NextFunction } from 'express';
 import { db } from '../db';
 import { pageNameEnum } from '../../shared/schema';
 import { z } from 'zod';
+import { hasPagePermission as checkPageAccess, hasActionPermission, hasWarehousePermission, savePermissionsToSession } from '../utils/permission-utils';
 
 /**
  * 根据用户角色获取默认权限
@@ -46,42 +47,21 @@ export function checkPagePermission(pageName: string) {
         guestAccess: false
       });
     }
-
-    // 如果是admin或super_admin角色，或者isAdmin/hasSuperAccess标记为true，直接放行
-    if (
-      req.session.role === 'admin' || 
-      req.session.role === 'super_admin' ||
-      req.session.isAdmin === true ||
-      req.session.hasSuperAccess === true
-    ) {
-      console.log(`[权限中间件] 用户${req.session.userId}具有管理员权限，允许访问${pageName}页面`);
+    
+    // 使用统一的权限工具函数检查页面权限
+    if (checkPageAccess(req, pageName)) {
+      if (req.session.isAdmin === true || req.session.hasSuperAccess === true) {
+        console.log(`[权限中间件] 用户${req.session.userId}具有管理员权限，允许访问${pageName}页面`);
+      }
       return next();
     }
 
-    // 获取用户的页面权限 - 支持旧版和新版权限结构
-    let hasPermission = false;
-    
-    // 旧版权限结构
-    if (req.session.pagePermissions && Array.isArray(req.session.pagePermissions)) {
-      hasPermission = req.session.pagePermissions.includes(pageName);
-    } 
-    
-    // 新版权限结构 - permissions.pages数组
-    if (!hasPermission && req.session.permissions && req.session.permissions.pages) {
-      if (Array.isArray(req.session.permissions.pages)) {
-        hasPermission = req.session.permissions.pages.includes(pageName);
-      }
-    }
-
-    if (!hasPermission) {
-      return res.status(403).json({
-        authenticated: true, 
-        message: '无权访问该页面',
-        guestAccess: false
-      });
-    }
-
-    next();
+    // 如果没有权限，返回403禁止访问
+    return res.status(403).json({
+      authenticated: true, 
+      message: '无权访问该页面',
+      guestAccess: false
+    });
   };
 }
 
@@ -99,42 +79,21 @@ export function checkActionPermission(actionName: string) {
         guestAccess: false
       });
     }
-
-    // 如果是admin或super_admin角色，或者isAdmin/hasSuperAccess标记为true，直接放行
-    if (
-      req.session.role === 'admin' || 
-      req.session.role === 'super_admin' ||
-      req.session.isAdmin === true ||
-      req.session.hasSuperAccess === true
-    ) {
-      console.log(`[权限中间件] 用户${req.session.userId}具有管理员权限，允许执行${actionName}操作`);
+    
+    // 使用统一的权限工具函数检查操作权限
+    if (hasActionPermission(req, actionName)) {
+      if (req.session.isAdmin === true || req.session.hasSuperAccess === true) {
+        console.log(`[权限中间件] 用户${req.session.userId}具有管理员权限，允许执行${actionName}操作`);
+      }
       return next();
     }
 
-    // 获取用户的操作权限 - 支持旧版和新版权限结构
-    let hasPermission = false;
-    
-    // 旧版权限结构
-    if (req.session.actionPermissions && Array.isArray(req.session.actionPermissions)) {
-      hasPermission = req.session.actionPermissions.includes(actionName);
-    } 
-    
-    // 新版权限结构 - permissions.actions数组
-    if (!hasPermission && req.session.permissions && req.session.permissions.actions) {
-      if (Array.isArray(req.session.permissions.actions)) {
-        hasPermission = req.session.permissions.actions.includes(actionName);
-      }
-    }
-
-    if (!hasPermission) {
-      return res.status(403).json({
-        authenticated: true, 
-        message: '无操作权限',
-        guestAccess: false  
-      });
-    }
-
-    next();
+    // 如果没有权限，返回403禁止访问
+    return res.status(403).json({
+      authenticated: true, 
+      message: '无操作权限',
+      guestAccess: false  
+    });
   };
 }
 
@@ -152,17 +111,6 @@ export function checkWarehouseViewPermission(warehouseIdParam: string = 'warehou
       });
     }
 
-    // 如果是admin或super_admin角色，或者isAdmin/hasSuperAccess标记为true，直接放行
-    if (
-      req.session.role === 'admin' || 
-      req.session.role === 'super_admin' ||
-      req.session.isAdmin === true ||
-      req.session.hasSuperAccess === true
-    ) {
-      console.log(`[权限中间件] 用户${req.session.userId}具有管理员权限，允许访问仓库`);
-      return next();
-    }
-
     // 获取请求中的仓库ID
     const warehouseId = Number(req.params[warehouseIdParam] || req.body[warehouseIdParam]);
     
@@ -170,29 +118,21 @@ export function checkWarehouseViewPermission(warehouseIdParam: string = 'warehou
     if (!warehouseId) {
       return next();
     }
-
-    // 检查用户是否有查看该仓库的权限 - 支持旧版和新版权限结构
-    let hasPermission = false;
     
-    // 旧版权限结构
-    const warehousePermissions = req.session.warehousePermissions || {};
-    hasPermission = warehousePermissions[warehouseId] && warehousePermissions[warehouseId].view;
-    
-    // 新版权限结构 - permissions.warehouses对象
-    if (!hasPermission && req.session.permissions && req.session.permissions.warehouses) {
-      const newWarehousePermissions = req.session.permissions.warehouses || {};
-      hasPermission = newWarehousePermissions[warehouseId] && newWarehousePermissions[warehouseId].canView;
+    // 使用统一的权限工具函数检查仓库权限
+    if (hasWarehousePermission(req, warehouseId, 'view')) {
+      if (req.session.isAdmin === true || req.session.hasSuperAccess === true) {
+        console.log(`[权限中间件] 用户${req.session.userId}具有管理员权限，允许访问仓库`);
+      }
+      return next();
     }
 
-    if (!hasPermission) {
-      return res.status(403).json({
-        authenticated: true, 
-        message: '无权访问该仓库',
-        guestAccess: false
-      });
-    }
-
-    next();
+    // 如果没有权限，返回403禁止访问
+    return res.status(403).json({
+      authenticated: true, 
+      message: '无权访问该仓库',
+      guestAccess: false
+    });
   };
 }
 
@@ -210,17 +150,6 @@ export function checkWarehouseManagePermission(warehouseIdParam: string = 'wareh
       });
     }
 
-    // 如果是admin或super_admin角色，或者isAdmin/hasSuperAccess标记为true，直接放行
-    if (
-      req.session.role === 'admin' || 
-      req.session.role === 'super_admin' ||
-      req.session.isAdmin === true ||
-      req.session.hasSuperAccess === true
-    ) {
-      console.log(`[权限中间件] 用户${req.session.userId}具有管理员权限，允许管理仓库`);
-      return next();
-    }
-
     // 获取请求中的仓库ID
     const warehouseId = Number(req.params[warehouseIdParam] || req.body[warehouseIdParam]);
     
@@ -228,29 +157,21 @@ export function checkWarehouseManagePermission(warehouseIdParam: string = 'wareh
     if (!warehouseId) {
       return next();
     }
-
-    // 检查用户是否有管理该仓库的权限 - 支持旧版和新版权限结构
-    let hasPermission = false;
     
-    // 旧版权限结构
-    const warehousePermissions = req.session.warehousePermissions || {};
-    hasPermission = warehousePermissions[warehouseId] && warehousePermissions[warehouseId].manage;
-    
-    // 新版权限结构 - permissions.warehouses对象
-    if (!hasPermission && req.session.permissions && req.session.permissions.warehouses) {
-      const newWarehousePermissions = req.session.permissions.warehouses || {};
-      hasPermission = newWarehousePermissions[warehouseId] && newWarehousePermissions[warehouseId].canManage;
+    // 使用统一的权限工具函数检查仓库管理权限
+    if (hasWarehousePermission(req, warehouseId, 'manage')) {
+      if (req.session.isAdmin === true || req.session.hasSuperAccess === true) {
+        console.log(`[权限中间件] 用户${req.session.userId}具有管理员权限，允许管理仓库`);
+      }
+      return next();
     }
 
-    if (!hasPermission) {
-      return res.status(403).json({
-        authenticated: true, 
-        message: '无权管理该仓库',
-        guestAccess: false
-      });
-    }
-
-    next();
+    // 如果没有权限，返回403禁止访问
+    return res.status(403).json({
+      authenticated: true, 
+      message: '无权管理该仓库',
+      guestAccess: false
+    });
   };
 }
 
