@@ -52,9 +52,42 @@ export class TranslationMonitor {
     message: string;
   }> = [];
   
-  // 报警阈值
-  private errorRateThreshold: number = 0.01; // 1%
-  private responseTimeThreshold: number = 2000; // 2秒
+  // 存储告警历史
+  private alertHistory: Array<{
+    timestamp: Date;
+    type: string;  // 'error_rate', 'response_time', 'consecutive_errors'
+    value: number;
+    threshold: number;
+    message: string;
+    actionTaken?: string;
+  }> = [];
+  
+  // 连续错误计数器
+  private consecutiveErrors: Record<RequestType, number> = {
+    [RequestType.GET_ALL]: 0,
+    [RequestType.GET_BY_LANGUAGE]: 0,
+    [RequestType.UPSERT]: 0,
+    [RequestType.DELETE]: 0,
+    [RequestType.SYNC_TO_FILE]: 0,
+    [RequestType.SYNC_TO_DB]: 0
+  };
+  
+  // 服务降级状态
+  private degraded: boolean = false;
+  private lastAlertTime: number = 0;
+  
+  // 告警配置
+  private monitorConfig = {
+    errorRateThreshold: 0.01,         // 错误率阈值 (1%)
+    responseTimeThreshold: 2000,      // 响应时间阈值 (毫秒)
+    criticalErrorRate: 0.05,          // 严重错误率阈值 (5%)
+    minRequestsForAlert: 20,          // 触发告警的最小请求数
+    autoDegradation: true,            // 是否启用自动降级
+    autoRollback: true,               // 是否启用自动回滚
+    alertCooldown: 300000,            // 告警冷却时间 (毫秒)
+    maxConsecutiveErrors: 5,          // 最大连续错误数
+    logLevel: 'info'                  // 日志级别 (debug, info, warn, error)
+  };
   
   private constructor() {
     // 每小时重置计数
@@ -101,10 +134,16 @@ export class TranslationMonitor {
     this.responseTimes.push(responseTime);
     this.requestStats[type].responseTimes.push(responseTime);
     
-    // 如果请求失败，记录错误
-    if (!success) {
+    if (success) {
+      // 请求成功，重置连续错误计数
+      this.consecutiveErrors[type] = 0;
+    } else {
+      // 请求失败，记录错误
       this.errorCount++;
       this.requestStats[type].errorCount++;
+      
+      // 更新连续错误计数器
+      this.consecutiveErrors[type]++;
       
       // 存储错误信息
       this.recentErrors.push({
@@ -128,25 +167,44 @@ export class TranslationMonitor {
    * @param type 请求类型
    */
   private checkAlertThresholds(type: RequestType): void {
+    // 检查是否处于告警冷却期
+    const now = Date.now();
+    if (now - this.lastAlertTime < this.monitorConfig.alertCooldown) {
+      return;
+    }
+    
     // 检查总体错误率
     const errorRate = this.errorCount / this.requestCount;
-    if (errorRate >= this.errorRateThreshold && this.requestCount >= 100) {
+    if (errorRate >= this.monitorConfig.errorRateThreshold && 
+        this.requestCount >= this.monitorConfig.minRequestsForAlert) {
       this.triggerErrorRateAlert(errorRate);
     }
     
     // 检查特定类型的错误率
     const typeStats = this.requestStats[type];
-    if (typeStats.requestCount >= 20) {
+    if (typeStats.requestCount >= this.monitorConfig.minRequestsForAlert) {
       const typeErrorRate = typeStats.errorCount / typeStats.requestCount;
-      if (typeErrorRate >= this.errorRateThreshold) {
+      if (typeErrorRate >= this.monitorConfig.errorRateThreshold) {
         this.triggerTypeErrorRateAlert(type, typeErrorRate);
       }
     }
     
     // 检查平均响应时间
     const avgResponseTime = this.getAverageResponseTime();
-    if (avgResponseTime > this.responseTimeThreshold) {
+    if (avgResponseTime > this.monitorConfig.responseTimeThreshold) {
       this.triggerResponseTimeAlert(avgResponseTime);
+    }
+    
+    // 检查连续错误计数是否超过阈值
+    if (this.consecutiveErrors[type] >= this.monitorConfig.maxConsecutiveErrors) {
+      this.triggerConsecutiveErrorsAlert(type);
+    }
+    
+    // 检查是否达到严重错误率，触发自动降级
+    if (errorRate >= this.monitorConfig.criticalErrorRate && 
+        this.monitorConfig.autoDegradation &&
+        !this.degraded) {
+      this.enableServiceDegradation(errorRate);
     }
   }
   
@@ -155,8 +213,19 @@ export class TranslationMonitor {
    * @param errorRate 错误率
    */
   private triggerErrorRateAlert(errorRate: number): void {
-    console.error(`[翻译监控告警] 总体错误率达到${(errorRate * 100).toFixed(2)}%，超过阈值${(this.errorRateThreshold * 100).toFixed(2)}%`);
-    // 这里可以集成发送告警通知的逻辑
+    const message = `总体错误率达到${(errorRate * 100).toFixed(2)}%，超过阈值${(this.monitorConfig.errorRateThreshold * 100).toFixed(2)}%`;
+    console.error(`[翻译监控告警] ${message}`);
+    
+    // 记录告警历史
+    this.alertHistory.push({
+      timestamp: new Date(),
+      type: 'error_rate',
+      value: errorRate,
+      threshold: this.monitorConfig.errorRateThreshold,
+      message
+    });
+    
+    this.lastAlertTime = Date.now();
   }
   
   /**
@@ -165,8 +234,19 @@ export class TranslationMonitor {
    * @param errorRate 错误率
    */
   private triggerTypeErrorRateAlert(type: RequestType, errorRate: number): void {
-    console.error(`[翻译监控告警] ${type}请求错误率达到${(errorRate * 100).toFixed(2)}%，超过阈值${(this.errorRateThreshold * 100).toFixed(2)}%`);
-    // 这里可以集成发送告警通知的逻辑
+    const message = `${type}请求错误率达到${(errorRate * 100).toFixed(2)}%，超过阈值${(this.monitorConfig.errorRateThreshold * 100).toFixed(2)}%`;
+    console.error(`[翻译监控告警] ${message}`);
+    
+    // 记录告警历史
+    this.alertHistory.push({
+      timestamp: new Date(),
+      type: `error_rate_${type}`,
+      value: errorRate,
+      threshold: this.monitorConfig.errorRateThreshold,
+      message
+    });
+    
+    this.lastAlertTime = Date.now();
   }
   
   /**
@@ -174,8 +254,61 @@ export class TranslationMonitor {
    * @param avgTime 平均响应时间
    */
   private triggerResponseTimeAlert(avgTime: number): void {
-    console.error(`[翻译监控告警] 平均响应时间达到${avgTime.toFixed(2)}ms，超过阈值${this.responseTimeThreshold}ms`);
-    // 这里可以集成发送告警通知的逻辑
+    const message = `平均响应时间达到${avgTime.toFixed(2)}ms，超过阈值${this.monitorConfig.responseTimeThreshold}ms`;
+    console.error(`[翻译监控告警] ${message}`);
+    
+    // 记录告警历史
+    this.alertHistory.push({
+      timestamp: new Date(),
+      type: 'response_time',
+      value: avgTime,
+      threshold: this.monitorConfig.responseTimeThreshold,
+      message
+    });
+    
+    this.lastAlertTime = Date.now();
+  }
+  
+  /**
+   * 触发连续错误告警
+   * @param type 请求类型
+   */
+  private triggerConsecutiveErrorsAlert(type: RequestType): void {
+    const message = `${type}请求连续出错${this.consecutiveErrors[type]}次，超过阈值${this.monitorConfig.maxConsecutiveErrors}次`;
+    console.error(`[翻译监控告警] ${message}`);
+    
+    // 记录告警历史
+    this.alertHistory.push({
+      timestamp: new Date(),
+      type: 'consecutive_errors',
+      value: this.consecutiveErrors[type],
+      threshold: this.monitorConfig.maxConsecutiveErrors,
+      message
+    });
+    
+    // 重置连续错误计数
+    this.consecutiveErrors[type] = 0;
+    this.lastAlertTime = Date.now();
+  }
+  
+  /**
+   * 启用服务降级
+   * @param errorRate 当前错误率
+   */
+  private enableServiceDegradation(errorRate: number): void {
+    this.degraded = true;
+    const message = `自动启用服务降级：错误率达到${(errorRate * 100).toFixed(2)}%，超过严重阈值${(this.monitorConfig.criticalErrorRate * 100).toFixed(2)}%`;
+    console.error(`[翻译监控系统] ${message}`);
+    
+    // 记录降级操作
+    this.alertHistory.push({
+      timestamp: new Date(),
+      type: 'auto_degradation',
+      value: errorRate,
+      threshold: this.monitorConfig.criticalErrorRate,
+      message,
+      actionTaken: '自动启用服务降级模式'
+    });
   }
   
   /**
@@ -266,7 +399,7 @@ export class TranslationMonitor {
    */
   public setErrorRateThreshold(threshold: number): void {
     if (threshold >= 0 && threshold <= 1) {
-      this.errorRateThreshold = threshold;
+      this.monitorConfig.errorRateThreshold = threshold;
     }
   }
   
@@ -276,8 +409,70 @@ export class TranslationMonitor {
    */
   public setResponseTimeThreshold(threshold: number): void {
     if (threshold > 0) {
-      this.responseTimeThreshold = threshold;
+      this.monitorConfig.responseTimeThreshold = threshold;
     }
+  }
+  
+  /**
+   * 获取告警历史
+   * @param limit 最大数量
+   * @returns 最近的告警历史
+   */
+  public getAlertHistory(limit: number = 10): Array<{
+    timestamp: Date;
+    type: string;
+    value: number;
+    threshold: number;
+    message: string;
+    actionTaken?: string;
+  }> {
+    return this.alertHistory.slice(-limit);
+  }
+  
+  /**
+   * 获取当前降级状态
+   * @returns 是否启用了服务降级
+   */
+  public isDegraded(): boolean {
+    return this.degraded;
+  }
+  
+  /**
+   * 禁用服务降级
+   * @param reason 禁用原因
+   */
+  public disableServiceDegradation(reason: string): void {
+    if (!this.degraded) return;
+    
+    this.degraded = false;
+    console.log(`[翻译监控系统] 禁用服务降级: ${reason}`);
+    
+    // 记录操作
+    this.alertHistory.push({
+      timestamp: new Date(),
+      type: 'degradation_disabled',
+      value: 0,
+      threshold: 0,
+      message: `禁用服务降级: ${reason}`,
+      actionTaken: '手动禁用服务降级模式'
+    });
+  }
+  
+  /**
+   * 更新监控配置
+   * @param config 新的配置选项
+   */
+  public updateConfig(config: Partial<typeof this.monitorConfig>): void {
+    // 合并配置，仅更新提供的字段
+    this.monitorConfig = { ...this.monitorConfig, ...config };
+    console.log('[翻译监控] 监控配置已更新');
+  }
+  
+  /**
+   * 获取当前监控配置
+   */
+  public getConfig(): typeof this.monitorConfig {
+    return { ...this.monitorConfig };
   }
 }
 
