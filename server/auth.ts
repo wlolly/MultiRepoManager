@@ -373,20 +373,7 @@ export async function completeLogin(req: Request, res: Response) {
       path: '/'
     });
     
-    // 返回成功响应
-    return res.status(200).json({
-      success: true,
-      authenticated: true,
-      message: '登录成功',
-      sessionId,
-      user: {
-        id: user.id,
-        username: user.username,
-        role: user.role,
-        fullName: user.full_name,
-        language: user.language || 'zh'
-      }
-    });
+    undefined
   } catch (error) {
     console.error('[认证系统] 验证完成处理错误:', error);
     return res.status(500).json({
@@ -477,20 +464,7 @@ export async function loginUser(req: Request, res: Response) {
       path: '/'
     });
     
-    // 返回成功响应
-    return res.status(200).json({
-      success: true,
-      authenticated: true,
-      message: '登录成功',
-      sessionId,
-      user: {
-        id: user.id,
-        username: user.username,
-        role: user.role,
-        fullName: user.full_name,
-        language: user.language || 'zh'
-      }
-    });
+    undefined
   } catch (error) {
     console.error('[认证系统] 登录处理错误:', error);
     return res.status(500).json({

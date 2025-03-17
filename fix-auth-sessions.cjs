@@ -7,38 +7,17 @@
 const fs = require('fs');
 const path = require('path');
 
-// 读取auth文件
-const authFilePath = path.join(process.cwd(), 'server', 'auth.ts');
-let content = fs.readFileSync(authFilePath, 'utf8');
+// 读取 auth.ts 文件
+const authFilePath = path.join(__dirname, 'server', 'auth.ts');
+let authContent = fs.readFileSync(authFilePath, 'utf8');
 
-// 替换所有登录函数中的会话设置代码
-const sessionUpdatePattern = /\/\/ 更新会话对象[\s\S]*?req\.session\.authenticated = true;[\s\S]*?req\.session\.userId = user\.id;[\s\S]*?req\.session\.role = user\.role;[\s\S]*?req\.session\.language[\s\S]*?req\.session\.username[\s\S]*?\/\/ 设置新会话ID[\s\S]*?req\.sessionID = sessionId;/g;
+// 修改 completeLogin 函数中的用户返回数据
+let updatedContent = authContent.replace(
+  /\/\/ 返回成功响应\s+return res\.status\(200\)\.json\(\{\s+success: true,\s+authenticated: true,\s+message: '登录成功',\s+sessionId,\s+user: \{\s+id: user\.id,\s+username: user\.username,\s+role: user\.role,\s+fullName: user\.full_name,\s+language: user\.language \|\| 'zh'\s+\}\s+\}\);/g,
+  
+);
 
-const improvedSessionCode = `// 更新会话对象
-    req.session.authenticated = true;
-    req.session.isAuthenticated = true; // 同时设置两个属性以确保兼容性
-    req.session.userId = user.id;
-    req.session.role = user.role;
-    req.session.language = user.language || 'zh';
-    req.session.username = user.username;
-    
-    // 设置新会话ID 
-    req.sessionID = sessionId;
-    
-    // 保存会话以确保状态被持久化
-    await new Promise<void>((resolve) => {
-      req.session.save((err) => {
-        if (err) {
-          console.error('[认证系统] 保存会话状态失败:', err);
-        }
-        resolve();
-      });
-    });`;
+// 保存修改后的文件
+fs.writeFileSync(authFilePath, updatedContent, 'utf8');
 
-// 替换所有匹配的代码
-content = content.replace(sessionUpdatePattern, improvedSessionCode);
-
-// 写回文件
-fs.writeFileSync(authFilePath, content, 'utf8');
-
-console.log('认证会话代码更新完成');
+console.log('已修复 auth.ts 文件中的用户ID返回逻辑');
