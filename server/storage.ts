@@ -8,6 +8,8 @@ import {
   teamWarehousePermissions, type TeamWarehousePermission, type InsertTeamWarehousePermission,
   translations, type Translation, type InsertTranslation,
   activities, type Activity, type InsertActivity,
+  // 登录认证相关导入
+  loginVerifications, type LoginVerification, type InsertLoginVerification,
   // 仓库管理系统相关导入
   products, type Product, type InsertProduct,
   warehouses, type Warehouse, type InsertWarehouse,
@@ -45,6 +47,12 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, user: Partial<User>): Promise<User | undefined>;
   getUsers(): Promise<User[]>;
+  
+  // 登录验证方法
+  createLoginVerification(verification: InsertLoginVerification): Promise<LoginVerification>;
+  getLoginVerification(verificationId: string): Promise<LoginVerification | undefined>;
+  updateLoginVerification(verificationId: string, updates: Partial<LoginVerification>): Promise<LoginVerification | undefined>;
+  cleanupExpiredVerifications(): Promise<number>; // 返回清理的验证记录数量
   
   // 会话管理方法
   createUserSession(sessionData: InsertUserSession): Promise<UserSession>;
@@ -339,10 +347,14 @@ export class MemStorage implements IStorage {
   private uniqueCodeHistoryMap: Map<number, UniqueCodeHistory>;
   private uniqueCodeHistoryIdCounter: number;
   
+  // 登录验证相关存储
+  private loginVerificationsMap: Map<string, LoginVerification>;
+  
   // 用户会话相关存储
   private userSessionsMap: Map<string, UserSession>;
 
   private userIdCounter: number;
+  private loginVerificationIdCounter: number;
   private repositoryIdCounter: number;
   private teamIdCounter: number;
   private teamMemberIdCounter: number;
@@ -402,6 +414,9 @@ export class MemStorage implements IStorage {
     // 初始化唯一码跟踪相关存储
     this.uniqueCodeTrackingMap = new Map();
     this.uniqueCodeHistoryMap = new Map();
+    
+    // 初始化登录验证相关存储
+    this.loginVerificationsMap = new Map();
     
     // 初始化用户会话相关存储
     this.userSessionsMap = new Map();

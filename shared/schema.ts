@@ -108,6 +108,38 @@ export const insertUserSchema = createInsertSchema(users).pick({
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
+// 登录验证记录表 - 用于两阶段登录验证流程
+export const loginVerifications = pgTable("login_verifications", {
+  id: serial("id").primaryKey(),
+  verificationId: varchar("verification_id", { length: 255 }).notNull().unique(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  ipAddress: varchar("ip_address", { length: 50 }),
+  userAgent: text("user_agent"),
+  status: varchar("status", { length: 20 }).notNull().default('pending'),
+  created: timestamp("created").defaultNow().notNull(),
+  expires: timestamp("expires").notNull(),
+  used: boolean("used").default(false),
+  usedAt: timestamp("used_at"),
+}, (table) => {
+  return {
+    verificationIdIdx: index("login_verifications_verification_id_idx").on(table.verificationId),
+    userIdIdx: index("login_verifications_user_id_idx").on(table.userId),
+    statusIdx: index("login_verifications_status_idx").on(table.status)
+  };
+});
+
+export const insertLoginVerificationSchema = createInsertSchema(loginVerifications).pick({
+  verificationId: true,
+  userId: true,
+  ipAddress: true,
+  userAgent: true,
+  status: true,
+  expires: true
+});
+
+export type InsertLoginVerification = z.infer<typeof insertLoginVerificationSchema>;
+export type LoginVerification = typeof loginVerifications.$inferSelect;
+
 // 用户会话表定义 - 用于存储用户登录会话信息
 export const userSessions = pgTable("user_sessions", {
   id: serial("id").primaryKey(),
