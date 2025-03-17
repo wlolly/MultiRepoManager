@@ -15,6 +15,14 @@ interface WarehousePermissions {
   };
 }
 
+// 页面权限检查结果
+export interface PagePermissionResult {
+  hasPermission: boolean;
+  isAdmin: boolean;
+  pageName: string;
+  success: boolean;
+}
+
 // 权限钩子返回类型
 interface PermissionsHook {
   loading: boolean;
@@ -23,6 +31,8 @@ interface PermissionsHook {
   // 页面权限
   pagePermissions: PagePermissions;
   hasPagePermission: (pageName: string) => boolean;
+  // 实时页面权限检查（异步）
+  checkSpecificPagePermission: (pageName: string) => Promise<PagePermissionResult>;
   // 仓库权限
   warehousePermissions: WarehousePermissions;
   canViewWarehouse: (warehouseId: number) => boolean;
@@ -172,13 +182,53 @@ export function usePermissions(): PermissionsHook {
     return () => clearInterval(intervalId);
   }, []);
 
-  // 检查页面权限
+  // 检查页面权限 (通用检查，使用缓存的权限)
   const hasPagePermission = (pageName: string): boolean => {
     // 如果页面权限为空或未找到指定页面权限，默认返回false
     if (!pagePermissions || !pagePermissions[pageName]) {
       return false;
     }
     return pagePermissions[pageName];
+  };
+
+  // 检查特定页面权限 (实时检查)
+  const checkSpecificPagePermission = async (pageName: string): Promise<{
+    hasPermission: boolean;
+    isAdmin: boolean;
+    pageName: string;
+    success: boolean;
+  }> => {
+    try {
+      // 调用新端点检查特定页面权限
+      const response = await fetch(`/api/permissions/check-page/${pageName}`, {
+        method: 'GET',
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log(`页面[${pageName}]权限检查结果:`, result);
+        return result;
+      } else {
+        console.error(`页面权限检查失败，状态码: ${response.status}`);
+        // 请求失败返回无权限
+        return {
+          hasPermission: false,
+          isAdmin: false,
+          pageName,
+          success: false
+        };
+      }
+    } catch (error) {
+      console.error(`检查页面[${pageName}]权限时出错:`, error);
+      // 出错时返回无权限
+      return {
+        hasPermission: false,
+        isAdmin: false,
+        pageName,
+        success: false
+      };
+    }
   };
 
   // 检查仓库查看权限
@@ -209,6 +259,7 @@ export function usePermissions(): PermissionsHook {
     isLoading: loading, // 添加别名，保持兼容性
     pagePermissions,
     hasPagePermission,
+    checkSpecificPagePermission, // 添加实时权限检查方法
     warehousePermissions,
     canViewWarehouse,
     canManageWarehouse,

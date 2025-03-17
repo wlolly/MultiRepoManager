@@ -332,6 +332,13 @@ export async function getUserWarehousePermissions(userId: number, role?: string)
  * @param pageName 页面名称
  * @returns 是否有权限访问
  */
+/**
+ * 检查用户是否有特定页面权限 - 支持方法调用
+ * @param userId 用户ID
+ * @param role 用户角色 (可选，如果未提供则会从数据库中读取)
+ * @param pageName 页面名称
+ * @returns 是否有权限访问
+ */
 export async function hasPagePermission(userId: number, role?: string, pageName?: string): Promise<boolean> {
   try {
     // 如果没有提供页面名称，默认返回true
@@ -356,6 +363,69 @@ export async function hasPagePermission(userId: number, role?: string, pageName?
   } catch (error) {
     console.error('检查页面权限失败:', error);
     return false;
+  }
+}
+
+/**
+ * 检查用户对特定页面的访问权限 - 用于API端点实时权限验证
+ * 支持新的前端checkSpecificPagePermission方法调用
+ * 
+ * @param userId 用户ID
+ * @param role 用户角色
+ * @param pageName 要检查权限的页面名称
+ * @returns 包含权限检查结果的对象
+ */
+export async function checkSpecificPagePermissionResult(
+  userId: number, 
+  role?: string, 
+  pageName?: string
+): Promise<{ 
+  hasPermission: boolean;
+  isAdmin: boolean;
+  pageName: string;
+  success: boolean;
+}> {
+  // 初始化结果对象
+  const result = {
+    hasPermission: false,
+    isAdmin: false,
+    pageName: pageName || '',
+    success: true
+  };
+  
+  try {
+    // 如果没有提供页面名称，默认返回true
+    if (!pageName) {
+      result.hasPermission = true;
+      return result;
+    }
+    
+    // 如果没有提供角色，从数据库中获取用户角色
+    if (!role && userId > 0) {
+      const userResult = await db.query('SELECT role FROM users WHERE id = $1', [userId]);
+      if (userResult && userResult.rows && userResult.rows.length > 0) {
+        role = userResult.rows[0].role;
+      }
+    }
+    
+    // 检查是否为管理员
+    if (role === 'super_admin' || role === 'admin') {
+      result.hasPermission = true;
+      result.isAdmin = true;
+      return result;
+    }
+    
+    // 对于普通用户，获取其页面权限列表并检查
+    const pagePermissions = await getUserPagePermissions(userId, role);
+    result.hasPermission = pagePermissions.includes(pageName);
+    return result;
+    
+  } catch (error) {
+    console.error('实时检查页面权限失败:', error);
+    // 出错时返回访问被拒绝，但标记操作成功失败
+    result.hasPermission = false;
+    result.success = false;
+    return result;
   }
 }
 
