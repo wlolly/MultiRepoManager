@@ -855,7 +855,7 @@ export class DbStorage implements IStorage {
       // 获取低库存产品数量 (设定阈值为5)
       const lowStockCount = await this.db.select({ count: sql`COUNT(*)` })
         .from(schema.products)
-        .where(lte(schema.products.stockQuantity, 5));
+        .where(sql`stock <= 5`);
 
       // 获取总价值、平均价格、总数量、总重量和总体积
       const aggregates = await this.db.select({
