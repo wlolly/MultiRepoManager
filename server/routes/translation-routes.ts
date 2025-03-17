@@ -38,6 +38,17 @@ export function createTranslationRoutes(storage: IStorage) {
     }
   });
   
+  // 获取翻译服务监控指标 (需要管理员权限)
+  router.get('/monitor', verifySession, isAdmin, async (req: Request, res: Response) => {
+    try {
+      const metrics = await translationService.getMonitorMetrics();
+      res.json(metrics);
+    } catch (error) {
+      console.error('[翻译路由] 获取监控指标出错:', error);
+      res.status(500).json({ error: '获取监控指标失败' });
+    }
+  });
+  
   // 获取所有翻译
   router.get('/', async (req: Request, res: Response) => {
     try {

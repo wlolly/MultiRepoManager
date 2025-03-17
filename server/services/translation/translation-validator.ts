@@ -37,6 +37,64 @@ export const translationValueSchema = z.string()
     }
   );
 
+// 中文翻译特定验证规则
+export const chineseTranslationSchema = translationValueSchema.refine(
+  (val) => /[\u4e00-\u9fa5]/.test(val),
+  {
+    message: "中文翻译必须包含至少一个汉字"
+  }
+);
+
+// 英文翻译特定验证规则
+export const englishTranslationSchema = translationValueSchema.refine(
+  (val) => /[a-zA-Z]/.test(val),
+  {
+    message: "英文翻译必须包含至少一个英文字母"
+  }
+);
+
+// 俄文翻译特定验证规则
+export const russianTranslationSchema = translationValueSchema.refine(
+  (val) => /[\u0400-\u04FF]/.test(val),
+  {
+    message: "俄文翻译必须包含至少一个西里尔字母"
+  }
+);
+
+// 哈萨克文翻译特定验证规则
+export const kazakhTranslationSchema = translationValueSchema.refine(
+  (val) => /[\u0400-\u04FF\u0500-\u052F]/.test(val),
+  {
+    message: "哈萨克文翻译必须包含至少一个西里尔字母"
+  }
+);
+
+// 乌兹别克文翻译特定验证规则
+export const uzbekTranslationSchema = translationValueSchema.refine(
+  (val) => /[\u0400-\u04FF\u0500-\u052F]/.test(val) || /[\u0100-\u017F]/.test(val),
+  {
+    message: "乌兹别克文翻译必须包含至少一个西里尔字母或拉丁扩展字母"
+  }
+);
+
+// 获取特定语言的验证模式
+export function getLanguageValidationSchema(language: string): z.ZodType<string> {
+  switch (language) {
+    case 'zh':
+      return chineseTranslationSchema;
+    case 'en':
+      return englishTranslationSchema;
+    case 'ru':
+      return russianTranslationSchema;
+    case 'kk':
+      return kazakhTranslationSchema;
+    case 'uz':
+      return uzbekTranslationSchema;
+    default:
+      return translationValueSchema;
+  }
+}
+
 // 完整的翻译条目验证模式
 export const translationEntrySchema = z.object({
   key: translationKeySchema,

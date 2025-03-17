@@ -178,6 +178,10 @@ export class TranslationService {
    * @returns 成功与否
    */
   async syncTranslationsToDatabase(): Promise<boolean> {
+    // 引入监控工具
+    const { translationMonitor, RequestType } = await import('./translation-monitor');
+    const requestStartTime = translationMonitor.startRequest(RequestType.SYNC_TO_DB);
+    
     try {
       console.log('[翻译服务] 开始同步翻译到数据库');
       
@@ -205,9 +209,21 @@ export class TranslationService {
       const result = await this.storage.createTranslationsBatch(dbTranslations);
       
       console.log('[翻译服务] 同步翻译到数据库完成，共插入', result.length, '条记录');
+      
+      // 记录成功
+      translationMonitor.endRequest(RequestType.SYNC_TO_DB, requestStartTime, true);
       return true;
     } catch (error) {
       console.error('[翻译服务] 同步翻译到数据库出错:', error);
+      
+      // 记录错误
+      translationMonitor.endRequest(
+        RequestType.SYNC_TO_DB,
+        requestStartTime,
+        false,
+        (error as Error).message || '同步翻译到数据库失败'
+      );
+      
       return false;
     }
   }
@@ -217,6 +233,10 @@ export class TranslationService {
    * @returns 成功与否
    */
   async syncTranslationsToFile(): Promise<boolean> {
+    // 引入监控工具
+    const { translationMonitor, RequestType } = await import('./translation-monitor');
+    const requestStartTime = translationMonitor.startRequest(RequestType.SYNC_TO_FILE);
+    
     try {
       console.log('[翻译服务] 开始同步翻译到文件');
       
@@ -231,9 +251,21 @@ export class TranslationService {
       );
       
       console.log('[翻译服务] 同步翻译到文件完成');
+      
+      // 记录成功
+      translationMonitor.endRequest(RequestType.SYNC_TO_FILE, requestStartTime, true);
       return true;
     } catch (error) {
       console.error('[翻译服务] 同步翻译到文件出错:', error);
+      
+      // 记录错误
+      translationMonitor.endRequest(
+        RequestType.SYNC_TO_FILE,
+        requestStartTime,
+        false,
+        (error as Error).message || '同步翻译到文件失败'
+      );
+      
       return false;
     }
   }
@@ -323,26 +355,49 @@ export class TranslationService {
    * @returns 成功与否
    */
   async deleteTranslation(key: string, language?: SupportedLanguage): Promise<boolean> {
+    // 引入监控工具
+    const { translationMonitor, RequestType } = await import('./translation-monitor');
+    const requestStartTime = translationMonitor.startRequest(RequestType.DELETE);
+    
     try {
       if (!key) {
         console.error('[翻译服务] 删除翻译参数无效');
+        translationMonitor.endRequest(
+          RequestType.DELETE,
+          requestStartTime,
+          false,
+          '删除翻译参数无效'
+        );
         return false;
       }
       
       if (language) {
         // 删除特定语言的翻译
         await this.storage.deleteTranslationByKeyAndLanguage(key, language);
+        console.log(`[翻译服务] 删除翻译: ${key} (${language})`);
       } else {
         // 删除所有语言的此键翻译
         await this.storage.deleteTranslationByKey(key);
+        console.log(`[翻译服务] 删除所有语言翻译: ${key}`);
       }
       
       // 同步到文件
       await this.syncTranslationsToFile();
       
+      // 记录成功
+      translationMonitor.endRequest(RequestType.DELETE, requestStartTime, true);
       return true;
     } catch (error) {
       console.error('[翻译服务] 删除翻译出错:', error);
+      
+      // 记录错误
+      translationMonitor.endRequest(
+        RequestType.DELETE,
+        requestStartTime,
+        false,
+        (error as Error).message || '删除翻译失败'
+      );
+      
       return false;
     }
   }
@@ -353,6 +408,10 @@ export class TranslationService {
    * @returns 成功与否
    */
   async initializeTranslations(): Promise<boolean> {
+    // 引入监控工具
+    const { translationMonitor, RequestType } = await import('./translation-monitor');
+    const requestStartTime = translationMonitor.startRequest(RequestType.SYNC_TO_DB);
+    
     try {
       console.log('[翻译服务] 开始初始化翻译数据');
       
@@ -361,15 +420,47 @@ export class TranslationService {
       
       if (dbTranslations && dbTranslations.length > 0) {
         console.log('[翻译服务] 数据库已有翻译数据，跳过初始化');
+        translationMonitor.endRequest(RequestType.SYNC_TO_DB, requestStartTime, true);
         return true;
       }
       
       // 从文件同步到数据库
-      return await this.syncTranslationsToDatabase();
+      const result = await this.syncTranslationsToDatabase();
+      translationMonitor.endRequest(RequestType.SYNC_TO_DB, requestStartTime, result);
+      return result;
     } catch (error) {
       console.error('[翻译服务] 初始化翻译数据出错:', error);
+      
+      // 记录错误
+      translationMonitor.endRequest(
+        RequestType.SYNC_TO_DB,
+        requestStartTime,
+        false,
+        (error as Error).message || '初始化翻译数据失败'
+      );
+      
       return false;
     }
+  }
+  
+  /**
+   * 获取翻译服务监控指标
+   * @returns 监控指标
+   */
+  async getMonitorMetrics(): Promise<any> {
+    const { translationMonitor } = await import('./translation-monitor');
+    return {
+      general: translationMonitor.getMetrics(),
+      byType: {
+        getAllTranslations: translationMonitor.getTypeMetrics(await (await import('./translation-monitor')).RequestType.GET_ALL),
+        getByLanguage: translationMonitor.getTypeMetrics(await (await import('./translation-monitor')).RequestType.GET_BY_LANGUAGE),
+        upsert: translationMonitor.getTypeMetrics(await (await import('./translation-monitor')).RequestType.UPSERT),
+        delete: translationMonitor.getTypeMetrics(await (await import('./translation-monitor')).RequestType.DELETE),
+        syncToFile: translationMonitor.getTypeMetrics(await (await import('./translation-monitor')).RequestType.SYNC_TO_FILE),
+        syncToDb: translationMonitor.getTypeMetrics(await (await import('./translation-monitor')).RequestType.SYNC_TO_DB)
+      },
+      recentErrors: translationMonitor.getRecentErrors()
+    };
   }
 }
 
