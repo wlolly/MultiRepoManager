@@ -504,12 +504,21 @@ export class DbStorage implements IStorage {
   }
 
   async getTeamWarehousePermissions(teamId: number): Promise<TeamWarehousePermission[]> {
-    try {
-      return await this.db.select().from(schema.teamWarehousePermissions).where(eq(schema.teamWarehousePermissions.teamId, teamId));
-    } catch (error) {
-      console.error('[DbStorage] getTeamWarehousePermissions错误:', error);
-      return [];
-    }
+    if (!teamId) return [];
+    const permissions = await this.db.query.teamWarehousePermissions.findMany({
+      where: eq(schema.teamWarehousePermissions.teamId, teamId),
+      columns: {
+        warehouseId: true,
+        canView: true,
+        canManage: true
+      }
+    });
+    // 确保返回正确的权限格式
+    return permissions.map(p => ({
+      warehouseId: p.warehouseId,
+      canView: !!p.canView,
+      canManage: !!p.canManage
+    }));
   }
 
   async removeTeamWarehousePermission(teamId: number, warehouseId: number): Promise<void> {

@@ -297,6 +297,65 @@ export function requireActionPermission(actionName: string) {
 export function requireWarehouseAccess(accessType: 'view' | 'manage' = 'view') {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
+      const warehouseId = parseInt(req.params.warehouseId || req.body.warehouseId);
+      const userId = req.session?.userId;
+      const userRole = req.session?.role;
+
+      if (!warehouseId || !userId) {
+        return res.status(400).json({
+          success: false,
+          message: '无效的请求参数'
+        });
+      }
+
+      // 管理员直接放行
+      if (userRole === 'admin' || userRole === 'super_admin') {
+        return next();
+      }
+
+      const db = req.app.locals.storage;
+      const user = await db.getUser(userId);
+      
+      if (!user?.primary_team_id) {
+        return res.status(403).json({
+          success: false,
+          message: '没有访问权限'
+        });
+      }
+
+      const permissions = await db.getTeamWarehousePermissions(user.primary_team_id);
+      const warehousePermission = permissions.find(p => p.warehouseId === warehouseId);
+
+      if (!warehousePermission) {
+        return res.status(403).json({
+          success: false,
+          message: '没有该仓库的访问权限'
+        });
+      }
+
+      if (accessType === 'manage' && !warehousePermission.canManage) {
+        return res.status(403).json({
+          success: false,
+          message: '没有该仓库的管理权限'
+        });
+      }
+
+      if (accessType === 'view' && !warehousePermission.canView) {
+        return res.status(403).json({
+          success: false,
+          message: '没有该仓库的查看权限'
+        });
+      }
+
+      next();
+    } catch (error) {
+      console.error('[权限验证] 仓库访问验证错误:', error);
+      return res.status(500).json({
+        success: false,
+        message: '权限验证失败'
+      });
+    }
+    try {
       const warehouseId = req.params.warehouseId || req.body.warehouseId;
 
       // 1. 验证仓库ID是否存在
