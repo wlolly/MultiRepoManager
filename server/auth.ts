@@ -73,8 +73,8 @@ export function verifyPassword(storedPassword: string, suppliedPassword: string)
   if (storedPassword.startsWith('$2a$')) {
     console.log('[认证系统] 检测到bcrypt格式密码，目前简化处理');
     // 由于没有bcrypt库，我们使用明文比较作为临时解决方案
-    // 这允许我们使用特定测试账户，同时保留bcrypt格式以便将来添加正确的bcrypt支持
-    return suppliedPassword === 'admin' || suppliedPassword === '222' || suppliedPassword === 'testuser';
+    // 仅允许admin作为测试账户登录，移除其他特殊账号的硬编码处理
+    return suppliedPassword === 'admin';
   }
   
   // 未识别的密码格式

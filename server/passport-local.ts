@@ -9,13 +9,9 @@ import { eq, sql } from 'drizzle-orm';
 import crypto from 'crypto';
 import { users } from '../shared/schema';
 
-// 密码验证函数 - 用于PBKDF2格式的密码或简单测试账号
+// 密码验证函数 - 用于PBKDF2格式的密码
 function verifyPassword(storedPassword: string, suppliedPassword: string): boolean {
-  // 特殊处理测试账号"222"，直接相等比较
-  if (suppliedPassword === "222" && storedPassword === "222") {
-    console.log('[Passport] 测试账号密码验证成功');
-    return true;
-  }
+  // 移除特殊处理测试账号"222"的部分，按标准流程走
   
   console.log('[Passport] 存储密码格式:', storedPassword);
   
