@@ -496,6 +496,7 @@ export default function App() {
             <Switch>
               {/* 测试页面 */}
               <Route path="/test-toast" component={TestToast} />
+              <Route path="/session-test" component={SessionTestPage} />
               
               {/* 主页与通用页面 */}
               <ProtectedRoute path="/" component={Dashboard} pageName="dashboard" requireAuth={false} publicContent={true} />
