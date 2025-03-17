@@ -107,13 +107,24 @@ export async function getCurrentUser(req: Request, res: Response) {
           req.session.userId = user.id;
           req.session.role = user.role;
 
+          // 获取用户基本权限
+          const basePermissions = ['dashboard'];
+          const authenticatedPermissions = ['profile', 'products', 'warehouses'];
+          
           // 获取用户仓库权限
           const warehousePermissions = await db.getTeamWarehousePermissions(user.primary_team_id);
-
+          
+          // 获取团队页面权限
+          const teamPagePermissions = await db.getTeamPagePermissions(user.primary_team_id);
+          
           // 构建权限信息
           const permissions = {
-            pages: user.role === 'admin' ? ['all'] : ['dashboard', 'profile'],
-            actions: user.role === 'admin' ? ['all'] : ['read'],
+            pages: user.role === 'admin' ? 
+              ['all'] : 
+              [...basePermissions, ...authenticatedPermissions, ...teamPagePermissions.map(p => p.pageName)],
+            actions: user.role === 'admin' ? 
+              ['all'] : 
+              ['read', 'view', ...teamPagePermissions.map(p => p.actions || []).flat()],
             warehouses: user.role === 'admin' ? 
               { all: { canView: true, canManage: true } } : 
               warehousePermissions.reduce((acc, perm) => {
