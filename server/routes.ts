@@ -11,6 +11,7 @@ import { createInternalUserID } from './database/userID';
 import { configurePassport } from './passport-local';
 import { createInventoryRoutes } from './routes/inventory-routes';
 import { createTranslationRoutes } from './routes/translation-routes';
+import { createSessionSyncRoutes } from './routes/session-sync';
 import { 
   insertUserSchema, 
   insertRepositorySchema, 
@@ -5063,6 +5064,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // 翻译API路由
   const translationRoutes = createTranslationRoutes(useFallbackStorage ? memStorage : storage);
   apiRouter.use('/translations', translationRoutes);
+  
+  // 会话同步路由
+  const sessionSyncRoutes = createSessionSyncRoutes();
+  apiRouter.use('/', sessionSyncRoutes);
 
   // 下面的直接定义的翻译API路由将被删除，改用上面的路由模块
   /* 这部分代码已移动到translation-routes.ts
