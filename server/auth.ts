@@ -320,11 +320,18 @@ export async function initiateLogin(req: Request, res: Response) {
     // 设置备用cookie以确保客户端能获取
     res.cookie('backup_sid', sessionId, {...cookieOptions, httpOnly: false});
 
-    // 3. 更新会话对象 (在cookie设置后执行)
+    // 更新会话对象
     if (req.session) {
       // 记录会话更新过程
       const originalSessionId = req.sessionID;
       console.log(`[认证系统] 会话更新: ${originalSessionId} -> ${sessionId}`);
+
+      // 清除旧的会话数据
+      Object.keys(req.session).forEach(key => {
+        if (key !== 'cookie') {
+          delete req.session[key];
+        }
+      });
 
       // 更新会话状态
       req.session.authenticated = true;
@@ -807,7 +814,7 @@ export async function getCurrentUser(req: Request, res: Response) {
     }
 
     // 确保存储接口存在
-    if (!req.app || !req.app.locals || !req.app.locals.storage) {
+    if(!req.app || !req.app.locals || !req.app.locals.storage) {
       console.error('[认证系统] 存储接口未初始化');
       return res.status(401).json({
         authenticated: false,
@@ -1242,7 +1249,7 @@ export async function verifySession(req: Request, res: Response, next: NextFunct
 
       // 增强的用户验证逻辑
       const user = await db.getUser(req.session.userId);
-      
+
       // 详细的用户验证日志
       console.log(`[认证] 验证用户(ID=${req.session.userId}):`, {
         exists: !!user,

@@ -34,17 +34,14 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
     });
 
     // 优先级: 客户端头部 > Cookie > Express
-    if (clientSessionId && clientSessionId.length > 10) {
-      req.sessionID = clientSessionId;
-      global.sessionMap[req.ip] = clientSessionId;
-      console.log(`[认证中间件] 使用客户端头部会话ID: ${clientSessionId}`);
-    } else if (cookieSessionId && cookieSessionId.length > 10) {
-      req.sessionID = cookieSessionId;
-      global.sessionMap[req.ip] = cookieSessionId;
-      console.log(`[认证中间件] 使用Cookie会话ID: ${cookieSessionId}`);
-    } else if (global.sessionMap[req.ip]) {
-      req.sessionID = global.sessionMap[req.ip];
-      console.log(`[认证中间件] 使用全局存储会话ID: ${req.sessionID}`);
+    const finalSessionId = clientSessionId || cookieSessionId || req.sessionID;
+    
+    if (finalSessionId && finalSessionId.length > 10) {
+      req.sessionID = finalSessionId;
+      if (global.sessionMap) {
+        global.sessionMap[req.ip] = finalSessionId;
+      }
+      console.log(`[认证中间件] 使用会话ID: ${finalSessionId}, 来源: ${clientSessionId ? 'Header' : (cookieSessionId ? 'Cookie' : 'Express')}`);
     }
 
     // 如果没有任何会话ID，创建新会话
