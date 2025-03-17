@@ -20,12 +20,29 @@ interface ISessionStorage {
 declare global {
   // 不能使用sessionStorage作为名称，因为它是JS的保留类型
   var customSessionStorage: ISessionStorage;
+  var sessionMap: Record<string, string>;
 }
 
 // 初始化全局会话存储
 if (!global.customSessionStorage) {
   global.customSessionStorage = {};
 }
+
+// 会话存储监听器
+const sessionMapListener = {
+  set(target: any, key: string, value: any) {
+    console.log(`[会话] 更新会话映射: ${key} -> ${value}`);
+    target[key] = value;
+    return true;
+  }
+};
+
+if (!global.sessionMap) {
+  global.sessionMap = {};
+}
+
+global.sessionMap = new Proxy(global.sessionMap, sessionMapListener);
+
 
 export async function sessionMiddleware(req: Request, res: Response, next: NextFunction) {
   try {
@@ -34,17 +51,17 @@ export async function sessionMiddleware(req: Request, res: Response, next: NextF
 
     // 首先，从查询参数或请求头中获取客户端会话ID (当正在执行会话同步时)
     const incomingSessionId = req.query.sessionId as string || req.headers['x-session-id'] as string;
-    
+
     // 如果请求中包含sessionId且为sync-session接口，优先使用该ID
     if (incomingSessionId && req.path.includes('/sync-session')) {
       console.log(`[会话中间件] 接收到会话同步请求，使用传入会话ID: ${incomingSessionId}`);
       req.sessionID = incomingSessionId;
-      
+
       // 保存到全局存储以便持久化
       if (global.customSessionStorage && req.ip && typeof req.ip === 'string') {
         global.customSessionStorage[req.ip] = incomingSessionId;
       }
-      
+
       res.setHeader('X-Incoming-Session-ID', incomingSessionId);
     }
     // 否则检查是否存在持久化的会话ID
@@ -65,7 +82,7 @@ export async function sessionMiddleware(req: Request, res: Response, next: NextF
         const dbSession = await req.app.locals.storage.getUserSessionById(req.sessionID);
         if (dbSession) {
           console.log(`[会话中间件] 数据库中存在会话记录，用户ID: ${dbSession.userId || '未关联'}`);
-          
+
           // 如果数据库会话有效且关联了用户，但当前会话未认证，则同步状态
           if (dbSession.userId && dbSession.isValid && 
               (!req.session.userId || !req.session.authenticated)) {
@@ -73,7 +90,7 @@ export async function sessionMiddleware(req: Request, res: Response, next: NextF
             req.session.userId = dbSession.userId;
             req.session.authenticated = true;
             req.session.isAuthenticated = true; // 兼容性字段
-            
+
             // 保存会话以确保状态被持久化
             await new Promise<void>((resolve) => {
               req.session.save((err) => {
@@ -86,7 +103,7 @@ export async function sessionMiddleware(req: Request, res: Response, next: NextF
               });
             });
           }
-          
+
           // 更新会话最后活动时间
           req.app.locals.storage.updateUserSession(req.sessionID, {
             lastActivity: new Date()
@@ -95,7 +112,7 @@ export async function sessionMiddleware(req: Request, res: Response, next: NextF
           });
         } else {
           console.log(`[会话中间件] 数据库中不存在会话记录: ${req.sessionID}`);
-          
+
           // 如果会话带有用户认证信息，但数据库中不存在，则创建会话记录
           if (req.session && (req.session.userId || req.session.authenticated)) {
             console.log(`[会话中间件] 创建会话数据库记录`);
@@ -124,7 +141,7 @@ export async function sessionMiddleware(req: Request, res: Response, next: NextF
       req.session.isAuthenticated === true || 
       (req.session.userId && req.session.userId > 0)
     );
-    
+
     if (authenticated) {
       res.setHeader('X-Authenticated', 'true');
       res.setHeader('X-User-ID', req.session?.userId?.toString() || '');
@@ -132,7 +149,7 @@ export async function sessionMiddleware(req: Request, res: Response, next: NextF
 
     // 记录请求会话信息
     console.log(`请求路径: ${req.path}, 会话ID: ${req.sessionID}, 已认证: ${authenticated}`);
-    
+
     // 记录会话调试信息
     console.log(`[会话调试] 路径: ${req.path}, 会话信息:`, {
       id: req.sessionID,
@@ -161,7 +178,7 @@ export function configureSession(app: any) {
   // 检查环境变量是否存在DATABASE_URL，强制使用PostgreSQL会话存储
   // 即使没有URL也尝试使用，这样服务将在启动时报错而不是静默降级到内存存储
   const usePostgresSession = true;
-  
+
   let sessionOptions: any = {
     name: 'warehouse.sid',
     secret: process.env.SESSION_SECRET || 'warehouse-session-secret-2024',
@@ -174,7 +191,7 @@ export function configureSession(app: any) {
         console.log(`[会话] 使用持久化会话ID: ${global.customSessionStorage[req.ip]}`);
         return global.customSessionStorage[req.ip];
       }
-      
+
       // 否则生成新ID - 使用顶层导入的crypto
       const sessionId = crypto.randomBytes(16).toString('hex');
       console.log(`[会话] 生成新会话ID: ${sessionId}`);
@@ -196,7 +213,7 @@ export function configureSession(app: any) {
     try {
       console.log('[会话] 使用PostgreSQL存储会话 - 数据库URL存在:', !!process.env.DATABASE_URL);
       const PgSession = connect_pg_simple(session);
-      
+
       // 实际配置PostgreSQL会话存储
       sessionOptions.store = new PgSession({
         conString: process.env.DATABASE_URL,
@@ -205,24 +222,24 @@ export function configureSession(app: any) {
         pruneSessionInterval: 86400, // 一天清理一次
         ttl: 2592000 // 30天过期
       });
-      
+
       // 监听会话存储错误
       sessionOptions.store.on('error', (err: Error) => {
         console.error('[会话存储] PostgreSQL错误:', err);
         console.log('[会话存储] 由于PostgreSQL错误，将回退到内存存储');
-        
+
         // 动态回退到内存存储
         sessionOptions.store = new MemoryStore({
           checkPeriod: 86400000, // 每24小时清理过期会话
           ttl: 2592000 // 30天的会话生命周期
         } as any);
       });
-      
+
       console.log('[会话] 成功配置PostgreSQL会话存储');
     } catch (pgError) {
       console.error('[会话] PostgreSQL会话存储配置失败:', pgError);
       console.log('[会话] 改用内存存储会话');
-      
+
       // 创建内存存储
       sessionOptions.store = new MemoryStore({
         checkPeriod: 86400000, // 每24小时清理过期会话
@@ -251,12 +268,12 @@ export function configureSession(app: any) {
       }
       return oldSetHeader.apply(this, arguments as any);
     };
-    
+
     // 确保每次请求都将当前会话ID保存到持久存储中
     if (global.customSessionStorage && req.ip && typeof req.ip === 'string') {
       global.customSessionStorage[req.ip] = req.sessionID;
     }
-    
+
     next();
   });
 }
