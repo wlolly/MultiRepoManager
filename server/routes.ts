@@ -830,7 +830,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           isSuperAdmin: userRole === 'super_admin'
         };
         
-        console.log(`管理员用户(${userRole})，返回完整权限`);
+        // 确保会话权限标志正确设置
+        if (req.session) {
+          req.session.isAdmin = true;
+          req.session.hasSuperAccess = userRole === 'super_admin';
+          
+          // 确保permissions对象存在并设置isAdmin标志
+          if (!req.session.permissions) {
+            req.session.permissions = { pages: [], actions: [], warehouses: {} };
+          }
+          req.session.permissions.isAdmin = true;
+          req.session.permissions.isSuperAdmin = userRole === 'super_admin';
+        }
+        
+        console.log(`管理员用户(${userRole})，返回完整权限，isAdmin=${adminPermissions.isAdmin}`);
         res.json(adminPermissions);
         return;
       }

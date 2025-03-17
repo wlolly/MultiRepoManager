@@ -500,28 +500,33 @@ export async function loadUserPermissions(userId: number, role?: string, req: Re
     // 首先获取基于角色的默认权限
     const defaultPermissions = getDefaultPermissionsByRole(role);
     
+    // 检查是否是管理员角色
+    const isAdminRole = role === 'super_admin' || role === 'admin';
+    
     // 如果是超级管理员或管理员，或者具有isAdmin/hasSuperAccess标记，赋予完整权限
     if (
-      role === 'super_admin' || 
-      role === 'admin' || 
+      isAdminRole || 
       req.session.isAdmin === true || 
       req.session.hasSuperAccess === true
     ) {
+      console.log(`[权限加载] 用户${userId}是管理员(${role})或有管理员标记(${req.session.isAdmin})，设置完整权限`);
+      
       // 将权限保存到会话 - 旧版格式
       req.session.pagePermissions = defaultPermissions.pages;
       req.session.actionPermissions = defaultPermissions.actions;
+      
+      // 确保权限标志正确设置 - 这是关键修复
+      const isSuperAdmin = role === 'super_admin' || req.session.hasSuperAccess === true;
+      req.session.isAdmin = true;
+      req.session.hasSuperAccess = isSuperAdmin;
       
       // 新版格式 - 权限对象
       req.session.permissions = {
         pages: defaultPermissions.pages,
         actions: defaultPermissions.actions,
         isAdmin: true,
-        isSuperAdmin: role === 'super_admin' || req.session.hasSuperAccess === true
+        isSuperAdmin: isSuperAdmin
       };
-      
-      // 设置角色标志 
-      req.session.isAdmin = true;
-      req.session.hasSuperAccess = role === 'super_admin' || req.session.hasSuperAccess === true;
       
       // 为管理员加载所有仓库权限
       const allWarehouses = await db.query('SELECT id FROM warehouses');
@@ -533,7 +538,7 @@ export async function loadUserPermissions(userId: number, role?: string, req: Re
         });
       }
       
-      // 同时设置旧版和新版格式
+      // 同时设置旧版和新版格式的仓库权限
       req.session.warehousePermissions = warehousePermissions;
       
       if (!req.session.permissions) {
@@ -541,7 +546,7 @@ export async function loadUserPermissions(userId: number, role?: string, req: Re
       }
       req.session.permissions.warehouses = warehousePermissions;
       
-      console.log(`[权限加载] 用户${req.session.userId}具有管理员权限，已设置完整权限`);
+      console.log(`[权限加载] 用户${userId}的管理员权限已设置，isAdmin=${req.session.isAdmin}`);
       
       return {
         pages: defaultPermissions.pages,
