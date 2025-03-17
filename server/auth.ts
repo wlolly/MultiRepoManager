@@ -328,9 +328,16 @@ export async function initiateLogin(req: Request, res: Response) {
     };
 
     // 优先设置安全cookie
-    res.cookie('sessionId', sessionId, cookieOptions);
+    res.cookie('sessionId', sessionId, {
+      ...cookieOptions,
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+    });
     // 设置备用cookie以确保客户端能获取
-    res.cookie('backup_sid', sessionId, {...cookieOptions, httpOnly: false});
+    res.cookie('backup_sid', sessionId, {
+      ...cookieOptions, 
+      httpOnly: false,
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+    });
 
     // 更新会话对象
     if (req.session) {
@@ -520,7 +527,20 @@ export async function completeLogin(req: Request, res: Response) {
     };
 
     // 存储会话到数据库
-    await db.createUserSession(userSessionData);
+    try {
+      console.log('[认证系统] 准备创建会话数据(验证登录):', JSON.stringify(userSessionData));
+      await db.createUserSession(userSessionData);
+      console.log('[认证系统] 数据库会话记录已创建(验证登录)');
+    } catch (createSessionError) {
+      console.error('[认证系统] 创建会话记录失败(验证登录):', createSessionError);
+      return res.status(500).json({
+        success: false,
+        message: '服务器错误，请稍后再试',
+        authenticated: false,
+        error: '创建会话失败',
+        debug: process.env.NODE_ENV !== 'production' ? createSessionError.message : undefined
+      });
+    }
 
     // 更新会话对象
     req.session.authenticated = true;
@@ -675,7 +695,20 @@ export async function loginUser(req: Request, res: Response) {
     };
 
     // 存储会话到数据库
-    await db.createUserSession(userSessionData);
+    try {
+      console.log('[认证系统] 准备创建会话数据(传统登录):', JSON.stringify(userSessionData));
+      await db.createUserSession(userSessionData);
+      console.log('[认证系统] 数据库会话记录已创建(传统登录)');
+    } catch (createSessionError) {
+      console.error('[认证系统] 创建会话记录失败(传统登录):', createSessionError);
+      return res.status(500).json({
+        success: false,
+        message: '服务器错误，请稍后再试',
+        authenticated: false,
+        error: '创建会话失败',
+        debug: process.env.NODE_ENV !== 'production' ? createSessionError.message : undefined
+      });
+    }
 
     // 更新会话对象
     req.session.authenticated = true;
@@ -707,7 +740,36 @@ export async function loginUser(req: Request, res: Response) {
       path: '/'
     });
 
-    undefined
+    // 构建权限信息
+    const permissions = {
+      pages: user.role === 'admin' || user.role === 'super_admin' 
+        ? ['dashboard', 'products', 'warehouse-products', 'users', 'teams', 'warehouses',
+          'inbound-orders', 'outbound-orders', 'order-audit', 'warehouse-transfers',
+          'create-warehouse-transfer', 'warehouse-reports', 'settings'] 
+        : ['dashboard', 'profile'],
+      actions: user.role === 'admin' || user.role === 'super_admin' ? ['view', 'edit', 'create', 'delete'] : ['view'],
+      warehouses: user.role === 'admin' || user.role === 'super_admin' ? { all: { canView: true, canManage: true } } : {}
+    };
+
+    // 返回成功响应
+    console.log('[认证系统] 传统登录成功，返回用户ID:', user.id);
+    
+    return res.status(200).json({
+      success: true,
+      authenticated: true,
+      message: '登录成功',
+      sessionId,
+      user: {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        fullName: user.full_name || user.username,
+        language: user.language || 'zh',
+        isactive: user.is_active,
+        isSocialUser: !!user.social_id,
+        permissions
+      }
+    });
   } catch (error) {
     console.error('[认证系统] 登录处理错误:', error);
     return res.status(500).json({
