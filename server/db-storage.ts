@@ -212,8 +212,60 @@ export class DbStorage implements IStorage {
 
   async createUserSession(sessionData: InsertUserSession): Promise<UserSession> {
     try {
-      const result = await this.db.insert(schema.userSessions).values(sessionData).returning();
-      return result[0];
+      console.log(`[DbStorage] 使用sql标签模板创建user_sessions记录`);
+      
+      // 转换日期为ISO字符串以确保PostgreSQL兼容性
+      const lastActivity = sessionData.lastActivity instanceof Date 
+        ? sessionData.lastActivity.toISOString() 
+        : new Date(sessionData.lastActivity).toISOString();
+      
+      const expiresAt = sessionData.expiresAt instanceof Date 
+        ? sessionData.expiresAt.toISOString() 
+        : new Date(sessionData.expiresAt).toISOString();
+      
+      // 使用sql标签模板进行查询而不是原始SQL
+      const result = await this.db.execute(sql`
+        INSERT INTO user_sessions (
+          session_id, 
+          user_id, 
+          ip_address, 
+          user_agent, 
+          is_valid, 
+          last_activity, 
+          expires_at, 
+          data
+        ) 
+        VALUES (
+          ${sessionData.sessionId}, 
+          ${sessionData.userId}, 
+          ${sessionData.ipAddress || null}, 
+          ${sessionData.userAgent || null}, 
+          ${sessionData.isValid}, 
+          ${lastActivity}, 
+          ${expiresAt}, 
+          ${sessionData.data ? JSON.stringify(sessionData.data) : null}
+        )
+        RETURNING *
+      `);
+      
+      const session = result[0];
+      if (!session) {
+        throw new Error('创建会话失败，没有返回记录');
+      }
+      
+      // 将数据库结果转换为符合UserSession类型的对象
+      return {
+        id: session.id,
+        sessionId: session.session_id,
+        userId: session.user_id,
+        ipAddress: session.ip_address,
+        userAgent: session.user_agent,
+        isValid: session.is_valid,
+        lastActivity: session.last_activity,
+        expiresAt: session.expires_at,
+        createdAt: session.created_at,
+        data: session.data
+      };
     } catch (error) {
       console.error('[DbStorage] createUserSession错误:', error);
       throw error;
