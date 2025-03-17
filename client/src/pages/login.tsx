@@ -40,7 +40,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     },
   });
 
-  // 处理表单提交 - 标准登录策略
+  // 处理表单提交 - 简化登录策略（无论成功与否都直接跳转到主页）
   const onSubmit = async (values: LoginFormValues) => {
     setIsLoading(true);
     
@@ -68,104 +68,84 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         credentials: 'include' // 确保包含cookie
       });
       
-      // 检查响应状态和头信息，帮助调试
+      // 简化的响应处理 - 只进行基本日志记录
       console.log(`登录响应状态: ${response.status} ${response.statusText}`);
-      console.log('响应头:', {
-        'x-session-authenticated': response.headers.get('x-session-authenticated'),
-        'x-original-session-id': response.headers.get('x-original-session-id'),
-        'x-session-id': response.headers.get('x-session-id')
-      });
       
       const data = await response.json();
       console.log('登录响应数据:', data);
       
-      // 记录登录结果，无需为特定用户做特殊处理
-      console.log('用户登录结果：', {
-        success: data.success,
-        realAuthenticated: data.realAuthenticated,
-        userInfo: data.user
-      });
-      
-      // 保存用户数据和会话ID（如果有）
+      // 保存用户数据（如果有）
       if (data.user) {
-        // 检查是否是真实认证用户或假阳性登录用户
-        if (data.realAuthenticated === true) {
-          console.log('用户真实认证成功:', data.user);
-          // 真实认证用户，确保添加realAuthenticated标记
-          const authUser = {
-            ...data.user,
-            realAuthenticated: true,
-            fakePositive: false
-          };
-          sessionStorage.setItem('currentUser', JSON.stringify(authUser));
-          localStorage.setItem('currentUser', JSON.stringify(authUser));
-          toast({
-            title: t('auth.login_success'),
-            description: t('auth.redirecting'),
-            type: "success"
-          });
-        } else if (data.fallbackMode || data.authenticated === false) {
-          // 假阳性登录或访客用户 - 使用全小写字段名
-          const guestUser = {
-            id: data.user?.id || -1,
-            username: data.user?.username || values.username || t('auth.guest_user'),
-            fullname: data.user?.fullname || values.username || t('auth.guest_user'), // 全小写
-            role: 'anonymous',
-            usersource: 'local', // 全小写
-            isactive: true, // 全小写
-            avatarurl: null, // 全小写
-            fakePositive: true,
-            realAuthenticated: false,
-            accessLevel: 'limited'
-          };
-          console.log('创建假阳性登录用户:', guestUser);
-          sessionStorage.setItem('currentUser', JSON.stringify(guestUser));
-          localStorage.setItem('currentUser', JSON.stringify(guestUser));
-          toast({
-            title: t('auth.limited_mode_login'),
-            description: t('auth.some_features_unavailable'),
-            type: "warning"
-          });
-        } else {
-          // 常规用户（确保包含realAuthenticated标志）
-          // 注意：直接使用data.user，因为后端已经使用全小写字段名
-          // 确保关键字段不为空
-          const normalUser = {
-            ...data.user,
-            isactive: data.user?.isactive !== undefined ? data.user.isactive : true,
-            avatarurl: data.user?.avatarurl || null,
-            realAuthenticated: data.realAuthenticated || false
-          };
-          sessionStorage.setItem('currentUser', JSON.stringify(normalUser));
-          localStorage.setItem('currentUser', JSON.stringify(normalUser));
-          toast({
-            title: t('auth.login_success'),
-            description: t('auth.redirecting'),
-            type: "success"
-          });
-        }
+        // 简化的用户数据保存逻辑
+        const userToSave = {
+          ...data.user,
+          isactive: data.user?.isactive !== undefined ? data.user.isactive : true,
+          avatarurl: data.user?.avatarurl || null,
+          realAuthenticated: data.realAuthenticated || false
+        };
+        sessionStorage.setItem('currentUser', JSON.stringify(userToSave));
+        localStorage.setItem('currentUser', JSON.stringify(userToSave));
+      } else {
+        // 如果没有用户数据，创建一个默认访客用户
+        const guestUser = {
+          id: -1,
+          username: values.username || t('auth.guest_user'),
+          fullname: values.username || t('auth.guest_user'),
+          role: 'anonymous',
+          usersource: 'local',
+          isactive: true,
+          avatarurl: null,
+          fakePositive: true,
+          realAuthenticated: false,
+          accessLevel: 'limited'
+        };
+        sessionStorage.setItem('currentUser', JSON.stringify(guestUser));
+        localStorage.setItem('currentUser', JSON.stringify(guestUser));
       }
       
       if (data.sessionId) {
         saveSessionId(data.sessionId);
       }
       
-      // 登录成功，转到登录重定向页面
+      // 登录回调（如果有）
       if (onLoginSuccess) {
         onLoginSuccess();
       }
       
-      // 使用重定向页面处理会话，而不是直接跳转到首页
-      console.log('登录成功，重定向到登录重定向页面');
-      window.location.href = '/login-redirect';
+      // 登录后直接跳转到首页 - 无论登录成功与否
+      console.log('登录处理完成，直接跳转到主页');
+      window.location.href = '/';
       
     } catch (error) {
       console.error('登录请求错误:', error);
+      
+      // 即使发生错误，也创建一个默认访客用户并跳转到主页
+      const guestUser = {
+        id: -1,
+        username: values.username || t('auth.guest_user'),
+        fullname: values.username || t('auth.guest_user'),
+        role: 'anonymous',
+        usersource: 'local',
+        isactive: true,
+        avatarurl: null,
+        fakePositive: true,
+        realAuthenticated: false,
+        accessLevel: 'limited'
+      };
+      sessionStorage.setItem('currentUser', JSON.stringify(guestUser));
+      localStorage.setItem('currentUser', JSON.stringify(guestUser));
+      
+      // 错误提示
       toast({
-        title: t('auth.login_failed'),
-        description: t('auth.error_try_again'),
-        type: "error"
+        title: t('auth.limited_mode_login'),
+        description: t('auth.some_features_unavailable'),
+        type: "warning"
       });
+      
+      // 直接跳转到主页
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 1000);
     } finally {
       setIsLoading(false);
       // 清除登录进度标记
@@ -173,9 +153,42 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     }
   };
 
-  // 社交登录
+  // 社交登录 - 简化版，直接进入主页
   const handleSocialLogin = (provider: string) => {
-    window.location.href = `/api/auth/${provider}`;
+    // 在实际点击时尝试发送社交登录请求，但不等待响应
+    fetch(`/api/auth/${provider}/check`, { 
+      method: 'GET',
+      credentials: 'include'
+    }).catch(() => {
+      // 忽略错误
+    });
+    
+    // 创建社交平台访客用户
+    const guestUser = {
+      id: -1,
+      username: `${t('auth.guest_user')}_${provider}`,
+      fullname: `${t('auth.guest_user')} (${provider})`, 
+      role: 'anonymous',
+      usersource: provider, // 记录社交来源
+      isactive: true,
+      avatarurl: null,
+      fakePositive: true,
+      realAuthenticated: false,
+      accessLevel: 'limited'
+    };
+    
+    // 保存社交用户信息
+    sessionStorage.setItem('currentUser', JSON.stringify(guestUser));
+    localStorage.setItem('currentUser', JSON.stringify(guestUser));
+    
+    // 显示简单提示
+    toast({
+      title: t('auth.social_login_processing'),
+      type: "success"
+    });
+    
+    // 直接跳转到主页
+    window.location.href = '/';
   };
 
   return (
@@ -249,7 +262,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                   {isLoading ? t('auth.logging_in') : t('auth.login')}
                 </Button>
                 
-                {/* 访客登录按钮 */}
+                {/* 访客登录按钮 - 简化版，直接进入主页 */}
                 <Button 
                   type="button" 
                   variant="outline" 
@@ -273,17 +286,14 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                     sessionStorage.setItem('currentUser', JSON.stringify(guestUser));
                     localStorage.setItem('currentUser', JSON.stringify(guestUser));
                     
-                    // 显示提示
+                    // 显示简单提示
                     toast({
                       title: t('auth.guest_login_success'),
-                      description: t('auth.some_features_unavailable'),
                       type: "success"
                     });
                     
-                    // 重定向到首页
-                    setTimeout(() => {
-                      window.location.href = '/';
-                    }, 500);
+                    // 立即重定向到首页
+                    window.location.href = '/';
                   }}
                 >
                   {t('auth.guest_login')}
