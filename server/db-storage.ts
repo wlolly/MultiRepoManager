@@ -222,19 +222,42 @@ export class DbStorage implements IStorage {
 
   async getUserSessionById(sessionId: string): Promise<UserSession | undefined> {
     try {
-      const sessions = await this.db.select().from(schema.userSessions)
-        .where(and(
-          eq(schema.userSessions.sessionId, sessionId),
-          eq(schema.userSessions.isValid, true),
-          sql`${schema.userSessions.expiresAt} > NOW()`
-        ));
+      console.log(`[DbStorage] 使用direct SQL查询user_sessions表, sessionId=${sessionId}`);
+      
+      // 使用直接SQL查询确保字段名称正确
+      const sessions = await this.client`
+        SELECT * FROM user_sessions 
+        WHERE session_id = ${sessionId} 
+        AND is_valid = true 
+        AND expires_at > NOW()
+      `;
+      
+      console.log(`[DbStorage] SQL查询结果:`, sessions);
+      
       const session = sessions[0];
       if (session) {
-        await this.db.update(schema.userSessions)
-          .set({ lastActivity: new Date() })
-          .where(eq(schema.userSessions.sessionId, sessionId));
+        // 更新最后活动时间
+        await this.client`
+          UPDATE user_sessions 
+          SET last_activity = ${new Date()} 
+          WHERE session_id = ${sessionId}
+        `;
+        
+        // 将数据库结果转换为符合UserSession类型的对象
+        return {
+          id: session.id,
+          sessionId: session.session_id,
+          userId: session.user_id,
+          ipAddress: session.ip_address,
+          userAgent: session.user_agent,
+          isValid: session.is_valid,
+          lastActivity: session.last_activity,
+          expiresAt: session.expires_at,
+          createdAt: session.created_at,
+          data: session.data
+        };
       }
-      return session;
+      return undefined;
     } catch (error) {
       console.error('[DbStorage] getUserSessionById错误:', error);
       return undefined;
@@ -243,8 +266,27 @@ export class DbStorage implements IStorage {
 
   async getUserSessionsByUserId(userId: number): Promise<UserSession[]> {
     try {
-      return await this.db.select().from(schema.userSessions)
-        .where(eq(schema.userSessions.userId, userId));
+      console.log(`[DbStorage] 使用direct SQL查询user_sessions表, userId=${userId}`);
+      
+      // 使用直接SQL查询确保字段名称正确
+      const sessions = await this.client`
+        SELECT * FROM user_sessions 
+        WHERE user_id = ${userId}
+      `;
+      
+      // 将数据库结果转换为符合UserSession类型的对象
+      return sessions.map(session => ({
+        id: session.id,
+        sessionId: session.session_id,
+        userId: session.user_id,
+        ipAddress: session.ip_address,
+        userAgent: session.user_agent,
+        isValid: session.is_valid,
+        lastActivity: session.last_activity,
+        expiresAt: session.expires_at,
+        createdAt: session.created_at,
+        data: session.data || null
+      }));
     } catch (error) {
       console.error('[DbStorage] getUserSessionsByUserId错误:', error);
       return [];
@@ -253,11 +295,54 @@ export class DbStorage implements IStorage {
 
   async updateUserSession(sessionId: string, updates: Partial<UserSession>): Promise<UserSession | undefined> {
     try {
-      const result = await this.db.update(schema.userSessions)
-        .set(updates)
-        .where(eq(schema.userSessions.sessionId, sessionId))
-        .returning();
-      return result[0];
+      console.log(`[DbStorage] 使用direct SQL更新user_sessions表, sessionId=${sessionId}`, updates);
+      
+      // 转换驼峰命名为下划线命名
+      const dbUpdates: any = {};
+      if (updates.isValid !== undefined) dbUpdates.is_valid = updates.isValid;
+      if (updates.lastActivity !== undefined) dbUpdates.last_activity = updates.lastActivity;
+      if (updates.expiresAt !== undefined) dbUpdates.expires_at = updates.expiresAt;
+      if (updates.data !== undefined) dbUpdates.data = updates.data;
+      
+      // 所有更新都添加更新时间
+      dbUpdates.updated_at = new Date();
+      
+      const updateFields = Object.keys(dbUpdates).map(key => `${key} = ${typeof dbUpdates[key] === 'object' ? 'CAST(${JSON.stringify(dbUpdates[key])} AS JSON)' : '${dbUpdates[key]}'}`).join(', ');
+      
+      const queryString = `
+        UPDATE user_sessions 
+        SET ${Object.entries(dbUpdates).map(([key, value]) => 
+          typeof value === 'object' && value !== null 
+            ? `${key} = $${key}::jsonb` 
+            : `${key} = $${key}`
+        ).join(', ')} 
+        WHERE session_id = $sessionId
+        RETURNING *
+      `;
+      
+      // 参数对象
+      const params: any = { sessionId, ...dbUpdates };
+      
+      // 执行查询
+      const result = await this.client.query(queryString, params);
+      const session = result.rows[0];
+      
+      if (session) {
+        // 将数据库结果转换为符合UserSession类型的对象
+        return {
+          id: session.id,
+          sessionId: session.session_id,
+          userId: session.user_id,
+          ipAddress: session.ip_address,
+          userAgent: session.user_agent,
+          isValid: session.is_valid,
+          lastActivity: session.last_activity,
+          expiresAt: session.expires_at,
+          createdAt: session.created_at,
+          data: session.data
+        };
+      }
+      return undefined;
     } catch (error) {
       console.error('[DbStorage] updateUserSession错误:', error);
       return undefined;
@@ -266,10 +351,16 @@ export class DbStorage implements IStorage {
 
   async invalidateUserSession(sessionId: string): Promise<boolean> {
     try {
-      const result = await this.db.update(schema.userSessions)
-        .set({ isValid: false, updatedAt: new Date() })
-        .where(eq(schema.userSessions.sessionId, sessionId))
-        .returning();
+      console.log(`[DbStorage] 使用direct SQL失效会话, sessionId=${sessionId}`);
+      
+      // 使用直接SQL查询确保字段名称正确
+      const result = await this.client`
+        UPDATE user_sessions 
+        SET is_valid = false, updated_at = ${new Date()} 
+        WHERE session_id = ${sessionId}
+        RETURNING *
+      `;
+      
       return result.length > 0;
     } catch (error) {
       console.error('[DbStorage] invalidateUserSession错误:', error);
