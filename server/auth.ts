@@ -303,8 +303,20 @@ export async function initiateLogin(req: Request, res: Response) {
     };
 
     // 存储会话到数据库
-    await db.createUserSession(userSessionData);
-    console.log('[认证系统] 数据库会话记录已创建');
+    try {
+      console.log('[认证系统] 准备创建会话数据:', JSON.stringify(userSessionData));
+      await db.createUserSession(userSessionData);
+      console.log('[认证系统] 数据库会话记录已创建');
+    } catch (createSessionError) {
+      console.error('[认证系统] 创建会话记录失败:', createSessionError);
+      return res.status(500).json({
+        success: false,
+        message: '服务器错误，请稍后再试',
+        authenticated: false,
+        error: '创建会话失败',
+        debug: process.env.NODE_ENV !== 'production' ? createSessionError.message : undefined
+      });
+    }
 
     // 2. 设置cookie和更新会话状态
     const cookieOptions = {
