@@ -394,9 +394,9 @@ export async function initiateLogin(req: Request, res: Response) {
 
     // 构建权限信息
     const permissions = {
-      pages: user.role === 'admin' ? ['all'] : ['dashboard', 'profile'],
-      actions: user.role === 'admin' ? ['all'] : ['read'],
-      warehouses: user.role === 'admin' ? { all: { canView: true, canManage: true } } : {}
+      pages: user.role === 'admin' || user.role === 'super_admin' ? ['all'] : ['dashboard', 'profile'],
+      actions: user.role === 'admin' || user.role === 'super_admin' ? ['all'] : ['read'],
+      warehouses: user.role === 'admin' || user.role === 'super_admin' ? { all: { canView: true, canManage: true } } : {}
     };
 
     // 返回成功响应
@@ -575,9 +575,9 @@ export async function completeLogin(req: Request, res: Response) {
 
     // 构建权限信息
     const permissions = {
-      pages: user.role === 'admin' ? ['all'] : ['dashboard', 'profile'],
-      actions: user.role === 'admin' ? ['all'] : ['read'],
-      warehouses: user.role === 'admin' ? { all: { canView: true, canManage: true } } : {}
+      pages: user.role === 'admin' || user.role === 'super_admin' ? ['all'] : ['dashboard', 'profile'],
+      actions: user.role === 'admin' || user.role === 'super_admin' ? ['all'] : ['read'],
+      warehouses: user.role === 'admin' || user.role === 'super_admin' ? { all: { canView: true, canManage: true } } : {}
     };
 
     // 返回成功响应
@@ -1502,7 +1502,7 @@ export function isAdmin(req: Request, res: Response, next: NextFunction) {
 
   // 验证用户是否有admin权限
   const isAdminRole = 
-    req.session.role === 'admin' || 
+    req.session.role === 'admin' || role === 'super_admin' || role === 'super_admin' || 
     req.session.role === 'super_admin' || 
     req.session.isAdmin === true || 
     req.session.hasSuperAccess === true;
