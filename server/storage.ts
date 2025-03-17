@@ -2352,10 +2352,15 @@ export class MemStorage implements IStorage {
   }
 }
 
-// 切换到数据库存储方式
 // 创建新的MemStorage实例供需要时使用
 export const memStorage = new MemStorage();
-// 创建数据库存储实例
-export const dbStorage = new DatabaseStorage();
-// 默认导出dbStorage，但允许导入方决定使用哪个存储
-export const storage = dbStorage;
+
+// 由于DatabaseStorage类尚未完成实现，暂时使用内存存储作为默认选项
+// TODO: 完成DatabaseStorage类的实现
+// export const dbStorage = new DatabaseStorage();
+
+// 默认导出memStorage，未来可以切换到数据库存储
+export const storage = memStorage;
+
+// 临时导出一个dbStorage变量，与memStorage相同，以维持API兼容性
+export const dbStorage = memStorage;
