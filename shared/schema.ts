@@ -73,36 +73,36 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: varchar("username", { length: 255 }).notNull().unique(),
   password: varchar("password", { length: 255 }),
-  fullname: varchar("fullname", { length: 255 }).notNull(),
-  avatarurl: varchar("avatarurl", { length: 255 }),
+  full_name: varchar("full_name", { length: 255 }).notNull(),
+  avatar_url: varchar("avatar_url", { length: 255 }),
   email: varchar("email", { length: 255 }),
-  phonenumber: varchar("phonenumber", { length: 50 }),
+  phone_number: varchar("phone_number", { length: 50 }),
   role: userRoleEnum("role").notNull().default("user"),
-  usersource: userSourceEnum("user_source").notNull().default("local"),
+  user_source: userSourceEnum("user_source").notNull().default("local"),
   // 团队关联字段
-  primaryTeamId: integer("primary_team_id"), // 用户的主要团队ID，管理员可以没有主要团队
+  primary_team_id: integer("primary_team_id"), // 用户的主要团队ID，管理员可以没有主要团队
   // 社交媒体登录相关字段
-  socialId: varchar("social_id", { length: 255 }), // 微信或WhatsApp的唯一ID
-  socialData: text("social_data"), // 存储从社交平台获取的JSON数据
-  lastLoginAt: timestamp("last_login_at"),
-  isactive: boolean("isactive").default(true), // 用户是否激活
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  social_id: varchar("social_id", { length: 255 }), // 微信或WhatsApp的唯一ID
+  social_data: text("social_data"), // 存储从社交平台获取的JSON数据
+  last_login_at: timestamp("last_login_at"),
+  is_active: boolean("is_active").default(true), // 用户是否激活
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
-  fullname: true,
-  avatarurl: true,
+  full_name: true,
+  avatar_url: true,
   email: true,
-  phonenumber: true,
+  phone_number: true,
   role: true,
-  usersource: true, // 修改为与数据库字段名一致的全小写
-  primaryTeamId: true,
-  socialId: true,
-  socialData: true,
-  isactive: true, // 与数据库字段名一致的全小写
+  user_source: true,
+  primary_team_id: true,
+  social_id: true,
+  social_data: true,
+  is_active: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;

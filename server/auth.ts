@@ -77,7 +77,7 @@ export async function loginUser(req: Request, res: Response) {
     }
     
     // 用户账号未激活
-    if (user.isactive === false) {
+    if (user.is_active === false) {
       return res.status(401).json({
         success: false,
         authenticated: false,
@@ -134,7 +134,7 @@ export async function loginUser(req: Request, res: Response) {
         id: user.id,
         username: user.username,
         role: user.role,
-        fullName: user.fullname,
+        fullName: user.full_name,
         language: user.language || 'zh'
       }
     });
@@ -183,15 +183,15 @@ export async function registerUser(req: Request, res: Response) {
     const newUser = await db.createUser({
       username: data.username,
       password: hashedPassword,
-      fullname: data.fullName,
+      full_name: data.fullName,
       email: data.email || null,
-      phonenumber: data.phoneNumber || null,
+      phone_number: data.phoneNumber || null,
       role: data.role,
-      isactive: true,
+      is_active: true,
       language: data.language,
-      usersource: 'local',
-      createdAt: new Date(),
-      updatedAt: new Date()
+      user_source: 'local',
+      created_at: new Date(),
+      updated_at: new Date()
     });
     
     // 返回成功响应，不包含密码
@@ -201,7 +201,7 @@ export async function registerUser(req: Request, res: Response) {
       user: {
         id: newUser.id,
         username: newUser.username,
-        fullName: newUser.fullname,
+        fullName: newUser.full_name,
         role: newUser.role,
         email: newUser.email
       }
