@@ -777,7 +777,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // 获取用户权限（包括访客用户权限）
-      const permissions = await getUserPagePermissions(userId);
+      // 检查用户是否是管理员或超级管理员，并传递角色信息以便获得完整权限
+      let userRole = '';
+      if (req.user) {
+        userRole = (req.user as any).role || '';
+        // 输出角色信息用于调试
+        console.log(`用户角色: ${userRole}`);
+      }
+      
+      const permissions = await getUserPagePermissions(userId, userRole);
       
       // 如果是访客用户，添加特殊标记
       if (isGuest) {
