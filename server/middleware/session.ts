@@ -103,26 +103,43 @@ export function configureSession(app: any) {
   };
 
   // 使用PostgreSQL存储会话（如果配置了数据库URL）
-  if (usePostgresSession) {
-    console.log('[会话] 使用PostgreSQL存储会话 - 数据库URL存在:', !!process.env.DATABASE_URL);
-    const PgSession = connect_pg_simple(session);
-    
-    // 使用内存存储作为备用 - 目前由于环境限制，不再尝试使用PostgreSQL存储
-    console.log('[会话] 改用内存存储会话');
-    
-    // 创建内存存储
-    sessionOptions.store = new MemoryStore({
-      checkPeriod: 86400000, // 每24小时清理过期会话
-      ttl: 30 * 24 * 60 * 60 // 30天的会话生命周期
-    } as any);
-    
-    // 为调试添加会话存储事件监听
-    sessionOptions.store.on('error', (err: Error) => {
-      console.error('[会话存储] 错误:', err);
-    });
-    
-    // 强制使用数据库会话
-    console.log('[会话] 成功配置PostgreSQL会话存储');
+  if (usePostgresSession && process.env.DATABASE_URL) {
+    try {
+      console.log('[会话] 使用PostgreSQL存储会话 - 数据库URL存在:', !!process.env.DATABASE_URL);
+      const PgSession = connect_pg_simple(session);
+      
+      // 实际配置PostgreSQL会话存储
+      sessionOptions.store = new PgSession({
+        conString: process.env.DATABASE_URL,
+        tableName: 'session', // 使用默认表名
+        createTableIfMissing: true, // 自动创建表
+        pruneSessionInterval: 24 * 60 * 60 * 1000, // 一天清理一次
+        ttl: 30 * 24 * 60 * 60 // 30天过期
+      });
+      
+      // 监听会话存储错误
+      sessionOptions.store.on('error', (err: Error) => {
+        console.error('[会话存储] PostgreSQL错误:', err);
+        console.log('[会话存储] 由于PostgreSQL错误，将回退到内存存储');
+        
+        // 动态回退到内存存储
+        sessionOptions.store = new MemoryStore({
+          checkPeriod: 86400000, // 每24小时清理过期会话
+          ttl: 30 * 24 * 60 * 60 // 30天的会话生命周期
+        } as any);
+      });
+      
+      console.log('[会话] 成功配置PostgreSQL会话存储');
+    } catch (pgError) {
+      console.error('[会话] PostgreSQL会话存储配置失败:', pgError);
+      console.log('[会话] 改用内存存储会话');
+      
+      // 创建内存存储
+      sessionOptions.store = new MemoryStore({
+        checkPeriod: 86400000, // 每24小时清理过期会话
+        ttl: 30 * 24 * 60 * 60 // 30天的会话生命周期
+      } as any);
+    }
   } else {
     console.log('[会话] ⚠️警告: 未找到DATABASE_URL环境变量，回退到内存存储会话');
     // MemoryStore doesn't actually have a checkPeriod option in its type definition
