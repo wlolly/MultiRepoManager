@@ -21,6 +21,7 @@ import {
 import { ProductGrid } from "@/components/products/product-grid";
 import { ProductList } from "@/components/products/product-list";
 import { CreateProductDialog } from "@/components/products/create-product-dialog";
+import { ProductActions } from "@/components/products/product-actions";
 import { 
   PlusIcon, 
   SearchIcon, 
@@ -29,7 +30,8 @@ import {
   DownloadIcon,
   DatabaseIcon,
   UploadIcon,
-  ChevronDownIcon
+  ChevronDownIcon,
+  PlusCircle
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatsCard } from "@/components/dashboard/stats-card";
