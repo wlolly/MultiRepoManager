@@ -14,21 +14,21 @@ dotenv.config();
 
 async function main() {
   console.log('开始创建数据库表...');
-  
+
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
     console.error('错误: 未找到 DATABASE_URL 环境变量');
     process.exit(1);
   }
-  
+
   try {
     // 创建数据库客户端
     const client = postgres(connectionString, { max: 1 });
     const db = drizzle(client, { schema });
-    
+
     // 直接执行 SQL 来创建表
     console.log('开始创建数据库表...');
-    
+
     // 创建用户相关表
     await client`
       CREATE TABLE IF NOT EXISTS "users" (
@@ -50,7 +50,7 @@ async function main() {
         "ui_language" VARCHAR(10) DEFAULT 'zh'
       );
     `;
-    
+
     // 创建存储库相关表
     await client`
       CREATE TABLE IF NOT EXISTS "repositories" (
@@ -69,7 +69,7 @@ async function main() {
         FOREIGN KEY ("owner_id") REFERENCES "users"("id") ON DELETE CASCADE
       );
     `;
-    
+
     // 创建团队相关表
     await client`
       CREATE TABLE IF NOT EXISTS "teams" (
@@ -80,7 +80,7 @@ async function main() {
         "created_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `;
-    
+
     // 创建团队成员表
     await client`
       CREATE TABLE IF NOT EXISTS "team_members" (
@@ -93,7 +93,7 @@ async function main() {
         UNIQUE ("team_id", "user_id")
       );
     `;
-    
+
     // 创建团队页面权限表
     await client`
       CREATE TABLE IF NOT EXISTS "team_page_permissions" (
@@ -106,7 +106,7 @@ async function main() {
         UNIQUE ("team_id", "page_name")
       );
     `;
-    
+
     // 创建团队仓库权限表
     await client`
       CREATE TABLE IF NOT EXISTS "team_warehouse_permissions" (
@@ -119,7 +119,7 @@ async function main() {
         UNIQUE ("team_id", "warehouse_id")
       );
     `;
-    
+
     // 创建团队仓库关联表
     await client`
       CREATE TABLE IF NOT EXISTS "team_repositories" (
@@ -131,7 +131,7 @@ async function main() {
         UNIQUE ("team_id", "repository_id")
       );
     `;
-    
+
     // 创建活动表
     await client`
       CREATE TABLE IF NOT EXISTS "activities" (
@@ -147,7 +147,7 @@ async function main() {
         FOREIGN KEY ("repository_id") REFERENCES "repositories"("id") ON DELETE CASCADE
       );
     `;
-    
+
     // 创建商品表
     await client`
       CREATE TABLE IF NOT EXISTS "products" (
@@ -175,7 +175,7 @@ async function main() {
         "updated_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `;
-    
+
     // 创建仓库表
     await client`
       CREATE TABLE IF NOT EXISTS "warehouses" (
@@ -186,7 +186,7 @@ async function main() {
         "created_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
     `;
-    
+
     // 创建入库单表
     await client`
       CREATE TABLE IF NOT EXISTS "inbound_orders" (
@@ -194,8 +194,8 @@ async function main() {
         "order_number" VARCHAR(50) NOT NULL UNIQUE,
         "warehouse_id" INTEGER NOT NULL,
         "status" VARCHAR(20) DEFAULT 'pending',
-        "total_weight" VARCHAR(20) NOT NULL,
-        "total_volume" VARCHAR(20) NOT NULL,
+        "total_weight" DECIMAL(10, 3) NOT NULL,
+        "total_volume" DECIMAL(10, 6) NOT NULL,
         "created_by" INTEGER NOT NULL,
         "order_type" VARCHAR(20),
         "notes" TEXT,
@@ -204,7 +204,7 @@ async function main() {
         FOREIGN KEY ("created_by") REFERENCES "users"("id")
       );
     `;
-    
+
     // 创建入库单明细表
     await client`
       CREATE TABLE IF NOT EXISTS "inbound_order_items" (
@@ -224,7 +224,7 @@ async function main() {
         FOREIGN KEY ("product_id") REFERENCES "products"("id")
       );
     `;
-    
+
     // 创建出库单表
     await client`
       CREATE TABLE IF NOT EXISTS "outbound_orders" (
@@ -232,8 +232,8 @@ async function main() {
         "order_number" VARCHAR(50) NOT NULL UNIQUE,
         "warehouse_id" INTEGER NOT NULL,
         "status" VARCHAR(20) DEFAULT 'pending',
-        "total_weight" VARCHAR(20) NOT NULL,
-        "total_volume" VARCHAR(20) NOT NULL,
+        "total_weight" DECIMAL(10, 3) NOT NULL,
+        "total_volume" DECIMAL(10, 6) NOT NULL,
         "created_by" INTEGER NOT NULL,
         "order_type" VARCHAR(20),
         "destination_type" VARCHAR(20),
@@ -243,7 +243,7 @@ async function main() {
         FOREIGN KEY ("created_by") REFERENCES "users"("id")
       );
     `;
-    
+
     // 创建出库单明细表
     await client`
       CREATE TABLE IF NOT EXISTS "outbound_order_items" (
@@ -263,7 +263,7 @@ async function main() {
         FOREIGN KEY ("product_id") REFERENCES "products"("id")
       );
     `;
-    
+
     // 创建电商产品表
     await client`
       CREATE TABLE IF NOT EXISTS "ecommerce_products" (
@@ -282,7 +282,7 @@ async function main() {
         UNIQUE ("platform_code", "platform_source")
       );
     `;
-    
+
     // 创建API配置表
     await client`
       CREATE TABLE IF NOT EXISTS "api_configurations" (
@@ -304,7 +304,7 @@ async function main() {
         FOREIGN KEY ("team_id") REFERENCES "teams"("id")
       );
     `;
-    
+
     // 创建产品匹配规则表
     await client`
       CREATE TABLE IF NOT EXISTS "product_matching_rules" (
@@ -320,7 +320,7 @@ async function main() {
         FOREIGN KEY ("created_by") REFERENCES "users"("id")
       );
     `;
-    
+
     // 创建平台订单表
     await client`
       CREATE TABLE IF NOT EXISTS "platform_orders" (
@@ -344,7 +344,7 @@ async function main() {
         UNIQUE ("platform_order_id", "platform_source")
       );
     `;
-    
+
     // 创建平台订单项目表
     await client`
       CREATE TABLE IF NOT EXISTS "platform_order_items" (
@@ -362,7 +362,7 @@ async function main() {
         UNIQUE ("platform_order_id", "platform_item_id")
       );
     `;
-    
+
     // 创建预审核订单表
     await client`
       CREATE TABLE IF NOT EXISTS "pre_audit_orders" (
@@ -385,7 +385,7 @@ async function main() {
         UNIQUE ("platform_order_id", "platform_source")
       );
     `;
-    
+
     // 创建预审核订单项目表
     await client`
       CREATE TABLE IF NOT EXISTS "pre_audit_order_items" (
@@ -405,7 +405,7 @@ async function main() {
         UNIQUE ("pre_audit_order_id", "platform_item_id")
       );
     `;
-    
+
     // 创建仓库调拨单表
     await client`
       CREATE TABLE IF NOT EXISTS "warehouse_transfers" (
@@ -438,7 +438,7 @@ async function main() {
         FOREIGN KEY ("outbound_order_id") REFERENCES "outbound_orders"("id")
       );
     `;
-    
+
     // 创建仓库调拨单明细表
     await client`
       CREATE TABLE IF NOT EXISTS "warehouse_transfer_items" (
@@ -455,7 +455,7 @@ async function main() {
         FOREIGN KEY ("product_id") REFERENCES "products"("id")
       );
     `;
-    
+
     // 创建唯一码跟踪表
     await client`
       CREATE TABLE IF NOT EXISTS "unique_code_tracking" (
@@ -488,7 +488,7 @@ async function main() {
         FOREIGN KEY ("last_operation_user_id") REFERENCES "users"("id")
       );
     `;
-    
+
     // 创建唯一码历史表
     await client`
       CREATE TABLE IF NOT EXISTS "unique_code_history" (
