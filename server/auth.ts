@@ -808,3 +808,36 @@ export function isAdmin(req: Request, res: Response, next: NextFunction) {
   
   next();
 }
+
+/**
+ * 清理过期的验证记录和无效会话
+ * 定期调用此函数可以避免数据库中堆积过多无用的记录
+ */
+export async function cleanupAuthRecords(app: any): Promise<{
+  verificationsRemoved: number,
+  sessionsRemoved: number
+}> {
+  try {
+    console.log('[认证系统] 开始清理过期的验证记录和无效会话');
+    const db = app.locals.storage;
+    
+    // 清理过期的验证记录
+    const verificationsRemoved = await db.cleanupExpiredVerifications();
+    console.log(`[认证系统] 已清理 ${verificationsRemoved} 条过期的验证记录`);
+    
+    // 清理过期的会话
+    const sessionsRemoved = await db.cleanupExpiredSessions();
+    console.log(`[认证系统] 已清理 ${sessionsRemoved} 条过期的会话`);
+    
+    return {
+      verificationsRemoved,
+      sessionsRemoved
+    };
+  } catch (error) {
+    console.error('[认证系统] 清理记录时出错:', error);
+    return {
+      verificationsRemoved: 0,
+      sessionsRemoved: 0
+    };
+  }
+}

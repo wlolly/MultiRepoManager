@@ -10,6 +10,7 @@ import passport from 'passport';
 import { configurePassport } from './passport-local';
 import { sql } from 'drizzle-orm';
 import { configureSession } from './middleware/session';
+import { cleanupAuthRecords } from './auth';
 
 const app = express();
 app.use(express.json());
@@ -74,6 +75,19 @@ import { initializeUserIDTable } from './database/userID';
   // 初始化文件清理调度器，每24小时清理一次过期文件
   scheduleCleanup();
   
+  // 设置定期清理过期验证记录和会话的调度器
+  // 每4小时运行一次
+  const AUTH_CLEANUP_INTERVAL = 4 * 60 * 60 * 1000; // 4小时，单位毫秒
+  setInterval(async () => {
+    console.log('[系统] 开始定期清理过期的验证记录和会话');
+    try {
+      const result = await cleanupAuthRecords(app);
+      console.log(`[系统] 清理完成：移除了 ${result.verificationsRemoved} 条验证记录和 ${result.sessionsRemoved} 条会话`);
+    } catch (error) {
+      console.error('[系统] 清理过程中出错:', error);
+    }
+  }, AUTH_CLEANUP_INTERVAL);
+  
   // 首先确保已经初始化了内存存储
   // 使用已导入的memStorage，不能在异步函数中使用import语句
   memStorage.initializeDemoData();
@@ -115,6 +129,15 @@ import { initializeUserIDTable } from './database/userID';
     try {
       await initializeUserIDTable();
       log('内部用户ID表初始化成功，有效期为2天', 'mysql');
+      
+      // 在服务器启动时执行一次过期验证记录和会话的清理
+      log('正在执行初始清理过期验证记录和会话', 'mysql');
+      try {
+        const result = await cleanupAuthRecords(app);
+        log(`初始清理完成：移除了 ${result.verificationsRemoved} 条验证记录和 ${result.sessionsRemoved} 条会话`, 'mysql');
+      } catch (cleanupError) {
+        console.error('初始验证记录清理失败:', cleanupError);
+      }
     } catch (error) {
       console.error('初始化内部用户ID表失败:', error);
       // 继续启动服务器，即使ID表初始化失败
