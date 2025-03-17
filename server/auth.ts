@@ -218,6 +218,7 @@ export async function initiateLogin(req: Request, res: Response) {
     
     // 返回带用户数据的成功响应
     console.log('[认证系统] 登录成功，返回会话ID:', sessionId);
+    console.log('[认证系统] 登录用户ID:', user.id, '用户名:', user.username);
     
     // 增加客户端权限信息
     const permissions = {
@@ -226,6 +227,8 @@ export async function initiateLogin(req: Request, res: Response) {
       warehouses: user.role === 'admin' ? { all: { canView: true, canManage: true } } : {}
     };
     
+    // 确保前端收到正确的用户ID
+    // 修复ID不匹配问题：确保前端收到的ID与数据库匹配
     return res.status(200).json({
       success: true,
       authenticated: true,
@@ -233,12 +236,13 @@ export async function initiateLogin(req: Request, res: Response) {
       sessionId,
       requireVerification: false,
       user: {
-        id: user.id,
+        id: user.id, // 使用真实的用户ID
         username: user.username,
         role: user.role,
         fullName: user.full_name,
         language: user.language || 'zh',
         isactive: user.is_active, // 使用前端要求的字段名
+        isSocialUser: !!user.social_id, // 社交账号标识
         permissions
       }
     });

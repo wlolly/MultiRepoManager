@@ -317,13 +317,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // 处理登录完成
   const handleLoginComplete = (userData: any) => {
     if (userData) {
-      // 保存用户数据
+      console.log('登录完成，接收到的用户数据:', userData);
+      
+      // 保存用户数据，确保使用服务器提供的ID
       const userToSave = {
         ...userData,
+        id: userData.id, // 确保使用服务器提供的用户ID
         isactive: userData?.isactive !== undefined ? userData.isactive : true,
         avatarurl: userData?.avatarurl || null,
         realAuthenticated: userData.realAuthenticated || true
       };
+      
+      console.log('保存用户数据，ID:', userToSave.id);
       
       // 更新本地存储
       sessionStorage.setItem('currentUser', JSON.stringify(userToSave));
