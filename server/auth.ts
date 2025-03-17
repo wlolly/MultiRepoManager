@@ -306,20 +306,25 @@ export async function initiateLogin(req: Request, res: Response) {
     await db.createUserSession(userSessionData);
     console.log('[认证系统] 数据库会话记录已创建');
 
-    // 2. 设置cookie (先于会话对象更新)
-    res.cookie('sessionId', sessionId, {
+    // 2. 设置cookie和更新会话状态
+    const cookieOptions = {
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30天
       httpOnly: false, // 允许JavaScript访问
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/'
-    });
+    };
 
-    // 3. 更新会话对象 (最后执行，因为它会重置一些状态)
+    // 优先设置安全cookie
+    res.cookie('sessionId', sessionId, cookieOptions);
+    // 设置备用cookie以确保客户端能获取
+    res.cookie('backup_sid', sessionId, {...cookieOptions, httpOnly: false});
+
+    // 3. 更新会话对象 (在cookie设置后执行)
     if (req.session) {
-      // 保存当前会话ID以便于调试
+      // 记录会话更新过程
       const originalSessionId = req.sessionID;
-      console.log(`[认证系统] 原始会话ID: ${originalSessionId}, 新会话ID: ${sessionId}`);
+      console.log(`[认证系统] 会话更新: ${originalSessionId} -> ${sessionId}`);
 
       // 更新会话状态
       req.session.authenticated = true;
@@ -1235,10 +1240,21 @@ export async function verifySession(req: Request, res: Response, next: NextFunct
       // 获取存储接口
       const db = req.app.locals.storage;
 
-      // 从数据库获取用户信息
+      // 增强的用户验证逻辑
       const user = await db.getUser(req.session.userId);
+      
+      // 详细的用户验证日志
+      console.log(`[认证] 验证用户(ID=${req.session.userId}):`, {
+        exists: !!user,
+        active: user?.is_active,
+        role: user?.role,
+        sessionValid: !!req.session.authenticated
+      });
+
       if (!user) {
         console.log(`[认证] 会话用户不存在: userId=${req.session.userId}`);
+        // 清除无效会话
+        req.session.destroy(() => {});
         return res.status(401).json({
           authenticated: false,
           message: '用户不存在或已被删除'
