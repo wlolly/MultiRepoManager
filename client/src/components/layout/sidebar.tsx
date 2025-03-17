@@ -172,6 +172,7 @@ export function Sidebar() {
           // 过滤导航项：
           // 1. 公共页面总是显示给所有用户
           // 2. 非公共页面(特别是产品页面)只有真实用户才能访问
+          // 放宽过滤条件，默认显示更多菜单项以改善导航体验
           .filter(item => {
             // 公共页面总是显示
             if (item.public) {
@@ -179,13 +180,27 @@ export function Sidebar() {
             }
             
             // 非公共页面只对真实用户显示
-            // 确保商品页面("/products")严格按照真实用户要求过滤
-            if (item.href === "/products" && !isRealUser) {
-              console.log("隐藏产品页面 - 用户不是真实用户");
-              return false;
+            // 这里增加调试信息
+            console.log(`导航项检查: ${item.keyName}, 是否真实用户: ${isRealUser}`);
+            
+            // 检查是否有本地存储的当前用户信息
+            const currentUserStr = localStorage.getItem('currentUser');
+            if (currentUserStr) {
+              try {
+                const currentUser = JSON.parse(currentUserStr);
+                if (currentUser && currentUser.role === 'admin') {
+                  // 管理员总是显示所有导航项
+                  console.log(`用户为管理员，显示导航项: ${item.keyName}`);
+                  return true;
+                }
+              } catch (e) {
+                console.error('解析本地存储用户数据失败:', e);
+              }
             }
             
-            return isRealUser;
+            // 对于测试环境或开发阶段，放宽过滤条件，允许显示更多导航项
+            // 如果是真实用户，或路径不是敏感区域(如Products)，则显示
+            return isRealUser || item.href !== "/products";
           })
           .map((item) => (
             <Link key={item.href} to={item.href} className={cn(
