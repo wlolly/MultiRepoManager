@@ -1,9 +1,23 @@
 /**
  * 权限系统工具函数
  * 用于处理权限相关的转换、验证和兼容性处理
+ * 
+ * 增强版本 - 增加权限缓存管理和实时更新机制
  */
 
 import { Request } from 'express';
+import { db } from '../db';
+import * as schema from '../../shared/schema';
+import { and, eq, inArray } from 'drizzle-orm';
+
+// 权限缓存记录 - 用于跟踪权限刷新时间
+const permissionCacheMap = new Map<number, {
+  lastRefreshed: Date;
+  permissions: PermissionSet;
+}>();
+
+// 权限缓存最大有效期 (毫秒) - 5分钟
+const PERMISSION_CACHE_MAX_AGE = 5 * 60 * 1000;
 
 /**
  * 权限集合类型
@@ -92,6 +106,63 @@ export function getPermissionsFromRequest(req: Request): PermissionSet {
     isAdmin: req.session.isAdmin === true,
     isSuperAdmin: req.session.hasSuperAccess === true
   };
+}
+
+/**
+ * 获取权限缓存，如果缓存不存在或已过期则返回null
+ * @param userId 用户ID
+ * @returns 缓存的权限集合或null
+ */
+export function getPermissionCache(userId: number): PermissionSet | null {
+  const cached = permissionCacheMap.get(userId);
+  
+  if (!cached) {
+    return null;
+  }
+  
+  // 检查缓存是否过期
+  const now = Date.now();
+  const lastRefreshed = cached.lastRefreshed.getTime();
+  
+  if (now - lastRefreshed > PERMISSION_CACHE_MAX_AGE) {
+    console.log(`[权限缓存] 用户${userId}的权限缓存已过期，需要刷新`);
+    return null;
+  }
+  
+  return cached.permissions;
+}
+
+/**
+ * 设置权限缓存
+ * @param userId 用户ID
+ * @param permissions 权限集合
+ */
+export function setPermissionCache(userId: number, permissions: PermissionSet): void {
+  permissionCacheMap.set(userId, {
+    lastRefreshed: new Date(),
+    permissions
+  });
+  
+  console.log(`[权限缓存] 已更新用户${userId}的权限缓存`);
+}
+
+/**
+ * 清除用户的权限缓存
+ * @param userId 用户ID
+ */
+export function clearPermissionCache(userId: number): void {
+  if (permissionCacheMap.has(userId)) {
+    permissionCacheMap.delete(userId);
+    console.log(`[权限缓存] 已清除用户${userId}的权限缓存`);
+  }
+}
+
+/**
+ * 清除所有用户的权限缓存
+ */
+export function clearAllPermissionCaches(): void {
+  permissionCacheMap.clear();
+  console.log(`[权限缓存] 已清除所有用户的权限缓存`);
 }
 
 /**
@@ -205,6 +276,183 @@ export function hasWarehousePermission(
   }
   
   return warehousePermission[permissionType] === true;
+}
+
+/**
+ * 从数据库加载用户权限
+ * 首先尝试从缓存获取，如果缓存不存在或已过期则从数据库加载
+ * 
+ * @param userId 用户ID
+ * @param sessionId 可选会话ID (用于日志记录)
+ * @param userRole 可选用户角色 (用于优化权限判断)
+ * @returns 用户权限集合
+ */
+export async function loadUserPermissions(
+  userId: number,
+  sessionId: string | null = null,
+  userRole: string | null = null
+): Promise<PermissionSet> {
+  console.log(`[权限加载] 开始为用户${userId}加载权限数据...`);
+  
+  // 检查是否有缓存的权限数据
+  const cachedPermissions = getPermissionCache(userId);
+  if (cachedPermissions) {
+    console.log(`[权限加载] 使用缓存的权限数据，用户ID: ${userId}`);
+    return cachedPermissions;
+  }
+  
+  // 缓存不存在或已过期，从数据库加载权限
+  console.log(`[权限加载] 缓存不存在或已过期，从数据库加载权限，用户ID: ${userId}`);
+  
+  try {
+    // 先查询用户角色(如果未提供)
+    let role = userRole;
+    if (!role) {
+      const user = await db.query.users.findFirst({
+        where: eq(schema.users.id, userId),
+        columns: {
+          role: true
+        }
+      });
+      role = user?.role || null;
+    }
+    
+    // 初始化默认权限
+    const permissions: PermissionSet = {
+      pages: [],
+      actions: [],
+      warehouses: {},
+      isAdmin: role === 'admin' || role === 'super_admin',
+      isSuperAdmin: role === 'super_admin'
+    };
+    
+    // 如果是管理员，直接赋予所有权限
+    if (permissions.isAdmin) {
+      console.log(`[权限加载] 用户${userId}是管理员，赋予所有权限`);
+      
+      // 1. 页面权限
+      permissions.pages = ['all']; // 所有页面
+      
+      // 2. 操作权限
+      permissions.actions = ['all']; // 所有操作
+      
+      // 3. 对所有仓库赋予完全访问权限
+      const allWarehouses = await db.query.warehouses.findMany({
+        columns: {
+          id: true
+        }
+      });
+      
+      for (const warehouse of allWarehouses) {
+        permissions.warehouses[warehouse.id.toString()] = {
+          view: true,
+          manage: true
+        };
+      }
+      
+      // 缓存并返回管理员权限
+      setPermissionCache(userId, permissions);
+      return permissions;
+    }
+    
+    // 非管理员，需要查询团队权限
+    console.log(`[权限加载] 用户${userId}不是管理员，加载团队权限`);
+    
+    // 1. 查询用户所在的团队
+    const teamMembers = await db.query.teamMembers.findMany({
+      where: eq(schema.teamMembers.userId, userId),
+      columns: {
+        teamId: true,
+        isAdmin: true
+      }
+    });
+    
+    const teamIds = teamMembers.map(member => member.teamId);
+    
+    if (teamIds.length === 0) {
+      console.log(`[权限加载] 用户${userId}不属于任何团队，仅有基本权限`);
+      // 用户不属于任何团队，仅有基本权限
+      permissions.pages = ['dashboard']; // 通常仅允许访问仪表盘
+      permissions.actions = ['view'];     // 仅查看权限
+      
+      // 缓存并返回基本权限
+      setPermissionCache(userId, permissions);
+      return permissions;
+    }
+    
+    // 2. 查询团队页面权限
+    const pagePermissions = await db.query.teamPagePermissions.findMany({
+      where: inArray(schema.teamPagePermissions.teamId, teamIds),
+      columns: {
+        teamId: true,
+        pageName: true,
+        canAccess: true
+      }
+    });
+    
+    // 收集有权限的页面
+    const pageSet = new Set<string>();
+    for (const permission of pagePermissions) {
+      if (permission.canAccess) {
+        pageSet.add(permission.pageName);
+      }
+    }
+    permissions.pages = Array.from(pageSet);
+    
+    // 3. 查询团队仓库权限
+    const warehousePermissions = await db.query.teamWarehousePermissions.findMany({
+      where: inArray(schema.teamWarehousePermissions.teamId, teamIds),
+      columns: {
+        teamId: true,
+        warehouseId: true,
+        canView: true,
+        canManage: true
+      }
+    });
+    
+    // 收集仓库权限
+    for (const permission of warehousePermissions) {
+      const warehouseId = permission.warehouseId.toString();
+      
+      // 如果这个仓库已经有更高级别的权限，不覆盖
+      if (permissions.warehouses[warehouseId]) {
+        const existing = permissions.warehouses[warehouseId];
+        permissions.warehouses[warehouseId] = {
+          view: existing.view || !!permission.canView,
+          manage: existing.manage || !!permission.canManage
+        };
+      } else {
+        permissions.warehouses[warehouseId] = {
+          view: !!permission.canView,
+          manage: !!permission.canManage
+        };
+      }
+    }
+    
+    // 4. 设置基本操作权限
+    permissions.actions = ['view'];
+    
+    // 如果用户在任一团队中是管理员，给予编辑权限
+    if (teamMembers.some(member => member.isAdmin)) {
+      permissions.actions.push('edit');
+    }
+    
+    // 缓存并返回完整权限
+    setPermissionCache(userId, permissions);
+    console.log(`[权限加载] 成功加载用户${userId}的权限: 页面(${permissions.pages.length}), 仓库(${Object.keys(permissions.warehouses).length})`);
+    return permissions;
+  } catch (error) {
+    console.error(`[权限加载] 加载用户${userId}权限时出错:`, error);
+    
+    // 发生错误时返回最小权限
+    return {
+      pages: ['dashboard'],
+      actions: ['view'],
+      warehouses: {},
+      isAdmin: false,
+      isSuperAdmin: false
+    };
+  }
 }
 
 /**
