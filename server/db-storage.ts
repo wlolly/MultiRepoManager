@@ -222,7 +222,7 @@ export class DbStorage implements IStorage {
 
   async getUserSessionById(sessionId: string): Promise<UserSession | undefined> {
     try {
-      console.log(`[DbStorage] 使用direct SQL查询user_sessions表, sessionId=${sessionId}`);
+      console.log(`[DbStorage] 使用sql标签模板查询user_sessions表, sessionId=${sessionId}`);
       
       // 使用sql标签模板进行查询而不是原始SQL
       const result = await this.db.execute(sql`
@@ -300,83 +300,110 @@ export class DbStorage implements IStorage {
     try {
       console.log(`[DbStorage] 使用sql标签模板更新user_sessions表, sessionId=${sessionId}`, updates);
       
-      // 使用sql标签模板语法进行动态更新
-      // 避免拼接SQL字符串，防止SQL注入
-      let query = this.db.update(schema.userSessions)
-        .set({
-          updated_at: new Date()
-        })
-        .where(eq(schema.userSessions.sessionId, sessionId))
-        .returning();
-      
-      // 添加需要更新的字段
-      if (updates.isValid !== undefined) {
-        query = this.db.update(schema.userSessions)
-          .set({
-            is_valid: updates.isValid,
-            updated_at: new Date()
-          })
-          .where(eq(schema.userSessions.sessionId, sessionId))
-          .returning();
-      }
-      
+      // 使用sql标签模板进行查询而不是原始SQL
       if (updates.lastActivity !== undefined) {
+        // 单独处理lastActivity更新，因为这是最常见的更新
         const lastActivity = updates.lastActivity instanceof Date 
           ? updates.lastActivity 
           : new Date(updates.lastActivity);
         
-        query = this.db.update(schema.userSessions)
-          .set({
-            last_activity: lastActivity,
-            updated_at: new Date()
-          })
-          .where(eq(schema.userSessions.sessionId, sessionId))
-          .returning();
-      }
-      
-      if (updates.expiresAt !== undefined) {
+        const result = await this.db.execute(sql`
+          UPDATE user_sessions 
+          SET last_activity = ${lastActivity.toISOString()} 
+          WHERE session_id = ${sessionId}
+          RETURNING *
+        `);
+        
+        if (result && result.length > 0) {
+          const session = result[0];
+          return {
+            id: session.id,
+            sessionId: session.session_id,
+            userId: session.user_id,
+            ipAddress: session.ip_address,
+            userAgent: session.user_agent,
+            isValid: session.is_valid,
+            lastActivity: session.last_activity,
+            expiresAt: session.expires_at,
+            createdAt: session.created_at,
+            data: session.data
+          };
+        }
+      } else if (updates.isValid !== undefined) {
+        const result = await this.db.execute(sql`
+          UPDATE user_sessions 
+          SET is_valid = ${updates.isValid} 
+          WHERE session_id = ${sessionId}
+          RETURNING *
+        `);
+        
+        if (result && result.length > 0) {
+          const session = result[0];
+          return {
+            id: session.id,
+            sessionId: session.session_id,
+            userId: session.user_id,
+            ipAddress: session.ip_address,
+            userAgent: session.user_agent,
+            isValid: session.is_valid,
+            lastActivity: session.last_activity,
+            expiresAt: session.expires_at,
+            createdAt: session.created_at,
+            data: session.data
+          };
+        }
+      } else if (updates.expiresAt !== undefined) {
         const expiresAt = updates.expiresAt instanceof Date 
           ? updates.expiresAt 
           : new Date(updates.expiresAt);
         
-        query = this.db.update(schema.userSessions)
-          .set({
-            expires_at: expiresAt,
-            updated_at: new Date()
-          })
-          .where(eq(schema.userSessions.sessionId, sessionId))
-          .returning();
+        const result = await this.db.execute(sql`
+          UPDATE user_sessions 
+          SET expires_at = ${expiresAt.toISOString()} 
+          WHERE session_id = ${sessionId}
+          RETURNING *
+        `);
+        
+        if (result && result.length > 0) {
+          const session = result[0];
+          return {
+            id: session.id,
+            sessionId: session.session_id,
+            userId: session.user_id,
+            ipAddress: session.ip_address,
+            userAgent: session.user_agent,
+            isValid: session.is_valid,
+            lastActivity: session.last_activity,
+            expiresAt: session.expires_at,
+            createdAt: session.created_at,
+            data: session.data
+          };
+        }
+      } else if (updates.data !== undefined) {
+        const result = await this.db.execute(sql`
+          UPDATE user_sessions 
+          SET data = ${JSON.stringify(updates.data)} 
+          WHERE session_id = ${sessionId}
+          RETURNING *
+        `);
+        
+        if (result && result.length > 0) {
+          const session = result[0];
+          return {
+            id: session.id,
+            sessionId: session.session_id,
+            userId: session.user_id,
+            ipAddress: session.ip_address,
+            userAgent: session.user_agent,
+            isValid: session.is_valid,
+            lastActivity: session.last_activity,
+            expiresAt: session.expires_at,
+            createdAt: session.created_at,
+            data: session.data
+          };
+        }
       }
       
-      if (updates.data !== undefined) {
-        query = this.db.update(schema.userSessions)
-          .set({
-            data: JSON.stringify(updates.data),
-            updated_at: new Date()
-          })
-          .where(eq(schema.userSessions.sessionId, sessionId))
-          .returning();
-      }
-      
-      // 执行查询
-      const result = await query;
-      
-      if (result && result.length > 0) {
-        const session = result[0];
-        // 将数据库结果转换为符合UserSession类型的对象
-        return {
-          id: session.id,
-          sessionId: session.sessionId,
-          userId: session.userId,
-          ipAddress: session.ipAddress,
-          userAgent: session.userAgent,
-          isValid: session.isValid,
-          lastActivity: session.lastActivity,
-          expiresAt: session.expiresAt,
-          createdAt: session.createdAt,
-          data: session.data
-        };
-      }
       return undefined;
     } catch (error) {
       console.error('[DbStorage] updateUserSession错误:', error);
