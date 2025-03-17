@@ -118,8 +118,8 @@ export function configureSession(app: any) {
         conString: process.env.DATABASE_URL,
         tableName: 'session', // 使用默认表名
         createTableIfMissing: true, // 自动创建表
-        pruneSessionInterval: 24 * 60 * 60 * 1000, // 一天清理一次
-        ttl: 30 * 24 * 60 * 60 // 30天过期
+        pruneSessionInterval: 86400, // 一天清理一次
+        ttl: 2592000 // 30天过期
       });
       
       // 监听会话存储错误
@@ -130,7 +130,7 @@ export function configureSession(app: any) {
         // 动态回退到内存存储
         sessionOptions.store = new MemoryStore({
           checkPeriod: 86400000, // 每24小时清理过期会话
-          ttl: 30 * 24 * 60 * 60 // 30天的会话生命周期
+          ttl: 2592000 // 30天的会话生命周期
         } as any);
       });
       
@@ -142,7 +142,7 @@ export function configureSession(app: any) {
       // 创建内存存储
       sessionOptions.store = new MemoryStore({
         checkPeriod: 86400000, // 每24小时清理过期会话
-        ttl: 30 * 24 * 60 * 60 // 30天的会话生命周期
+        ttl: 2592000 // 30天的会话生命周期
       } as any);
     }
   } else {
@@ -151,7 +151,7 @@ export function configureSession(app: any) {
     // but the implementation accepts it, so we use a type assertion
     sessionOptions.store = new MemoryStore({
       checkPeriod: 86400000, // 每24小时清理过期会话
-      ttl: 30 * 24 * 60 * 60 // 30天的会话生命周期
+      ttl: 2592000 // 30天的会话生命周期
     } as any);
   }
 

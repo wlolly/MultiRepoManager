@@ -191,8 +191,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         <h1 className="text-2xl font-bold text-gray-800">{t('system_name')}</h1>
       </div>
       
-      {/* 已经不需要手动跳转按钮 */}
-      
       {/* 登录框 */}
       <Card className="w-[360px] shadow-xl border-0 rounded-xl overflow-hidden bg-white/95 backdrop-blur-sm">
         <CardHeader className="space-y-1 pb-4 pt-6">
@@ -288,8 +286,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
                 >
                   {t('auth.guest_login')}
                 </Button>
-                
-                {/* 测试账号登录按钮已移除 */}
               </div>
             </form>
           </Form>
