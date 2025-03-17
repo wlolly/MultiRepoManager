@@ -718,7 +718,7 @@ export class MemStorage implements IStorage {
     const updatedAt = new Date();
     const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 默认30天有效期
 
-    constuserSession: UserSession = {
+    const userSession = {
       ...sessionData,
       createdAt,
       updatedAt,
