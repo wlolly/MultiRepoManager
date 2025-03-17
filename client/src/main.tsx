@@ -4,6 +4,7 @@ import App from "./App";
 import "./index.css";
 import "./checkLoading.js";
 import { getSessionId, attachSessionToRequest } from './lib/sessionManager';
+import { initializeSessionSync } from './lib/sessionSyncHelper';
 
 // 渲染应用，确保加载指示器显示足够的时间
 console.log("main.tsx is running, 准备渲染App");
@@ -19,6 +20,13 @@ declare global {
 function renderApp() {
   const rootElement = document.getElementById("root");
   console.log("Root element found:", rootElement);
+
+  // 初始化会话同步
+  initializeSessionSync().then(() => {
+    console.log("会话同步已初始化");
+  }).catch(err => {
+    console.error("会话同步初始化失败:", err);
+  });
 
   if (rootElement) {
     try {
