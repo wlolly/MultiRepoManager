@@ -91,8 +91,8 @@ export function usePermissions(): PermissionsHook {
         setIsAuthenticated(false);
         
         // 可以处理假阳性登录的特殊服务器响应
-        if (userData.fakePositive) {
-          console.log('检测到假阳性登录响应:', userData);
+        if (userData.fakePositive || userData.guestAccess) {
+          console.log('检测到访客访问权限响应:', userData);
           // 创建一个访客用户对象并存储
           const guestUser = {
             id: -1,
@@ -102,10 +102,20 @@ export function usePermissions(): PermissionsHook {
             userSource: 'local',
             fakePositive: true,
             realAuthenticated: false,
+            authenticated: false,
             accessLevel: userData.accessLevel || 'limited'
           };
           
           localStorage.setItem('currentUser', JSON.stringify(guestUser));
+          
+          // 清除可能存在的旧数据
+          localStorage.removeItem('pagePermissionsCache');
+          localStorage.removeItem('warehousePermissionsCache');
+          sessionStorage.removeItem('currentUser');
+        } else {
+          // 未认证且无访客权限，清除所有本地存储的用户信息
+          localStorage.removeItem('currentUser');
+          sessionStorage.removeItem('currentUser');
         }
         
         setLoading(false);

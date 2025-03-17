@@ -348,15 +348,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // 创建上下文值，使用更新后的字段名
+  // 创建上下文值，使用更新后的字段名，补充真实认证状态判断
   const contextValue: AuthContextType = {
     user: state.user,
     isLoading: state.isLoading,
-    isAuthenticated: Boolean(state.user?.authenticated),
-    isRealUser: Boolean(state.user?.id && state.user?.id > 0),
-    isAdmin: state.user?.role === 'admin',
-    // 检查用户是否为访客 (id <= 0 或不存在或未激活)
-    isVisitor: !state.user || !state.user.id || state.user.id <= 0 || state.user.isactive === false,
+    // 认证状态基于服务器认证结果，必须有效用户ID且已认证
+    isAuthenticated: Boolean(state.user?.authenticated && state.user?.id && state.user?.id > 0),
+    // 真实用户判断增加realAuthenticated判断
+    isRealUser: Boolean(
+      state.user?.id && 
+      state.user?.id > 0 && 
+      (state.user?.realAuthenticated === true || state.user?.role === 'admin')
+    ),
+    // 管理员判断增加realAuthenticated条件
+    isAdmin: state.user?.role === 'admin' && state.user?.realAuthenticated === true,
+    // 访客判断增加明确的fakePositive检查
+    isVisitor: !state.user || 
+              !state.user.id || 
+              state.user.id <= 0 || 
+              state.user.isactive === false || 
+              state.user.fakePositive === true || 
+              state.user.realAuthenticated === false,
     pagePermissions: state.pagePermissions,
     warehousePermissions: state.warehousePermissions,
     login,

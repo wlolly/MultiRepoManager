@@ -169,38 +169,39 @@ export function Sidebar() {
       <nav className="mt-2">
         <div className="px-4 py-2 text-gray-400 text-sm font-medium">{t('sidebar.navigation')}</div>
         {navItems
-          // 过滤导航项：
+          // 过滤导航项：严格按照认证状态和权限判断
           // 1. 公共页面总是显示给所有用户
-          // 2. 非公共页面(特别是产品页面)只有真实用户才能访问
-          // 放宽过滤条件，默认显示更多菜单项以改善导航体验
+          // 2. 非公共页面(特别是产品页面)只有真实认证用户才能访问
           .filter(item => {
             // 公共页面总是显示
             if (item.public) {
               return true;
             }
             
-            // 非公共页面只对真实用户显示
-            // 这里增加调试信息
-            console.log(`导航项检查: ${item.keyName}, 是否真实用户: ${isRealUser}`);
+            // 导航项过滤条件的调试日志
+            console.log(`导航项检查: ${item.keyName}, 实际认证状态: ${isAuthenticated}, 是否真实用户: ${isRealUser}, 访客状态: ${isVisitor}`);
             
-            // 检查是否有本地存储的当前用户信息
-            const currentUserStr = localStorage.getItem('currentUser');
-            if (currentUserStr) {
-              try {
-                const currentUser = JSON.parse(currentUserStr);
-                if (currentUser && currentUser.role === 'admin') {
-                  // 管理员总是显示所有导航项
-                  console.log(`用户为管理员，显示导航项: ${item.keyName}`);
-                  return true;
-                }
-              } catch (e) {
-                console.error('解析本地存储用户数据失败:', e);
-              }
+            // 管理员检查 - 使用正确的认证状态判断
+            if (isAuthenticated && isAdmin && !isVisitor) {
+              console.log(`管理员用户，允许访问所有导航项: ${item.keyName}`);
+              return true;
             }
             
-            // 对于测试环境或开发阶段，放宽过滤条件，允许显示更多导航项
-            // 如果是真实用户，或路径不是敏感区域(如Products)，则显示
-            return isRealUser || item.href !== "/products";
+            // 真实登录用户检查 - 必须同时满足：已认证、是真实用户、非访客
+            if (isAuthenticated && isRealUser && !isVisitor) {
+              console.log(`真实用户，允许访问导航项: ${item.keyName}`);
+              return true;
+            }
+            
+            // 访客用户只显示有限的导航项
+            if (isVisitor) {
+              // 仅允许访问仪表盘和少数非敏感页面
+              const visitorAllowedPaths = ["/", "/dashboard"];
+              return visitorAllowedPaths.includes(item.href);
+            }
+            
+            // 默认不显示
+            return false;
           })
           .map((item) => (
             <Link key={item.href} to={item.href} className={cn(
