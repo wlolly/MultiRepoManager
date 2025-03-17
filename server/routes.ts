@@ -2,7 +2,7 @@ import express, { type Express, Request, Response, NextFunction } from "express"
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { memStorage, useFallbackStorage, db } from "./db";
-import { getUserPagePermissions, getUserWarehousePermissions } from "./middleware/permission-middleware";
+import { getUserPagePermissions, getUserWarehousePermissions, checkSpecificPagePermissionResult } from "./middleware/permission-middleware";
 import { translations } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
 import socialAuthConfig from './social-auth-config';
@@ -820,30 +820,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`检查用户ID=${userId}, 角色=${role}的页面[${pageName}]权限`);
       
-      // 如果是管理员，直接返回有权限
-      if (role === 'admin' || role === 'super_admin') {
-        return res.json({ 
-          hasPermission: true,
-          isAdmin: true,
-          pageName,
-          success: true
-        });
-      }
+      // 使用新的checkSpecificPagePermissionResult函数检查权限
+      const permissionResult = await checkSpecificPagePermissionResult(userId, role, pageName);
       
-      // 使用hasPagePermission函数检查权限
-      const hasPermission = await hasPagePermission(userId, role, pageName);
-      
-      res.json({ 
-        hasPermission,
-        isAdmin: false,
-        pageName,
-        success: true
-      });
+      res.json(permissionResult);
     } catch (error) {
       console.error('检查页面权限失败:', error);
       res.status(500).json({ 
         error: '权限检查失败',
         message: '系统无法验证您的页面访问权限',
+        hasPermission: false,
+        isAdmin: false,
+        pageName: req.params.pageName || '',
         success: false
       });
     }
