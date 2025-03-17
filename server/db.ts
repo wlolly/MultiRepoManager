@@ -2,7 +2,6 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from "@shared/schema";
 import dotenv from 'dotenv';
-import { MemStorage } from './storage'; // 导入MemStorage实现
 import fs from 'fs';
 import path from 'path';
 import { log } from './vite';
@@ -28,8 +27,10 @@ try {
   console.error('[配置检查] 读取.env文件时出错:', err);
 }
 
-// 创建内存存储实例
-export const memStorage = new MemStorage();
+// 创建简单的内存存储对象用于降级场景
+export const memStorage = {
+  ready: true
+};
 
 // 监听未捕获的异常和拒绝的Promise
 process.on('uncaughtException', (err) => {

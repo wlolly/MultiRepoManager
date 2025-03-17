@@ -88,9 +88,9 @@ import { initializeUserIDTable } from './database/userID';
     }
   }, AUTH_CLEANUP_INTERVAL);
   
-  // 首先确保已经初始化了内存存储
-  // 使用已导入的memStorage，不能在异步函数中使用import语句
-  memStorage.initializeDemoData();
+  // 不再需要初始化内存存储的演示数据
+  // 系统现在使用PostgreSQL数据库，不使用内存存储
+  console.log('[系统] 跳过内存存储初始化，使用PostgreSQL数据库');
   
   // 数据库已经通过db.ts初始化 - 但这个过程是异步的，需要进行检查
   log('验证数据库连接状态', 'postgres');

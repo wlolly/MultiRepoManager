@@ -2357,10 +2357,13 @@ export const memStorage = new MemStorage();
 
 // 由于DatabaseStorage类尚未完成实现，暂时使用内存存储作为默认选项
 // TODO: 完成DatabaseStorage类的实现
-// export const dbStorage = new DatabaseStorage();
+// 引入DbStorage实现
+import { DbStorage } from './db-storage';
 
-// 默认导出memStorage，未来可以切换到数据库存储
-export const storage = memStorage;
+// 创建数据库存储实例
+export const dbStorage = new DbStorage();
 
-// 临时导出一个dbStorage变量，与memStorage相同，以维持API兼容性
-export const dbStorage = memStorage;
+// 导出数据库存储实例，作为默认存储
+export const storage = dbStorage;
+
+// 保留memStorage以保持向后兼容，但默认使用数据库存储
