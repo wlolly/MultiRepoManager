@@ -49,9 +49,9 @@ export interface IStorage {
   getUsers(): Promise<User[]>;
   
   // 登录验证方法
-  createLoginVerification(verification: InsertLoginVerification): Promise<LoginVerification>;
-  getLoginVerification(verificationId: string): Promise<LoginVerification | undefined>;
-  updateLoginVerification(verificationId: string, updates: Partial<LoginVerification>): Promise<LoginVerification | undefined>;
+  createLoginVerification(verification: any): Promise<any>;
+  getLoginVerification(verificationId: string): Promise<any | undefined>;
+  updateLoginVerification(verificationId: string, updates: any): Promise<any | undefined>;
   cleanupExpiredVerifications(): Promise<number>; // 返回清理的验证记录数量
   
   // 会话管理方法
@@ -1759,6 +1759,179 @@ export class DatabaseStorage implements IStorage {
   // 唯一码跟踪相关存储 - 使用内存存储实现
   private uniqueCodeTrackingMap: Map<string, UniqueCodeTracking>;
   
+  // 登录验证相关存储 - 使用内存存储实现
+  private loginVerificationsMap: Map<string, any> = new Map<string, any>();
+  private loginVerificationIdCounter: number = 1;
+  
+  /**
+   * 创建登录验证记录
+   * @param verification 验证记录数据
+   * @returns 创建的验证记录
+   */
+  async createLoginVerification(verification: any): Promise<any> {
+    const id = this.loginVerificationIdCounter++;
+    const created = new Date();
+    const verificationRecord = {
+      ...verification,
+      id,
+      created,
+      used: false,
+      usedAt: null
+    };
+    
+    this.loginVerificationsMap.set(verification.verificationId, verificationRecord);
+    return verificationRecord;
+  }
+  
+  /**
+   * 获取登录验证记录
+   * @param verificationId 验证ID
+   * @returns 验证记录，如果不存在或已过期则返回undefined
+   */
+  async getLoginVerification(verificationId: string): Promise<any | undefined> {
+    const verification = this.loginVerificationsMap.get(verificationId);
+    
+    // 检查验证记录是否过期
+    if (verification && verification.expires && new Date() > new Date(verification.expires)) {
+      // 如果已过期，自动删除
+      this.loginVerificationsMap.delete(verificationId);
+      return undefined;
+    }
+    
+    return verification;
+  }
+  
+  /**
+   * 更新登录验证记录
+   * @param verificationId 验证ID
+   * @param updates 更新数据
+   * @returns 更新后的验证记录，如果不存在则返回undefined
+   */
+  async updateLoginVerification(verificationId: string, updates: any): Promise<any | undefined> {
+    const verification = this.loginVerificationsMap.get(verificationId);
+    if (!verification) return undefined;
+    
+    const updatedVerification = {
+      ...verification,
+      ...updates
+    };
+    
+    this.loginVerificationsMap.set(verificationId, updatedVerification);
+    return updatedVerification;
+  }
+  
+  /**
+   * 清理过期的登录验证记录
+   * 根据数据一致性验证规范，确保清理操作符合以下要求：
+   * 1. 必须使用事务保证操作原子性
+   * 2. 操作前后记录日志追踪
+   * 3. 返回确切的清理数量
+   * 
+   * @returns 清理的验证记录数量
+   */
+  /**
+   * 添加登录验证记录到PostgreSQL数据库
+   * 用于双重验证流程的第一阶段
+   * @param verification 验证记录数据
+   */
+  async createLoginVerification(verification: any): Promise<any> {
+    const { db } = await import('./db');
+    
+    try {
+      console.log(`[数据库] 创建登录验证记录: ${verification.verificationId}`);
+      
+      const created = new Date();
+      const expires = verification.expires || new Date(Date.now() + 15 * 60 * 1000); // 默认15分钟过期
+      
+      // 确保状态字段存在
+      const status = verification.status || 'pending';
+      
+      // 创建验证记录
+      const [result] = await db.insert(loginVerifications).values({
+        verificationId: verification.verificationId,
+        userId: verification.userId,
+        ipAddress: verification.ipAddress || null,
+        userAgent: verification.userAgent || null,
+        status: status,
+        created: created,
+        expires: expires,
+        used: false,
+        usedAt: null
+      }).returning();
+      
+      console.log(`[数据库] 创建验证记录成功: ${result.verificationId}`);
+      return result;
+    } catch (error) {
+      console.error('[数据库] 创建登录验证记录时出错:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * 根据验证ID获取验证记录
+   * 如果验证记录不存在或已过期则返回undefined
+   * @param verificationId 验证ID
+   */
+  async getLoginVerification(verificationId: string): Promise<any | undefined> {
+    const { db } = await import('./db');
+    
+    try {
+      console.log(`[数据库] 查询验证记录: ${verificationId}`);
+      
+      // 查询验证记录
+      const [result] = await db.select()
+        .from(loginVerifications)
+        .where(eq(loginVerifications.verificationId, verificationId));
+      
+      if (!result) {
+        console.log(`[数据库] 未找到验证记录: ${verificationId}`);
+        return undefined;
+      }
+      
+      // 检查是否已过期
+      if (new Date() > new Date(result.expires)) {
+        console.log(`[数据库] 验证记录已过期: ${verificationId}`);
+        return undefined;
+      }
+      
+      console.log(`[数据库] 找到验证记录: ${verificationId}, 状态: ${result.status}`);
+      return result;
+    } catch (error) {
+      console.error('[数据库] 查询登录验证记录时出错:', error);
+      return undefined;
+    }
+  }
+  
+  /**
+   * 更新登录验证记录
+   * @param verificationId 验证ID
+   * @param updates 更新数据
+   */
+  async updateLoginVerification(verificationId: string, updates: any): Promise<any | undefined> {
+    const { db } = await import('./db');
+    
+    try {
+      console.log(`[数据库] 更新验证记录: ${verificationId}`);
+      
+      // 更新验证记录
+      const [result] = await db.update(loginVerifications)
+        .set(updates)
+        .where(eq(loginVerifications.verificationId, verificationId))
+        .returning();
+      
+      if (!result) {
+        console.log(`[数据库] 未找到要更新的验证记录: ${verificationId}`);
+        return undefined;
+      }
+      
+      console.log(`[数据库] 更新验证记录成功: ${verificationId}`);
+      return result;
+    } catch (error) {
+      console.error('[数据库] 更新登录验证记录时出错:', error);
+      return undefined;
+    }
+  }
+  
   /**
    * 清理过期的登录验证记录
    * 根据数据一致性验证规范，确保清理操作符合以下要求：
@@ -1770,13 +1943,15 @@ export class DatabaseStorage implements IStorage {
    */
   async cleanupExpiredVerifications(): Promise<number> {
     try {
+      const { db } = await import('./db');
+      
       console.log('[数据库] 开始清理过期的验证记录');
       
       // 查找所有过期的验证记录
       const now = new Date();
       
       // 使用Drizzle ORM执行删除操作
-      const result = await this.db
+      const result = await db
         .delete(loginVerifications)
         .where(or(
           lte(loginVerifications.expires, now),
