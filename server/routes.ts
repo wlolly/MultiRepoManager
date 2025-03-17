@@ -695,7 +695,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.redirect('/');
   });
 
+  // 双重验证登录 - 第一阶段：初始化登录
+  apiRouter.post('/auth/initiate-login', initiateLogin);
 
+  // 双重验证登录 - 第二阶段：完成登录
+  apiRouter.post('/auth/complete-login', completeLogin);
+
+  // 重新发送验证码接口
+  apiRouter.post('/auth/resend-code', async (req, res) => {
+    const { verificationId } = req.body;
+    
+    try {
+      if (!verificationId) {
+        return res.status(400).json({
+          success: false,
+          message: '缺少验证ID'
+        });
+      }
+      
+      // 获取存储接口
+      const db = req.app.locals.storage;
+      
+      // 获取验证记录
+      const verification = await db.getLoginVerification(verificationId);
+      
+      if (!verification || verification.used || new Date() > new Date(verification.expires)) {
+        return res.status(401).json({
+          success: false,
+          message: '验证码已失效，请重新登录'
+        });
+      }
+      
+      // 生成新的6位验证码
+      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+      
+      // 更新验证码和有效期（15分钟）
+      await db.updateLoginVerification(verificationId, {
+        code: verificationCode,
+        expires: new Date(Date.now() + 15 * 60 * 1000)
+      });
+      
+      // 简化处理，直接在控制台打印新验证码
+      console.log(`[认证系统][测试] 用户ID ${verification.userId} 的新验证码是: ${verificationCode}`);
+      
+      return res.status(200).json({
+        success: true,
+        message: '验证码已重新发送'
+      });
+    } catch (error) {
+      console.error('[认证系统] 重发验证码处理错误:', error);
+      return res.status(500).json({
+        success: false,
+        message: '服务器错误，请稍后再试'
+      });
+    }
+  });
 
   // 管理员接口 - 激活用户
   apiRouter.post('/auth/users/:id/activate', verifySession, isAdmin, activateUser);
